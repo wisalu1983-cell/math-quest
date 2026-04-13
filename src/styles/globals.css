@@ -1,0 +1,117 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #58cc02;
+  --color-primary-dark: #46a302;
+  --color-secondary: #1cb0f6;
+  --color-accent: #ff9600;
+  --color-danger: #ff4b4b;
+  --color-success: #58cc02;
+  --color-warning: #ffc800;
+  --color-xp: #ffd900;
+  --color-combo: #ce82ff;
+  --color-bg: #131f24;
+  --color-bg-card: #1a2c35;
+  --color-bg-elevated: #233a44;
+  --color-text: #ffffff;
+  --color-text-secondary: #94a3b8;
+  --color-border: #37464f;
+
+  --animate-shake: shake 0.3s ease-in-out;
+  --animate-float-up: float-up 0.8s ease-out forwards;
+  --animate-pulse-grow: pulse-grow 0.6s ease-in-out;
+  --animate-fade-in: fade-in 0.3s ease-out;
+
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+  }
+
+  @keyframes float-up {
+    0% { opacity: 1; transform: translateY(0) scale(1); }
+    100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
+  }
+
+  @keyframes pulse-grow {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+  }
+
+  @keyframes fade-in {
+    0% { opacity: 0; transform: translateY(10px); }
+    100% { opacity: 1; transform: translateY(0); }
+  }
+}
+
+@layer base {
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply bg-bg text-text antialiased;
+    font-family: "Nunito", "PingFang SC", "Microsoft YaHei", sans-serif;
+    overscroll-behavior: none;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  input, textarea {
+    user-select: auto;
+    -webkit-user-select: auto;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-white font-bold py-3 px-6 rounded-2xl
+           shadow-[0_4px_0_0] shadow-primary-dark
+           active:translate-y-1 active:shadow-none
+           transition-all duration-100;
+  }
+
+  .btn-secondary {
+    @apply bg-bg-elevated text-text font-bold py-3 px-6 rounded-2xl
+           border-2 border-border
+           active:bg-border transition-all duration-100;
+  }
+
+  .card {
+    @apply bg-bg-card rounded-2xl border border-border p-4;
+  }
+
+  .digit-cell {
+    @apply w-10 h-12 sm:w-12 sm:h-14 flex items-center justify-center
+           text-xl sm:text-2xl font-bold rounded-lg
+           border-2 transition-all duration-200;
+  }
+
+  .digit-cell-active {
+    @apply border-secondary bg-secondary/10 animate-pulse;
+  }
+
+  .digit-cell-correct {
+    @apply border-success bg-success/10 text-success;
+  }
+
+  .digit-cell-wrong {
+    @apply border-danger bg-danger/10 text-danger animate-shake;
+  }
+
+  .digit-cell-filled {
+    @apply border-border bg-bg-elevated text-text;
+  }
+
+  .digit-cell-empty {
+    @apply border-border/50 bg-bg text-text-secondary;
+  }
+}
+
+@utility safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+@utility safe-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
