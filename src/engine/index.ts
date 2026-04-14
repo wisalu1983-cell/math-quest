@@ -12,6 +12,29 @@ import { generateEquationTranspose } from './generators/equation-transpose';
 export interface GeneratorParams {
   difficulty: number;
   id?: string;
+  subtypeFilter?: string[];
+}
+
+export interface SubtypeEntry {
+  tag: string;
+  weight: number;
+  gen: () => Question;
+}
+
+/** 按权重从 entries 中随机选择，支持 subtypeFilter 过滤+重新归一化 */
+export function pickSubtype(entries: SubtypeEntry[], subtypeFilter?: string[]): Question {
+  let pool = entries;
+  if (subtypeFilter?.length) {
+    const filtered = entries.filter(e => subtypeFilter.includes(e.tag));
+    if (filtered.length > 0) pool = filtered;
+  }
+  const totalWeight = pool.reduce((s, e) => s + e.weight, 0);
+  let r = Math.random() * totalWeight;
+  for (const entry of pool) {
+    r -= entry.weight;
+    if (r <= 0) return entry.gen();
+  }
+  return pool[pool.length - 1].gen();
 }
 
 type Generator = (params: GeneratorParams) => Question;
@@ -27,10 +50,10 @@ const generators: Record<TopicId, Generator> = {
   'equation-transpose': generateEquationTranspose,
 };
 
-export function generateQuestion(topicId: TopicId, difficulty: number): Question {
+export function generateQuestion(topicId: TopicId, difficulty: number, subtypeFilter?: string[]): Question {
   const gen = generators[topicId];
   const d = Math.max(1, Math.min(10, Math.round(difficulty)));
-  return gen({ difficulty: d, id: nanoid(10) });
+  return gen({ difficulty: d, id: nanoid(10), subtypeFilter });
 }
 
 export function generateMixedQuestions(topicIds: TopicId[], difficulty: number, count: number): Question[] {

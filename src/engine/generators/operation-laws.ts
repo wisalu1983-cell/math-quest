@@ -1,5 +1,6 @@
 import type { Question } from '@/types';
-import type { GeneratorParams } from '../index';
+import type { GeneratorParams, SubtypeEntry } from '../index';
+import { pickSubtype } from '../index';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -180,23 +181,22 @@ function generateLawIdentification(difficulty: number, id: string): Question {
 }
 
 export function generateOperationLaws(params: GeneratorParams): Question {
-  const { difficulty, id = '' } = params;
+  const { difficulty, id = '', subtypeFilter } = params;
 
-  if (difficulty <= 5) {
-    const r = Math.random();
-    if (r < 0.35) return generateCommutative(difficulty, id);
-    if (r < 0.65) return generateAssociative(difficulty, id);
-    return generateLawIdentification(difficulty, id);
-  } else if (difficulty <= 7) {
-    const r = Math.random();
-    if (r < 0.30) return generateDistributive(difficulty, id);
-    if (r < 0.55) return generateAssociative(difficulty, id);
-    if (r < 0.75) return generateCommutative(difficulty, id);
-    return generateLawIdentification(difficulty, id);
-  } else {
-    const r = Math.random();
-    if (r < 0.40) return generateDistributive(difficulty, id);
-    if (r < 0.65) return generateAssociative(difficulty, id);
-    return generateLawIdentification(difficulty, id);
-  }
+  const entries: SubtypeEntry[] = difficulty <= 5 ? [
+    { tag: 'commutative', weight: 35, gen: () => generateCommutative(difficulty, id) },
+    { tag: 'associative', weight: 30, gen: () => generateAssociative(difficulty, id) },
+    { tag: 'identification', weight: 35, gen: () => generateLawIdentification(difficulty, id) },
+  ] : difficulty <= 7 ? [
+    { tag: 'distributive', weight: 30, gen: () => generateDistributive(difficulty, id) },
+    { tag: 'associative', weight: 25, gen: () => generateAssociative(difficulty, id) },
+    { tag: 'commutative', weight: 20, gen: () => generateCommutative(difficulty, id) },
+    { tag: 'identification', weight: 25, gen: () => generateLawIdentification(difficulty, id) },
+  ] : [
+    { tag: 'distributive', weight: 40, gen: () => generateDistributive(difficulty, id) },
+    { tag: 'associative', weight: 25, gen: () => generateAssociative(difficulty, id) },
+    { tag: 'identification', weight: 35, gen: () => generateLawIdentification(difficulty, id) },
+  ];
+
+  return pickSubtype(entries, subtypeFilter);
 }

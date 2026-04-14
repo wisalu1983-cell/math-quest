@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Vitest, math-quest 现有生成器架构
 
-**Spec:** `math-quest/docs/specs/2026-04-08-generator-improvements.md` Section 0
+**Spec:** `math-quest/ProjectManager/Specs/2026-04-08-generator-improvements.md` Section 0
 
 ---
 
@@ -20,7 +20,7 @@
 | `src/engine/generators/mental-arithmetic.ts` | 修改 | 新增 `generateOperationOrder()`，修改主函数分发 |
 | `src/engine/generators/multi-step.ts` | 修改 :692-718 | 调整 `generateMultiStep()` 主调度器的分发权重 |
 | `src/engine/generators/generators.test.ts` | 修改 | 新增 A01 运算顺序测试，调整 A07 测试期望 |
-| `math-quest/docs/reports/2026-04-09-A03-vertical-calc-review.md` | 新建 | A03 审视报告 |
+| `math-quest/ProjectManager/Reports/2026-04-09-A03-vertical-calc-review.md` | 新建 | A03 审视报告 |
 
 ---
 
@@ -495,7 +495,7 @@ git commit -m "refactor(A07): 纯化为简便计算 — 移除递等式按序模
 - Read: `reference-bank/A-numbers-and-operations/A03-vertical-calc/advanced.md`
 - Read: `src/engine/generators/vertical-calc.ts`
 - Read: `src/components/VerticalCalcBoard.tsx`
-- Create: `math-quest/docs/reports/2026-04-09-A03-vertical-calc-review.md`
+- Create: `math-quest/ProjectManager/Reports/2026-04-09-A03-vertical-calc-review.md`
 
 - [ ] **Step 1: 阅读已提取的 A03 真题**
 
@@ -527,7 +527,7 @@ git commit -m "refactor(A07): 纯化为简便计算 — 移除递等式按序模
 
 - [ ] **Step 5: 撰写审视报告**
 
-在 `math-quest/docs/reports/2026-04-09-A03-vertical-calc-review.md` 中写报告，包含：
+在 `math-quest/ProjectManager/Reports/2026-04-09-A03-vertical-calc-review.md` 中写报告，包含：
 
 ```markdown
 # A03 竖式笔算审视报告
@@ -555,7 +555,7 @@ git commit -m "refactor(A07): 纯化为简便计算 — 移除递等式按序模
 - [ ] **Step 6: 提交报告**
 
 ```bash
-git add math-quest/docs/reports/2026-04-09-A03-vertical-calc-review.md
+git add math-quest/ProjectManager/Reports/2026-04-09-A03-vertical-calc-review.md
 git commit -m "docs: A03 竖式笔算审视报告 — 考察目标、题型设计和边界分析"
 ```
 

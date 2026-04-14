@@ -293,7 +293,7 @@
 **Phase 0 — 分类调整（架构级）** ✅ 已完成
 1. ✅ A01 升级: 新增 `generateOperationOrder()` 子函数
 2. ✅ A07 纯化: 调整调度器，移除递等式按序模式
-3. ✅ A03 审视: 输出审视报告 `docs/reports/2026-04-09-A03-vertical-calc-review.md`
+3. ✅ A03 审视: 输出审视报告 `ProjectManager/Reports/2026-04-09-A03-vertical-calc-review.md`
 
 **Phase 1 — P0 高频考点缺失** ✅ 已完成
 4. ✅ A05/A02 大小比较: `generateCompareSize()` / `generateCompare()`

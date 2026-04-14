@@ -6,7 +6,7 @@ import { useGameProgressStore } from './gamification';
 import { nanoid } from 'nanoid';
 import { generateQuestion } from '@/engine';
 import { CAMPAIGN_MAX_HEARTS } from '@/constants';
-import { getCampaignLevel } from '@/constants/campaign';
+import { getCampaignLevel, getSubtypeFilter } from '@/constants/campaign';
 
 // ─── User Store ───
 interface UserStore {
@@ -96,7 +96,10 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const { session, currentIndex, totalQuestions } = get();
     if (!session || currentIndex >= totalQuestions) return;
 
-    const question = generateQuestion(session.topicId, session.difficulty);
+    const filter = session.targetLevelId
+      ? getSubtypeFilter(session.topicId, session.targetLevelId)
+      : undefined;
+    const question = generateQuestion(session.topicId, session.difficulty, filter);
 
     set({
       currentQuestion: question,

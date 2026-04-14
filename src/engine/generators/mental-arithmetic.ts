@@ -1,5 +1,7 @@
 import type { Question, ComputationStep } from '@/types';
 import type { GeneratorParams } from '../index';
+import { pickSubtype } from '../index';
+import type { SubtypeEntry } from '../index';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -117,24 +119,40 @@ function shuffle<T>(arr: T[]): T[] {
 
 /** 为"先算哪一步"MC 题生成 3 个干扰选项 */
 function generateWrongFirstSteps(expression: string, correctFirst: string): string[] {
-  // 从表达式中提取所有可能的二元子表达式
   const tokens = expression.replace(/[()]/g, '').split(/\s+/);
+  const seen = new Set<string>([correctFirst]);
   const candidates: string[] = [];
+
+  const add = (s: string) => {
+    if (!seen.has(s)) { seen.add(s); candidates.push(s); }
+  };
+
+  // 1. 表达式中所有相邻二元子表达式（左→右错序等典型错误）
   for (let i = 0; i < tokens.length - 2; i += 2) {
-    const sub = `${tokens[i]} ${tokens[i + 1]} ${tokens[i + 2]}`;
-    if (sub !== correctFirst) candidates.push(sub);
+    add(`${tokens[i]} ${tokens[i + 1]} ${tokens[i + 2]}`);
   }
-  // 补充到 3 个干扰项
-  while (candidates.length < 3) {
-    const a = randInt(1, 20);
-    const b = randInt(1, 20);
-    const op = ['+', '-', '×', '÷'][randInt(0, 3)];
-    const filler = `${a} ${op} ${b}`;
-    if (filler !== correctFirst && !candidates.includes(filler)) {
-      candidates.push(filler);
+
+  // 2. 正确步骤换运算符（运算法则混淆）
+  const [cA, cOp, cB] = correctFirst.split(/\s+/);
+  if (cOp === '×' || cOp === '÷') {
+    add(`${cA} + ${cB}`);
+    add(`${cA} - ${cB}`);
+  } else {
+    add(`${cA} × ${cB}`);
+  }
+
+  // 3. 表达式中非相邻数对 + 表达式运算符
+  const nums = tokens.filter((_, i) => i % 2 === 0);
+  const ops = tokens.filter((_, i) => i % 2 === 1);
+  for (let i = 0; i < nums.length && candidates.length < 3; i++) {
+    for (let j = i + 1; j < nums.length && candidates.length < 3; j++) {
+      for (const op of ops) {
+        add(`${nums[i]} ${op} ${nums[j]}`);
+      }
     }
   }
-  return candidates.slice(0, 3);
+
+  return shuffle(candidates).slice(0, 3);
 }
 
 function generateOperationOrder(difficulty: number, id: string): Question {
@@ -283,22 +301,11 @@ function generateOperationOrder(difficulty: number, id: string): Question {
   };
 }
 
-export function generateMentalArithmetic(params: GeneratorParams): Question {
-  const { difficulty, id = '' } = params;
-
-  // 20% 概率生成运算顺序题（基础计算的新增能力）
-  if (Math.random() < 0.20) {
-    return generateOperationOrder(difficulty, id);
-  }
-
-  // 80% 概率生成单步口算题（原有逻辑不变）
-  const op = pickOperator();
+function generateSingleStep(forcedOp: '+' | '-' | '×' | '÷', difficulty: number, id: string): Question {
+  const op = forcedOp;
   const [a, b, numAnswer] = generatePair(difficulty, op);
-
-  // Division: always "quotient...remainder" string; others: number
   const remainder = op === '÷' ? a - b * numAnswer : 0;
   const finalAnswer: number | string = op === '÷' ? `${numAnswer}...${remainder}` : numAnswer;
-
   const expression = `${a} ${op} ${b}`;
 
   const hintText =
@@ -314,14 +321,25 @@ export function generateMentalArithmetic(params: GeneratorParams): Question {
     : `${expression} = ${numAnswer}`;
 
   return {
-    id,
-    topicId: 'mental-arithmetic',
-    type: 'numeric-input',
-    difficulty,
+    id, topicId: 'mental-arithmetic', type: 'numeric-input', difficulty,
     prompt: `计算: ${expression}`,
     data: { kind: 'mental-arithmetic', expression, operands: [a, b], operator: op },
     solution: { answer: finalAnswer, explanation },
     hints: [hintText],
     xpBase: 10 + (difficulty - 1) * 5,
   };
+}
+
+export function generateMentalArithmetic(params: GeneratorParams): Question {
+  const { difficulty, id = '', subtypeFilter } = params;
+
+  const entries: SubtypeEntry[] = [
+    { tag: 'add', weight: 20, gen: () => generateSingleStep('+', difficulty, id) },
+    { tag: 'sub', weight: 20, gen: () => generateSingleStep('-', difficulty, id) },
+    { tag: 'mul', weight: 20, gen: () => generateSingleStep('×', difficulty, id) },
+    { tag: 'div', weight: 20, gen: () => generateSingleStep('÷', difficulty, id) },
+    { tag: 'order', weight: 20, gen: () => generateOperationOrder(difficulty, id) },
+  ];
+
+  return pickSubtype(entries, subtypeFilter);
 }

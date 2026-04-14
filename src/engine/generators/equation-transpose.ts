@@ -1,5 +1,6 @@
 import type { Question } from '@/types';
-import type { GeneratorParams } from '../index';
+import type { GeneratorParams, SubtypeEntry } from '../index';
+import { pickSubtype } from '../index';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -25,32 +26,39 @@ function generateMoveConstant(difficulty: number, id: string): Question {
   let equation: string;
   let correct: string;
   let wrong1: string;
+  let wrong2: string;
+  let wrong3: string;
   let explanation: string;
 
   if (op === '+') {
     const b = x + a;
     equation = `x + ${a} = ${b}`;
     correct = `x = ${b} - ${a}`;
-    wrong1 = `x = ${b} + ${a}`;
+    wrong1 = `x = ${b} + ${a}`;           // 忘记变号
+    wrong2 = `x = ${a} - ${b}`;           // 左右颠倒
+    wrong3 = `x = ${b}`;                  // 忘记移项
     explanation = `+${a} 移到右边变为 -${a}`;
   } else {
     const b = x - a;
     if (b < 0) {
-      // Avoid negative, use + instead
       const b2 = x + a;
       equation = `x + ${a} = ${b2}`;
       correct = `x = ${b2} - ${a}`;
       wrong1 = `x = ${b2} + ${a}`;
+      wrong2 = `x = ${a} - ${b2}`;
+      wrong3 = `x = ${b2}`;
       explanation = `+${a} 移到右边变为 -${a}`;
     } else {
       equation = `x - ${a} = ${b}`;
       correct = `x = ${b} + ${a}`;
-      wrong1 = `x = ${b} - ${a}`;
+      wrong1 = `x = ${b} - ${a}`;         // 忘记变号
+      wrong2 = `x = ${a} - ${b}`;         // 左右颠倒且符号错
+      wrong3 = `x = ${b}`;                // 忘记移项
       explanation = `-${a} 移到右边变为 +${a}`;
     }
   }
 
-  const options = shuffle([correct, wrong1]);
+  const options = shuffle([correct, wrong1, wrong2, wrong3]);
 
   return {
     id, topicId: 'equation-transpose', type: 'multiple-choice', difficulty,
@@ -74,13 +82,17 @@ function generateMoveFromLinear(difficulty: number, id: string): Question {
   let equation: string;
   let correct: string;
   let wrong1: string;
+  let wrong2: string;
+  let wrong3: string;
   let explanation: string;
 
   if (op === '+') {
     c = a * x + b;
     equation = `${a}x + ${b} = ${c}`;
     correct = `${a}x = ${c} - ${b}`;
-    wrong1 = `${a}x = ${c} + ${b}`;
+    wrong1 = `${a}x = ${c} + ${b}`;            // 忘记变号
+    wrong2 = `${a}x = ${b} - ${c}`;            // 左右颠倒
+    wrong3 = `x = ${c} - ${b}`;                // 漏掉系数
     explanation = `+${b} 移到右边变为 -${b}`;
   } else {
     c = a * x - b;
@@ -89,16 +101,20 @@ function generateMoveFromLinear(difficulty: number, id: string): Question {
       equation = `${a}x + ${b} = ${c}`;
       correct = `${a}x = ${c} - ${b}`;
       wrong1 = `${a}x = ${c} + ${b}`;
+      wrong2 = `${a}x = ${b} - ${c}`;
+      wrong3 = `x = ${c} - ${b}`;
       explanation = `+${b} 移到右边变为 -${b}`;
     } else {
       equation = `${a}x - ${b} = ${c}`;
       correct = `${a}x = ${c} + ${b}`;
-      wrong1 = `${a}x = ${c} - ${b}`;
+      wrong1 = `${a}x = ${c} - ${b}`;          // 忘记变号
+      wrong2 = `${a}x = ${b} - ${c}`;          // 颠倒且符号错
+      wrong3 = `x = ${c} + ${b}`;              // 漏掉系数
       explanation = `-${b} 移到右边变为 +${b}`;
     }
   }
 
-  const options = shuffle([correct, wrong1]);
+  const options = shuffle([correct, wrong1, wrong2, wrong3]);
 
   return {
     id, topicId: 'equation-transpose', type: 'multiple-choice', difficulty,
@@ -342,31 +358,28 @@ function generateEquationConcept(difficulty: number, id: string): Question {
 }
 
 export function generateEquationTranspose(params: GeneratorParams): Question {
-  const { difficulty, id = '' } = params;
+  const { difficulty, id = '', subtypeFilter } = params;
 
-  if (difficulty <= 5) {
-    const r = Math.random();
-    if (r < 0.35) return generateMoveConstant(difficulty, id);
-    if (r < 0.60) return generateSolveAfterTranspose(difficulty, id);
-    if (r < 0.80) return generateDivisionEquation(difficulty, id);
-    return generateEquationConcept(difficulty, id);
-  }
+  const entries: SubtypeEntry[] = difficulty <= 5 ? [
+    { tag: 'move-constant', weight: 35, gen: () => generateMoveConstant(difficulty, id) },
+    { tag: 'solve-after-transpose', weight: 25, gen: () => generateSolveAfterTranspose(difficulty, id) },
+    { tag: 'division-equation', weight: 20, gen: () => generateDivisionEquation(difficulty, id) },
+    { tag: 'equation-concept', weight: 20, gen: () => generateEquationConcept(difficulty, id) },
+  ] : difficulty <= 7 ? [
+    { tag: 'move-from-linear', weight: 20, gen: () => generateMoveFromLinear(difficulty, id) },
+    { tag: 'solve-after-transpose', weight: 20, gen: () => generateSolveAfterTranspose(difficulty, id) },
+    { tag: 'move-constant', weight: 15, gen: () => generateMoveConstant(difficulty, id) },
+    { tag: 'bracket-equation', weight: 15, gen: () => generateBracketEquation(difficulty, id) },
+    { tag: 'division-equation', weight: 15, gen: () => generateDivisionEquation(difficulty, id) },
+    { tag: 'equation-concept', weight: 15, gen: () => generateEquationConcept(difficulty, id) },
+  ] : [
+    { tag: 'move-both-sides', weight: 25, gen: () => generateMoveBothSides(difficulty, id) },
+    { tag: 'bracket-equation', weight: 20, gen: () => generateBracketEquation(difficulty, id) },
+    { tag: 'move-from-linear', weight: 15, gen: () => generateMoveFromLinear(difficulty, id) },
+    { tag: 'solve-after-transpose', weight: 15, gen: () => generateSolveAfterTranspose(difficulty, id) },
+    { tag: 'division-equation', weight: 15, gen: () => generateDivisionEquation(difficulty, id) },
+    { tag: 'equation-concept', weight: 10, gen: () => generateEquationConcept(difficulty, id) },
+  ];
 
-  if (difficulty <= 7) {
-    const r = Math.random();
-    if (r < 0.20) return generateMoveFromLinear(difficulty, id);
-    if (r < 0.40) return generateSolveAfterTranspose(difficulty, id);
-    if (r < 0.55) return generateMoveConstant(difficulty, id);
-    if (r < 0.70) return generateBracketEquation(difficulty, id);
-    if (r < 0.85) return generateDivisionEquation(difficulty, id);
-    return generateEquationConcept(difficulty, id);
-  }
-
-  const r = Math.random();
-  if (r < 0.25) return generateMoveBothSides(difficulty, id);
-  if (r < 0.45) return generateBracketEquation(difficulty, id);
-  if (r < 0.60) return generateMoveFromLinear(difficulty, id);
-  if (r < 0.75) return generateSolveAfterTranspose(difficulty, id);
-  if (r < 0.90) return generateDivisionEquation(difficulty, id);
-  return generateEquationConcept(difficulty, id);
+  return pickSubtype(entries, subtypeFilter);
 }

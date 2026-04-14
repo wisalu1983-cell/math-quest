@@ -1,5 +1,6 @@
 import type { Question } from '@/types';
-import type { GeneratorParams } from '../index';
+import type { GeneratorParams, SubtypeEntry } from '../index';
+import { pickSubtype } from '../index';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -128,12 +129,12 @@ function generateCompare(difficulty: number, id: string): Question {
     ? Number((randInt(11, 99) / 10).toFixed(1))
     : Number((randInt(101, 999) / 100).toFixed(2));
 
-  // 因子 b: 等概率生成 >1, <1, =1
-  const bType = randInt(0, 2);
+  // 因子 b: b>1 42.5%, b<1 42.5%, b=1 15%
+  const roll = Math.random();
   let b: number;
-  if (bType === 0) {
+  if (roll < 0.425) {
     b = Number((randInt(11, 25) / 10).toFixed(1));
-  } else if (bType === 1) {
+  } else if (roll < 0.85) {
     b = Number((randInt(1, 9) / 10).toFixed(1));
   } else {
     b = 1;
@@ -209,22 +210,15 @@ function generateReverseRound(difficulty: number, id: string): Question {
 
   const dp = difficulty <= 5 ? 1 : 2;
   const roundedScaled = randInt(10, 99);
-  const rounded = roundedScaled / Math.pow(10, dp);
-  const roundedStr = rounded.toFixed(dp);
+  const roundedStr = (roundedScaled / Math.pow(10, dp)).toFixed(dp);
   const precision = dp === 1 ? '一位小数' : '两位小数';
   const nextDp = dp + 1;
-  const unit = Math.pow(10, -nextDp);
+  const scale = Math.pow(10, nextDp);
 
-  const halfUnit = 5 * Math.pow(10, -(nextDp));
-  let answer: number;
-
-  if (askMax) {
-    answer = Math.round((rounded + halfUnit - unit) * Math.pow(10, nextDp)) / Math.pow(10, nextDp);
-  } else {
-    answer = Math.round((rounded - halfUnit) * Math.pow(10, nextDp)) / Math.pow(10, nextDp);
-  }
-
-  const answerStr = answer.toFixed(nextDp);
+  // 纯整数运算避免浮点误差: base = roundedScaled 扩展到 nextDp 精度
+  const base = roundedScaled * 10;
+  const answerScaled = askMax ? base + 4 : base - 5;
+  const answerStr = (answerScaled / scale).toFixed(nextDp);
   const extremeText = askMax ? '最大' : '最小';
 
   return {
@@ -243,11 +237,15 @@ function generateReverseRound(difficulty: number, id: string): Question {
 }
 
 export function generateNumberSense(params: GeneratorParams): Question {
-  const { difficulty, id = '' } = params;
-  const r = Math.random();
-  if (r < 0.35) return generateEstimate(difficulty, id);
-  if (r < 0.55) return generateRound(difficulty, id);
-  if (r < 0.70) return generateCompare(difficulty, id);
-  if (r < 0.85) return generateFloorCeil(difficulty, id);
-  return generateReverseRound(difficulty, id);
+  const { difficulty, id = '', subtypeFilter } = params;
+
+  const entries: SubtypeEntry[] = [
+    { tag: 'estimate', weight: 35, gen: () => generateEstimate(difficulty, id) },
+    { tag: 'round', weight: 20, gen: () => generateRound(difficulty, id) },
+    { tag: 'compare', weight: 15, gen: () => generateCompare(difficulty, id) },
+    { tag: 'floor-ceil', weight: 15, gen: () => generateFloorCeil(difficulty, id) },
+    { tag: 'reverse-round', weight: 15, gen: () => generateReverseRound(difficulty, id) },
+  ];
+
+  return pickSubtype(entries, subtypeFilter);
 }

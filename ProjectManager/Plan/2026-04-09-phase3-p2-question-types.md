@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Vitest, math-quest 现有生成器架构
 
-**Spec:** `math-quest/docs/specs/2026-04-08-generator-improvements.md` Section 2.P1, 3.P1-P2, 7.P2
+**Spec:** `math-quest/ProjectManager/Specs/2026-04-08-generator-improvements.md` Section 2.P1, 3.P1-P2, 7.P2
 
 ---
 

@@ -45,11 +45,24 @@
 | Phase 2（待写）| 进阶系统（心→星，难度自动调配） | ⬜ 未开始 |
 | Phase 3（待写）| 段位赛系统（BO3/BO5/BO7） | ⬜ 未开始 |
 
+## Phase 1 优化迭代
+
+| 文件 | 内容 | 状态 |
+|------|------|------|
+| [2026-04-14-phase1-hotfix-and-iteration.md](2026-04-14-phase1-hotfix-and-iteration.md) | Phase 1 热修复 + 优化迭代（去年级区分、History入口、路线匹配修复、出题质量、难度标准） | ✅ 完成 |
+
+## 设计规格新增
+
+| 文件 | 内容 |
+|------|------|
+| [2026-04-14-difficulty-standard.md](../Specs/2026-04-14-difficulty-standard.md) | 难度基准文档（difficulty 1-10 各档定义 + 8 个生成器分档明细 + 校准记录） |
+| [2026-04-14-ui-redesign-spec.md](../Specs/2026-04-14-ui-redesign-spec.md) | UI/UX 整体重设计规格（炼金书院方向：Token 体系 + IA 重构 + 组件规范 + 交互规则 + hotfix 分类） |
+
 ## 待排期
 
 | 内容 | 优先级 |
 |------|--------|
-| P0-P1 Issue 修复（ISSUE-001 ~ 007）| 高（可与游戏化实施并行） |
+| P2 Issue 修复（ISSUE-008~010）| 中 |
 | A03 块B Plus（乘法部分积、除法试商）| 中 |
 | A09 分数运算生成器 | 低 |
 | B/C/D 领域开发 | 低 |

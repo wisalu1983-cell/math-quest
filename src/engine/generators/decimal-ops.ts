@@ -1,5 +1,6 @@
 import type { Question } from '@/types';
-import type { GeneratorParams } from '../index';
+import type { GeneratorParams, SubtypeEntry } from '../index';
+import { pickSubtype } from '../index';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -364,11 +365,12 @@ function generateCompareSize(id: string, difficulty: number): Question {
     ? Number((randInt(11, 99) / 10).toFixed(1))
     : Number((randInt(101, 999) / 100).toFixed(2));
 
-  const bType = randInt(0, 2);
+  // b>1 42.5%, b<1 42.5%, b=1 15%
+  const roll = Math.random();
   let b: number;
-  if (bType === 0) {
+  if (roll < 0.425) {
     b = Number((randInt(11, 25) / 10).toFixed(1));
-  } else if (bType === 1) {
+  } else if (roll < 0.85) {
     b = Number((randInt(1, 9) / 10).toFixed(1));
   } else {
     b = 1;
@@ -444,31 +446,28 @@ function generateCyclicDivision(id: string, difficulty: number): Question {
 // ===== Main generator =====
 
 export function generateDecimalOps(params: GeneratorParams): Question {
-  const { difficulty, id = '' } = params;
+  const { difficulty, id = '', subtypeFilter } = params;
 
-  if (difficulty <= 5) {
-    const r = Math.random();
-    if (r < 0.30) return generateNormalAddSub(id, difficulty);
-    if (r < 0.60) return generateNormalMulInt(id, difficulty);
-    if (r < 0.85) return generateNormalDivInt(id, difficulty);
-    return generateCompareSize(id, difficulty);
-  }
+  const entries: SubtypeEntry[] = difficulty <= 5 ? [
+    { tag: 'add-sub', weight: 30, gen: () => generateNormalAddSub(id, difficulty) },
+    { tag: 'mul', weight: 30, gen: () => generateNormalMulInt(id, difficulty) },
+    { tag: 'div', weight: 25, gen: () => generateNormalDivInt(id, difficulty) },
+    { tag: 'compare', weight: 15, gen: () => generateCompareSize(id, difficulty) },
+  ] : difficulty <= 7 ? [
+    { tag: 'mul', weight: 25, gen: () => generateHardMulDecimal(id, difficulty) },
+    { tag: 'div', weight: 20, gen: () => generateHardDivDecimal(id, difficulty) },
+    { tag: 'add-sub', weight: 15, gen: () => generateHardMixedAddSub(id, difficulty) },
+    { tag: 'shift', weight: 10, gen: () => generateHardShift(id, difficulty) },
+    { tag: 'trap', weight: 10, gen: () => generateHardTrap(id, difficulty) },
+    { tag: 'compare', weight: 10, gen: () => generateCompareSize(id, difficulty) },
+    { tag: 'cyclic-div', weight: 10, gen: () => generateCyclicDivision(id, difficulty) },
+  ] : [
+    { tag: 'mul', weight: 35, gen: () => generateDemonMulDecimal(id, difficulty) },
+    { tag: 'div', weight: 30, gen: () => generateDemonDivDecimal(id, difficulty) },
+    { tag: 'compare', weight: 15, gen: () => generateCompareSize(id, difficulty) },
+    { tag: 'cyclic-div', weight: 10, gen: () => generateCyclicDivision(id, difficulty) },
+    { tag: 'trap', weight: 10, gen: () => generateHardTrap(id, difficulty) },
+  ];
 
-  if (difficulty <= 7) {
-    const r = Math.random();
-    if (r < 0.25) return generateHardMulDecimal(id, difficulty);
-    if (r < 0.45) return generateHardDivDecimal(id, difficulty);
-    if (r < 0.60) return generateHardMixedAddSub(id, difficulty);
-    if (r < 0.70) return generateHardShift(id, difficulty);
-    if (r < 0.80) return generateHardTrap(id, difficulty);
-    if (r < 0.90) return generateCompareSize(id, difficulty);
-    return generateCyclicDivision(id, difficulty);
-  }
-
-  const r = Math.random();
-  if (r < 0.35) return generateDemonMulDecimal(id, difficulty);
-  if (r < 0.65) return generateDemonDivDecimal(id, difficulty);
-  if (r < 0.80) return generateCompareSize(id, difficulty);
-  if (r < 0.90) return generateCyclicDivision(id, difficulty);
-  return generateHardTrap(id, difficulty);
+  return pickSubtype(entries, subtypeFilter);
 }

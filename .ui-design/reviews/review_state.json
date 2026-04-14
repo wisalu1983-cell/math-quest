@@ -1,0 +1,16 @@
+{
+  "review_id": "mathquest_20260414_full",
+  "target": "src/ (entire math-quest product)",
+  "focus_areas": ["visual", "usability", "code", "performance"],
+  "context": "儿童数学练习应用（小学五年级），闯关+错题本+进度追踪",
+  "platform": "responsive (mobile-first)",
+  "status": "complete",
+  "started_at": "2026-04-14T00:00:00Z",
+  "issues_found": 18,
+  "severity_counts": {
+    "critical": 2,
+    "major": 5,
+    "minor": 7,
+    "suggestion": 4
+  }
+}

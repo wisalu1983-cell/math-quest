@@ -79,6 +79,13 @@ export default function Progress() {
                 <div className="text-xs text-text-secondary">总正确率</div>
               </div>
             </div>
+            <button
+              onClick={() => setPage('history')}
+              className="w-full mt-4 py-2.5 text-sm font-bold text-primary bg-primary/10 rounded-xl
+                         hover:bg-primary/20 transition-colors"
+            >
+              查看练习记录 →
+            </button>
           </div>
         )}
       </div>

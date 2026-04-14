@@ -15,6 +15,7 @@ export interface CampaignLane {
   laneId: string;          // e.g. "mental-arithmetic-S1-LA"
   laneLabel: string;       // e.g. "主路线" | "估算" | "比较"
   levels: CampaignLevel[];
+  subtypeFilter?: string[];  // 限定此路线允许的子题型标签，为空/undefined 时不过滤
 }
 
 /** 阶段定义 */

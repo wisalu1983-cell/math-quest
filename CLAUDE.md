@@ -99,7 +99,7 @@ src/
 │   ├── VerticalCalcBoard.tsx     # 竖式计算交互组件（支持小数点列）
 │   └── DecimalTrainingGrid.tsx   # 小数乘除法训练格（难度分级反馈）
 └── pages/               # 10 个页面组件
-    ├── Onboarding.tsx    # 首次注册（昵称 + 年级）
+    ├── Onboarding.tsx    # 首次注册（欢迎 + 昵称，2步完成）
     ├── Home.tsx          # 首页（主题列表 + 每日目标）
     ├── TopicSelect.tsx   # 难度与题数选择
     ├── Practice.tsx      # 答题页面（核心交互）
@@ -143,5 +143,6 @@ reference-bank/
 - 页面路由用 Zustand `useUIStore.currentPage` 状态驱动，不使用 react-router-dom（虽然已安装）
 - 题目生成是纯函数（`engine/generators/`），接受 `{difficulty, id}` 返回 `Question` 对象
 - 难度值 1-10，映射到三档：普通(1-5)、困难(6-7)、魔王(8-10)
-- XP 系统：基础 XP + 连击加成 + 速度奖励 + 全对奖励
+- 难度基准：所有题目以**上海市五年级小学毕业生小升初**标准能力要求为「普通档」基准，difficulty=5 对应毕业考试标准水平
+- 不区分年级，User.grade 字段已废弃（可选字段，新用户不再写入）
 - 已知问题和待办事项见 `ProjectManager/Overview.md`

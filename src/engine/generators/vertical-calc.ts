@@ -1,5 +1,6 @@
 import type { Question, VerticalCalcStep } from '@/types';
-import type { GeneratorParams } from '../index';
+import type { GeneratorParams, SubtypeEntry } from '../index';
+import { pickSubtype } from '../index';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -464,98 +465,69 @@ function generateApproximate(difficulty: number, id: string): Question {
   };
 }
 
+function generateIntAdd(difficulty: number, id: string): Question {
+  const [lo, hi] = difficulty <= 5 ? [100, 999] : difficulty <= 7 ? [1000, 9999] : [10000, 99999];
+  const a = randInt(lo, hi); const b = randInt(lo, hi);
+  return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
+    prompt: `用竖式计算: ${a} + ${b}`,
+    data: { kind: 'vertical-calc' as const, operation: '+' as const, operands: [a, b], steps: generateAdditionSteps(a, b, difficulty) },
+    solution: { answer: a + b, explanation: `${a} + ${b} = ${a + b}` },
+    hints: ['从个位开始，逐位相加，满十进一'], xpBase: 10 + (difficulty - 1) * 5,
+  };
+}
+
+function generateIntSub(difficulty: number, id: string): Question {
+  const [lo, hi] = difficulty <= 5 ? [100, 999] : difficulty <= 7 ? [1000, 9999] : [10000, 99999];
+  const a = randInt(lo, hi); const b = randInt(lo, a);
+  return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
+    prompt: `用竖式计算: ${a} - ${b}`,
+    data: { kind: 'vertical-calc' as const, operation: '-' as const, operands: [a, b], steps: generateSubtractionSteps(a, b, difficulty) },
+    solution: { answer: a - b, explanation: `${a} - ${b} = ${a - b}` },
+    hints: ['从个位开始，逐位相减，不够减向前借一'], xpBase: 10 + (difficulty - 1) * 5,
+  };
+}
+
+function generateIntMul(difficulty: number, id: string): Question {
+  if (difficulty > 5) return generateMultiDigitMult(difficulty, id);
+  const a = randInt(10, 99); const b = randInt(2, 9);
+  return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
+    prompt: `用竖式计算: ${a} × ${b}`,
+    data: { kind: 'vertical-calc' as const, operation: '×' as const, operands: [a, b], steps: generateMultiplicationSteps(a, b, difficulty) },
+    solution: { answer: a * b, explanation: `${a} × ${b} = ${a * b}` },
+    hints: ['从个位开始，逐位相乘'], xpBase: 10 + (difficulty - 1) * 5,
+  };
+}
+
 export function generateVerticalCalc(params: GeneratorParams): Question {
-  const { difficulty, id = '' } = params;
+  const { difficulty, id = '', subtypeFilter } = params;
 
-  if (difficulty <= 5) {
-    // 普通: 整数 50% (加15% 减15% 乘10% 除10%) | 小数 50% (加减25% 乘15% 除10%)
-    const r = Math.random();
-    if (r < 0.15) {
-      const a = randInt(100, 999); const b = randInt(100, 999);
-      return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
-        prompt: `用竖式计算: ${a} + ${b}`,
-        data: { kind: 'vertical-calc' as const, operation: '+' as const, operands: [a, b], steps: generateAdditionSteps(a, b, difficulty) },
-        solution: { answer: a + b, explanation: `${a} + ${b} = ${a + b}` },
-        hints: ['从个位开始，逐位相加，满十进一'], xpBase: 10 + (difficulty - 1) * 5,
-      };
-    }
-    if (r < 0.30) {
-      const a = randInt(100, 999); const b = randInt(100, a);
-      return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
-        prompt: `用竖式计算: ${a} - ${b}`,
-        data: { kind: 'vertical-calc' as const, operation: '-' as const, operands: [a, b], steps: generateSubtractionSteps(a, b, difficulty) },
-        solution: { answer: a - b, explanation: `${a} - ${b} = ${a - b}` },
-        hints: ['从个位开始，逐位相减，不够减向前借一'], xpBase: 10 + (difficulty - 1) * 5,
-      };
-    }
-    if (r < 0.40) {
-      const a = randInt(10, 99); const b = randInt(2, 9);
-      return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
-        prompt: `用竖式计算: ${a} × ${b}`,
-        data: { kind: 'vertical-calc' as const, operation: '×' as const, operands: [a, b], steps: generateMultiplicationSteps(a, b, difficulty) },
-        solution: { answer: a * b, explanation: `${a} × ${b} = ${a * b}` },
-        hints: ['从个位开始，逐位相乘'], xpBase: 10 + (difficulty - 1) * 5,
-      };
-    }
-    if (r < 0.50) return generateDivision(difficulty, id);
-    if (r < 0.75) return generateDecimalAddSub(difficulty, id);
-    if (r < 0.90) return generateDecimalMul(difficulty, id);
-    return generateDecimalDiv(difficulty, id);
-  }
+  const entries: SubtypeEntry[] = difficulty <= 5 ? [
+    { tag: 'int-add', weight: 15, gen: () => generateIntAdd(difficulty, id) },
+    { tag: 'int-sub', weight: 15, gen: () => generateIntSub(difficulty, id) },
+    { tag: 'int-mul', weight: 10, gen: () => generateIntMul(difficulty, id) },
+    { tag: 'int-div', weight: 10, gen: () => generateDivision(difficulty, id) },
+    { tag: 'dec-add-sub', weight: 25, gen: () => generateDecimalAddSub(difficulty, id) },
+    { tag: 'dec-mul', weight: 15, gen: () => generateDecimalMul(difficulty, id) },
+    { tag: 'dec-div', weight: 10, gen: () => generateDecimalDiv(difficulty, id) },
+  ] : difficulty <= 7 ? [
+    { tag: 'int-add', weight: 5, gen: () => generateIntAdd(difficulty, id) },
+    { tag: 'int-sub', weight: 5, gen: () => generateIntSub(difficulty, id) },
+    { tag: 'int-mul', weight: 10, gen: () => generateIntMul(difficulty, id) },
+    { tag: 'int-div', weight: 10, gen: () => generateDivision(difficulty, id) },
+    { tag: 'dec-add-sub', weight: 30, gen: () => generateDecimalAddSub(difficulty, id) },
+    { tag: 'dec-mul', weight: 15, gen: () => generateDecimalMul(difficulty, id) },
+    { tag: 'dec-div', weight: 15, gen: () => generateDecimalDiv(difficulty, id) },
+    { tag: 'approximate', weight: 10, gen: () => generateApproximate(difficulty, id) },
+  ] : [
+    { tag: 'int-add', weight: 5, gen: () => generateIntAdd(difficulty, id) },
+    { tag: 'int-sub', weight: 5, gen: () => generateIntSub(difficulty, id) },
+    { tag: 'int-mul', weight: 10, gen: () => generateIntMul(difficulty, id) },
+    { tag: 'int-div', weight: 10, gen: () => generateDivision(difficulty, id) },
+    { tag: 'dec-add-sub', weight: 20, gen: () => generateDecimalAddSub(difficulty, id) },
+    { tag: 'dec-mul', weight: 20, gen: () => generateDecimalMul(difficulty, id) },
+    { tag: 'dec-div', weight: 20, gen: () => generateDecimalDiv(difficulty, id) },
+    { tag: 'approximate', weight: 10, gen: () => generateApproximate(difficulty, id) },
+  ];
 
-  if (difficulty <= 7) {
-    // 困难: 整数 30% (加5% 减5% 乘10% 除10%) | 小数 70% (加减30% 乘15% 除15% 近似10%)
-    const r = Math.random();
-    if (r < 0.05) {
-      const a = randInt(1000, 9999); const b = randInt(1000, 9999);
-      return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
-        prompt: `用竖式计算: ${a} + ${b}`,
-        data: { kind: 'vertical-calc' as const, operation: '+' as const, operands: [a, b], steps: generateAdditionSteps(a, b, difficulty) },
-        solution: { answer: a + b, explanation: `${a} + ${b} = ${a + b}` },
-        hints: ['从个位开始，逐位相加'], xpBase: 10 + (difficulty - 1) * 5,
-      };
-    }
-    if (r < 0.10) {
-      const a = randInt(1000, 9999); const b = randInt(1000, a);
-      return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
-        prompt: `用竖式计算: ${a} - ${b}`,
-        data: { kind: 'vertical-calc' as const, operation: '-' as const, operands: [a, b], steps: generateSubtractionSteps(a, b, difficulty) },
-        solution: { answer: a - b, explanation: `${a} - ${b} = ${a - b}` },
-        hints: ['从个位开始，逐位相减'], xpBase: 10 + (difficulty - 1) * 5,
-      };
-    }
-    if (r < 0.20) return generateMultiDigitMult(difficulty, id);
-    if (r < 0.30) return generateDivision(difficulty, id);
-    if (r < 0.60) return generateDecimalAddSub(difficulty, id);
-    if (r < 0.75) return generateDecimalMul(difficulty, id);
-    if (r < 0.90) return generateDecimalDiv(difficulty, id);
-    return generateApproximate(difficulty, id);
-  }
-
-  // 魔王: 整数 30% (加5% 减5% 乘10% 除10%) | 小数 70% (加减20% 乘20% 除20% 近似10%)
-  const r = Math.random();
-  if (r < 0.05) {
-    const a = randInt(10000, 99999); const b = randInt(10000, 99999);
-    return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
-      prompt: `用竖式计算: ${a} + ${b}`,
-      data: { kind: 'vertical-calc' as const, operation: '+' as const, operands: [a, b], steps: generateAdditionSteps(a, b, difficulty) },
-      solution: { answer: a + b, explanation: `${a} + ${b} = ${a + b}` },
-      hints: ['从个位开始，逐位相加'], xpBase: 10 + (difficulty - 1) * 5,
-    };
-  }
-  if (r < 0.10) {
-    const a = randInt(10000, 99999); const b = randInt(10000, a);
-    return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
-      prompt: `用竖式计算: ${a} - ${b}`,
-      data: { kind: 'vertical-calc' as const, operation: '-' as const, operands: [a, b], steps: generateSubtractionSteps(a, b, difficulty) },
-      solution: { answer: a - b, explanation: `${a} - ${b} = ${a - b}` },
-      hints: ['从个位开始，逐位相减'], xpBase: 10 + (difficulty - 1) * 5,
-    };
-  }
-  if (r < 0.20) return generateMultiDigitMult(difficulty, id);
-  if (r < 0.30) return generateDivision(difficulty, id);
-  if (r < 0.50) return generateDecimalAddSub(difficulty, id);
-  if (r < 0.70) return generateDecimalMul(difficulty, id);
-  if (r < 0.90) return generateDecimalDiv(difficulty, id);
-  return generateApproximate(difficulty, id);
+  return pickSubtype(entries, subtypeFilter);
 }

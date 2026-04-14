@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Vitest, math-quest 现有生成器架构
 
-**设计来源:** 对话中确认的 A03 块 A 设计方案 + A03 审视报告 `docs/reports/2026-04-09-A03-vertical-calc-review.md`
+**设计来源:** 对话中确认的 A03 块 A 设计方案 + A03 审视报告 `ProjectManager/Reports/2026-04-09-A03-vertical-calc-review.md`
 
 ---
 

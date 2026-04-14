@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-13（游戏化 Phase 1 CR+QA 验收通过；删除全部倒计时逻辑）
+> 最后更新：2026-04-14（Phase 1 热修复 + 优化迭代完成；深度体验 QA Batch 1 已执行；UI 设计审查 + WCAG AA 无障碍审查已完成，ISSUE-018~045 已录入；UI/UX 整体重设计规格已制定，见 Specs/2026-04-14-ui-redesign-spec.md）
 
 ---
 
@@ -33,6 +33,8 @@
 | 设计 Q1~Q10 | 游戏化规格确认（闯关/进阶/段位赛体系，心数门槛，段位数值） | ✅ 完成 |
 | Phase 1 开发 | Foundation + 闯关系统（15 个 Task，tsc 0 错误，91 测试通过） | ✅ 开发完成 |
 | Phase 1 CR+QA | Code Review 修复 2 Bug + 浏览器全量测试 48/48 PASS | ✅ 验收通过 |
+| Phase 1 热修复+迭代 | 去年级区分、History入口、路线匹配修复、出题质量、难度标准化 | ✅ [全部完成](Plan/2026-04-14-phase1-hotfix-and-iteration.md) |
+| Phase 1 深度体验 QA Batch 1 | 解锁链 / 退出弹窗 / 竖式板交互拟真人工 QA（经产品分流后：14 PASS / 1 RISK） | ✅ [已完成](Plan/2026-04-14-phase1-deep-experience-manual-qa.md) |
 | Phase 2 | 进阶系统（心→星，难度自动调配） | ⬜ 待开始 |
 | Phase 3 | 段位赛系统（BO3/BO5/BO7） | ⬜ 待开始 |
 
@@ -56,7 +58,7 @@
 | A03 块A | 生成器小数支持 | ✅ 完成 |
 | A03 块B | 组件重构（小数点列 + 训练格） | ✅ 完成 |
 
-**当前状态**：91 测试通过，构建成功（446KB）
+**当前状态**：88 测试通过，构建成功
 
 ### 真题参考库
 
@@ -80,20 +82,53 @@
 
 ## 待解决问题
 
-完整清单见 [`docs/ISSUE_LIST.md`](../docs/ISSUE_LIST.md)
+完整清单见 [`ISSUE_LIST.md`](ISSUE_LIST.md)
 
 ### P0 — 必须修复
 - **ISSUE-001** ✅ 随 Phase 1 关闭（速度奖励系统已删除）
 - **ISSUE-002** ✅ Phase 1 内含修复（normalize 函数已改进）
-- **ISSUE-003** A08 `generateMoveConstant` 只有 2 个选项 → 50% 蒙对率
+- **ISSUE-003** ✅ A08 MC 选项已扩充至 4 个（热修复 1.4）
+- **ISSUE-011** ✅ subtypeFilter 架构修复，44 路线全部配置（热修复第二批）
+- **ISSUE-014** ✅ 去掉年级选择，统一难度基准并文档化（热修复 1.1 + 第四批）
 
 ### P1 — 重要
-- **ISSUE-004** `generateReverseRound` 浮点精度问题
-- **ISSUE-005** `generateOperationOrder` MC 干扰项质量差
-- **ISSUE-006** `generateCompareSize` b=1 概率 33%（应降到 10-15%）
-- **ISSUE-007** `generateTwoStep/ThreeStep` 是死代码
+- **ISSUE-004** ✅ 浮点精度用纯整数运算修复（热修复 3.1）
+- **ISSUE-005** ✅ MC 干扰项改为从表达式子组合生成（热修复 3.2）
+- **ISSUE-006** ✅ b=1 概率从 33% 降至 15%（热修复 3.3）
+- **ISSUE-007** ✅ 死代码已删除（热修复 3.4）
+- **ISSUE-012** ✅ Progress 页面新增 History 入口按钮（热修复 1.3）
+- **ISSUE-013** ✅ loadGameProgress 后立即持久化（热修复 1.2）
 
-### P2 — 增强
+### P2 — 增强（待解决）
 - **ISSUE-008** 约 40% 子函数无直接测试覆盖
 - **ISSUE-009** 提示文本质量不一致
 - **ISSUE-010** 答案格式不统一
+- **ISSUE-017** 竖式减法退位提示可发现性偏弱（可考虑在有进位/退位辅助格的题型上提供可点开的 Tips 说明）
+
+### UI 设计审查（2026-04-14，待修复）
+> 完整报告: [.ui-design/reviews/mathquest_20260414_full.md](.ui-design/reviews/mathquest_20260414_full.md)
+
+| 等级 | Issue | 描述 |
+|------|-------|------|
+| Critical | ISSUE-018 | SessionSummary 使用无效 CSS token `bg-error/10` |
+| Critical | ISSUE-019 | SessionSummary render 中调用 setPage（React 反模式） |
+| Major | ISSUE-020 | 底部导航栏5份重复代码 |
+| Major | ISSUE-021 | useGameProgressStore 导入来源不一致 |
+| Major | ISSUE-022 | CampaignMap 关卡按钮触控区域偏小 |
+| Major | ISSUE-023 | 错题本每主题仅展5题无"查看全部" |
+| Major | ISSUE-024 | 页面加载无 Loading 状态 |
+| Minor | ISSUE-025~031 | 详见 ISSUE_LIST.md |
+
+### WCAG AA 无障碍审查（2026-04-14，待修复）
+> 完整报告: [.ui-design/audits/mathquest_a11y_20260414_AA.md](.ui-design/audits/mathquest_a11y_20260414_AA.md)
+
+| 等级 | Issue | 描述 |
+|------|-------|------|
+| Critical | ISSUE-032 | 主按钮白字对比度仅 2.09:1（WCAG 1.4.3） |
+| Critical | ISSUE-033 | viewport user-scalable=no 阻止文字缩放（WCAG 1.4.4） |
+| Serious | ISSUE-028 | 图标按钮缺 aria-label（WCAG 4.1.2） |
+| Serious | ISSUE-034 | 退出弹窗缺 dialog 语义和焦点陷阱 |
+| Serious | ISSUE-035 | 进度条无 ARIA 角色与属性 |
+| Serious | ISSUE-036 | 答题反馈无 aria-live 区域（WCAG 4.1.3） |
+| Moderate | ISSUE-037~041 | 对比度/动画/颜色区分等，详见 ISSUE_LIST.md |
+| Minor | ISSUE-042~045 | 详见 ISSUE_LIST.md |

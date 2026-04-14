@@ -32,6 +32,7 @@ export const useGameProgressStore = create<GameProgressStore>((set, get) => ({
 
   loadGameProgress: (userId) => {
     const gp = repository.getGameProgress(userId);
+    repository.saveGameProgress(gp);
     set({ gameProgress: gp });
   },
 

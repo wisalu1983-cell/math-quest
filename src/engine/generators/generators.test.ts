@@ -64,13 +64,6 @@ describe('Mental Arithmetic (口算速算)', () => {
       expect(exact.length).toBeGreaterThan(0);
     });
 
-    it('时间限制为 10 秒', () => {
-      const qs = genN(generateMentalArithmetic, 5, 20);
-      const basicQs = qs.filter(q => q.data.kind === 'mental-arithmetic');
-      for (const q of basicQs) {
-        expect(q.timeLimit).toBe(10000);
-      }
-    });
   });
 
   describe('Hard (difficulty=7)', () => {
@@ -92,23 +85,6 @@ describe('Mental Arithmetic (口算速算)', () => {
       expect(has3digit).toBe(true);
     });
 
-    it('时间限制为 30 秒', () => {
-      const qs = genN(generateMentalArithmetic, 7, 20);
-      const basicQs = qs.filter(q => q.data.kind === 'mental-arithmetic');
-      for (const q of basicQs) {
-        expect(q.timeLimit).toBe(30000);
-      }
-    });
-  });
-
-  describe('Demon (difficulty=10)', () => {
-    it('时间限制为 60 秒', () => {
-      const qs = genN(generateMentalArithmetic, 10, 20);
-      const basicQs = qs.filter(q => q.data.kind === 'mental-arithmetic');
-      for (const q of basicQs) {
-        expect(q.timeLimit).toBe(60000);
-      }
-    });
   });
 
   describe('Operation Order (运算顺序)', () => {

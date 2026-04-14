@@ -6,7 +6,7 @@
 
 **Architecture:** 逐主题串行提取 — 每个主题读取对应的素材文件，识别候选计算题，按规范格式化并写入 foundation.md / advanced.md。每个主题完成后暂停等待用户抽检。
 
-**Spec:** `math-quest/docs/specs/2026-04-08-reference-bank-extraction-design.md`
+**Spec:** `math-quest/ProjectManager/Specs/2026-04-08-reference-bank-extraction-design.md`
 
 ---
 

@@ -1,5 +1,6 @@
 import type { Question } from '@/types';
-import type { GeneratorParams } from '../index';
+import type { GeneratorParams, SubtypeEntry } from '../index';
+import { pickSubtype } from '../index';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -27,101 +28,6 @@ function shuffle<T>(arr: T[]): T[] {
 
 function gcd(a: number, b: number): number { return b === 0 ? a : gcd(b, a % b); }
 function lcm(a: number, b: number): number { return a * b / gcd(a, b); }
-
-// ===== Integer two-step (with ÷) =====
-
-// 保留供外部使用（已从 A07 调度器移除，归入 A01 基础计算）
-export function generateTwoStep(difficulty: number, id: string): Question {
-  const allOps: string[] = ['+', '-', '×', '÷'];
-  const op1 = allOps[randInt(0, allOps.length - 1)];
-  const op2 = ['+', '-'][randInt(0, 1)];
-
-  let a: number, b: number, c: number;
-  if (op1 === '×') {
-    a = randInt(2, difficulty <= 5 ? 9 : 12);
-    b = randInt(2, difficulty <= 5 ? 20 : 50);
-  } else if (op1 === '÷') {
-    const divisor = randInt(2, 9);
-    const quotient = randInt(2, difficulty <= 5 ? 15 : difficulty <= 7 ? 20 : 50);
-    a = divisor * quotient;
-    b = divisor;
-  } else {
-    const max = difficulty <= 5 ? 100 : difficulty <= 7 ? 500 : 2000;
-    a = randInt(10, max);
-    b = randInt(10, max);
-  }
-  c = randInt(10, difficulty <= 5 ? 100 : difficulty <= 7 ? 500 : 2000);
-
-  let intermediate: number;
-  if (op1 === '÷') {
-    intermediate = a / b;
-  } else {
-    intermediate = evaluate(`${a} ${op1.replace('×', '*')} ${b}`);
-  }
-  if (op2 === '-' && intermediate <= c) {
-    c = randInt(1, Math.max(1, Math.floor(intermediate) - 1));
-  }
-
-  const expression = `${a} ${op1} ${b} ${op2} ${c}`;
-  const answer = Math.round(evaluate(expression));
-
-  return {
-    id, topicId: 'multi-step', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}`,
-    data: {
-      kind: 'multi-step', expression,
-      steps: [
-        { stepIndex: 0, subExpression: `${a} ${op1} ${b}`, result: intermediate, annotation: op1 === '×' || op1 === '÷' ? '先算乘除' : '从左到右' },
-        { stepIndex: 1, subExpression: `... ${op2} ${c}`, result: answer, annotation: '再算剩余' },
-      ],
-    },
-    solution: {
-      answer,
-      steps: [`先算 ${a} ${op1} ${b} = ${intermediate}`, `再算 ${intermediate} ${op2} ${c} = ${answer}`],
-      explanation: `按运算顺序: 先乘除后加减`,
-    },
-    hints: ['注意运算顺序: 先乘除，后加减'],
-    xpBase: 10 + (difficulty - 1) * 5,
-  };
-}
-
-// ===== Integer three-step (params scale with difficulty) =====
-
-// 保留供外部使用（已从 A07 调度器移除，归入 A01 基础计算）
-export function generateThreeStep(difficulty: number, id: string): Question {
-  const a = randInt(2, difficulty <= 7 ? 9 : 12);
-  const b = randInt(2, difficulty <= 7 ? 20 : 50);
-  const c = randInt(10, difficulty <= 7 ? 100 : 500);
-  const d = randInt(10, difficulty <= 7 ? 100 : 500);
-
-  const product = a * b;
-  const result = product + c - d > 0 ? product + c - d : product + c + d;
-  const expression = result === product + c - d
-    ? `${a} × ${b} + ${c} - ${d}`
-    : `${a} × ${b} + ${c} + ${d}`;
-
-  const answer = evaluate(expression);
-
-  return {
-    id, topicId: 'multi-step', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}`,
-    data: {
-      kind: 'multi-step', expression,
-      steps: [
-        { stepIndex: 0, subExpression: `${a} × ${b}`, result: product, annotation: '先算乘法' },
-        { stepIndex: 1, subExpression: `${product} + ${c}`, result: product + c, annotation: '再从左到右' },
-        { stepIndex: 2, subExpression: `... ${expression.includes('- ' + d) ? '-' : '+'} ${d}`, result: answer, annotation: '最后一步' },
-      ],
-    },
-    solution: {
-      answer,
-      steps: [`先算 ${a} × ${b} = ${product}`, `然后从左到右计算`],
-      explanation: `先乘除后加减，同级从左到右`,
-    },
-    hints: ['先算乘除，再从左到右算加减'],
-    xpBase: 10 + (difficulty - 1) * 5,
-  };
-}
 
 // ===== Decimal two-step =====
 
@@ -785,29 +691,23 @@ function generateBracketDemon(difficulty: number, id: string): Question {
 // ===== Main generator =====
 
 export function generateMultiStep(params: GeneratorParams): Question {
-  const { difficulty, id = '' } = params;
+  const { difficulty, id = '', subtypeFilter } = params;
 
-  if (difficulty <= 5) {
-    // 简便计算(基础): 40% 连减/分配律凑整/加减凑整, 30% 提取公因数(基础), 30% 小数简便两步
-    const r = Math.random();
-    if (r < 0.40) return generateBracketNormal(difficulty, id);
-    if (r < 0.70) return generateExtractFactor(difficulty, id);
-    return generateDecimalTwoStep(difficulty, id);
-  }
+  const entries: SubtypeEntry[] = difficulty <= 5 ? [
+    { tag: 'bracket-normal', weight: 40, gen: () => generateBracketNormal(difficulty, id) },
+    { tag: 'extract-factor', weight: 30, gen: () => generateExtractFactor(difficulty, id) },
+    { tag: 'decimal-two-step', weight: 30, gen: () => generateDecimalTwoStep(difficulty, id) },
+  ] : difficulty <= 7 ? [
+    { tag: 'bracket-hard', weight: 30, gen: () => generateBracketHard(difficulty, id) },
+    { tag: 'extract-factor', weight: 25, gen: () => generateExtractFactor(difficulty, id) },
+    { tag: 'decimal-two-step', weight: 25, gen: () => generateDecimalTwoStep(difficulty, id) },
+    { tag: 'simplify-subtract', weight: 20, gen: () => generateSimplifySubtract(difficulty, id) },
+  ] : [
+    { tag: 'decimal-multi-step', weight: 30, gen: () => generateDecimalMultiStep(difficulty, id) },
+    { tag: 'bracket-demon', weight: 25, gen: () => generateBracketDemon(difficulty, id) },
+    { tag: 'extract-factor', weight: 25, gen: () => generateExtractFactor(difficulty, id) },
+    { tag: 'decimal-chain', weight: 20, gen: () => generateDecimalChain(difficulty, id) },
+  ];
 
-  if (difficulty <= 7) {
-    // 简便计算(进阶): 30% 括号陷阱MC, 25% 提取公因数, 25% 小数简便两步, 20% 简便减法
-    const r = Math.random();
-    if (r < 0.30) return generateBracketHard(difficulty, id);
-    if (r < 0.55) return generateExtractFactor(difficulty, id);
-    if (r < 0.80) return generateDecimalTwoStep(difficulty, id);
-    return generateSimplifySubtract(difficulty, id);
-  }
-
-  // 魔王: 30% 复杂小数多步, 25% 括号陷阱MC, 25% 提取公因数, 20% 小数连乘除
-  const r = Math.random();
-  if (r < 0.30) return generateDecimalMultiStep(difficulty, id);
-  if (r < 0.55) return generateBracketDemon(difficulty, id);
-  if (r < 0.80) return generateExtractFactor(difficulty, id);
-  return generateDecimalChain(difficulty, id);
+  return pickSubtype(entries, subtypeFilter);
 }

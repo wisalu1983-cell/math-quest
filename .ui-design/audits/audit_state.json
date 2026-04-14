@@ -1,0 +1,20 @@
+{
+  "audit_id": "mathquest_a11y_20260414_AA",
+  "target": "src/ (entire math-quest product)",
+  "wcag_level": "AA",
+  "standard": "WCAG 2.1",
+  "focus_areas": ["all"],
+  "status": "complete",
+  "started_at": "2026-04-14T00:00:00Z",
+  "completed_at": "2026-04-14T00:10:00Z",
+  "files_audited": 18,
+  "compliance_status": "failing",
+  "issues_found": {
+    "critical": 2,
+    "serious": 4,
+    "moderate": 5,
+    "minor": 4
+  },
+  "criteria_checked": 22,
+  "criteria_passed": 14
+}

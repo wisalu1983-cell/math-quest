@@ -15,7 +15,7 @@ export interface User {
   nickname: string;
   avatarSeed: string;
   createdAt: number;
-  grade: 5 | 6;
+  grade?: number;
   settings: UserSettings;
 }
 
@@ -42,8 +42,8 @@ export interface Question {
   data: QuestionData;
   solution: Solution;
   hints: string[];
-  timeLimit?: number;
-  xpBase: number;
+  /** @deprecated 旧XP体系残留，计划移除 */
+  xpBase?: number;
 }
 
 export type QuestionData =

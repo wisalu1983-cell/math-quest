@@ -8,7 +8,7 @@
 
 **Tech Stack:** React 19, TypeScript, TailwindCSS v4, Vitest
 
-**Spec:** `math-quest/docs/specs/2026-04-09-a03-block-b-design.md`
+**Spec:** `math-quest/ProjectManager/Specs/2026-04-09-a03-block-b-design.md`
 
 ---
 

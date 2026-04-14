@@ -14,9 +14,9 @@ export const TOPICS: TopicMeta[] = [
 export type DifficultyTier = 'normal' | 'hard' | 'demon';
 
 export const DIFFICULTY_TIERS: { id: DifficultyTier; label: string; icon: string; value: number; description: string }[] = [
-  { id: 'normal', label: '普通', icon: '😊', value: 5, description: '基础练习，打好根基' },
-  { id: 'hard', label: '困难', icon: '😤', value: 7, description: '有一定挑战，需要动脑' },
-  { id: 'demon', label: '魔王', icon: '👹', value: 10, description: '最强难度，计算高手专属' },
+  { id: 'normal', label: '普通', icon: '😊', value: 5, description: '五年级毕业标准，打好根基' },
+  { id: 'hard', label: '困难', icon: '😤', value: 7, description: '小升初提高题，需要动脑' },
+  { id: 'demon', label: '魔王', icon: '👹', value: 10, description: '竞赛拓展级，计算高手专属' },
 ];
 
 /** 闯关最大心数（固定 3） */

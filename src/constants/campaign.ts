@@ -13,6 +13,7 @@ const mentalArithmeticMap: CampaignMap = {
         {
           laneId: 'mental-arithmetic-S1-LA',
           laneLabel: '加减主路',
+          subtypeFilter: ['add', 'sub'],
           levels: [
             { levelId: 'mental-arithmetic-S1-LA-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'mental-arithmetic-S1-LA-L2', difficulty: 3, questionCount: 12 },
@@ -22,6 +23,7 @@ const mentalArithmeticMap: CampaignMap = {
         {
           laneId: 'mental-arithmetic-S1-LB',
           laneLabel: '乘除支路',
+          subtypeFilter: ['mul', 'div'],
           levels: [
             { levelId: 'mental-arithmetic-S1-LB-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'mental-arithmetic-S1-LB-L2', difficulty: 3, questionCount: 12 },
@@ -36,7 +38,8 @@ const mentalArithmeticMap: CampaignMap = {
       lanes: [
         {
           laneId: 'mental-arithmetic-S2-LA',
-          laneLabel: '主路线',
+          laneLabel: '运算顺序',
+          subtypeFilter: ['order'],
           levels: [
             { levelId: 'mental-arithmetic-S2-LA-L1', difficulty: 4, questionCount: 15 },
             { levelId: 'mental-arithmetic-S2-LA-L2', difficulty: 5, questionCount: 15 },
@@ -90,6 +93,7 @@ const numberSenseMap: CampaignMap = {
         {
           laneId: 'number-sense-S1-LA',
           laneLabel: '估算',
+          subtypeFilter: ['estimate'],
           levels: [
             { levelId: 'number-sense-S1-LA-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'number-sense-S1-LA-L2', difficulty: 3, questionCount: 12 },
@@ -98,6 +102,7 @@ const numberSenseMap: CampaignMap = {
         {
           laneId: 'number-sense-S1-LB',
           laneLabel: '比较大小',
+          subtypeFilter: ['compare'],
           levels: [
             { levelId: 'number-sense-S1-LB-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'number-sense-S1-LB-L2', difficulty: 3, questionCount: 12 },
@@ -113,6 +118,7 @@ const numberSenseMap: CampaignMap = {
         {
           laneId: 'number-sense-S2-LA',
           laneLabel: '四舍五入',
+          subtypeFilter: ['round'],
           levels: [
             { levelId: 'number-sense-S2-LA-L1', difficulty: 4, questionCount: 12 },
             { levelId: 'number-sense-S2-LA-L2', difficulty: 5, questionCount: 15 },
@@ -121,6 +127,7 @@ const numberSenseMap: CampaignMap = {
         {
           laneId: 'number-sense-S2-LB',
           laneLabel: '去尾进一',
+          subtypeFilter: ['floor-ceil'],
           levels: [
             { levelId: 'number-sense-S2-LB-L1', difficulty: 4, questionCount: 12 },
             { levelId: 'number-sense-S2-LB-L2', difficulty: 5, questionCount: 15 },
@@ -129,6 +136,7 @@ const numberSenseMap: CampaignMap = {
         {
           laneId: 'number-sense-S2-LC',
           laneLabel: '逆向推理',
+          subtypeFilter: ['reverse-round'],
           levels: [
             { levelId: 'number-sense-S2-LC-L1', difficulty: 5, questionCount: 12 },
             { levelId: 'number-sense-S2-LC-L2', difficulty: 5, questionCount: 15 },
@@ -152,6 +160,7 @@ const numberSenseMap: CampaignMap = {
         {
           laneId: 'number-sense-S3-LB',
           laneLabel: '逆向高阶',
+          subtypeFilter: ['reverse-round'],
           levels: [
             { levelId: 'number-sense-S3-LB-L1', difficulty: 6, questionCount: 15 },
             { levelId: 'number-sense-S3-LB-L2', difficulty: 7, questionCount: 18 },
@@ -188,6 +197,7 @@ const verticalCalcMap: CampaignMap = {
         {
           laneId: 'vertical-calc-S1-LA',
           laneLabel: '加减',
+          subtypeFilter: ['int-add', 'int-sub'],
           levels: [
             { levelId: 'vertical-calc-S1-LA-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'vertical-calc-S1-LA-L2', difficulty: 3, questionCount: 12 },
@@ -197,6 +207,7 @@ const verticalCalcMap: CampaignMap = {
         {
           laneId: 'vertical-calc-S1-LB',
           laneLabel: '乘除',
+          subtypeFilter: ['int-mul', 'int-div'],
           levels: [
             { levelId: 'vertical-calc-S1-LB-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'vertical-calc-S1-LB-L2', difficulty: 3, questionCount: 12 },
@@ -211,7 +222,8 @@ const verticalCalcMap: CampaignMap = {
       lanes: [
         {
           laneId: 'vertical-calc-S2-LA',
-          laneLabel: '主路线',
+          laneLabel: '小数笔算',
+          subtypeFilter: ['dec-add-sub', 'dec-mul', 'dec-div'],
           levels: [
             { levelId: 'vertical-calc-S2-LA-L1', difficulty: 4, questionCount: 12 },
             { levelId: 'vertical-calc-S2-LA-L2', difficulty: 5, questionCount: 15 },
@@ -264,7 +276,8 @@ const operationLawsMap: CampaignMap = {
       lanes: [
         {
           laneId: 'operation-laws-S1-LA',
-          laneLabel: '主路线',
+          laneLabel: '交换律结合律',
+          subtypeFilter: ['commutative', 'associative'],
           levels: [
             { levelId: 'operation-laws-S1-LA-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'operation-laws-S1-LA-L2', difficulty: 3, questionCount: 12 },
@@ -280,7 +293,8 @@ const operationLawsMap: CampaignMap = {
       lanes: [
         {
           laneId: 'operation-laws-S2-LA',
-          laneLabel: '主路线',
+          laneLabel: '分配律',
+          subtypeFilter: ['distributive'],
           levels: [
             { levelId: 'operation-laws-S2-LA-L1', difficulty: 4, questionCount: 15 },
             { levelId: 'operation-laws-S2-LA-L2', difficulty: 5, questionCount: 18 },
@@ -334,6 +348,7 @@ const decimalOpsMap: CampaignMap = {
         {
           laneId: 'decimal-ops-S1-LA',
           laneLabel: '加法',
+          subtypeFilter: ['add-sub'],
           levels: [
             { levelId: 'decimal-ops-S1-LA-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'decimal-ops-S1-LA-L2', difficulty: 3, questionCount: 12 },
@@ -342,6 +357,7 @@ const decimalOpsMap: CampaignMap = {
         {
           laneId: 'decimal-ops-S1-LB',
           laneLabel: '减法',
+          subtypeFilter: ['add-sub'],
           levels: [
             { levelId: 'decimal-ops-S1-LB-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'decimal-ops-S1-LB-L2', difficulty: 3, questionCount: 12 },
@@ -357,6 +373,7 @@ const decimalOpsMap: CampaignMap = {
         {
           laneId: 'decimal-ops-S2-LA',
           laneLabel: '乘法',
+          subtypeFilter: ['mul'],
           levels: [
             { levelId: 'decimal-ops-S2-LA-L1', difficulty: 3, questionCount: 12 },
             { levelId: 'decimal-ops-S2-LA-L2', difficulty: 5, questionCount: 15 },
@@ -365,6 +382,7 @@ const decimalOpsMap: CampaignMap = {
         {
           laneId: 'decimal-ops-S2-LB',
           laneLabel: '除法',
+          subtypeFilter: ['div'],
           levels: [
             { levelId: 'decimal-ops-S2-LB-L1', difficulty: 3, questionCount: 12 },
             { levelId: 'decimal-ops-S2-LB-L2', difficulty: 5, questionCount: 15 },
@@ -416,7 +434,8 @@ const bracketOpsMap: CampaignMap = {
       lanes: [
         {
           laneId: 'bracket-ops-S1-LA',
-          laneLabel: '主路线',
+          laneLabel: '添括号',
+          subtypeFilter: ['add-bracket'],
           levels: [
             { levelId: 'bracket-ops-S1-LA-L1', difficulty: 2, questionCount: 12 },
             { levelId: 'bracket-ops-S1-LA-L2', difficulty: 3, questionCount: 15 },
@@ -432,7 +451,8 @@ const bracketOpsMap: CampaignMap = {
       lanes: [
         {
           laneId: 'bracket-ops-S2-LA',
-          laneLabel: '主路线',
+          laneLabel: '去括号',
+          subtypeFilter: ['remove-bracket-plus', 'remove-bracket-minus'],
           levels: [
             { levelId: 'bracket-ops-S2-LA-L1', difficulty: 4, questionCount: 15 },
             { levelId: 'bracket-ops-S2-LA-L2', difficulty: 5, questionCount: 18 },
@@ -448,7 +468,8 @@ const bracketOpsMap: CampaignMap = {
       lanes: [
         {
           laneId: 'bracket-ops-S3-LA',
-          laneLabel: '主路线',
+          laneLabel: '除法性质',
+          subtypeFilter: ['division-property'],
           levels: [
             { levelId: 'bracket-ops-S3-LA-L1', difficulty: 6, questionCount: 18 },
             { levelId: 'bracket-ops-S3-LA-L2', difficulty: 7, questionCount: 20 },
@@ -486,6 +507,7 @@ const multiStepMap: CampaignMap = {
         {
           laneId: 'multi-step-S1-LA',
           laneLabel: '交换结合',
+          subtypeFilter: ['bracket-normal'],
           levels: [
             { levelId: 'multi-step-S1-LA-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'multi-step-S1-LA-L2', difficulty: 3, questionCount: 12 },
@@ -494,6 +516,7 @@ const multiStepMap: CampaignMap = {
         {
           laneId: 'multi-step-S1-LB',
           laneLabel: '分配律',
+          subtypeFilter: ['extract-factor'],
           levels: [
             { levelId: 'multi-step-S1-LB-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'multi-step-S1-LB-L2', difficulty: 3, questionCount: 12 },
@@ -509,6 +532,7 @@ const multiStepMap: CampaignMap = {
         {
           laneId: 'multi-step-S2-LA',
           laneLabel: '正向变换',
+          subtypeFilter: ['bracket-normal', 'decimal-two-step'],
           levels: [
             { levelId: 'multi-step-S2-LA-L1', difficulty: 4, questionCount: 12 },
             { levelId: 'multi-step-S2-LA-L2', difficulty: 5, questionCount: 15 },
@@ -517,6 +541,7 @@ const multiStepMap: CampaignMap = {
         {
           laneId: 'multi-step-S2-LB',
           laneLabel: '变号陷阱',
+          subtypeFilter: ['bracket-hard', 'simplify-subtract'],
           levels: [
             { levelId: 'multi-step-S2-LB-L1', difficulty: 4, questionCount: 12 },
             { levelId: 'multi-step-S2-LB-L2', difficulty: 5, questionCount: 15 },
@@ -525,6 +550,7 @@ const multiStepMap: CampaignMap = {
         {
           laneId: 'multi-step-S2-LC',
           laneLabel: '概念判断',
+          subtypeFilter: ['bracket-hard'],
           levels: [
             { levelId: 'multi-step-S2-LC-L1', difficulty: 4, questionCount: 12 },
             { levelId: 'multi-step-S2-LC-L2', difficulty: 5, questionCount: 15 },
@@ -577,6 +603,7 @@ const equationTransposeMap: CampaignMap = {
         {
           laneId: 'equation-transpose-S1-LA',
           laneLabel: '常数移项',
+          subtypeFilter: ['move-constant'],
           levels: [
             { levelId: 'equation-transpose-S1-LA-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'equation-transpose-S1-LA-L2', difficulty: 3, questionCount: 12 },
@@ -585,6 +612,7 @@ const equationTransposeMap: CampaignMap = {
         {
           laneId: 'equation-transpose-S1-LB',
           laneLabel: '系数处理',
+          subtypeFilter: ['move-from-linear', 'solve-after-transpose'],
           levels: [
             { levelId: 'equation-transpose-S1-LB-L1', difficulty: 2, questionCount: 10 },
             { levelId: 'equation-transpose-S1-LB-L2', difficulty: 3, questionCount: 12 },
@@ -599,7 +627,8 @@ const equationTransposeMap: CampaignMap = {
       lanes: [
         {
           laneId: 'equation-transpose-S2-LA',
-          laneLabel: '主路线',
+          laneLabel: '两步方程',
+          subtypeFilter: ['solve-after-transpose', 'bracket-equation', 'division-equation'],
           levels: [
             { levelId: 'equation-transpose-S2-LA-L1', difficulty: 4, questionCount: 15 },
             { levelId: 'equation-transpose-S2-LA-L2', difficulty: 5, questionCount: 18 },
@@ -685,6 +714,20 @@ export function getAllLevelIds(topicId: string): string[] {
     }
   }
   return ids;
+}
+
+/** 获取关卡所在路线的 subtypeFilter */
+export function getSubtypeFilter(topicId: string, levelId: string): string[] | undefined {
+  const map = getCampaignMap(topicId);
+  if (!map) return undefined;
+  for (const stage of map.stages) {
+    for (const lane of stage.lanes) {
+      for (const level of lane.levels) {
+        if (level.levelId === levelId) return lane.subtypeFilter;
+      }
+    }
+  }
+  return undefined;
 }
 
 /** 判断某题型的闯关是否全部完成（含 Boss 关）*/

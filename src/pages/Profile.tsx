@@ -38,7 +38,7 @@ export default function Profile() {
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold">{user.nickname}</h2>
-            <p className="text-sm text-text-secondary mt-1">{user.grade}年级 · 数学大冒险</p>
+            <p className="text-sm text-text-secondary mt-1">五年级 · 数学大冒险</p>
           </div>
         </div>
 
@@ -96,12 +96,6 @@ export default function Profile() {
               >
                 <div className={`w-5 h-5 rounded-full bg-white shadow transition-all mx-0.5 ${soundEnabled ? 'translate-x-6' : 'translate-x-0'}`} />
               </button>
-            </div>
-
-            {/* Grade */}
-            <div className="flex justify-between items-center">
-              <span className="text-sm">年级</span>
-              <span className="text-sm text-text-secondary">{user.grade}年级</span>
             </div>
 
             {/* Wrong book shortcut */}

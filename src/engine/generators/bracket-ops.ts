@@ -1,5 +1,6 @@
 import type { Question } from '@/types';
-import type { GeneratorParams } from '../index';
+import type { GeneratorParams, SubtypeEntry } from '../index';
+import { pickSubtype } from '../index';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -185,23 +186,25 @@ function generateDivisionProperty(difficulty: number, id: string): Question {
 }
 
 export function generateBracketOps(params: GeneratorParams): Question {
-  const { difficulty, id = '' } = params;
-  if (difficulty <= 5) {
-    return Math.random() < 0.6
-      ? generateRemoveBracketPlus(difficulty, id)
-      : generateRemoveBracketMinus(difficulty, id);
-  } else if (difficulty <= 7) {
-    const r = Math.random();
-    if (r < 0.25) return generateRemoveBracketPlus(difficulty, id);
-    if (r < 0.50) return generateRemoveBracketMinus(difficulty, id);
-    if (r < 0.75) return generateAddBracket(difficulty, id);
-    return generateDivisionProperty(difficulty, id);
-  } else {
-    const r = Math.random();
-    if (r < 0.25) return generateRemoveBracketMinus(difficulty, id);
-    if (r < 0.45) return generateAddBracket(difficulty, id);
-    if (r < 0.60) return generateNestedBracket(difficulty, id);
-    if (r < 0.80) return generateDivisionProperty(difficulty, id);
-    return generateRemoveBracketPlus(difficulty, id);
-  }
+  const { difficulty, id = '', subtypeFilter } = params;
+
+  const entries: SubtypeEntry[] = difficulty <= 5 ? [
+    { tag: 'remove-bracket-plus', weight: 60, gen: () => generateRemoveBracketPlus(difficulty, id) },
+    { tag: 'remove-bracket-minus', weight: 40, gen: () => generateRemoveBracketMinus(difficulty, id) },
+    { tag: 'add-bracket', weight: 0, gen: () => generateAddBracket(difficulty, id) },
+    { tag: 'division-property', weight: 0, gen: () => generateDivisionProperty(difficulty, id) },
+  ] : difficulty <= 7 ? [
+    { tag: 'remove-bracket-plus', weight: 25, gen: () => generateRemoveBracketPlus(difficulty, id) },
+    { tag: 'remove-bracket-minus', weight: 25, gen: () => generateRemoveBracketMinus(difficulty, id) },
+    { tag: 'add-bracket', weight: 25, gen: () => generateAddBracket(difficulty, id) },
+    { tag: 'division-property', weight: 25, gen: () => generateDivisionProperty(difficulty, id) },
+  ] : [
+    { tag: 'remove-bracket-minus', weight: 25, gen: () => generateRemoveBracketMinus(difficulty, id) },
+    { tag: 'add-bracket', weight: 20, gen: () => generateAddBracket(difficulty, id) },
+    { tag: 'nested-bracket', weight: 15, gen: () => generateNestedBracket(difficulty, id) },
+    { tag: 'division-property', weight: 20, gen: () => generateDivisionProperty(difficulty, id) },
+    { tag: 'remove-bracket-plus', weight: 20, gen: () => generateRemoveBracketPlus(difficulty, id) },
+  ];
+
+  return pickSubtype(entries, subtypeFilter);
 }

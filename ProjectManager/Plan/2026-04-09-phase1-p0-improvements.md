@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, Vitest, math-quest 现有生成器架构
 
-**Spec:** `math-quest/docs/specs/2026-04-08-generator-improvements.md` Section 1-3
+**Spec:** `math-quest/ProjectManager/Specs/2026-04-08-generator-improvements.md` Section 1-3
 
 **前置决策:**
 - A03/A05 划分规则已确认：A03 不涉及循环小数，循环小数完全归 A05
@@ -909,7 +909,7 @@ Run: `cd math-quest && npm run dev`
 
 - [ ] **Step 4: 更新 spec 文件（标记已完成项）**
 
-在 `docs/specs/2026-04-08-generator-improvements.md` 的对应条目后添加 `✅ Phase 1 已实现` 标记。
+在 `ProjectManager/Specs/2026-04-08-generator-improvements.md` 的对应条目后添加 `✅ Phase 1 已实现` 标记。
 
 - [ ] **Step 5: 最终提交（如有修复）**
 
