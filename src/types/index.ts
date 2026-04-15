@@ -1,4 +1,4 @@
-import type { GameSessionMode } from './gamification';
+import type { GameSessionMode, AdvanceSlot } from './gamification';
 
 export type TopicId =
   | 'number-sense'
@@ -168,6 +168,7 @@ export interface PracticeSession {
   questions: QuestionAttempt[];
   heartsRemaining: number;
   completed: boolean;
+  advanceSlots?: AdvanceSlot[]; // 进阶模式专用：预生成的20道题槽位
 }
 
 export interface WrongQuestion {

@@ -121,16 +121,16 @@
 ### UI 设计审查 — 严重（Critical）
 
 ### ISSUE-018 (UI/Critical): SessionSummary 使用无效 CSS token `bg-error/10`
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
 - **位置**: `src/pages/SessionSummary.tsx:24`
 - **现象**: 失败 Banner 用 `bg-error/10`，但设计系统中 token 名为 `--color-danger`，无 `error`。失败状态背景色不生效，与通关状态外观难以区分
-- **修复**: `bg-error/10` → `bg-danger/10`（1行）
+- **修复**: `bg-error/10` → `bg-danger/10`
 
 ### ISSUE-019 (UI/Critical): SessionSummary 在渲染期间直接调用 `setPage`
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
 - **位置**: `src/pages/SessionSummary.tsx:10-12`
 - **现象**: `lastSession` 为 null 时直接调用 `setPage('home')`，违反 React 渲染纯函数原则，在严格/并发模式下可能触发无限重渲染
-- **修复**: 将 `setPage` 移入 `useEffect`（5行）
+- **修复**: 将 `setPage('home')` 移入 `useEffect`
 
 ---
 
@@ -143,10 +143,10 @@
 - **修复**: 提取 `<BottomNav activeTab={...} />` 组件，顺带修复 ISSUE-029
 
 ### ISSUE-021 (UI/Major): `useGameProgressStore` 导入来源不一致
-- **状态**: ⬜ 待调查
-- **位置**: WrongBook.tsx:1 / Profile.tsx:1（从 `@/store`）vs Home.tsx:3 / Progress.tsx:2 / CampaignMap.tsx:6（从 `@/store/gamification`）
+- **状态**: ✅ 已关闭（2026-04-15）
+- **位置**: WrongBook.tsx:1 / Profile.tsx:1（从 `@/store`）vs Home.tsx:3 / Progress.tsx:2 / CampaignMap.tsx:6 / App.tsx:4（从 `@/store/gamification`）
 - **现象**: 同一个 store hook 从两个不同路径导入，若 `@/store` 未正确 re-export，页面数据可能不一致
-- **修复**: 统一从 `@/store/gamification` 导入，或在 `@/store/index.ts` 明确 re-export 并注释
+- **修复**: 统一改为从 `@/store` 导入（barrel re-export，tsc 0 错误验证通过）
 
 ### ISSUE-022 (UI/Major): CampaignMap 关卡按钮触控区域偏小且内容密度高
 - **状态**: ⬜ 待修复
@@ -183,9 +183,9 @@
 - **修复**: 全局替换 `text-[10px]` → `text-xs`（12px）
 
 ### ISSUE-027 (UI/Minor): Profile 页昵称下方硬编码”五年级”
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
 - **位置**: `src/pages/Profile.tsx:42`
-- **修复**: 改为”数学大冒险”或读取 user 字段
+- **修复**: 改为固定文案 `数学大冒险`
 
 ### ISSUE-028 (UI+a11y/Serious): 图标/符号按钮缺少 aria-label（WCAG 4.1.2）
 - **状态**: ⬜ 待修复
@@ -220,10 +220,10 @@
 - **修复**: 将按钮文字改为深色（如 `#1a3a00`，对比度约 6.5:1），参考 Duolingo 自身实践
 
 ### ISSUE-033 (a11y/Critical): `user-scalable=no` 阻止用户调整文字大小（WCAG 1.4.4）
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
 - **位置**: `index.html:5`
 - **现象**: `maximum-scale=1.0, user-scalable=no` 阻止系统层面的文字缩放，有视力需求的儿童或家长无法使用辅助功能放大
-- **修复**: 移除 `user-scalable=no` 和 `maximum-scale=1.0`（1行改动）
+- **修复**: viewport 仅保留 `width=device-width, initial-scale=1.0, viewport-fit=cover`
 
 ---
 
@@ -242,10 +242,10 @@
 - **修复**: 添加 `role=”progressbar” aria-valuenow aria-valuemin aria-valuemax aria-valuetext`
 
 ### ISSUE-036 (a11y/Serious): 答题反馈区无 `aria-live`，屏幕阅读器不播报结果（WCAG 4.1.3）
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
 - **位置**: `src/pages/Practice.tsx:244-280`
 - **现象**: 提交答案后动态插入的反馈（正确/错误）无 live region，视障用户无法知道是否答对
-- **修复**: 在 Practice 根元素内加 `<div aria-live=”polite” aria-atomic=”true” className=”sr-only”>` 播报结果
+- **修复**: 在 Practice 根元素内加 `aria-live="polite"` 的 `sr-only` 播报区域
 
 ---
 
@@ -264,16 +264,16 @@
 - **修复**: 改用 `bg-bg-elevated border-accent/40 text-text` 等应用 token
 
 ### ISSUE-039 (a11y/Moderate): 心数展示缺可访问文字描述（WCAG 1.1.1）
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
 - **位置**: Practice.tsx:130-134 / SessionSummary.tsx:37-42 / CampaignMap.tsx:56-65
 - **现象**: ❤ emoji 列表读出”红心 红心 红心”，无法传达”当前剩余X条命”语义
-- **修复**: 给心数容器加 `aria-label=”剩余生命 X 颗，共 3 颗”`，emoji 用 `aria-hidden=”true”`
+- **修复**: 心数容器加 `role="img" + aria-label="剩余生命 X 颗，共 3 颗"`，emoji 加 `aria-hidden="true"`
 
 ### ISSUE-040 (a11y/Moderate): 无 `prefers-reduced-motion` 支持
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
 - **位置**: `src/styles/globals.css`（shake/float-up/pulse-grow/fade-in 四种动画）
 - **现象**: 对前庭障碍或运动敏感用户（含部分有感知障碍的儿童）可能造成不适
-- **修复**: 在 globals.css 末尾加 `@media (prefers-reduced-motion: reduce)` 全局禁用动画
+- **修复**: 在 globals.css 末尾加 `@media (prefers-reduced-motion: reduce)`，统一压缩动画与过渡时长
 
 ### ISSUE-041 (a11y/Moderate): 关卡完成/可玩/锁定状态仅颜色区分（WCAG 1.4.1）
 - **状态**: ⬜ 待评估
@@ -297,10 +297,10 @@
 - **修复**: 改为永久可见的 `<p>` 提示文字 + `aria-describedby` 关联
 
 ### ISSUE-044 (a11y/Minor): 页面切换无 `document.title` 更新（WCAG 2.4.2）
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
 - **位置**: `src/App.tsx`
 - **现象**: Zustand 路由切换不更新标题，所有页面读到的都是”数学大冒险”，屏幕阅读器无法区分
-- **修复**: App.tsx useEffect 监听 currentPage 更新 document.title
+- **修复**: App.tsx 使用 `useEffect` 监听 `currentPage` 并按页面映射更新 `document.title`
 
 ### ISSUE-045 (a11y/Minor): 无跳过导航链接（WCAG 2.4.1）
 - **状态**: ⬜ 待评估

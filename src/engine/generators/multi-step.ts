@@ -1,6 +1,27 @@
 import type { Question } from '@/types';
 import type { GeneratorParams, SubtypeEntry } from '../index';
 import { pickSubtype } from '../index';
+import type { SubtypeDef } from '@/types/gamification';
+
+export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
+  if (difficulty <= 5) return [
+    { tag: 'bracket-normal',    weight: 40 },
+    { tag: 'extract-factor',    weight: 30 },
+    { tag: 'decimal-two-step',  weight: 30 },
+  ];
+  if (difficulty <= 7) return [
+    { tag: 'bracket-hard',      weight: 30 },
+    { tag: 'extract-factor',    weight: 25 },
+    { tag: 'decimal-two-step',  weight: 25 },
+    { tag: 'simplify-subtract', weight: 20 },
+  ];
+  return [
+    { tag: 'decimal-multi-step', weight: 30 },
+    { tag: 'bracket-demon',      weight: 25 },
+    { tag: 'extract-factor',     weight: 25 },
+    { tag: 'decimal-chain',      weight: 20 },
+  ];
+}
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;

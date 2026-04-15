@@ -50,10 +50,9 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
   const b = operands[1];
   const aDigits = String(a).split('').map(Number);
   const bDigits = String(b).split('').map(Number);
-  const answerDigits = String(Math.abs(
-    operation === '+' ? a + b : operation === '-' ? a - b : operation === '×' ? a * b : Math.floor(a / b)
-  )).split('').map(Number);
-  const gridCols = Math.max(aDigits.length, bDigits.length, answerDigits.length) + 1 + (dp > 0 ? 1 : 0);
+  // 从 steps 推算答案位数，避免浮点运算精度问题（如 0.1+0.2=0.30000...）
+  const answerDigitCount = columns.length;
+  const gridCols = Math.max(aDigits.length, bDigits.length, answerDigitCount) + 1 + (dp > 0 ? 1 : 0);
 
   // The decimal point visual column position (render column index, or -1 if no dp)
   // gridCols includes: 1 operator col + digit cols + (dp > 0 ? 1 dot col : 0)
@@ -467,7 +466,7 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
             className={`text-sm font-bold py-2 px-6 rounded-2xl transition-all
               ${canSubmit
                 ? 'btn-primary'
-                : 'bg-bg-elevated text-text-secondary border-2 border-border cursor-not-allowed'}`}
+                : 'bg-card-2 text-text-2 border-2 border-border cursor-not-allowed'}`}
             disabled={!canSubmit}
           >
             提交

@@ -1,6 +1,39 @@
 import type { Question, VerticalCalcStep } from '@/types';
 import type { GeneratorParams, SubtypeEntry } from '../index';
 import { pickSubtype } from '../index';
+import type { SubtypeDef } from '@/types/gamification';
+
+export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
+  if (difficulty <= 5) return [
+    { tag: 'int-add',     weight: 15 },
+    { tag: 'int-sub',     weight: 15 },
+    { tag: 'int-mul',     weight: 10 },
+    { tag: 'int-div',     weight: 10 },
+    { tag: 'dec-add-sub', weight: 25 },
+    { tag: 'dec-mul',     weight: 15 },
+    { tag: 'dec-div',     weight: 10 },
+  ];
+  if (difficulty <= 7) return [
+    { tag: 'int-add',     weight: 5  },
+    { tag: 'int-sub',     weight: 5  },
+    { tag: 'int-mul',     weight: 10 },
+    { tag: 'int-div',     weight: 10 },
+    { tag: 'dec-add-sub', weight: 30 },
+    { tag: 'dec-mul',     weight: 15 },
+    { tag: 'dec-div',     weight: 15 },
+    { tag: 'approximate', weight: 10 },
+  ];
+  return [
+    { tag: 'int-add',     weight: 5  },
+    { tag: 'int-sub',     weight: 5  },
+    { tag: 'int-mul',     weight: 10 },
+    { tag: 'int-div',     weight: 10 },
+    { tag: 'dec-add-sub', weight: 20 },
+    { tag: 'dec-mul',     weight: 20 },
+    { tag: 'dec-div',     weight: 20 },
+    { tag: 'approximate', weight: 10 },
+  ];
+}
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;

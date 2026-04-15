@@ -1,12 +1,15 @@
 import { useGameProgressStore, useUIStore } from '@/store';
 import { TOPICS } from '@/constants';
 import type { WrongQuestion } from '@/types';
+import BottomNav from '@/components/BottomNav';
+import LoadingScreen from '@/components/LoadingScreen';
+import { TopicIcon } from '@/components/TopicIcon';
 
 export default function WrongBook() {
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const { setPage } = useUIStore();
 
-  if (!gameProgress) return null;
+  if (!gameProgress) return <LoadingScreen />;
 
   const wrongQuestions = [...gameProgress.wrongQuestions].reverse();
 
@@ -19,20 +22,26 @@ export default function WrongBook() {
   }
 
   return (
-    <div className="min-h-dvh bg-bg pb-20 safe-top">
-      <div className="sticky top-0 z-10 bg-bg/90 backdrop-blur-md border-b border-border px-4 py-3">
+    <div className="min-h-dvh bg-bg pb-[88px] safe-top">
+      <div className="sticky top-0 z-10 bg-card border-b-2 border-border-2 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <button onClick={() => setPage('home')} className="text-2xl">←</button>
-          <h1 className="text-lg font-bold">错题本</h1>
-          <span className="ml-auto text-sm text-text-secondary">{wrongQuestions.length}题</span>
+          <button
+            onClick={() => setPage('home')}
+            aria-label="返回首页"
+            className="text-2xl text-text-2 hover:text-text transition-colors"
+          >
+            ←
+          </button>
+          <h1 className="text-[17px] font-black">错题本</h1>
+          <span className="ml-auto text-sm font-bold text-text-2">{wrongQuestions.length} 题</span>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-4">
+      <div className="max-w-lg mx-auto px-4 py-4 stagger-1">
         {wrongQuestions.length === 0 ? (
           <div className="text-center py-16">
             <div className="text-5xl mb-4">🎉</div>
-            <p className="text-text-secondary">还没有做错的题目，继续保持！</p>
+            <p className="text-text-2">还没有做错的题目，继续保持！</p>
           </div>
         ) : (
           <div className="space-y-6">
@@ -42,35 +51,30 @@ export default function WrongBook() {
 
               return (
                 <div key={topicId}>
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl">{topic.icon}</span>
-                      <span className="font-bold text-sm">{topic.name}</span>
-                      <span className="text-xs text-text-secondary">({questions.length}题)</span>
+                  <div className="flex items-center gap-2 mb-3">
+                    <div style={{ color: topic.color, width: 22, height: 22 }}>
+                      <TopicIcon topicId={topic.id} size={22} />
                     </div>
+                    <span className="font-black text-sm">{topic.name}</span>
+                    <span className="text-xs font-bold text-text-2">({questions.length} 题)</span>
                   </div>
 
                   <div className="space-y-2">
-                    {questions.slice(0, 5).map((wq, i) => (
-                      <div key={i} className="card">
-                        <div className="text-sm font-medium mb-1">{wq.question.prompt}</div>
-                        <div className="flex gap-4 text-xs">
-                          <span className="text-danger">你的答案: {wq.wrongAnswer}</span>
-                          <span className="text-success">正确答案: {String(wq.question.solution.answer)}</span>
+                    {questions.map((wq, i) => (
+                      <div key={i} className="bg-card rounded-2xl border-2 border-border-2 p-3"
+                           style={{ boxShadow: '0 1px 5px rgba(0,0,0,.07)' }}>
+                        <div className="text-sm font-bold mb-1.5">{wq.question.prompt}</div>
+                        <div className="flex gap-4 text-xs font-bold">
+                          <span className="text-danger">你的答案：{wq.wrongAnswer}</span>
+                          <span className="text-success">正确：{String(wq.question.solution.answer)}</span>
                         </div>
                         {wq.question.solution.explanation && (
-                          <div className="text-xs text-text-secondary mt-1">
+                          <div className="text-xs text-text-2 mt-1.5 leading-relaxed">
                             {wq.question.solution.explanation}
                           </div>
                         )}
                       </div>
                     ))}
-
-                    {questions.length > 5 && (
-                      <p className="text-xs text-text-secondary text-center">
-                        还有 {questions.length - 5} 题...
-                      </p>
-                    )}
                   </div>
                 </div>
               );
@@ -79,27 +83,7 @@ export default function WrongBook() {
         )}
       </div>
 
-      {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-bg/90 backdrop-blur-md border-t border-border safe-bottom">
-        <div className="max-w-lg mx-auto flex">
-          {[
-            { page: 'home' as const, icon: '🏠', label: '首页' },
-            { page: 'progress' as const, icon: '📊', label: '进度' },
-            { page: 'wrong-book' as const, icon: '📕', label: '错题本' },
-            { page: 'profile' as const, icon: '👤', label: '我的' },
-          ].map(item => (
-            <button
-              key={item.page}
-              onClick={() => setPage(item.page)}
-              className={`flex-1 flex flex-col items-center py-2 text-xs transition-colors
-                ${item.page === 'wrong-book' ? 'text-primary' : 'text-text-secondary hover:text-text'}`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      <BottomNav activeTab="wrong-book" />
     </div>
   );
 }

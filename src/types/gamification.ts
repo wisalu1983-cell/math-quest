@@ -1,6 +1,32 @@
 // src/types/gamification.ts
 import type { TopicId, WrongQuestion } from './index';
 
+// ─── Advance System ───
+
+/** 子题型定义（不含 gen 闭包，供进阶系统读取权重用） */
+export interface SubtypeDef {
+  tag: string;
+  weight: number;
+}
+
+/** 进阶 session 的单道题槽位（session 开始时预生成） */
+export interface AdvanceSlot {
+  difficulty: number;
+  subtypeTag: string;
+}
+
+/** 单题型进阶进度 */
+export interface TopicAdvanceProgress {
+  topicId: TopicId;
+  heartsAccumulated: number; // 累计已投入心数
+  sessionsPlayed: number;    // 总局数（含白练局）
+  sessionsWhite: number;     // 白练局数（heartsEarned = 0）
+  unlockedAt: number;        // 解锁时间戳
+}
+
+/** 进阶系统进度（全题型汇总） */
+export type AdvanceProgress = Partial<Record<TopicId, TopicAdvanceProgress>>;
+
 // ─── Campaign System ───
 
 /** 单个关卡定义（只读静态数据） */
@@ -54,8 +80,8 @@ export interface TopicCampaignProgress {
 export interface GameProgress {
   userId: string;
   campaignProgress: Partial<Record<TopicId, TopicCampaignProgress>>;
-  // Phase 2 在此追加 advanceProgress
-  // Phase 3 在此追加 rankProgress
+  advanceProgress: AdvanceProgress;   // Phase 2
+  // Phase 3 追加 rankProgress
   wrongQuestions: WrongQuestion[];
   totalQuestionsAttempted: number;
   totalQuestionsCorrect: number;
@@ -63,5 +89,5 @@ export interface GameProgress {
 
 // ─── Session Mode ───
 
-export type GameSessionMode = 'campaign' | 'wrong-review';
-// Phase 2 追加 'advance'；Phase 3 追加 'rank-match'
+export type GameSessionMode = 'campaign' | 'advance' | 'wrong-review';
+// Phase 3 追加 'rank-match'

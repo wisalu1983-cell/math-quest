@@ -1,46 +1,71 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #58cc02;
-  --color-primary-dark: #46a302;
-  --color-secondary: #1cb0f6;
-  --color-accent: #ff9600;
-  --color-danger: #ff4b4b;
-  --color-success: #58cc02;
-  --color-warning: #ffc800;
-  --color-xp: #ffd900;
-  --color-combo: #ce82ff;
-  --color-bg: #131f24;
-  --color-bg-card: #1a2c35;
-  --color-bg-elevated: #233a44;
-  --color-text: #ffffff;
-  --color-text-secondary: #94a3b8;
-  --color-border: #37464f;
+  /* ── 主色：全局唯一，三页统一（阳光版 v5）── */
+  --color-primary:      #FF6B35;   /* 主操作、进度、推荐关卡 */
+  --color-primary-dark: #D4521A;   /* 渐变深端、悬停 */
+  --color-primary-lt:   #FFF0EB;   /* 轻填充背景 */
+  --color-primary-mid:  #FFCDB8;   /* 边框、进度轨道 */
 
-  --animate-shake: shake 0.3s ease-in-out;
-  --animate-float-up: float-up 0.8s ease-out forwards;
-  --animate-pulse-grow: pulse-grow 0.6s ease-in-out;
-  --animate-fade-in: fade-in 0.3s ease-out;
+  /* ── 功能色 ── */
+  --color-success:      #3DBF6E;   /* 答对反馈、已完成关卡 */
+  --color-success-lt:   #EAF9F0;
+  --color-success-mid:  #B6EDD0;
+  --color-warning:      #FFD43B;   /* 答错鼓励底色（非惩罚红）*/
+  --color-warning-lt:   #FFF9DB;
+  --color-danger:       #FF6B6B;   /* 仅退出按钮等极小范围 */
+  --color-danger-lt:    #FFF5F5;
+
+  /* ── 背景 / 卡片 ── */
+  --color-bg:           #FFF8F3;   /* 全局应用背景，三页统一 */
+  --color-card:         #FFFFFF;
+  --color-card-2:       #FFFAF7;   /* 次级卡片 */
+
+  /* ── 文字 ── */
+  --color-text:         #181818;
+  --color-text-2:       #7A7A7A;
+  --color-text-3:       #C8C8C8;   /* 禁用/占位 */
+
+  /* ── 边框 ── */
+  --color-border:       #EED9CC;   /* 主要卡片边框 */
+  --color-border-2:     #F5EDE8;   /* 次要边框、分隔线 */
+
+  /* ── 动效曲线（CSS 自定义变量，供组件内 var() 引用）── */
+  --ease-spring: cubic-bezier(.34, 1.56, .64, 1);  /* 弹性：反馈、弹入 */
+  --ease-smooth: cubic-bezier(.4, 0, .2, 1);        /* 平滑：状态切换 */
+
+  /* ── 动画（生成 animate-* 工具类）── */
+  --animate-up-in:      up-in 0.3s cubic-bezier(.4,0,.2,1) forwards;
+  --animate-bounce-rec: bounce-rec 2.2s ease-in-out infinite;
+  --animate-star-pop:   star-pop 0.35s cubic-bezier(.34,1.56,.64,1) forwards;
+  --animate-shake:      shake 0.3s ease-in-out;
+  --animate-conf-fall:  conf-fall 1s ease-in forwards;
+
+  @keyframes up-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes bounce-rec {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-5px); }
+  }
+
+  @keyframes star-pop {
+    0%   { transform: scale(0) rotate(-25deg); opacity: 0; }
+    70%  { transform: scale(1.25) rotate(5deg); }
+    100% { transform: scale(1) rotate(0); opacity: 1; }
+  }
 
   @keyframes shake {
     0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-4px); }
-    75% { transform: translateX(4px); }
+    25%       { transform: translateX(-4px); }
+    75%       { transform: translateX(4px); }
   }
 
-  @keyframes float-up {
-    0% { opacity: 1; transform: translateY(0) scale(1); }
-    100% { opacity: 0; transform: translateY(-60px) scale(1.5); }
-  }
-
-  @keyframes pulse-grow {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.15); }
-  }
-
-  @keyframes fade-in {
-    0% { opacity: 0; transform: translateY(10px); }
-    100% { opacity: 1; transform: translateY(0); }
+  @keyframes conf-fall {
+    0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(120px) rotate(720deg); opacity: 0; }
   }
 }
 
@@ -49,9 +74,28 @@
     -webkit-tap-highlight-color: transparent;
   }
 
+  /* 跳转至主要内容（键盘用户 skip link）*/
+  .skip-link {
+    @apply sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[9999]
+           focus:bg-primary focus:text-white focus:font-black focus:text-sm
+           focus:px-4 focus:py-2 focus:rounded-xl;
+  }
+
+  /* 全局 focus-visible 焦点环 */
+  :focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+  }
+
+  /* 防止 input 等表单元素 focus 时显示默认 outline（已用 border 替代）*/
+  input:focus-visible,
+  textarea:focus-visible {
+    outline: none;
+  }
+
   body {
     @apply bg-bg text-text antialiased;
-    font-family: "Nunito", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-family: 'Nunito', 'PingFang SC', 'Microsoft YaHei UI', sans-serif;
     overscroll-behavior: none;
     user-select: none;
     -webkit-user-select: none;
@@ -64,48 +108,55 @@
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-primary text-white font-bold py-3 px-6 rounded-2xl
-           shadow-[0_4px_0_0] shadow-primary-dark
-           active:translate-y-1 active:shadow-none
+  /* ── 主操作按钮（阳光版：平面风格，无 3D 阴影）── */
+  .btn-flat {
+    @apply bg-primary text-white font-black rounded-2xl
            transition-all duration-100;
+    font-size: 15px;
+    font-weight: 900;
+    padding: 13px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.07);
   }
+  .btn-flat:hover  { filter: brightness(1.06); }
+  .btn-flat:active { transform: scale(.99); }
+
+  /* 兼容旧 btn-primary 引用（Phase B 迁移至 btn-flat 后可移除）*/
+  .btn-primary {
+    @apply bg-primary text-white font-black rounded-2xl
+           transition-all duration-100;
+    font-size: 15px;
+    font-weight: 900;
+    padding: 13px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.07);
+  }
+  .btn-primary:hover  { filter: brightness(1.06); }
+  .btn-primary:active { transform: scale(.99); }
 
   .btn-secondary {
-    @apply bg-bg-elevated text-text font-bold py-3 px-6 rounded-2xl
+    @apply bg-card text-text font-bold rounded-2xl
            border-2 border-border
-           active:bg-border transition-all duration-100;
+           active:bg-card-2 transition-all duration-100;
+    padding: 13px;
   }
 
+  /* ── 通用卡片 ── */
   .card {
-    @apply bg-bg-card rounded-2xl border border-border p-4;
+    @apply bg-card rounded-2xl border-2 border-border-2;
+    box-shadow: 0 2px 10px rgba(0,0,0,.09);
   }
 
+  /* ── 竖式计算单元格（功能保留，视觉更新为阳光版配色）── */
   .digit-cell {
     @apply w-10 h-12 sm:w-12 sm:h-14 flex items-center justify-center
            text-xl sm:text-2xl font-bold rounded-lg
            border-2 transition-all duration-200;
   }
 
-  .digit-cell-active {
-    @apply border-secondary bg-secondary/10 animate-pulse;
-  }
-
-  .digit-cell-correct {
-    @apply border-success bg-success/10 text-success;
-  }
-
-  .digit-cell-wrong {
-    @apply border-danger bg-danger/10 text-danger animate-shake;
-  }
-
-  .digit-cell-filled {
-    @apply border-border bg-bg-elevated text-text;
-  }
-
-  .digit-cell-empty {
-    @apply border-border/50 bg-bg text-text-secondary;
-  }
+  .digit-cell-active  { @apply border-primary bg-primary-lt; }
+  .digit-cell-correct { @apply border-success bg-success-lt text-success; }
+  .digit-cell-wrong   { @apply border-danger bg-danger-lt text-danger animate-shake; }
+  .digit-cell-filled  { @apply border-border bg-card-2 text-text; }
+  .digit-cell-empty   { @apply border-border-2 bg-bg text-text-3; }
 }
 
 @utility safe-bottom {
@@ -114,4 +165,23 @@
 
 @utility safe-top {
   padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── 页面进入 stagger 动画（各页面主区块依次入场）── */
+@utility stagger-1 { animation: up-in 0.3s cubic-bezier(.4,0,.2,1) 40ms both; }
+@utility stagger-2 { animation: up-in 0.3s cubic-bezier(.4,0,.2,1) 90ms both; }
+@utility stagger-3 { animation: up-in 0.3s cubic-bezier(.4,0,.2,1) 140ms both; }
+@utility stagger-4 { animation: up-in 0.3s cubic-bezier(.4,0,.2,1) 190ms both; }
+@utility stagger-5 { animation: up-in 0.3s cubic-bezier(.4,0,.2,1) 240ms both; }
+@utility stagger-6 { animation: up-in 0.3s cubic-bezier(.4,0,.2,1) 290ms both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

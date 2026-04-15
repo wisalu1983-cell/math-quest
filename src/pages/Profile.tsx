@@ -1,12 +1,15 @@
 import { useUserStore, useGameProgressStore, useUIStore } from '@/store';
 import { TOPICS } from '@/constants';
+import BottomNav from '@/components/BottomNav';
+import LoadingScreen from '@/components/LoadingScreen';
+import { TopicIcon } from '@/components/TopicIcon';
 
 export default function Profile() {
   const user = useUserStore(s => s.user);
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const { setPage, soundEnabled, toggleSound } = useUIStore();
 
-  if (!user) return null;
+  if (!user) return <LoadingScreen />;
 
   // 统计数据
   const totalQuestions = gameProgress?.totalQuestionsAttempted ?? 0;
@@ -22,15 +25,19 @@ export default function Profile() {
   const wrongCount = gameProgress?.wrongQuestions.length ?? 0;
 
   return (
-    <div className="min-h-dvh bg-bg pb-20 safe-top">
-      <div className="sticky top-0 z-10 bg-bg/90 backdrop-blur-md border-b border-border px-4 py-3">
+    <div className="min-h-dvh bg-bg pb-[88px] safe-top">
+      <div className="sticky top-0 z-10 bg-card border-b-2 border-border-2 px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center gap-3">
-          <button onClick={() => setPage('home')} className="text-2xl">←</button>
-          <h1 className="text-lg font-bold">个人中心</h1>
+          <button
+            onClick={() => setPage('home')}
+            aria-label="返回首页"
+            className="text-2xl text-text-2 hover:text-text transition-colors"
+          >←</button>
+          <h1 className="text-[17px] font-black">个人中心</h1>
         </div>
       </div>
 
-      <div className="max-w-lg mx-auto px-4 py-4 space-y-6">
+      <div className="max-w-lg mx-auto px-4 py-4 space-y-6 stagger-1">
         {/* Profile card */}
         <div className="card flex items-center gap-4">
           <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center text-3xl">
@@ -38,7 +45,7 @@ export default function Profile() {
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-bold">{user.nickname}</h2>
-            <p className="text-sm text-text-secondary mt-1">五年级 · 数学大冒险</p>
+            <p className="text-sm text-text-2 mt-1">数学大冒险</p>
           </div>
         </div>
 
@@ -46,15 +53,15 @@ export default function Profile() {
         <div className="grid grid-cols-3 gap-3">
           <div className="card text-center py-3">
             <div className="text-xl font-bold text-primary">{totalQuestions}</div>
-            <div className="text-[10px] text-text-secondary">总题数</div>
+            <div className="text-[12px] text-text-2">总题数</div>
           </div>
           <div className="card text-center py-3">
             <div className="text-xl font-bold text-success">{accuracy}%</div>
-            <div className="text-[10px] text-text-secondary">准确率</div>
+            <div className="text-[12px] text-text-2">准确率</div>
           </div>
           <div className="card text-center py-3">
             <div className="text-xl font-bold text-warning">{completedTopics}/{totalTopics}</div>
-            <div className="text-[10px] text-text-secondary">关卡通关</div>
+            <div className="text-[12px] text-text-2">关卡通关</div>
           </div>
         </div>
 
@@ -68,10 +75,12 @@ export default function Profile() {
               const count = tp?.completedLevels.length ?? 0;
               return (
                 <div key={topic.id} className="flex items-center gap-3">
-                  <span className="text-xl">{topic.icon}</span>
+                  <div style={{ color: topic.color, width: 22, height: 22, flexShrink: 0 }}>
+                    <TopicIcon topicId={topic.id} size={22} />
+                  </div>
                   <div className="flex-1">
                     <div className="text-sm font-medium">{topic.name}</div>
-                    <div className="text-xs text-text-secondary">已通关 {count} 关</div>
+                    <div className="text-xs text-text-2">已通关 {count} 关</div>
                   </div>
                   {done && <span className="text-xs text-success font-bold">✓ 全通</span>}
                 </div>
@@ -88,7 +97,7 @@ export default function Profile() {
             <div className="flex justify-between items-center">
               <div>
                 <div className="text-sm">音效</div>
-                <div className="text-xs text-text-secondary">练习时的音效反馈</div>
+                <div className="text-xs text-text-2">练习时的音效反馈</div>
               </div>
               <button
                 onClick={toggleSound}
@@ -115,26 +124,7 @@ export default function Profile() {
       </div>
 
       {/* Bottom nav */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-bg/90 backdrop-blur-md border-t border-border safe-bottom">
-        <div className="max-w-lg mx-auto flex">
-          {[
-            { page: 'home' as const, icon: '🏠', label: '首页' },
-            { page: 'progress' as const, icon: '📊', label: '进度' },
-            { page: 'wrong-book' as const, icon: '📕', label: '错题本' },
-            { page: 'profile' as const, icon: '👤', label: '我的' },
-          ].map(item => (
-            <button
-              key={item.page}
-              onClick={() => setPage(item.page)}
-              className={`flex-1 flex flex-col items-center py-2 text-xs transition-colors
-                ${item.page === 'profile' ? 'text-primary' : 'text-text-secondary hover:text-text'}`}
-            >
-              <span className="text-xl">{item.icon}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      </nav>
+      <BottomNav activeTab="profile" />
     </div>
   );
 }

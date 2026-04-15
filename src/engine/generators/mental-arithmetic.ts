@@ -2,6 +2,7 @@ import type { Question, ComputationStep } from '@/types';
 import type { GeneratorParams } from '../index';
 import { pickSubtype } from '../index';
 import type { SubtypeEntry } from '../index';
+import type { SubtypeDef } from '@/types/gamification';
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -328,6 +329,17 @@ function generateSingleStep(forcedOp: '+' | '-' | '×' | '÷', difficulty: numbe
     hints: [hintText],
     xpBase: 10 + (difficulty - 1) * 5,
   };
+}
+
+export function getSubtypeEntries(_difficulty: number): SubtypeDef[] {
+  // A01 所有难度档使用相同子题型集合
+  return [
+    { tag: 'add',   weight: 20 },
+    { tag: 'sub',   weight: 20 },
+    { tag: 'mul',   weight: 20 },
+    { tag: 'div',   weight: 20 },
+    { tag: 'order', weight: 20 },
+  ];
 }
 
 export function generateMentalArithmetic(params: GeneratorParams): Question {

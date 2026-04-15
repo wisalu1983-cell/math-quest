@@ -18,6 +18,12 @@ test-screenshots/
 
 # Tool artifacts
 .superpowers/
+.ui-design/
+
+# Generated test scripts (auto-generated, not hand-written)
+test-*.cjs
+test_recon.py
+test_regression.py
 
 # Editor directories and files
 .vscode/*

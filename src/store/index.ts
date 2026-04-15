@@ -7,6 +7,8 @@ import { nanoid } from 'nanoid';
 import { generateQuestion } from '@/engine';
 import { CAMPAIGN_MAX_HEARTS } from '@/constants';
 import { getCampaignLevel, getSubtypeFilter } from '@/constants/campaign';
+import { buildAdvanceSlots } from '@/engine/advance';
+import { ADVANCE_QUESTION_COUNT } from '@/constants/advance';
 
 // ─── User Store ───
 interface UserStore {
@@ -31,8 +33,7 @@ export const useUserStore = create<UserStore>((set) => ({
 interface SessionStore {
   active: boolean;
   session: PracticeSession | null;
-  currentQuestion: Question | null;
-  currentIndex: number;
+  currentQuestion: Question | null;  currentIndex: number;
   totalQuestions: number;
   hearts: number;
   questionStartTime: number;
@@ -41,6 +42,7 @@ interface SessionStore {
   pendingWrongQuestions: WrongQuestion[];
 
   startCampaignSession: (topicId: TopicId, levelId: string) => void;
+  startAdvanceSession: (topicId: TopicId) => void;
   nextQuestion: () => void;
   submitAnswer: (answer: string) => { correct: boolean };
   endSession: () => PracticeSession;
@@ -92,14 +94,62 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     get().nextQuestion();
   },
 
+  startAdvanceSession: (topicId) => {
+    const user = useUserStore.getState().user;
+    if (!user) return;
+
+    const gp = useGameProgressStore.getState().gameProgress;
+    const heartsAccumulated = gp?.advanceProgress[topicId]?.heartsAccumulated ?? 0;
+    const slots = buildAdvanceSlots(topicId, heartsAccumulated);
+
+    const session: PracticeSession = {
+      id: nanoid(10),
+      userId: user.id,
+      topicId,
+      startedAt: Date.now(),
+      difficulty: slots[0]?.difficulty ?? 4,
+      sessionMode: 'advance',
+      targetLevelId: null,
+      questions: [],
+      heartsRemaining: CAMPAIGN_MAX_HEARTS,
+      completed: false,
+      advanceSlots: slots,
+    };
+
+    set({
+      active: true,
+      session,
+      currentIndex: 0,
+      totalQuestions: ADVANCE_QUESTION_COUNT,
+      hearts: CAMPAIGN_MAX_HEARTS,
+      showFeedback: false,
+      pendingWrongQuestions: [],
+    });
+
+    get().nextQuestion();
+  },
+
   nextQuestion: () => {
     const { session, currentIndex, totalQuestions } = get();
     if (!session || currentIndex >= totalQuestions) return;
 
-    const filter = session.targetLevelId
-      ? getSubtypeFilter(session.topicId, session.targetLevelId)
-      : undefined;
-    const question = generateQuestion(session.topicId, session.difficulty, filter);
+    let difficulty: number;
+    let subtypeFilter: string[] | undefined;
+
+    if (session.sessionMode === 'advance' && session.advanceSlots) {
+      // 进阶：按预生成槽位取 difficulty 和单一子题型
+      const slot = session.advanceSlots[currentIndex];
+      difficulty = slot?.difficulty ?? session.difficulty;
+      subtypeFilter = slot ? [slot.subtypeTag] : undefined;
+    } else {
+      // 闯关：固定 difficulty，按路线 subtypeFilter
+      difficulty = session.difficulty;
+      subtypeFilter = session.targetLevelId
+        ? getSubtypeFilter(session.topicId, session.targetLevelId)
+        : undefined;
+    }
+
+    const question = generateQuestion(session.topicId, difficulty, subtypeFilter);
 
     set({
       currentQuestion: question,
@@ -184,15 +234,21 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
     repository.saveSession(completedSession);
 
-    if (hearts > 0 && completedSession.targetLevelId && completedSession.sessionMode === 'campaign') {
-      useGameProgressStore.getState().recordLevelCompletion(
-        completedSession.topicId,
-        completedSession.targetLevelId,
-        hearts
-      );
+    const gpStore = useGameProgressStore.getState();
+
+    if (completedSession.sessionMode === 'campaign') {
+      if (hearts > 0 && completedSession.targetLevelId) {
+        gpStore.recordLevelCompletion(
+          completedSession.topicId,
+          completedSession.targetLevelId,
+          hearts
+        );
+      }
+    } else if (completedSession.sessionMode === 'advance') {
+      // 进阶结算：hearts 即为 heartsEarned（0~3）
+      gpStore.recordAdvanceSession(completedSession.topicId, hearts);
     }
 
-    const gpStore = useGameProgressStore.getState();
     for (const wq of pendingWrongQuestions) {
       gpStore.addWrongQuestion(wq);
     }
@@ -209,6 +265,26 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   },
 
   abandonSession: () => {
+    const { session, hearts, pendingWrongQuestions } = get();
+
+    // 保存错题（无论哪种模式）
+    if (pendingWrongQuestions.length > 0) {
+      const gpStore = useGameProgressStore.getState();
+      for (const wq of pendingWrongQuestions) {
+        gpStore.addWrongQuestion(wq);
+      }
+    }
+
+    // 保存中止历史
+    if (session) {
+      repository.saveSession({
+        ...session,
+        endedAt: Date.now(),
+        heartsRemaining: hearts,
+        completed: false,
+      });
+    }
+
     set({
       active: false,
       session: null,
@@ -228,6 +304,7 @@ interface UIStore {
     | 'onboarding'
     | 'home'
     | 'campaign-map'
+    | 'advance-select'
     | 'practice'
     | 'summary'
     | 'progress'
@@ -261,3 +338,9 @@ export const useUIStore = create<UIStore>((set) => ({
 
 // 让其他文件可从 store/index 直接导入 useGameProgressStore
 export { useGameProgressStore } from './gamification';
+
+// E2E 测试钩子：DEV 模式下暴露 store，供 Playwright 读取当前题目的正确答案
+if (import.meta.env.DEV) {
+  (window as any).__MQ_SESSION__ = useSessionStore;
+  (window as any).__MQ_GAME_PROGRESS__ = useGameProgressStore;
+}

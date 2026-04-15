@@ -50,11 +50,16 @@ export const repository = {
 
   // GameProgress
   getGameProgress(userId: string): GameProgress {
-    const p = read<GameProgress>(KEYS.gameProgress);
-    if (p && p.userId === userId) return p;
+    const raw = read<GameProgress>(KEYS.gameProgress);
+    if (raw && raw.userId === userId) {
+      // 向前兼容迁移：老数据无 advanceProgress 字段
+      if (!raw.advanceProgress) raw.advanceProgress = {};
+      return raw;
+    }
     return {
       userId,
       campaignProgress: {},
+      advanceProgress: {},
       wrongQuestions: [],
       totalQuestionsAttempted: 0,
       totalQuestionsCorrect: 0,

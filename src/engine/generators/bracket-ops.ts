@@ -1,6 +1,28 @@
 import type { Question } from '@/types';
 import type { GeneratorParams, SubtypeEntry } from '../index';
 import { pickSubtype } from '../index';
+import type { SubtypeDef } from '@/types/gamification';
+
+export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
+  // 普通档：仅 weight>0 的条目（add-bracket 和 division-property 在普通档 weight=0，不纳入）
+  if (difficulty <= 5) return [
+    { tag: 'remove-bracket-plus',  weight: 60 },
+    { tag: 'remove-bracket-minus', weight: 40 },
+  ];
+  if (difficulty <= 7) return [
+    { tag: 'remove-bracket-plus',  weight: 25 },
+    { tag: 'remove-bracket-minus', weight: 25 },
+    { tag: 'add-bracket',          weight: 25 },
+    { tag: 'division-property',    weight: 25 },
+  ];
+  return [
+    { tag: 'remove-bracket-minus', weight: 25 },
+    { tag: 'add-bracket',          weight: 20 },
+    { tag: 'nested-bracket',       weight: 15 },
+    { tag: 'division-property',    weight: 20 },
+    { tag: 'remove-bracket-plus',  weight: 20 },
+  ];
+}
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;

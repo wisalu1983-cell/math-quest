@@ -1,6 +1,18 @@
 import type { Question } from '@/types';
 import type { GeneratorParams, SubtypeEntry } from '../index';
 import { pickSubtype } from '../index';
+import type { SubtypeDef } from '@/types/gamification';
+
+export function getSubtypeEntries(_difficulty: number): SubtypeDef[] {
+  // A02 所有难度档使用相同子题型集合
+  return [
+    { tag: 'estimate',      weight: 35 },
+    { tag: 'round',         weight: 20 },
+    { tag: 'compare',       weight: 15 },
+    { tag: 'floor-ceil',    weight: 15 },
+    { tag: 'reverse-round', weight: 15 },
+  ];
+}
 
 function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;

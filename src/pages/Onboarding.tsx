@@ -33,7 +33,7 @@ export default function Onboarding() {
         <div className="flex flex-col items-center gap-8 max-w-sm w-full animate-fade-in">
           <div className="text-6xl">🧮</div>
           <h1 className="text-3xl font-bold text-text">数学大冒险</h1>
-          <p className="text-text-secondary text-center">
+          <p className="text-text-2 text-center">
             每天练一练，计算能力天天进步！
           </p>
           <button className="btn-primary w-full text-lg" onClick={() => setStep(1)}>
@@ -52,7 +52,8 @@ export default function Onboarding() {
             onChange={e => setNickname(e.target.value)}
             placeholder="输入你的昵称"
             maxLength={12}
-            className="w-full bg-bg-elevated border-2 border-border rounded-2xl px-4 py-3 text-lg text-text
+            aria-label="用户昵称"
+            className="w-full bg-card-2 border-2 border-border rounded-2xl px-4 py-3 text-lg text-text
                        focus:border-primary outline-none transition-colors text-center"
             autoFocus
           />

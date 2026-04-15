@@ -42,7 +42,9 @@
 | 文件 | 内容 | 状态 |
 |------|------|------|
 | [2026-04-13-gamification-phase1-foundation-campaign.md](2026-04-13-gamification-phase1-foundation-campaign.md) | Phase 1：Foundation + 闯关系统（移除旧 XP 体系，新类型/Store/Repository，8 题型闯关地图，CampaignMap 页） | ✅ 开发完成，待浏览器验收 |
-| Phase 2（待写）| 进阶系统（心→星，难度自动调配） | ⬜ 未开始 |
+| [2026-04-15-gamification-phase2-implementation.md](2026-04-15-gamification-phase2-implementation.md) | Phase 2 进阶系统实施计划（T1-T15 全部完成） | ✅ 完成 |
+
+| Phase 2（待验收）| 进阶系统（心→星，难度自动调配） | ✅ 开发完成，待浏览器验收 |
 | Phase 3（待写）| 段位赛系统（BO3/BO5/BO7） | ⬜ 未开始 |
 
 ## Phase 1 优化迭代
@@ -56,7 +58,31 @@
 | 文件 | 内容 |
 |------|------|
 | [2026-04-14-difficulty-standard.md](../Specs/2026-04-14-difficulty-standard.md) | 难度基准文档（difficulty 1-10 各档定义 + 8 个生成器分档明细 + 校准记录） |
-| [2026-04-14-ui-redesign-spec.md](../Specs/2026-04-14-ui-redesign-spec.md) | UI/UX 整体重设计规格（炼金书院方向：Token 体系 + IA 重构 + 组件规范 + 交互规则 + hotfix 分类） |
+| [2026-04-14-ui-redesign-spec.md](../Specs/2026-04-14-ui-redesign-spec.md) | UI/UX 整体重设计规格（阳光版 v5 批准；含颜色 token、图标系统、组件规范、交互规则、hotfix 分类；v1 炼金书院草案已废弃） |
+| [2026-04-14-ui-redesign-spec.md → 配套实施参考](./../.ui-design/design-system.md) | 设计系统参考文档（.ui-design/design-system.md）—— 实施级 token、SVG 图标说明、组件规格、Do/Don't |
+
+## UI Hotfix 子计划
+
+| 文件 | 内容 | 状态 |
+|------|------|------|
+| [2026-04-14-ui-hotfix-6-1.md](2026-04-14-ui-hotfix-6-1.md) | UI redesign spec §6.1 的独立 hotfix 执行计划 | ✅ 完成 |
+
+## UI 整体重设计（阳光版 v5）
+
+| 阶段 | 内容 | 状态 |
+|------|------|------|
+| Phase A | Token + 组件基础设施（BottomNav/ProgressBar/Hearts/LoadingScreen/Dialog）| ✅ 完成（2026-04-14）|
+| Phase B | 全量页面级改造（Home/CampaignMap/Practice/Summary/WrongBook/Progress/Profile 等）| ✅ 完成（2026-04-14）|
+| Phase C | 动效打磨（stagger 入场动画 + 推荐关卡跳动）| ✅ 完成（2026-04-15）|
+| Design Review | 设计系统合规审查 + 修复（94% 合规）| ✅ 完成（2026-04-15）|
+| WCAG AA 审查 | 无障碍审查 + 修复（CampaignMap 键盘/输入框 aria/skip-link 等）| ✅ 完成（2026-04-15）|
+| 浏览器实测 | E2E 主路径验收（Playwright，0 JS 错误）| ✅ 完成（2026-04-15）|
+
+## 视觉 QA 修复（Reports/2026-04-15-visual-qa-results.md）
+
+| 文件 | 内容 | 状态 |
+|------|------|------|
+| [2026-04-15-visual-qa-fixes.md](2026-04-15-visual-qa-fixes.md) | 视觉 QA 修复（F2/VR-01/VR-02/VR-04/VR-05/F1，共 5 个文件改动）| ✅ 完成（2026-04-15）|
 
 ## 待排期
 

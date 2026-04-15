@@ -51,15 +51,15 @@ export default function DecimalTrainingGrid({ fields, difficulty, onComplete }: 
   }, [values, fields, showFeedback, allDone, onComplete]);
 
   return (
-    <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-4">
-      <div className="text-xs text-amber-700 font-semibold mb-3 tracking-wide flex items-center gap-1">
-        <span>📐</span>
+    <div className="bg-primary-lt border-2 border-primary-mid rounded-xl p-4 mb-4">
+      <div className="text-xs text-primary-dark font-bold mb-3 tracking-wide flex items-center gap-1">
+        <span aria-hidden="true">📐</span>
         <span>训练格</span>
-        {!showFeedback && <span className="text-amber-500 font-normal">（填完解锁答案）</span>}
+        {!showFeedback && <span className="text-primary font-normal">（填完解锁答案）</span>}
       </div>
       {fields.map((field, idx) => (
         <div key={idx} className="flex items-center gap-2 mb-2 text-sm flex-wrap">
-          <span className="text-gray-600">{field.label}</span>
+          <span className="text-text-2">{field.label}</span>
           <input
             type="text"
             inputMode="decimal"
@@ -67,26 +67,27 @@ export default function DecimalTrainingGrid({ fields, difficulty, onComplete }: 
             onChange={e => handleChange(idx, e.target.value)}
             placeholder={field.placeholder ?? '?'}
             disabled={allDone}
+            aria-label={field.label}
             className={`w-16 text-center text-lg font-bold rounded-lg border-2 px-2 py-1 outline-none transition-colors
               ${results[idx] === 'correct'
-                ? 'border-green-500 bg-green-50 text-green-700'
+                ? 'border-success bg-success-lt text-success'
                 : results[idx] === 'wrong'
-                  ? 'border-red-500 bg-red-50 text-red-600'
-                  : 'border-amber-400 bg-white text-gray-800 focus:border-blue-500'
+                  ? 'border-danger bg-danger-lt text-danger'
+                  : 'border-border bg-card text-text focus:border-primary'
               }
               ${allDone ? 'opacity-60' : ''}
             `}
           />
           {showFeedback && results[idx] === 'wrong' && (
-            <span className="text-red-500 text-xs">✗ 再想想</span>
+            <span className="text-danger text-xs font-bold" aria-hidden="true">✗ 再想想</span>
           )}
           {showFeedback && results[idx] === 'correct' && (
-            <span className="text-green-500 text-xs">✓</span>
+            <span className="text-success text-xs font-bold" aria-hidden="true">✓</span>
           )}
         </div>
       ))}
       {allDone && (
-        <div className="text-green-600 text-xs font-semibold mt-2">✓ 训练格完成，请填写答案</div>
+        <div className="text-success text-xs font-bold mt-2">✓ 训练格完成，请填写答案</div>
       )}
     </div>
   );
