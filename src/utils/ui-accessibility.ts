@@ -2,6 +2,7 @@ export type AppPage =
   | 'onboarding'
   | 'home'
   | 'campaign-map'
+  | 'advance-select'
   | 'practice'
   | 'summary'
   | 'progress'
@@ -14,6 +15,7 @@ const PAGE_TITLES: Record<AppPage, string> = {
   onboarding: '数学大冒险',
   home: '数学大冒险 · 学习',
   'campaign-map': '数学大冒险 · 闯关',
+  'advance-select': '数学大冒险 · 进阶',
   practice: '数学大冒险 · 答题中',
   summary: '数学大冒险 · 练习结果',
   progress: '数学大冒险 · 进度',

@@ -32,12 +32,6 @@ function formatNum(n: number): string {
   return n.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
 }
 
-function evaluate(expr: string): number {
-  const sanitized = expr.replace(/×/g, '*').replace(/÷/g, '/');
-  // eslint-disable-next-line no-new-func
-  return new Function(`return (${sanitized})`)() as number;
-}
-
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
   for (let i = a.length - 1; i > 0; i--) {

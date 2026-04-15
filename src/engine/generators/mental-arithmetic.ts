@@ -8,11 +8,6 @@ function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-function pickOperator(): '+' | '-' | '×' | '÷' {
-  const ops: ('+' | '-' | '×' | '÷')[] = ['+', '-', '×', '÷'];
-  return ops[randInt(0, 3)];
-}
-
 function generatePair(difficulty: number, op: '+' | '-' | '×' | '÷'): [number, number, number] {
   let a: number, b: number, answer: number;
 
