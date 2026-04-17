@@ -15,76 +15,97 @@ function genN(fn: (p: { difficulty: number; id: string }) => any, difficulty: nu
 }
 
 // ==================== Mental Arithmetic ====================
+// v2.1 规格：
+//   低档 (d≤5): 表内乘除（整除）+ 两位数加减 + 整十整百差
+//   中档 (6≤d≤7): 陷阱题（退位边界/中间含0/接近整数减法），三位数÷一位数整除
+//   高档 (d≥8): 末尾0管理 + 需拆分技巧
 describe('Mental Arithmetic (口算速算)', () => {
-  describe('Normal (difficulty=5)', () => {
-    it('乘法应为 1位×2位', () => {
+  describe('低档 (difficulty=5)', () => {
+    it('乘法应为表内乘法（两端都在 2-9）', () => {
       const qs = genN(generateMentalArithmetic, 5, 200);
-      // 排除整十/整百运算题（20%概率生成，operands 可能超出普通范围）
-      // const muls = qs.filter((q: any) => q.data.operator === '×' && !q.data.operands.some((n: number) => n >= 10 && n % 10 === 0 && n >= 10 && n <= 900 && (n % 10 === 0)));
-      // 只检查非整十整百题
-      const normalMuls = qs.filter((q: any) => q.data.operator === '×' && q.data.operands[0] <= 9);
-      expect(normalMuls.length).toBeGreaterThan(0);
-      for (const q of normalMuls) {
-        const [a, b] = q.data.operands;
-        expect(a).toBeGreaterThanOrEqual(2);
-        expect(a).toBeLessThanOrEqual(9);
-        expect(b).toBeGreaterThanOrEqual(10);
-        expect(b).toBeLessThanOrEqual(99);
-      }
-    });
-
-    it('除法应为 2位÷1位，答案为 "商...余数" 格式', () => {
-      const qs = genN(generateMentalArithmetic, 5, 200);
-      // 排除整十/整百运算题（a >= 100 的是整百运算，答案格式不同）
-      const divs = qs.filter((q: any) => q.data.operator === '÷' && q.data.operands[0] <= 99);
-      expect(divs.length).toBeGreaterThan(0);
-      for (const q of divs) {
-        const [a, b] = q.data.operands;
-        expect(a).toBeGreaterThanOrEqual(10);
-        expect(a).toBeLessThanOrEqual(99);
-        expect(b).toBeGreaterThanOrEqual(2);
-        expect(b).toBeLessThanOrEqual(9);
-        // Answer must be "quotient...remainder" string
-        const ansStr = String(q.solution.answer);
-        expect(ansStr).toMatch(/^\d+\.\.\.\d+$/);
-        const [qStr, rStr] = ansStr.split('...');
-        const quotient = parseInt(qStr);
-        const remainder = parseInt(rStr);
-        expect(quotient).toBe(Math.floor(a / b));
-        expect(remainder).toBe(a % b);
-      }
-    });
-
-    it('除法应混有有余数和整除两种情况', () => {
-      const qs = genN(generateMentalArithmetic, 5, 500);
-      const divs = qs.filter(q => q.data.operator === '÷');
-      const withRemainder = divs.filter(q => !String(q.solution.answer).endsWith('...0'));
-      const exact = divs.filter(q => String(q.solution.answer).endsWith('...0'));
-      expect(withRemainder.length).toBeGreaterThan(0);
-      expect(exact.length).toBeGreaterThan(0);
-    });
-
-  });
-
-  describe('Hard (difficulty=7)', () => {
-    it('乘法应为 1位×(2或3位)', () => {
-      const qs = genN(generateMentalArithmetic, 7, 200);
-      const muls = qs.filter(q => q.data.operator === '×');
+      const muls = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
       expect(muls.length).toBeGreaterThan(0);
-      let has2digit = false, has3digit = false;
       for (const q of muls) {
         const [a, b] = q.data.operands;
         expect(a).toBeGreaterThanOrEqual(2);
         expect(a).toBeLessThanOrEqual(9);
-        expect(b).toBeGreaterThanOrEqual(10);
-        expect(b).toBeLessThanOrEqual(999);
-        if (b >= 100) has3digit = true;
-        else has2digit = true;
+        expect(b).toBeGreaterThanOrEqual(2);
+        expect(b).toBeLessThanOrEqual(9);
       }
-      expect(has2digit).toBe(true);
-      expect(has3digit).toBe(true);
     });
 
+    it('除法应为表内除法（整除，商为 2-9）', () => {
+      const qs = genN(generateMentalArithmetic, 5, 200);
+      const divs = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
+      expect(divs.length).toBeGreaterThan(0);
+      for (const q of divs) {
+        const [a, b] = q.data.operands;
+        // 整除且除数在表内范围
+        expect(a % b).toBe(0);
+        expect(b).toBeGreaterThanOrEqual(2);
+        expect(b).toBeLessThanOrEqual(9);
+        // 答案是数字，不是"商...余数"字符串
+        expect(typeof q.solution.answer === 'number').toBe(true);
+        expect(q.solution.answer).toBe(a / b);
+      }
+    });
+  });
+
+  describe('中档 (difficulty=7)', () => {
+    it('乘法包含"中间含0"陷阱（如 208×5）', () => {
+      const qs = genN(generateMentalArithmetic, 7, 300);
+      const muls = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
+      expect(muls.length).toBeGreaterThan(0);
+      // 至少存在一道：a 是三位数且十位为 0（即 X0Y 结构）
+      const midZero = muls.filter((q: any) => {
+        const a = q.data.operands[0];
+        return a >= 100 && a <= 999 && Math.floor((a / 10) % 10) === 0;
+      });
+      expect(midZero.length).toBeGreaterThan(0);
+    });
+
+    it('除法为整除（v2.1 规格：心算题不带余数）', () => {
+      const qs = genN(generateMentalArithmetic, 7, 300);
+      const divs = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
+      expect(divs.length).toBeGreaterThan(0);
+      for (const q of divs) {
+        const [a, b] = q.data.operands;
+        expect(a % b).toBe(0);
+        expect(typeof q.solution.answer === 'number').toBe(true);
+      }
+    });
+  });
+
+  describe('档 2 (difficulty=9，v2.2)', () => {
+    it('乘法池包含"末尾0/拆分/基础"混合（档 2 = 原中档+原高档）', () => {
+      const qs = genN(generateMentalArithmetic, 9, 300);
+      const muls = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
+      expect(muls.length).toBeGreaterThan(0);
+      const qualifying = muls.filter((q: any) => {
+        const [a, b] = q.data.operands;
+        const trailingZero = (a % 10 === 0) || (b % 10 === 0);
+        const factorSplit = [25, 125, 75, 50].includes(a) || [25, 125, 75, 50].includes(b);
+        return trailingZero || factorSplit;
+      });
+      // 档 2 约 50% 抽到原高档池（含末尾0/拆分），给宽松下界 20%
+      expect(qualifying.length).toBeGreaterThan(muls.length * 0.2);
+    });
+
+    it('除法必须整除；档 2 覆盖原高档"非表内"池', () => {
+      const qs = genN(generateMentalArithmetic, 9, 300);
+      const divs = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
+      expect(divs.length).toBeGreaterThan(0);
+      for (const q of divs) {
+        const [a, b] = q.data.operands;
+        expect(a % b).toBe(0);
+      }
+      // 档 2 约 50% 抽到原高档池（除数≥10 或 被除数≥1000）
+      const hard = divs.filter((q: any) => {
+        const [a, b] = q.data.operands;
+        return b >= 10 || a >= 1000;
+      });
+      expect(hard.length).toBeGreaterThan(divs.length * 0.2);
+    });
   });
 
   describe('Operation Order (运算顺序)', () => {
@@ -120,35 +141,42 @@ describe('Mental Arithmetic (口算速算)', () => {
       }
     });
 
-    it('difficulty≥6 运算顺序题应包含括号', () => {
+    it('档 2 (d≥6) 运算顺序题：含括号子池 + 陷阱子池 各占一部分（v2.2）', () => {
       const qs = genN(generateMentalArithmetic, 7, 300);
       const orderQs = qs.filter(q => q.data.kind === 'multi-step');
-      const withBracket = orderQs.filter(q => q.data.expression.includes('('));
-      expect(withBracket.length).toBeGreaterThan(0);
+      expect(orderQs.length).toBeGreaterThan(0);
+      const withBrackets = orderQs.filter(q => q.data.expression.includes('('));
+      const trapOnly = orderQs.filter(q => !q.data.expression.includes('('));
+      // v2.2：档 2 order = midOrder(含括号) 50% + highOrder(陷阱无括号) 50%
+      expect(withBrackets.length).toBeGreaterThan(orderQs.length * 0.2);
+      expect(trapOnly.length).toBeGreaterThan(orderQs.length * 0.2);
+    });
+
+    it('档 2 (d≥6) 运算顺序题全部 numeric-input（MC 仅在档 1）', () => {
+      const qs = genN(generateMentalArithmetic, 9, 300);
+      const orderQs = qs.filter(q => q.data.kind === 'multi-step');
+      for (const q of orderQs) {
+        expect(q.type).toBe('numeric-input');
+      }
     });
   });
 
-  it('单步口算答案与正确计算一致', () => {
-    for (const d of [5, 7, 10]) {
+  it('单步口算答案与正确计算一致（v2.1：除法整除，直接给数字答案）', () => {
+    for (const d of [5, 7, 9]) {
       const qs = genN(generateMentalArithmetic, d, 100);
       const basicQs = qs.filter(q => q.data.kind === 'mental-arithmetic');
       for (const q of basicQs) {
         const [a, b] = q.data.operands;
         const op = q.data.operator;
-        if (op === '÷') {
-          // Division: answer is "quotient...remainder" string
-          const ansStr = String(q.solution.answer);
-          expect(ansStr).toMatch(/^\d+\.\.\.\d+$/);
-          const [qStr, rStr] = ansStr.split('...');
-          expect(parseInt(qStr)).toBe(Math.floor(a / b));
-          expect(parseInt(rStr)).toBe(a % b);
-        } else {
-          let expected: number;
-          if (op === '+') expected = a + b;
-          else if (op === '-') expected = a - b;
-          else expected = a * b;
-          expect(q.solution.answer).toBe(expected);
+        let expected: number;
+        if (op === '+') expected = a + b;
+        else if (op === '-') expected = a - b;
+        else if (op === '×') expected = a * b;
+        else {
+          expect(a % b).toBe(0);
+          expected = a / b;
         }
+        expect(q.solution.answer).toBe(expected);
       }
     }
   });
@@ -189,7 +217,7 @@ describe('Vertical Calc (竖式笔算)', () => {
   });
 
   describe('Demon (difficulty=10)', () => {
-    it('乘法应为 3~4位×2位', () => {
+    it('乘法应为 3~4位×2位（整数版）', () => {
       const qs = genN(generateVerticalCalc, 10, 200);
       const muls = qs.filter(q => q.data.operation === '×' && q.type === 'numeric-input' &&
         Number.isInteger(q.data.operands[0]) && Number.isInteger(q.data.operands[1]));
@@ -202,19 +230,13 @@ describe('Vertical Calc (竖式笔算)', () => {
       }
     });
 
-    it('除法应为 3~4位÷2位（整数）或小数除法', () => {
+    it('除法以小数÷小数为主（v2.1：高档整数除法已移出）', () => {
       const qs = genN(generateVerticalCalc, 10, 200);
       const divs = qs.filter(q => q.data.operation === '÷');
       expect(divs.length).toBeGreaterThan(0);
-      // 整数除法部分：操作数都是整数时才验证范围
-      const intDivs = divs.filter(q =>
-        Number.isInteger(q.data.operands[0]) && Number.isInteger(q.data.operands[1]));
-      for (const q of intDivs) {
-        const [a, b] = q.data.operands;
-        expect(a).toBeGreaterThanOrEqual(100);
-        expect(b).toBeGreaterThanOrEqual(11);
-        expect(b).toBeLessThanOrEqual(99);
-      }
+      // 除数是小数的比例应占多数（取近似题里的除法也可能是整数÷整数）
+      const decDivisor = divs.filter(q => !Number.isInteger(q.data.operands[1]));
+      expect(decDivisor.length).toBeGreaterThan(0);
     });
   });
 
@@ -347,42 +369,32 @@ describe('Multi-Step (多步计算)', () => {
       expect(pureTwoStep.length).toBeLessThanOrEqual(5);
     });
 
-    it('应包含简单小数混合运算', () => {
+    // v2.1：低档以识别（MC）+ 执行（multi-blank）为主
+    it('低档应混合 MC 识别 与 multi-blank 执行', () => {
       const qs = genN(generateMultiStep, 5, 200);
-      const withDecimal = qs.filter(q => q.data.expression.includes('.'));
-      expect(withDecimal.length).toBeGreaterThan(0);
+      const mcs = qs.filter(q => q.type === 'multiple-choice');
+      const mbs = qs.filter(q => q.type === 'multi-blank');
+      expect(mcs.length).toBeGreaterThan(0);
+      expect(mbs.length).toBeGreaterThan(0);
     });
 
-    it('应包含连减合并题 (a-b-c 无括号)', () => {
+    it('低档 multi-blank 答案为数字数组', () => {
       const qs = genN(generateMultiStep, 5, 200);
-      const reductions = qs.filter(q => {
-        const expr = String(q.data.expression);
-        return !expr.includes('(') && (expr.match(/-/g) || []).length >= 2;
-      });
-      expect(reductions.length).toBeGreaterThan(0);
-    });
-
-    it('应包含乘法分配律凑整题 (a×near-round)', () => {
-      const qs = genN(generateMultiStep, 5, 200);
-      const distributes = qs.filter(q => {
-        const expr = String(q.data.expression);
-        return expr.includes('×') && !expr.includes('(') && !expr.includes('.') && q.type === 'numeric-input';
-      });
-      expect(distributes.length).toBeGreaterThan(0);
+      const mbs = qs.filter(q => q.type === 'multi-blank');
+      for (const q of mbs) {
+        expect(Array.isArray(q.solution.blanks)).toBe(true);
+        expect((q.solution.blanks as any[]).length).toBeGreaterThanOrEqual(2);
+      }
     });
   });
 
   describe('Hard (difficulty=7)', () => {
-    it('应包含小数两步运算', () => {
+    it('中档包含 MC（识别/方法）与 multi-blank（拆分路径）', () => {
       const qs = genN(generateMultiStep, 7, 200);
-      const withDecimal = qs.filter(q => q.data.expression.includes('.'));
-      expect(withDecimal.length).toBeGreaterThan(0);
-    });
-
-    it('应包含括号陷阱选择题 (multiple-choice)', () => {
-      const qs = genN(generateMultiStep, 7, 200);
-      const trapMC = qs.filter(q => q.type === 'multiple-choice');
-      expect(trapMC.length).toBeGreaterThan(0);
+      const mcs = qs.filter(q => q.type === 'multiple-choice');
+      const mbs = qs.filter(q => q.type === 'multi-blank');
+      expect(mcs.length).toBeGreaterThan(0);
+      expect(mbs.length).toBeGreaterThan(0);
     });
 
     it('选择题答案必须包含在选项内', () => {
@@ -407,16 +419,22 @@ describe('Multi-Step (多步计算)', () => {
   });
 
   describe('Demon (difficulty=10)', () => {
-    it('应包含复杂小数多步运算', () => {
+    it('高档应含 multi-select 识别题', () => {
       const qs = genN(generateMultiStep, 10, 200);
-      const withDecimal = qs.filter(q => q.data.expression.includes('.'));
-      expect(withDecimal.length).toBeGreaterThan(0);
+      const multis = qs.filter(q => q.type === 'multi-select');
+      expect(multis.length).toBeGreaterThan(0);
     });
 
-    it('应包含分配律/除法陷阱选择题', () => {
+    it('高档应含错误诊断 MC（"哪步错了"）', () => {
       const qs = genN(generateMultiStep, 10, 200);
-      const trapMC = qs.filter(q => q.type === 'multiple-choice');
-      expect(trapMC.length).toBeGreaterThan(0);
+      const diagnose = qs.filter(q => (q.data as any).subtype === 'error-diagnose');
+      expect(diagnose.length).toBeGreaterThan(0);
+    });
+
+    it('高档应含 expression-input 隐藏公因数统一题', () => {
+      const qs = genN(generateMultiStep, 10, 200);
+      const exprs = qs.filter(q => q.type === 'expression-input');
+      expect(exprs.length).toBeGreaterThan(0);
     });
 
     it('魔王选择题答案在选项内', () => {
@@ -428,43 +446,13 @@ describe('Multi-Step (多步计算)', () => {
         expect(opts).toContain(String(q.solution.answer));
       }
     });
-
-    it('魔王级应包含提取公因数题', () => {
-      const demonQs = genN(generateMultiStep, 10, 200);
-      const extractQs = demonQs.filter(q => {
-        const explanation = String(q.solution.explanation || '');
-        return explanation.includes('提取') || explanation.includes('公因数');
-      });
-      expect(extractQs.length).toBeGreaterThan(0);
-    });
   });
 
-  it('所有数值答案为有效数字，MC答案在选项内', () => {
-    for (const d of [5, 7, 10]) {
-      const qs = genN(generateMultiStep, d, 100);
-      for (const q of qs) {
-        if (q.type === 'multiple-choice') {
-          const opts = (q.data as any).options as string[];
-          expect(opts).toContain(String(q.solution.answer));
-        } else {
-          const ans = q.solution.answer;
-          expect(isNaN(Number(ans))).toBe(false);
-        }
-      }
-    }
-  });
-
-  it('所有小数答案精度合理', () => {
+  it('v2.1：A07 不再产生纯 numeric-input 得数题', () => {
     for (const d of [5, 7, 10]) {
       const qs = genN(generateMultiStep, d, 200);
-      for (const q of qs) {
-        if (q.type === 'multiple-choice') continue;
-        const ansStr = String(q.solution.answer);
-        if (ansStr.includes('.')) {
-          const dp = ansStr.split('.')[1].length;
-          expect(dp).toBeLessThanOrEqual(4);
-        }
-      }
+      const numericOnly = qs.filter(q => q.type === 'numeric-input');
+      expect(numericOnly.length).toBe(0);
     }
   });
 });
@@ -548,57 +536,49 @@ describe('Decimal Ops - Cyclic Division (循环小数除法)', () => {
 
 // ==================== Equation Transpose ====================
 describe('Equation Transpose (方程与等式)', () => {
-  describe('Bracket Equations (含括号方程)', () => {
-    it('difficulty≥6 应能生成含括号方程', () => {
+  describe('Bracket Equations (含括号方程, v2.1)', () => {
+    it('difficulty≥6 应能生成含括号方程（equation-input 或 numeric-input）', () => {
       const qs = genN(generateEquationTranspose, 7, 400);
-      const bracketQs = qs.filter((q: any) =>
-        q.data.equation.includes('(') && q.type === 'numeric-input'
-      );
+      const bracketQs = qs.filter((q: any) => q.data.equation?.includes('('));
       expect(bracketQs.length).toBeGreaterThan(0);
     });
 
-    it('含括号方程答案应为有效数字', () => {
+    it('含括号方程：numeric 答案为有效数字，expression 提供 standardExpression', () => {
       const qs = genN(generateEquationTranspose, 7, 400);
-      const bracketQs = qs.filter((q: any) =>
-        q.data.equation.includes('(') && q.type === 'numeric-input'
-      );
+      const bracketQs = qs.filter((q: any) => q.data.equation?.includes('('));
       for (const q of bracketQs) {
-        expect(isNaN(Number(q.solution.answer))).toBe(false);
-        expect(Number(q.solution.answer)).toBeGreaterThan(0);
-      }
-    });
-
-    it('含括号方程 solution.steps 应非空', () => {
-      const qs = genN(generateEquationTranspose, 7, 400);
-      const bracketQs = qs.filter((q: any) =>
-        q.data.equation.includes('(') && q.type === 'numeric-input'
-      );
-      for (const q of bracketQs) {
-        expect(q.solution.steps).toBeDefined();
-        expect(q.solution.steps!.length).toBeGreaterThanOrEqual(2);
+        if (q.type === 'numeric-input') {
+          expect(isNaN(Number(q.solution.answer))).toBe(false);
+        } else if (q.type === 'equation-input') {
+          expect(q.solution.standardExpression).toBeTruthy();
+        }
       }
     });
   });
 
-  describe('Division Equations (除法方程)', () => {
-    it('difficulty≤5 应能生成除法方程', () => {
-      const qs = genN(generateEquationTranspose, 5, 400);
-      const divQs = qs.filter((q: any) =>
-        q.data.equation.includes('÷') && q.type === 'numeric-input'
-      );
-      expect(divQs.length).toBeGreaterThan(0);
+  describe('v2.1 低档主流为 equation-input 填写完整等式', () => {
+    it('低档（d=3）equation-input 比例应显著', () => {
+      const qs = genN(generateEquationTranspose, 3, 400);
+      const exprInput = qs.filter((q: any) => q.type === 'equation-input');
+      expect(exprInput.length).toBeGreaterThan(qs.length * 0.3);
     });
 
-    it('除法方程答案应为正整数', () => {
-      const qs = genN(generateEquationTranspose, 5, 400);
-      const divQs = qs.filter((q: any) =>
-        q.data.equation.includes('÷') && q.type === 'numeric-input'
-      );
-      for (const q of divQs) {
-        const ans = Number(q.solution.answer);
-        expect(isNaN(ans)).toBe(false);
-        expect(ans).toBeGreaterThan(0);
+    it('equation-input 必须提供 variable 与 standardExpression', () => {
+      const qs = genN(generateEquationTranspose, 3, 200);
+      const exprInput = qs.filter((q: any) => q.type === 'equation-input');
+      for (const q of exprInput) {
+        expect(q.solution.variable).toBeTruthy();
+        expect(q.solution.standardExpression).toBeTruthy();
       }
+    });
+  });
+
+  describe('v2.1 高档陷阱覆盖', () => {
+    it('高档（d=9）应出现 T3 / T4 / T3+T4 陷阱标记', () => {
+      const qs = genN(generateEquationTranspose, 9, 400);
+      const traps = qs.map((q: any) => q.data?.trap).filter(Boolean);
+      const unique = new Set(traps);
+      expect(unique.size).toBeGreaterThan(0);
     });
   });
 });
@@ -699,11 +679,20 @@ describe('Bracket Ops - Division Property (除法性质)', () => {
   });
 });
 
-describe('Bracket Ops - Decimal Support (小数支持)', () => {
-  it('difficulty≥6 应偶尔生成小数括号变换题', () => {
-    const qs = genN(generateBracketOps, 7, 500);
-    const decimalQs = qs.filter((q: any) => q.data.originalExpression.includes('.'));
-    expect(decimalQs.length).toBeGreaterThan(0);
+describe('Bracket Ops v2.1 - 答题形式', () => {
+  it('低档（d=3）全部为 expression-input（填写式子）', () => {
+    const qs = genN(generateBracketOps, 3, 60);
+    for (const q of qs) {
+      expect(q.type).toBe('expression-input');
+    }
+  });
+
+  it('高档（d=9）同时含 expression-input 与 multiple-choice', () => {
+    const qs = genN(generateBracketOps, 9, 200);
+    const exprs = qs.filter(q => q.type === 'expression-input');
+    const mcs = qs.filter(q => q.type === 'multiple-choice');
+    expect(exprs.length).toBeGreaterThan(0);
+    expect(mcs.length).toBeGreaterThan(0);
   });
 });
 
@@ -735,24 +724,37 @@ describe('Mental Arithmetic - Extended Ranges (整十整百运算)', () => {
 });
 
 // ==================== A07 Phase 2: Hidden Factor + Decimal ====================
-describe('Multi-Step - Hidden Factor (隐藏公因数)', () => {
-  it('difficulty≥6 应生成隐藏公因数题', () => {
-    const qs = genN(generateMultiStep, 7, 500);
-    const factorQs = qs.filter((q: any) =>
-      q.solution.explanation && q.solution.explanation.includes('公因数')
+describe('Multi-Step v2.1 - 识别力（Recognize）', () => {
+  it('低档应能生成"哪道可以凑整简便"识别题', () => {
+    const qs = genN(generateMultiStep, 5, 300);
+    const recognize = qs.filter((q: any) => q.data.subtype === 'recognize-simplifiable');
+    expect(recognize.length).toBeGreaterThan(0);
+  });
+
+  it('中档应能生成"哪道不能简便"/"用什么律"识别题', () => {
+    const qs = genN(generateMultiStep, 7, 400);
+    const recognize = qs.filter((q: any) =>
+      q.data.subtype === 'recognize-not-simplifiable' ||
+      q.data.subtype === 'recognize-method'
     );
-    const hidden = factorQs.filter((q: any) => q.data.expression.includes('.'));
-    expect(hidden.length).toBeGreaterThan(0);
+    expect(recognize.length).toBeGreaterThan(0);
   });
 });
 
-describe('Multi-Step - Decimal Versions (小数简便计算)', () => {
-  it('difficulty≤5 连减凑整应支持小数', () => {
-    const qs = genN(generateMultiStep, 5, 500);
-    const decimalQs = qs.filter((q: any) =>
-      q.data.expression.includes('.') && q.solution.explanation && q.solution.explanation.includes('凑')
-    );
-    expect(decimalQs.length).toBeGreaterThan(0);
+describe('Multi-Step v2.1 - 执行力（Execute）填空模板', () => {
+  it('低档应能生成凑整拆分 multi-blank 模板', () => {
+    const qs = genN(generateMultiStep, 5, 300);
+    const mbs = qs.filter((q: any) => q.type === 'multi-blank' && q.data.subtype === 'fill-split-low');
+    expect(mbs.length).toBeGreaterThan(0);
+    for (const q of mbs) {
+      expect((q.solution.blanks as any[]).length).toBe(2);
+    }
+  });
+
+  it('中档应能生成发现拆分路径 multi-blank 题', () => {
+    const qs = genN(generateMultiStep, 7, 400);
+    const mbs = qs.filter((q: any) => q.type === 'multi-blank' && q.data.subtype === 'fill-split-mid');
+    expect(mbs.length).toBeGreaterThan(0);
   });
 });
 
@@ -861,10 +863,10 @@ describe('Number Sense - Reverse Round (逆向推理)', () => {
   });
 });
 
-// ==================== A03 Decimal Support ====================
+// ==================== A03 Decimal Support (v2.1：小数从中档起) ====================
 describe('Vertical Calc - Decimal Add/Sub (小数加减法)', () => {
-  it('普通难度应生成小数加减法题', () => {
-    const qs = genN(generateVerticalCalc, 5, 400);
+  it('中档应生成小数加减法题', () => {
+    const qs = genN(generateVerticalCalc, 7, 400);
     const decAddSub = qs.filter((q: any) =>
       q.type === 'vertical-fill' && q.data.decimalPlaces != null &&
       (q.data.operation === '+' || q.data.operation === '-')
@@ -873,7 +875,7 @@ describe('Vertical Calc - Decimal Add/Sub (小数加减法)', () => {
   });
 
   it('小数加减法答案应为有效数字', () => {
-    const qs = genN(generateVerticalCalc, 5, 400);
+    const qs = genN(generateVerticalCalc, 7, 400);
     const decAddSub = qs.filter((q: any) =>
       q.type === 'vertical-fill' && q.data.decimalPlaces != null &&
       (q.data.operation === '+' || q.data.operation === '-')
@@ -885,8 +887,8 @@ describe('Vertical Calc - Decimal Add/Sub (小数加减法)', () => {
 });
 
 describe('Vertical Calc - Decimal Mul (小数乘法)', () => {
-  it('普通难度应生成小数乘法题', () => {
-    const qs = genN(generateVerticalCalc, 5, 400);
+  it('中档应生成小数×整数乘法题', () => {
+    const qs = genN(generateVerticalCalc, 7, 400);
     const decMul = qs.filter((q: any) =>
       q.type === 'numeric-input' && q.prompt.includes('列竖式计算') &&
       q.data.operation === '×' &&
@@ -897,8 +899,8 @@ describe('Vertical Calc - Decimal Mul (小数乘法)', () => {
 });
 
 describe('Vertical Calc - Decimal Div (小数除法)', () => {
-  it('普通难度应生成小数除法题', () => {
-    const qs = genN(generateVerticalCalc, 5, 400);
+  it('中档应生成小数÷整数除法题', () => {
+    const qs = genN(generateVerticalCalc, 7, 400);
     const decDiv = qs.filter((q: any) =>
       q.type === 'numeric-input' && q.prompt.includes('列竖式计算') &&
       q.data.operation === '÷' &&
@@ -907,8 +909,8 @@ describe('Vertical Calc - Decimal Div (小数除法)', () => {
     expect(decDiv.length).toBeGreaterThan(0);
   });
 
-  it('困难应生成除数是小数的除法题', () => {
-    const qs = genN(generateVerticalCalc, 7, 400);
+  it('高档应生成除数是小数的除法题', () => {
+    const qs = genN(generateVerticalCalc, 9, 400);
     const decDivDecDivisor = qs.filter((q: any) =>
       q.type === 'numeric-input' && q.data.operation === '÷' &&
       q.data.operands[1] % 1 !== 0
@@ -938,17 +940,17 @@ describe('Vertical Calc - Approximate (取近似值)', () => {
 });
 
 describe('Vertical Calc - Dispatcher Distribution (调度器分布)', () => {
-  it('普通难度整数与小数题应各约一半', () => {
+  it('低档 100% 整数（v2.1：低档禁止小数）', () => {
     const qs = genN(generateVerticalCalc, 5, 1000);
-    const intQs = qs.filter((q: any) => q.type === 'vertical-fill');
-    const intPct = intQs.length / qs.length;
-    expect(intPct).toBeGreaterThan(0.30);
-    expect(intPct).toBeLessThan(0.70);
+    const intOnly = qs.filter((q: any) => {
+      const ops = q.data.operands ?? [];
+      return ops.every((n: number) => Number.isInteger(n));
+    });
+    expect(intOnly.length).toBe(qs.length);
   });
 
-  it('困难整数 vertical-fill 应约 10%', () => {
+  it('中档整数 vertical-fill 应明显下降（小数接管主流）', () => {
     const qs = genN(generateVerticalCalc, 7, 1000);
-    // 仅统计整数竖式（无 decimalPlaces），小数加减法现已改为 vertical-fill 需排除
     const intVf = qs.filter((q: any) => q.type === 'vertical-fill' && q.data.decimalPlaces == null);
     expect(intVf.length / qs.length).toBeLessThan(0.25);
   });

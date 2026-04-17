@@ -2,29 +2,46 @@ import type { Question } from '@/types';
 import type { GeneratorParams, SubtypeEntry } from '../index';
 import { pickSubtype } from '../index';
 import type { SubtypeDef } from '@/types/gamification';
+import { formatNum } from './utils';
+
+// v2.1 重构：A05 从"小数四则运算"改为"小数的性质与规律"
+//
+// 核心定位：
+//   - 不考比大小（归 A02）
+//   - 不考需要笔算的乘除（归 A03）
+//   - 聚焦：位值、互换、移位、位数规律、方向辨析、循环节位置、反直觉性质
+//
+// 兼容策略：
+//   - topicId 保留 'decimal-ops'，subtype 路由 tag 保留（add-sub / mul / div / shift / trap / compare / cyclic-div）
+//   - 每个 tag 内部内容全部换为"性质/规律"类题；答案仍为 numeric-input / MC 形式
+//
+// 与 A02/A03 的边界：
+//   - A02：不精确比较、估算方向、四舍五入
+//   - A03：需列竖式的加减乘除
+//   - A05：小数"这个数"的性质和运算规律（位值、移位、循环节位置、位数关系）
 
 export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
   if (difficulty <= 5) return [
-    { tag: 'add-sub',  weight: 30 },
-    { tag: 'mul',      weight: 30 },
-    { tag: 'div',      weight: 25 },
-    { tag: 'compare',  weight: 15 },
+    { tag: 'add-sub',  weight: 30 }, // 位值 / 互换
+    { tag: 'mul',      weight: 30 }, // 简单移位 × / 特殊值乘法
+    { tag: 'div',      weight: 25 }, // 简单移位 ÷
+    { tag: 'compare',  weight: 15 }, // 移位等价比较
   ];
   if (difficulty <= 7) return [
-    { tag: 'mul',       weight: 25 },
-    { tag: 'div',       weight: 20 },
-    { tag: 'add-sub',   weight: 15 },
-    { tag: 'shift',     weight: 10 },
-    { tag: 'trap',      weight: 10 },
-    { tag: 'compare',   weight: 10 },
-    { tag: 'cyclic-div', weight: 10 },
+    { tag: 'mul',       weight: 25 }, // 位数规律 / 方向实证
+    { tag: 'div',       weight: 20 }, // 方向实证（×0.1 vs ÷0.1）
+    { tag: 'add-sub',   weight: 15 }, // 位值延伸
+    { tag: 'shift',     weight: 10 }, // 连续移位
+    { tag: 'trap',      weight: 10 }, // <1×<1 反直觉实证
+    { tag: 'compare',   weight: 10 }, // 移位等价比较
+    { tag: 'cyclic-div', weight: 10 }, // 循环小数近似保留 1 位
   ];
   return [
-    { tag: 'mul',       weight: 35 },
-    { tag: 'div',       weight: 30 },
-    { tag: 'compare',   weight: 15 },
-    { tag: 'cyclic-div', weight: 10 },
-    { tag: 'trap',      weight: 10 },
+    { tag: 'mul',       weight: 35 }, // <1×<1 反直觉 / 多位数规律
+    { tag: 'div',       weight: 30 }, // 循环节位置推理
+    { tag: 'compare',   weight: 15 }, // 复杂移位等价比较
+    { tag: 'cyclic-div', weight: 10 }, // 循环小数保留 2 位
+    { tag: 'trap',      weight: 10 }, // 概念陷阱实证
   ];
 }
 
@@ -32,46 +49,141 @@ function randInt(min: number, max: number): number {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 
-/**
- * Format a number for display: keep meaningful decimal places, strip trailing zeros.
- */
-function formatNum(n: number): string {
-  if (Number.isInteger(n)) return String(n);
-  // Use toFixed with enough precision, then strip trailing zeros
-  const s = n.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
-  return s;
+function round(value: number, places: number): number {
+  const f = Math.pow(10, places);
+  return Math.round(value * f) / f;
 }
 
-// ===== Normal (≤5): decimal add/sub, decimal×integer, decimal÷integer =====
+// ==================== 低档：add-sub = 位值 / 互换 ====================
 
-function generateNormalAddSub(id: string, difficulty: number): Question {
-  const places = Math.random() < 0.5 ? 1 : 2;
-  const factor = Math.pow(10, places);
-  const aInt = randInt(10, 50 * factor);
-  const bInt = randInt(10, 50 * factor);
-  const a = aInt / factor;
-  const b = bInt / factor;
-  const op = Math.random() < 0.5 ? '+' : '-';
-  const [big, small] = a >= b ? [a, b] : [b, a];
-  const first = op === '-' ? big : a;
-  const second = op === '-' ? small : b;
-  const answerInt = op === '+' ? (Math.round(first * factor) + Math.round(second * factor)) : (Math.round(first * factor) - Math.round(second * factor));
-  const answer = answerInt / factor;
-  const expression = `${formatNum(first)} ${op} ${formatNum(second)}`;
+function generatePlaceValueOrConvert(id: string, difficulty: number): Question {
+  const variant = randInt(0, 3);
 
+  // 变式 0：位值组合 —— "a 个十分之一 + b 个百分之一 = ?"
+  if (variant === 0) {
+    const a = randInt(1, 9);
+    const b = randInt(1, 9);
+    const answer = a / 10 + b / 100;
+    const expression = `${a}个 1/10 + ${b}个 1/100`;
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `${a} 个十分之一加 ${b} 个百分之一，写成小数是多少？`,
+      data: { kind: 'decimal-ops', expression, subtype: 'add-sub' },
+      solution: {
+        answer: formatNum(round(answer, 2)),
+        explanation: `${a} 个 0.1 是 ${formatNum(a / 10)}，${b} 个 0.01 是 ${formatNum(b / 100)}，合起来是 ${formatNum(round(answer, 2))}`,
+      },
+      hints: ['1 个 0.1 = 0.1，1 个 0.01 = 0.01，按位相加'],
+      xpBase: 10 + (difficulty - 1) * 5,
+    };
+  }
+
+  // 变式 1：三项位值 —— "a 个 1 + b 个 0.1 + c 个 0.01"
+  if (variant === 1) {
+    const a = randInt(1, 9);
+    const b = randInt(0, 9);
+    const c = randInt(0, 9);
+    const answer = a + b / 10 + c / 100;
+    const expression = `${a}个1 + ${b}个0.1 + ${c}个0.01`;
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `${a} 个 1、${b} 个 0.1、${c} 个 0.01 合起来是多少？`,
+      data: { kind: 'decimal-ops', expression, subtype: 'add-sub' },
+      solution: {
+        answer: formatNum(round(answer, 2)),
+        explanation: `按位组合：整数位 ${a}、十分位 ${b}、百分位 ${c} → ${formatNum(round(answer, 2))}`,
+      },
+      hints: ['整数部分、十分位、百分位按位填进来'],
+      xpBase: 10 + (difficulty - 1) * 5,
+    };
+  }
+
+  // 变式 2：分数 → 小数（分母为 2/4/5/10/20/25/50/100）
+  if (variant === 2) {
+    const pairs: Array<[number, number]> = [
+      [1, 2], [3, 4], [2, 5], [7, 10], [9, 20], [3, 25], [17, 50], [7, 100], [1, 4], [3, 5], [1, 5],
+    ];
+    const [num, den] = pairs[randInt(0, pairs.length - 1)];
+    const answer = num / den;
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `把分数 ${num}/${den} 化成小数（书写时请用小数形式）`,
+      promptLatex: `\\frac{${num}}{${den}}`,
+      data: { kind: 'decimal-ops', expression: `${num}/${den}`, subtype: 'add-sub' },
+      solution: {
+        answer: formatNum(round(answer, 3)),
+        explanation: `${num} ÷ ${den} = ${formatNum(round(answer, 3))}`,
+      },
+      hints: ['分数化小数就是分子除以分母'],
+      xpBase: 10 + (difficulty - 1) * 5,
+    };
+  }
+
+  // 变式 3：小数 → 分数（反向思考，答案是分母/分子对应的小数等价值 —— 保持 numeric-input，问学生"约分后分母是几"）
+  const cases: Array<{ dec: number; expectDen: number; desc: string }> = [
+    { dec: 0.5, expectDen: 2, desc: '0.5 = 1/?' },
+    { dec: 0.25, expectDen: 4, desc: '0.25 = 1/?' },
+    { dec: 0.2, expectDen: 5, desc: '0.2 = 1/?' },
+    { dec: 0.1, expectDen: 10, desc: '0.1 = 1/?' },
+    { dec: 0.75, expectDen: 4, desc: '0.75 = 3/?' },
+    { dec: 0.4, expectDen: 5, desc: '0.4 = 2/?' },
+  ];
+  const c = cases[randInt(0, cases.length - 1)];
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}`,
-    data: { kind: 'decimal-ops', expression, subtype: 'add-sub' },
-    solution: { answer: formatNum(answer), explanation: `${expression} = ${formatNum(answer)}，注意小数点对齐` },
-    hints: ['把小数点对齐，然后像整数一样计算'],
+    prompt: `把 ${formatNum(c.dec)} 化成最简分数，分母是几？（${c.desc}）`,
+    data: { kind: 'decimal-ops', expression: `${c.dec}→fraction`, subtype: 'add-sub' },
+    solution: {
+      answer: c.expectDen,
+      explanation: `${formatNum(c.dec)} 写成分数先不约分（如 ${Math.round(c.dec * 100)}/100），然后化到最简，分母为 ${c.expectDen}`,
+    },
+    hints: ['先按小数位数写成 n/10、n/100，然后约分到最简'],
     xpBase: 10 + (difficulty - 1) * 5,
   };
 }
 
-function generateNormalMulInt(id: string, difficulty: number): Question {
-  // 15% 概率生成特殊值乘法
-  if (Math.random() < 0.15) {
+// ==================== 中档 add-sub：位值延伸（带补0的小数写法辨析） ====================
+
+function generateMidPlaceExtend(id: string, difficulty: number): Question {
+  // 末尾补0 / 去0 的等价识别：0.30 = 0.3 吗？以 numeric-input 形式：请把 0.30、0.300 化成最简小数
+  const variant = randInt(0, 1);
+  if (variant === 0) {
+    const base = randInt(1, 99) / 10; // 1 位小数
+    const padZeros = randInt(1, 3);
+    const displayed = base.toFixed(1) + '0'.repeat(padZeros);
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `把 ${displayed} 化简为最简小数（去掉末尾多余的 0）`,
+      data: { kind: 'decimal-ops', expression: displayed, subtype: 'add-sub' },
+      solution: {
+        answer: formatNum(base),
+        explanation: `小数末尾的 0 不影响数的大小，${displayed} = ${formatNum(base)}`,
+      },
+      hints: ['小数末尾的 0 去掉，数的大小不变'],
+      xpBase: 12 + (difficulty - 1) * 5,
+    };
+  }
+  // 三位小数去末尾0
+  const base2 = randInt(1, 999) / 100;
+  const s = base2.toFixed(2) + '0';
+  return {
+    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+    prompt: `${s} 这个小数，末尾 0 去掉后是？`,
+    data: { kind: 'decimal-ops', expression: s, subtype: 'add-sub' },
+    solution: {
+      answer: formatNum(base2),
+      explanation: `末尾的 0 可以去掉，${s} = ${formatNum(base2)}`,
+    },
+    hints: ['小数末尾的 0 去掉不改变大小'],
+    xpBase: 12 + (difficulty - 1) * 5,
+  };
+}
+
+// ==================== 低档 mul：简单移位 × / 特殊值乘法 ====================
+
+function generateLowMul(id: string, difficulty: number): Question {
+  // 20% 特殊值，80% 简单右移
+  if (Math.random() < 0.2) {
     const specials = [
       { a: 0.125, b: 8, answer: 1 },
       { a: 0.25, b: 4, answer: 1 },
@@ -79,6 +191,7 @@ function generateNormalMulInt(id: string, difficulty: number): Question {
       { a: 0.125, b: 16, answer: 2 },
       { a: 0.25, b: 8, answer: 2 },
       { a: 0.5, b: 4, answer: 2 },
+      { a: 0.125, b: 24, answer: 3 },
     ];
     const s = specials[randInt(0, specials.length - 1)];
     const expression = `${formatNum(s.a)} × ${s.b}`;
@@ -86,357 +199,319 @@ function generateNormalMulInt(id: string, difficulty: number): Question {
       id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
       prompt: `计算: ${expression}`,
       data: { kind: 'decimal-ops', expression, subtype: 'mul' },
-      solution: { answer: formatNum(s.answer), explanation: `${expression} = ${s.answer}（常见特殊值）` },
+      solution: { answer: formatNum(s.answer), explanation: `${expression} = ${s.answer}（常见特殊值组合）` },
       hints: ['这是一个常见的特殊值组合，记住它！'],
       xpBase: 10 + (difficulty - 1) * 5,
     };
   }
 
-  // 原有逻辑
-  const places = Math.random() < 0.5 ? 1 : 2;
-  const factor = Math.pow(10, places);
-  const aScaled = places === 1 ? randInt(11, 500) : randInt(101, 5000);
-  const b = randInt(2, 9);
-  const productInt = aScaled * b;
+  // 简单右移：a × 10/100/1000
+  const shifts = [10, 100, 1000];
+  const shift = shifts[randInt(0, 2)];
+  const dp = randInt(1, 2);
+  const factor = Math.pow(10, dp);
+  const aScaled = randInt(10, 99 * factor);
   const a = aScaled / factor;
-  const answer = productInt / factor;
-  const expression = `${formatNum(a)} × ${b}`;
-
+  const answer = a * shift;
+  const expression = `${formatNum(a)} × ${shift}`;
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
     prompt: `计算: ${expression}`,
     data: { kind: 'decimal-ops', expression, subtype: 'mul' },
-    solution: { answer: formatNum(answer), explanation: `${expression} = ${formatNum(answer)}` },
-    hints: ['先不看小数点，按整数乘法算，再数小数位数'],
+    solution: { answer: formatNum(answer), explanation: `乘 ${shift}，小数点向右移 ${Math.log10(shift)} 位` },
+    hints: [`乘 ${shift} 时，小数点向右移动 ${Math.log10(shift)} 位`],
     xpBase: 10 + (difficulty - 1) * 5,
   };
 }
 
-function generateNormalDivInt(id: string, difficulty: number): Question {
-  // decimal ÷ integer, e.g. 3.15÷3, 12.6÷6 (exact division)
-  const b = randInt(2, 9);
-  const places = Math.random() < 0.5 ? 1 : 2;
-  const factor = Math.pow(10, places);
-  const answerScaled = randInt(11, 500); // quotient * factor
-  const a = answerScaled * b; // dividend * factor (exact integer)
-  const dividend = a / factor;
-  const answer = answerScaled / factor;
-  const expression = `${formatNum(dividend)} ÷ ${b}`;
+// ==================== 低档 div：简单移位 ÷ ====================
 
+function generateLowDiv(id: string, difficulty: number): Question {
+  // a ÷ 10/100/1000
+  const shifts = [10, 100, 1000];
+  const shift = shifts[randInt(0, 2)];
+  const a = randInt(1, 999);
+  const answer = a / shift;
+  const expression = `${a} ÷ ${shift}`;
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
     prompt: `计算: ${expression}`,
     data: { kind: 'decimal-ops', expression, subtype: 'div' },
-    solution: { answer: formatNum(answer), explanation: `${expression} = ${formatNum(answer)}` },
-    hints: ['商的小数点要和被除数的小数点对齐'],
+    solution: { answer: formatNum(round(answer, 3)), explanation: `除以 ${shift}，小数点向左移 ${Math.log10(shift)} 位（位数不够用 0 补足）` },
+    hints: [`除以 ${shift} 时，小数点向左移动 ${Math.log10(shift)} 位`],
     xpBase: 10 + (difficulty - 1) * 5,
   };
 }
 
-// ===== Hard (6-7): decimal×decimal, decimal÷decimal, mixed add/sub, shift =====
+// ==================== 中档 mul：位数规律 / 方向实证 ====================
 
-function generateHardMulDecimal(id: string, difficulty: number): Question {
-  // decimal × decimal, e.g. 3.06×4.5, 0.38×3.2
-  const dpA = Math.random() < 0.5 ? 1 : 2;
-  const dpB = dpA === 2 ? 1 : (Math.random() < 0.5 ? 1 : 2);
-  const factorA = Math.pow(10, dpA);
-  const factorB = Math.pow(10, dpB);
-  const aScaled = randInt(11, 300); // a * factorA
-  const bScaled = randInt(11, 99);  // b * factorB
-  const productScaled = aScaled * bScaled; // exact integer = product * factorA * factorB
-  const totalFactor = factorA * factorB;
-  const a = aScaled / factorA;
-  const b = bScaled / factorB;
-  const answer = productScaled / totalFactor;
-  const expression = `${formatNum(a)} × ${formatNum(b)}`;
+function generateMidMulPattern(id: string, difficulty: number): Question {
+  // v2.2：降低 ×0.1/0.01 系列权重，扩大 0.25/0.5/0.125/1.25/2.5 的覆盖
+  // 骰子：0.25 = 变式 0（方向实证），0.25-0.60 = 变式 3（新：多样小数乘法），剩下 = 原变式 1/2
+  const roll = Math.random();
 
-  return {
-    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}`,
-    data: { kind: 'decimal-ops', expression, subtype: 'mul' },
-    solution: { answer: formatNum(answer), explanation: `${expression} = ${formatNum(answer)}，两个因数共有${dpA + dpB}位小数` },
-    hints: ['先按整数乘法计算，再数两个因数一共有几位小数'],
-    xpBase: 10 + (difficulty - 1) * 5,
-  };
-}
-
-function generateHardDivDecimal(id: string, difficulty: number): Question {
-  // decimal ÷ decimal, e.g. 16.65÷3.3, 40.8÷0.34
-  // Strategy: generate with integers, then place decimal points
-  const q10 = randInt(11, 199); // quotient × 10 → quotient has 1dp
-  const d10 = randInt(11, 99);  // divisor × 10 → divisor has 1dp
-  const dividend100 = q10 * d10; // exact integer = dividend × 100
-  const quotient = q10 / 10;
-  const divisor = d10 / 10;
-  const dividend = dividend100 / 100;
-  const expression = `${formatNum(dividend)} ÷ ${formatNum(divisor)}`;
-
-  return {
-    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}`,
-    data: { kind: 'decimal-ops', expression, subtype: 'div' },
-    solution: {
-      answer: formatNum(quotient),
-      steps: [`将除数 ${formatNum(divisor)} 变成整数: 乘以10`, `被除数同时乘以10: ${formatNum(dividend)} → ${formatNum(dividend * 10)}`, `${formatNum(dividend * 10)} ÷ ${d10} = ${formatNum(quotient)}`],
-      explanation: `${expression} = ${formatNum(quotient)}`,
-    },
-    hints: ['先把除数变成整数（乘以10或100），被除数也同时乘相同的数'],
-    xpBase: 10 + (difficulty - 1) * 5,
-  };
-}
-
-function generateHardMixedAddSub(id: string, difficulty: number): Question {
-  // Mixed decimal places trap (e.g. 3.5 + 2.46)
-  const placesA = Math.random() < 0.5 ? 1 : 2;
-  const placesB = placesA === 1 ? 2 : 1;
-  const factorA = Math.pow(10, placesA);
-  const factorB = Math.pow(10, placesB);
-  const maxFactor = Math.max(factorA, factorB);
-  const aScaled = randInt(10, 30 * factorA);
-  const bScaled = randInt(10, 30 * factorB);
-  const a = aScaled / factorA;
-  const b = bScaled / factorB;
-  const op = Math.random() < 0.5 ? '+' : '-';
-  const [big, small] = a >= b ? [a, b] : [b, a];
-  const first = op === '-' ? big : a;
-  const second = op === '-' ? small : b;
-  const answerScaled = op === '+'
-    ? Math.round(first * maxFactor) + Math.round(second * maxFactor)
-    : Math.round(first * maxFactor) - Math.round(second * maxFactor);
-  const answer = answerScaled / maxFactor;
-  const expression = `${formatNum(first)} ${op} ${formatNum(second)}`;
-
-  return {
-    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}`,
-    data: { kind: 'decimal-ops', expression, subtype: 'add-sub' },
-    solution: { answer: formatNum(answer), explanation: `${expression} = ${formatNum(answer)}，小数位数不同时，末尾补零对齐` },
-    hints: ['位数不同时，把短的那个在末尾加0补齐，例如 3.5 = 3.50'],
-    xpBase: 10 + (difficulty - 1) * 5,
-  };
-}
-
-function generateHardShift(id: string, difficulty: number): Question {
-  // 50% 右移 (×10/100/1000), 50% 左移 (×0.1/0.01/0.001)
-  const isLeftShift = Math.random() < 0.5;
-
-  if (isLeftShift) {
-    const shiftValues = [0.1, 0.01];
-    if (difficulty >= 8) shiftValues.push(0.001);
-    const shift = shiftValues[randInt(0, shiftValues.length - 1)];
-    const shiftPlaces = Math.round(-Math.log10(shift));
-    const hasDecimal = Math.random() < 0.4;
-    const aScaled = hasDecimal ? randInt(11, 99) : randInt(10, 999);
-    const a = hasDecimal ? aScaled / 10 : aScaled;
+  // 变式 0（降权至 25%）：方向实证 —— a × 0.1 / × 0.01
+  if (roll < 0.20) {
+    const aScaled = randInt(11, 99);
+    const a = aScaled / 10;
+    const shift = Math.random() < 0.5 ? 0.1 : 0.01;
     const answer = a * shift;
     const expression = `${formatNum(a)} × ${formatNum(shift)}`;
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `计算: ${expression}（乘以小于 1 的数，积会怎么变？）`,
+      data: { kind: 'decimal-ops', expression, subtype: 'mul' },
+      solution: {
+        answer: formatNum(round(answer, 4)),
+        explanation: `乘 ${formatNum(shift)} 相当于小数点向左移 ${shift === 0.1 ? 1 : 2} 位：${expression} = ${formatNum(round(answer, 4))}`,
+      },
+      hints: [`乘 ${formatNum(shift)} 等价于除以 ${shift === 0.1 ? 10 : 100}`],
+      xpBase: 12 + (difficulty - 1) * 5,
+    };
+  }
 
+  // 新变式 3（权重 40%）：多样化乘数 —— a × {0.25, 0.5, 0.125, 1.25, 2.5}
+  // 考察"乘以 <1 的数 = 除以它的倒数"的数感
+  if (roll < 0.60) {
+    const pool: Array<{ mul: number; equiv: string }> = [
+      { mul: 0.25,  equiv: '÷ 4' },
+      { mul: 0.5,   equiv: '÷ 2' },
+      { mul: 0.125, equiv: '÷ 8' },
+      { mul: 1.25,  equiv: '× 5 ÷ 4' },
+      { mul: 2.5,   equiv: '× 5 ÷ 2' },
+    ];
+    const { mul, equiv } = pool[randInt(0, pool.length - 1)];
+    // 选择能整除的 a，保证结果好看
+    const base = mul === 0.25 ? 4 : mul === 0.5 ? 2 : mul === 0.125 ? 8 : mul === 1.25 ? 4 : 2;
+    const a = randInt(1, 20) * base;
+    const answer = round(a * mul, 4);
+    const expression = `${a} × ${formatNum(mul)}`;
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `计算: ${expression}（想一想：乘 ${formatNum(mul)} 和 ${equiv} 的效果？）`,
+      data: { kind: 'decimal-ops', expression, subtype: 'mul' },
+      solution: {
+        answer: formatNum(answer),
+        explanation: `${formatNum(mul)} 的倒数视角：${a} × ${formatNum(mul)} 等价于 ${a} ${equiv} = ${formatNum(answer)}`,
+      },
+      hints: [`× ${formatNum(mul)} 可以转换成 ${equiv}，心算更快`],
+      xpBase: 13 + (difficulty - 1) * 5,
+    };
+  }
+
+  // 变式 1（权重 20%）：位数规律 —— 0.3 × 0.04 = ? 让学生算出后自行体会位数
+  if (roll < 0.80) {
+    const a10 = randInt(1, 9);    // 0.1~0.9
+    const b100 = randInt(1, 9);   // 0.01~0.09
+    const a = a10 / 10;
+    const b = b100 / 100;
+    const answerScaled = a10 * b100; // 积 × 1000
+    const answer = answerScaled / 1000;
+    const expression = `${formatNum(a)} × ${formatNum(b)}`;
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `计算: ${expression}（思考：两个因数共几位小数？积应有几位小数？）`,
+      data: { kind: 'decimal-ops', expression, subtype: 'mul' },
+      solution: {
+        answer: formatNum(round(answer, 4)),
+        explanation: `${a10} × ${b100} = ${answerScaled}；两个因数共 3 位小数，积点 3 位小数：${formatNum(round(answer, 4))}`,
+      },
+      hints: ['先按整数算 → 数两个因数共几位小数 → 在积里点出对应位数'],
+      xpBase: 12 + (difficulty - 1) * 5,
+    };
+  }
+
+  // 变式 2（权重 20%）：×1、×>1、×<1 对比
+  const aScaled2 = randInt(11, 99) / 10;
+  const bVariants = [0.8, 0.9, 1, 1.1, 1.2];
+  const b = bVariants[randInt(0, bVariants.length - 1)];
+  const answer2 = round(aScaled2 * b, 4);
+  const expression2 = `${formatNum(aScaled2)} × ${formatNum(b)}`;
+  return {
+    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+    prompt: `计算: ${expression2}`,
+    data: { kind: 'decimal-ops', expression: expression2, subtype: 'mul' },
+    solution: {
+      answer: formatNum(answer2),
+      explanation: `${expression2} = ${formatNum(answer2)}；${b < 1 ? `因为乘 ${formatNum(b)} < 1，所以积 ${formatNum(answer2)} < ${formatNum(aScaled2)}` : b > 1 ? `因为乘 ${formatNum(b)} > 1，所以积 ${formatNum(answer2)} > ${formatNum(aScaled2)}` : `乘 1 结果不变`}`,
+    },
+    hints: ['看因数和 1 的大小关系，可以预判积和原数的大小关系'],
+    xpBase: 12 + (difficulty - 1) * 5,
+  };
+}
+
+// ==================== 中档 div：方向辨析（÷小于1 vs ÷大于1） ====================
+
+function generateMidDivPattern(id: string, difficulty: number): Question {
+  // v2.2：20% 出 ÷0.1/÷0.01 方向实证，80% 出多样化除数 {0.25, 0.5, 0.125, 1.25, 2.5}
+  const useShift = Math.random() < 0.20;
+  if (useShift) {
+    const aScaled = randInt(11, 99);
+    const a = aScaled / 10;
+    const b = Math.random() < 0.5 ? 0.1 : 0.01;
+    const answer = a / b;
+    const expression = `${formatNum(a)} ÷ ${formatNum(b)}`;
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `计算: ${expression}（思考：除以小于 1 的数，商会变大还是变小？）`,
+      data: { kind: 'decimal-ops', expression, subtype: 'div' },
+      solution: {
+        answer: formatNum(round(answer, 4)),
+        explanation: `${expression} = ${formatNum(round(answer, 4))}；除以 ${formatNum(b)}（<1），商比被除数大`,
+      },
+      hints: ['÷ 0.1 = × 10，÷ 0.01 = × 100'],
+      xpBase: 12 + (difficulty - 1) * 5,
+    };
+  }
+  // 多样化除数池：考察"÷ 小数 = × 倒数"
+  const pool: Array<{ div: number; equiv: string }> = [
+    { div: 0.25,  equiv: '× 4' },
+    { div: 0.5,   equiv: '× 2' },
+    { div: 0.125, equiv: '× 8' },
+    { div: 1.25,  equiv: '× 4 ÷ 5' },
+    { div: 2.5,   equiv: '× 2 ÷ 5' },
+  ];
+  const { div, equiv } = pool[randInt(0, pool.length - 1)];
+  // 选能整除的被除数
+  const base = div === 0.25 ? 1 : div === 0.5 ? 1 : div === 0.125 ? 1 : div === 1.25 ? 5 : 5;
+  const a = randInt(2, 24) * base;
+  const answer = round(a / div, 4);
+  const expression = `${a} ÷ ${formatNum(div)}`;
+  return {
+    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+    prompt: `计算: ${expression}（想一想：除以 ${formatNum(div)} 和 ${equiv} 的效果？）`,
+    data: { kind: 'decimal-ops', expression, subtype: 'div' },
+    solution: {
+      answer: formatNum(answer),
+      explanation: `${formatNum(div)} 的倒数视角：${a} ÷ ${formatNum(div)} 等价于 ${a} ${equiv} = ${formatNum(answer)}`,
+    },
+    hints: [`÷ ${formatNum(div)} 可以转换成 ${equiv}，心算更快`],
+    xpBase: 13 + (difficulty - 1) * 5,
+  };
+}
+
+// ==================== 中档 shift：连续移位 ====================
+
+function generateShiftChain(id: string, difficulty: number): Question {
+  // 40% 形式：a × 0.1 / 0.01 / 0.001 （左移等价题）
+  if (Math.random() < 0.4) {
+    const shifts = [0.1, 0.01];
+    if (difficulty >= 8) shifts.push(0.001);
+    const shift = shifts[randInt(0, shifts.length - 1)];
+    const shiftPlaces = Math.round(-Math.log10(shift));
+    const aScaled = randInt(11, 999);
+    const a = aScaled / (Math.random() < 0.5 ? 1 : 10);
+    const answer = round(a * shift, 4);
+    const expression = `${formatNum(a)} × ${formatNum(shift)}`;
     return {
       id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
       prompt: `计算: ${expression}`,
       data: { kind: 'decimal-ops', expression, subtype: 'shift' },
-      solution: { answer: formatNum(answer), explanation: `乘${formatNum(shift)}就是小数点向左移${shiftPlaces}位` },
-      hints: [`乘${formatNum(shift)}时，小数点向左移动${shiftPlaces}位`],
-      xpBase: 10 + (difficulty - 1) * 5,
+      solution: { answer: formatNum(answer), explanation: `乘 ${formatNum(shift)} 就是小数点向左移 ${shiftPlaces} 位` },
+      hints: [`乘 ${formatNum(shift)} 等价于 ÷${Math.pow(10, shiftPlaces)}，小数点向左移 ${shiftPlaces} 位`],
+      xpBase: 13 + (difficulty - 1) * 5,
     };
   }
 
-  // 原有右移逻辑
-  const shifts = [10, 100, 1000];
-  const shift = shifts[randInt(0, 2)];
-  const dp = randInt(1, 3);
-  const factor = Math.pow(10, dp);
-  const aScaled = randInt(1, 99 * factor);
-  const a = aScaled / factor;
-  const answerScaled = aScaled * shift;
-  const answer = answerScaled / factor;
-  const expression = `${formatNum(a)} × ${shift}`;
-
+  // 60% 形式：连续移位 a × m ÷ n   或   a ÷ m × n
+  const a = randInt(1, 99) / 10; // 0.1~9.9
+  const m = [10, 100, 1000][randInt(0, 2)];
+  const n = [10, 100, 1000][randInt(0, 2)];
+  const useDiv = Math.random() < 0.5;
+  const answer = useDiv ? (a / m) * n : (a * m) / n;
+  const expression = useDiv ? `${formatNum(a)} ÷ ${m} × ${n}` : `${formatNum(a)} × ${m} ÷ ${n}`;
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}`,
+    prompt: `计算: ${expression}（按顺序做移位）`,
     data: { kind: 'decimal-ops', expression, subtype: 'shift' },
-    solution: { answer: formatNum(answer), explanation: `乘${shift}就是小数点向右移${Math.log10(shift)}位` },
-    hints: [`乘${shift}时，小数点向右移动${Math.log10(shift)}位`],
-    xpBase: 10 + (difficulty - 1) * 5,
+    solution: {
+      answer: formatNum(round(answer, 4)),
+      explanation: `${expression}：连续移位，先${useDiv ? '左' : '右'}移 ${Math.log10(m)} 位，再${useDiv ? '右' : '左'}移 ${Math.log10(n)} 位`,
+    },
+    hints: ['×10ⁿ 小数点右移 n 位，÷10ⁿ 小数点左移 n 位，按顺序做'],
+    xpBase: 13 + (difficulty - 1) * 5,
   };
 }
 
-// ===== Hard trap: <1 × <1 (少量陷阱, 10% within hard) =====
+// ==================== 中档 trap：<1 × <1 实证 ====================
 
-function generateHardTrap(id: string, difficulty: number): Question {
-  // Both factors < 1, e.g. 0.3 × 0.4 = 0.12
-  const a10 = randInt(1, 9); // 0.1~0.9
-  const b10 = randInt(1, 9);
-  const product = a10 * b10; // integer = answer × 100
+function generateLt1Trap(id: string, difficulty: number): Question {
+  // 两个都 <1，引导"积比两个因数都小"
+  const a10 = randInt(2, 9);
+  const b10 = randInt(2, 9);
   const a = a10 / 10;
   const b = b10 / 10;
-  const answer = product / 100;
+  const answer = (a10 * b10) / 100;
   const expression = `${formatNum(a)} × ${formatNum(b)}`;
-
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}`,
+    prompt: `计算: ${expression}（注意积的大小和两个因数的关系）`,
     data: { kind: 'decimal-ops', expression, subtype: 'mul' },
-    solution: { answer: formatNum(answer), explanation: `${expression} = ${formatNum(answer)}，注意两个因数都小于1，积比任何一个因数都小` },
-    hints: ['两个因数共2位小数，先算整数部分，再点小数点'],
-    xpBase: 10 + (difficulty - 1) * 5,
+    solution: {
+      answer: formatNum(round(answer, 4)),
+      explanation: `${expression} = ${formatNum(round(answer, 4))}；两个因数都小于 1，所以积比任何一个因数都小`,
+    },
+    hints: ['两个都<1 时，积小于任意一个因数'],
+    xpBase: 13 + (difficulty - 1) * 5,
   };
 }
 
-// ===== Demon (≥8): complex decimal×decimal, complex decimal÷decimal =====
+// ==================== 中档 compare：移位等价比较（>/</=） ====================
 
-function generateDemonMulDecimal(id: string, difficulty: number): Question {
-  // 40% both < 1 trap (e.g. 0.25×0.4), 60% multi-digit (e.g. 2.05×3.6)
-  if (Math.random() < 0.4) {
-    // Both < 1: e.g. 0.25 × 0.4 = 0.1
-    const a100 = randInt(11, 99); // 0.11~0.99 (2dp)
-    const b10 = randInt(1, 9);    // 0.1~0.9 (1dp)
-    const productScaled = a100 * b10; // exact integer = answer × 1000
-    const a = a100 / 100;
-    const b = b10 / 10;
-    const answer = productScaled / 1000;
-    const expression = `${formatNum(a)} × ${formatNum(b)}`;
-
-    return {
-      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-      prompt: `计算: ${expression}`,
-      data: { kind: 'decimal-ops', expression, subtype: 'mul' },
-      solution: { answer: formatNum(answer), explanation: `${expression} = ${formatNum(answer)}，两个因数共3位小数` },
-      hints: ['先按整数算，再数总共几位小数'],
-      xpBase: 10 + (difficulty - 1) * 5,
-    };
-  } else {
-    // Multi-digit: 2dp × 1dp or 1dp × 2dp, larger range
-    const dpA = Math.random() < 0.5 ? 2 : 1;
-    const dpB = dpA === 2 ? 1 : 2;
-    const factorA = Math.pow(10, dpA);
-    const factorB = Math.pow(10, dpB);
-    const aScaled = randInt(101, 999);
-    const bScaled = randInt(11, 99);
-    const productScaled = aScaled * bScaled;
-    const totalFactor = factorA * factorB;
-    const a = aScaled / factorA;
-    const b = bScaled / factorB;
-    const answer = productScaled / totalFactor;
-    const expression = `${formatNum(a)} × ${formatNum(b)}`;
-
-    return {
-      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-      prompt: `计算: ${expression}`,
-      data: { kind: 'decimal-ops', expression, subtype: 'mul' },
-      solution: { answer: formatNum(answer), explanation: `${expression} = ${formatNum(answer)}，共${dpA + dpB}位小数` },
-      hints: ['先按整数乘法计算，再数两个因数一共有几位小数'],
-      xpBase: 10 + (difficulty - 1) * 5,
-    };
-  }
-}
-
-function generateDemonDivDecimal(id: string, difficulty: number): Question {
-  // Complex decimal ÷ decimal, e.g. 40.8÷0.34=120, 4.56÷0.12=38
-  // Strategy: integer quotient OR 1dp quotient, divisor has 2dp
-  if (Math.random() < 0.5) {
-    // Integer quotient, 2dp divisor
-    const quotient = randInt(11, 200);
-    const d100 = randInt(11, 99); // divisor × 100 (2dp divisor)
-    const dividendScaled = quotient * d100; // exact integer = dividend × 100
-    const divisor = d100 / 100;
-    const dividend = dividendScaled / 100;
-    const expression = `${formatNum(dividend)} ÷ ${formatNum(divisor)}`;
-
-    return {
-      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-      prompt: `计算: ${expression}`,
-      data: { kind: 'decimal-ops', expression, subtype: 'div' },
-      solution: {
-        answer: formatNum(quotient),
-        steps: [`将除数变成整数: ×100`, `被除数同时 ×100: ${formatNum(dividend)} → ${dividendScaled / 1}`, `${dividendScaled} ÷ ${d100} = ${quotient}`],
-        explanation: `${expression} = ${formatNum(quotient)}`,
-      },
-      hints: ['把除数变成整数（乘以100），被除数也同时乘以100'],
-      xpBase: 10 + (difficulty - 1) * 5,
-    };
-  } else {
-    // 1dp quotient, 1dp divisor, larger numbers
-    const q10 = randInt(11, 500); // quotient × 10
-    const d10 = randInt(11, 99);  // divisor × 10
-    const dividendScaled = q10 * d10; // exact integer = dividend × 100
-    const quotient = q10 / 10;
-    const divisor = d10 / 10;
-    const dividend = dividendScaled / 100;
-    const expression = `${formatNum(dividend)} ÷ ${formatNum(divisor)}`;
-
-    return {
-      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-      prompt: `计算: ${expression}`,
-      data: { kind: 'decimal-ops', expression, subtype: 'div' },
-      solution: {
-        answer: formatNum(quotient),
-        steps: [`将除数变成整数: ×10`, `被除数同时 ×10`, `${formatNum(dividendScaled / 10)} ÷ ${d10} = ${formatNum(quotient)}`],
-        explanation: `${expression} = ${formatNum(quotient)}`,
-      },
-      hints: ['先把除数变成整数，被除数也同时乘相同的数'],
-      xpBase: 10 + (difficulty - 1) * 5,
-    };
-  }
-}
-
-// ===== Compare Size (大小比较) =====
-
-function generateCompareSize(id: string, difficulty: number): Question {
-  const isMultiply = Math.random() < 0.5;
-  const op = isMultiply ? '×' : '÷';
-
-  const a = difficulty <= 5
-    ? Number((randInt(11, 99) / 10).toFixed(1))
-    : Number((randInt(101, 999) / 100).toFixed(2));
-
-  // b>1 42.5%, b<1 42.5%, b=1 15%
+function generateShiftEquivCompare(id: string, difficulty: number): Question {
+  const a = randInt(11, 99) / 10; // 1.1~9.9
+  // 三类：
+  //   等价：a × 10ᵏ vs a ÷ 10⁻ᵏ（= 相等）
+  //   左偏（>）：a × 10ᵏ > a × 10ᵏ⁻¹
+  //   右偏（<）：a × 10ᵏ⁻¹ < a × 10ᵏ
+  // 控制"="概率 ≤20%：20% 等价 / 40% 左大 / 40% 左小
   const roll = Math.random();
-  let b: number;
-  if (roll < 0.425) {
-    b = Number((randInt(11, 25) / 10).toFixed(1));
-  } else if (roll < 0.85) {
-    b = Number((randInt(1, 9) / 10).toFixed(1));
+  let leftExpr: string;
+  let rightExpr: string;
+  let answer: '>' | '<' | '=';
+  if (roll < 0.20) {
+    // 等价对（×10ᵏ = ÷10⁻ᵏ）
+    const pairs: Array<[string, string]> = [
+      [`${formatNum(a)} × 100`, `${formatNum(a)} ÷ 0.01`],
+      [`${formatNum(a)} × 10`, `${formatNum(a)} ÷ 0.1`],
+      [`${formatNum(a)} ÷ 100`, `${formatNum(a)} × 0.01`],
+      [`${formatNum(a)} ÷ 10`, `${formatNum(a)} × 0.1`],
+    ];
+    [leftExpr, rightExpr] = pairs[randInt(0, pairs.length - 1)];
+    answer = '=';
+  } else if (roll < 0.60) {
+    leftExpr = `${formatNum(a)} × 100`;
+    rightExpr = `${formatNum(a)} × 10`;
+    answer = '>';
   } else {
-    b = 1;
+    leftExpr = `${formatNum(a)} × 10`;
+    rightExpr = `${formatNum(a)} × 100`;
+    answer = '<';
   }
-
-  let answer: string;
-  if (isMultiply) {
-    answer = b > 1 ? '>' : b < 1 ? '<' : '=';
-  } else {
-    answer = b > 1 ? '<' : b < 1 ? '>' : '=';
-  }
-
-  const expression = `${formatNum(a)} ${op} ${formatNum(b)}`;
-  const comparison = `${expression} ○ ${formatNum(a)}`;
-
-  const ruleText = isMultiply
-    ? (b > 1 ? '乘以大于1的数，积大于原数' : b < 1 ? '乘以小于1的数，积小于原数' : '乘以1，积等于原数')
-    : (b > 1 ? '除以大于1的数，商小于原数' : b < 1 ? '除以小于1的数，商大于原数' : '除以1，商等于原数');
-
+  const comparison = `${leftExpr} ○ ${rightExpr}`;
   return {
     id, topicId: 'decimal-ops', type: 'multiple-choice', difficulty,
-    prompt: `比较大小: ${comparison}，○ 里应填什么？`,
+    prompt: `在 ○ 里填上合适的符号：${comparison}`,
     data: { kind: 'decimal-ops', expression: comparison, subtype: 'compare', options: ['>', '<', '='] },
-    solution: { answer, explanation: ruleText },
-    hints: ['想一想：乘以（除以）的那个数比 1 大还是小？'],
+    solution: {
+      answer,
+      explanation: answer === '='
+        ? `${leftExpr} 和 ${rightExpr} 都等于 ${formatNum(a * 100)}，所以相等`
+        : `左右两边分别算一下：${leftExpr} 与 ${rightExpr}，比大小即可`,
+    },
+    hints: ['×10 和 ÷0.1 效果相同，×100 和 ÷0.01 效果相同'],
     xpBase: 10 + (difficulty - 1) * 5,
   };
 }
 
-// ===== Cyclic Division (循环小数除法) =====
+// ==================== 中/高档 cyclic-div：循环小数保留 n 位 ====================
 
-function generateCyclicDivision(id: string, difficulty: number): Question {
+function generateCyclicApprox(id: string, difficulty: number): Question {
   const divisorPool = difficulty <= 7 ? [3, 6, 9] : [3, 6, 7, 9, 11];
   const divisor = divisorPool[randInt(0, divisorPool.length - 1)];
-
   const maxDividend = difficulty <= 7 ? 30 : 80;
   let dividend = randInt(1, maxDividend);
-  while (dividend % divisor === 0) {
-    dividend = randInt(1, maxDividend);
-  }
+  while (dividend % divisor === 0) dividend = randInt(1, maxDividend);
 
   let displayDividend: number = dividend;
   let displayDivisor: number = divisor;
@@ -448,7 +523,6 @@ function generateCyclicDivision(id: string, difficulty: number): Question {
   const places = difficulty <= 7 ? 1 : 2;
   const quotient = displayDividend / displayDivisor;
   const rounded = Number(quotient.toFixed(places));
-
   const placeText = places === 1 ? '一' : '两';
   const expression = `${formatNum(displayDividend)} ÷ ${formatNum(displayDivisor)}`;
 
@@ -459,40 +533,118 @@ function generateCyclicDivision(id: string, difficulty: number): Question {
     solution: {
       answer: formatNum(rounded),
       steps: [
-        `${expression} = ${quotient.toFixed(places + 2)}…`,
+        `${expression} ≈ ${quotient.toFixed(places + 2)}…`,
         `四舍五入保留${placeText}位小数 ≈ ${formatNum(rounded)}`,
       ],
-      explanation: `商是除不尽的（循环小数），需要四舍五入到${placeText}位小数`,
+      explanation: `商是循环小数（除不尽），需要四舍五入到${placeText}位小数`,
     },
-    hints: ['这道除法除不尽，注意四舍五入'],
-    xpBase: 10 + (difficulty - 1) * 5,
+    hints: ['商除不尽时，按要求保留小数位，最后一位要做四舍五入'],
+    xpBase: 12 + (difficulty - 1) * 5,
   };
 }
 
-// ===== Main generator =====
+// ==================== 高档 div：循环节位置推理 ====================
+
+function generateCyclicPosition(id: string, difficulty: number): Question {
+  // 循环节 ≥2 位的标准案例；v2.2：题干只给最初几位，不明示循环节/长度
+  const cases = [
+    { expr: '1 ÷ 7',  digits: '142857', period: 6, preview: '0.142857142857…' },
+    { expr: '2 ÷ 7',  digits: '285714', period: 6, preview: '0.285714285714…' },
+    { expr: '3 ÷ 7',  digits: '428571', period: 6, preview: '0.428571428571…' },
+    { expr: '1 ÷ 11', digits: '09',     period: 2, preview: '0.0909090909…' },
+    { expr: '1 ÷ 13', digits: '076923', period: 6, preview: '0.076923076923…' },
+  ];
+  const c = cases[randInt(0, cases.length - 1)];
+  const pos = randInt(10, 60);
+  const idx = ((pos - 1) % c.period); // 0-indexed
+  const answer = Number(c.digits[idx]);
+  return {
+    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+    prompt: `${c.expr} = ${c.preview}\n请问小数点后第 ${pos} 位是哪个数字？`,
+    data: { kind: 'decimal-ops', expression: c.expr, subtype: 'div' },
+    solution: {
+      answer,
+      steps: [
+        `先观察规律：这是循环小数，循环节是 ${c.digits}（共 ${c.period} 位）`,
+        `${pos} ÷ ${c.period} = ${Math.floor(pos / c.period)} 余 ${pos % c.period}`,
+        `余数为 ${pos % c.period === 0 ? c.period : pos % c.period}，对应循环节第 ${idx + 1} 位：${c.digits[idx]}`,
+      ],
+      explanation: `观察预览中反复出现的数字串，找出循环节（这里是 ${c.digits}，长度 ${c.period}），再用位置除以长度取余。`,
+    },
+    hints: ['先自己从预览里数出循环节——哪几位重复出现？', '找出循环节长度后，用位置数除以长度，取余数就是循环节内的序号'],
+    xpBase: 18 + (difficulty - 1) * 5,
+  };
+}
+
+// ==================== 高档 mul：<1×<1 反直觉实证（多位数） ====================
+
+function generateHighMulLt1(id: string, difficulty: number): Question {
+  // 2dp × 1dp，都 < 1
+  const a100 = randInt(11, 99);
+  const b10 = randInt(1, 9);
+  const a = a100 / 100;
+  const b = b10 / 10;
+  const answerScaled = a100 * b10;
+  const answer = answerScaled / 1000;
+  const expression = `${formatNum(a)} × ${formatNum(b)}`;
+  return {
+    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+    prompt: `计算: ${expression}（注意：两个因数都小于 1）`,
+    data: { kind: 'decimal-ops', expression, subtype: 'mul' },
+    solution: {
+      answer: formatNum(round(answer, 4)),
+      explanation: `${a100} × ${b10} = ${answerScaled}，两因数共 3 位小数，积点 3 位：${formatNum(round(answer, 4))}；比两个因数都小`,
+    },
+    hints: ['两个都<1 → 积比两个都小'],
+    xpBase: 16 + (difficulty - 1) * 5,
+  };
+}
+
+// ==================== 高档 trap：概念陷阱实证 ====================
+
+function generateConceptTrapCalc(id: string, difficulty: number): Question {
+  // 用 a × b，b 是 >1 的小数，让学生算，体验"乘以小数积不一定变小"
+  const aScaled = randInt(11, 99) / 10;
+  const b = [1.2, 1.5, 2.5, 1.8, 3.2][randInt(0, 4)];
+  const answer = round(aScaled * b, 4);
+  const expression = `${formatNum(aScaled)} × ${formatNum(b)}`;
+  return {
+    id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+    prompt: `计算: ${expression}（思考：这道题乘以小数后，积比原数大还是小？）`,
+    data: { kind: 'decimal-ops', expression, subtype: 'trap' },
+    solution: {
+      answer: formatNum(answer),
+      explanation: `${expression} = ${formatNum(answer)}；这里乘以的是 ${formatNum(b)}（>1），所以积比 ${formatNum(aScaled)} 大——"乘以小数积一定变小"其实是错的！`,
+    },
+    hints: ['只有乘以 <1 的数积才变小；乘以 >1 的小数积仍然变大'],
+    xpBase: 16 + (difficulty - 1) * 5,
+  };
+}
+
+// ==================== Main generator ====================
 
 export function generateDecimalOps(params: GeneratorParams): Question {
   const { difficulty, id = '', subtypeFilter } = params;
 
   const entries: SubtypeEntry[] = difficulty <= 5 ? [
-    { tag: 'add-sub', weight: 30, gen: () => generateNormalAddSub(id, difficulty) },
-    { tag: 'mul', weight: 30, gen: () => generateNormalMulInt(id, difficulty) },
-    { tag: 'div', weight: 25, gen: () => generateNormalDivInt(id, difficulty) },
-    { tag: 'compare', weight: 15, gen: () => generateCompareSize(id, difficulty) },
+    { tag: 'add-sub', weight: 30, gen: () => generatePlaceValueOrConvert(id, difficulty) },
+    { tag: 'mul',     weight: 30, gen: () => generateLowMul(id, difficulty) },
+    { tag: 'div',     weight: 25, gen: () => generateLowDiv(id, difficulty) },
+    { tag: 'compare', weight: 15, gen: () => generateShiftEquivCompare(id, difficulty) },
   ] : difficulty <= 7 ? [
-    { tag: 'mul', weight: 25, gen: () => generateHardMulDecimal(id, difficulty) },
-    { tag: 'div', weight: 20, gen: () => generateHardDivDecimal(id, difficulty) },
-    { tag: 'add-sub', weight: 15, gen: () => generateHardMixedAddSub(id, difficulty) },
-    { tag: 'shift', weight: 10, gen: () => generateHardShift(id, difficulty) },
-    { tag: 'trap', weight: 10, gen: () => generateHardTrap(id, difficulty) },
-    { tag: 'compare', weight: 10, gen: () => generateCompareSize(id, difficulty) },
-    { tag: 'cyclic-div', weight: 10, gen: () => generateCyclicDivision(id, difficulty) },
+    { tag: 'mul',        weight: 25, gen: () => generateMidMulPattern(id, difficulty) },
+    { tag: 'div',        weight: 20, gen: () => generateMidDivPattern(id, difficulty) },
+    { tag: 'add-sub',    weight: 15, gen: () => generateMidPlaceExtend(id, difficulty) },
+    { tag: 'shift',      weight: 10, gen: () => generateShiftChain(id, difficulty) },
+    { tag: 'trap',       weight: 10, gen: () => generateLt1Trap(id, difficulty) },
+    { tag: 'compare',    weight: 10, gen: () => generateShiftEquivCompare(id, difficulty) },
+    { tag: 'cyclic-div', weight: 10, gen: () => generateCyclicApprox(id, difficulty) },
   ] : [
-    { tag: 'mul', weight: 35, gen: () => generateDemonMulDecimal(id, difficulty) },
-    { tag: 'div', weight: 30, gen: () => generateDemonDivDecimal(id, difficulty) },
-    { tag: 'compare', weight: 15, gen: () => generateCompareSize(id, difficulty) },
-    { tag: 'cyclic-div', weight: 10, gen: () => generateCyclicDivision(id, difficulty) },
-    { tag: 'trap', weight: 10, gen: () => generateHardTrap(id, difficulty) },
+    { tag: 'mul',        weight: 35, gen: () => generateHighMulLt1(id, difficulty) },
+    { tag: 'div',        weight: 30, gen: () => generateCyclicPosition(id, difficulty) },
+    { tag: 'compare',    weight: 15, gen: () => generateShiftEquivCompare(id, difficulty) },
+    { tag: 'cyclic-div', weight: 10, gen: () => generateCyclicApprox(id, difficulty) },
+    { tag: 'trap',       weight: 10, gen: () => generateConceptTrapCalc(id, difficulty) },
   ];
 
   return pickSubtype(entries, subtypeFilter);

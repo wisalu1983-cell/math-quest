@@ -1,6 +1,7 @@
 // src/repository/local.ts
-import type { User, PracticeSession } from '@/types';
-import type { GameProgress } from '@/types/gamification';
+import type { User, PracticeSession, TopicId } from '@/types';
+import type { GameProgress, TopicCampaignProgress } from '@/types/gamification';
+import { CAMPAIGN_MAPS, getAllLevelIds, isCampaignFullyCompleted } from '@/constants/campaign';
 
 const KEYS = {
   user: 'mq_user',
@@ -11,6 +12,68 @@ const KEYS = {
 
 const CURRENT_VERSION = 2;
 const MAX_SESSIONS = 200;
+
+/**
+ * ISSUE-057（2026-04-17）闯关结构全面重构后的一次性存档迁移（策略 X）
+ *
+ * 背景：8 个题型的 stage/lane/levelId 都发生了变化。旧结构里存在的
+ *   levelId（如 'mental-arithmetic-S4-LA-L1' 老 Boss）在新结构里不存在，
+ *   玩家进度如果不迁移就会变成孤儿数据。
+ *
+ * 策略：
+ *   - 如果玩家曾通 Boss（campaignCompleted=true 或含任何旧 Boss levelId）
+ *     → 新结构所有 levelId 直接标记通关（bestHearts=3）
+ *   - 否则丢弃旧 completedLevels，玩家从新 S1 第 1 关开始
+ *   - advanceProgress 不动
+ *
+ * 幂等：只有当 completedLevels 含"新结构外 levelId"时才触发；迁移一次后
+ *   所有 levelId 都属于新结构，不再触发。
+ */
+export function migrateCampaignIfNeeded(gp: GameProgress): GameProgress {
+  let changed = false;
+  const newCampaignProgress: typeof gp.campaignProgress = { ...gp.campaignProgress };
+
+  for (const topicId of Object.keys(CAMPAIGN_MAPS) as TopicId[]) {
+    const topicProg = gp.campaignProgress[topicId];
+    if (!topicProg) continue;
+
+    const validIds = new Set(getAllLevelIds(topicId));
+    const hasStaleId = topicProg.completedLevels.some(l => !validIds.has(l.levelId));
+
+    if (!hasStaleId) continue;
+
+    changed = true;
+    const wasBossDone = topicProg.campaignCompleted === true;
+
+    let migrated: TopicCampaignProgress;
+    if (wasBossDone) {
+      const now = Date.now();
+      const allIds = getAllLevelIds(topicId);
+      migrated = {
+        topicId,
+        completedLevels: allIds.map(levelId => ({
+          levelId,
+          bestHearts: 3,
+          completedAt: now,
+        })),
+        campaignCompleted: isCampaignFullyCompleted(topicId, new Set(allIds)),
+      };
+    } else {
+      const kept = topicProg.completedLevels.filter(l => validIds.has(l.levelId));
+      const keptIds = new Set(kept.map(l => l.levelId));
+      migrated = {
+        topicId,
+        completedLevels: kept,
+        campaignCompleted: isCampaignFullyCompleted(topicId, keptIds),
+      };
+    }
+
+    newCampaignProgress[topicId] = migrated;
+  }
+
+  if (!changed) return gp;
+  return { ...gp, campaignProgress: newCampaignProgress };
+}
 
 function read<T>(key: string): T | null {
   try {
@@ -54,7 +117,12 @@ export const repository = {
     if (raw && raw.userId === userId) {
       // 向前兼容迁移：老数据无 advanceProgress 字段
       if (!raw.advanceProgress) raw.advanceProgress = {};
-      return raw;
+      // ISSUE-057 闯关结构重构后的一次性存档迁移
+      const migrated = migrateCampaignIfNeeded(raw);
+      if (migrated !== raw) {
+        write(KEYS.gameProgress, migrated);
+      }
+      return migrated;
     }
     return {
       userId,

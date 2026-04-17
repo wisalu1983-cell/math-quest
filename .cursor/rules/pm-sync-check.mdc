@@ -1,0 +1,43 @@
+---
+description: 开工前 / 收尾前必跑 pm-sync-check（文档同步机制 L2 钩子）
+alwaysApply: true
+---
+
+# pm-sync-check 执行约束（L2 钩子）
+
+本项目用 `scripts/pm-sync-check.ts` 做项目管理文档的静态一致性校验（L1）。Agent 必须在下面两个节点**主动在同一批工具调用里**执行它，不能等用户追问。
+
+## 必须执行的节点
+
+### 开工前（pre-flight）
+
+在每个新 session 的**第一次响应里**，只要任务涉及下面任何一项，就跑：
+
+- 改动 `ProjectManager/` 下的任何 `.md`（Plan / Specs / ISSUE_LIST / Reports / Overview）
+- 改动 `src/constants/advance.ts`、`scripts/generate-human-bank.ts`、任何生成器源码
+- 新开一份 Plan / Spec / ISSUE
+- 涉及"规格、档位、star cap、难度、关卡"等跨系统维度
+
+纯闲聊、纯查阅代码、纯前端样式微调可以豁免。
+
+### 收尾前（post-flight）
+
+在声明"本 session 任务完成"、做 session 交接、或输出收尾总结**之前**，必须再跑一次。
+
+## 执行方式
+
+```bash
+npx tsx scripts/pm-sync-check.ts
+```
+
+## 结果处理
+
+- **✅ 全绿** → 继续；如在收尾节点，直接在总结里标注"pm-sync-check: 全绿"
+- **❌ 错误** → 必须先处理；若本 session 不处理，必须在 Plan 的"前置相关规格"栏或收尾回写段里**显式写出**"已知不一致：XXX，本次不动，因为 YYY"
+- **⚠️ 警告** → Agent 判断是否与本次任务相关；相关就处理，不相关就在回写段里显式说明跳过
+
+## 完整规则与设计背景
+
+见 `ProjectManager/Plan/README.md` §7、§8 和 `ProjectManager/Plan/2026-04-17-pm-document-sync-mechanism.md`。
+
+脚本本身覆盖 6 项检查：`_index.md` 完整性 / Specs 版本号一致 / ISSUE 状态一致（启发式）/ Plan→Spec 引用存在 / TOPIC_STAR_CAP ↔ human-bank 档数一致。

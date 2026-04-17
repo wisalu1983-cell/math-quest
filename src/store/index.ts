@@ -9,6 +9,16 @@ import { CAMPAIGN_MAX_HEARTS } from '@/constants';
 import { getCampaignLevel, getSubtypeFilter } from '@/constants/campaign';
 import { buildAdvanceSlots } from '@/engine/advance';
 import { ADVANCE_QUESTION_COUNT } from '@/constants/advance';
+import {
+  isNumericEqual,
+  isMultiChoiceEqual,
+  isMultiBlankEqual,
+  isExpressionEquivalent,
+  isEquationEquivalent,
+  isTrivialSolution,
+  hasAnyBracket,
+  hasBracketAndEquivalent,
+} from '@/engine/answerValidation';
 
 // ─── User Store ───
 interface UserStore {
@@ -165,21 +175,47 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const timeMs = Date.now() - questionStartTime;
     const correctAnswer = String(currentQuestion.solution.answer);
 
-    const normalize = (s: string) => {
-      let r = s.trim().replace(/\s+/g, '').replace(/\u2026/g, '...');
-      if (r.includes('.')) {
-        r = r.replace(/0+$/, '').replace(/\.$/, '');
-      }
-      return r;
-    };
-
-    let correct: boolean;
+    let correct = false;
     const qData = currentQuestion.data;
+    const solution = currentQuestion.solution;
+
+    // 1. 估算题：acceptedAnswers 数组判定
     if (qData.kind === 'number-sense' && qData.subtype === 'estimate' && qData.acceptedAnswers) {
       const userNum = parseFloat(answer);
       correct = !isNaN(userNum) && qData.acceptedAnswers.includes(userNum);
-    } else {
-      correct = normalize(answer) === normalize(correctAnswer);
+    }
+    // 2. 多选题：集合相等
+    else if (currentQuestion.type === 'multi-select' && solution.answers) {
+      correct = isMultiChoiceEqual(answer, solution.answers);
+    }
+    // 3. 多步填空：答案以 '|' 分隔，逐项比较
+    else if (currentQuestion.type === 'multi-blank' && solution.blanks) {
+      const parts = answer.split('|').map(s => s.trim());
+      correct = isMultiBlankEqual(parts, solution.blanks);
+    }
+    // 4. 填写表达式（A06 去括号 / 添括号 / A07 简便变形）
+    else if (currentQuestion.type === 'expression-input' && solution.standardExpression) {
+      const policy = solution.bracketPolicy ?? 'none';
+      if (policy === 'must-not-have' && hasAnyBracket(answer)) {
+        correct = false;
+      } else if (policy === 'must-have') {
+        correct = hasBracketAndEquivalent(answer, solution.standardExpression);
+      } else {
+        correct = isExpressionEquivalent(answer, solution.standardExpression);
+      }
+    }
+    // 5. 填写等式（A08 方程移项）
+    else if (currentQuestion.type === 'equation-input' && solution.standardExpression) {
+      const variable = solution.variable ?? 'x';
+      if (isTrivialSolution(answer, variable)) {
+        correct = false;
+      } else {
+        correct = isEquationEquivalent(answer, solution.standardExpression, variable);
+      }
+    }
+    // 6. 其它（numeric-input, multiple-choice, vertical-fill）：字符串归一化比较
+    else {
+      correct = isNumericEqual(answer, correctAnswer);
     }
 
     const attempt: QuestionAttempt = {
@@ -192,12 +228,13 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       attemptedAt: Date.now(),
     };
 
+    const newHearts = correct ? hearts : hearts - 1;
+
     const updatedSession = {
       ...session,
       questions: [...session.questions, attempt],
+      heartsRemaining: newHearts,
     };
-
-    const newHearts = correct ? hearts : hearts - 1;
 
     useGameProgressStore.getState().recordAttempt(correct);
 

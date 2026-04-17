@@ -2,36 +2,33 @@ import type { Question, VerticalCalcStep } from '@/types';
 import type { GeneratorParams, SubtypeEntry } from '../index';
 import { pickSubtype } from '../index';
 import type { SubtypeDef } from '@/types/gamification';
+import { formatNum } from './utils';
 
+// v2.1 规格：
+//   低档 (d≤5): 纯整数，禁止小数。
+//   中档 (6≤d≤7): 小数加减、小数×整数、整数÷出小数、多位×多位整数。
+//   高档 (d≥8): 小数÷小数扩倍、高位数含中间0乘法、循环小数取近似。
 export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
   if (difficulty <= 5) return [
-    { tag: 'int-add',     weight: 15 },
-    { tag: 'int-sub',     weight: 15 },
-    { tag: 'int-mul',     weight: 10 },
-    { tag: 'int-div',     weight: 10 },
-    { tag: 'dec-add-sub', weight: 25 },
-    { tag: 'dec-mul',     weight: 15 },
-    { tag: 'dec-div',     weight: 10 },
+    { tag: 'int-add',     weight: 30 },
+    { tag: 'int-sub',     weight: 30 },
+    { tag: 'int-mul',     weight: 20 },
+    { tag: 'int-div',     weight: 20 },
   ];
   if (difficulty <= 7) return [
-    { tag: 'int-add',     weight: 5  },
-    { tag: 'int-sub',     weight: 5  },
-    { tag: 'int-mul',     weight: 10 },
-    { tag: 'int-div',     weight: 10 },
+    { tag: 'int-mul',     weight: 15 },  // 多位×多位整数
+    { tag: 'int-div',     weight: 10 },  // 整数÷出小数
     { tag: 'dec-add-sub', weight: 30 },
-    { tag: 'dec-mul',     weight: 15 },
-    { tag: 'dec-div',     weight: 15 },
+    { tag: 'dec-mul',     weight: 20 },  // 小数×整数
+    { tag: 'dec-div',     weight: 15 },  // 小数÷整数 / 整数÷整数出小数
     { tag: 'approximate', weight: 10 },
   ];
   return [
-    { tag: 'int-add',     weight: 5  },
-    { tag: 'int-sub',     weight: 5  },
-    { tag: 'int-mul',     weight: 10 },
-    { tag: 'int-div',     weight: 10 },
-    { tag: 'dec-add-sub', weight: 20 },
-    { tag: 'dec-mul',     weight: 20 },
-    { tag: 'dec-div',     weight: 20 },
-    { tag: 'approximate', weight: 10 },
+    { tag: 'int-mul',     weight: 15 },  // 多位×多位，含中间0
+    { tag: 'dec-add-sub', weight: 10 },  // 少量，保留训练对齐
+    { tag: 'dec-mul',     weight: 25 },  // 小数×小数，位数多
+    { tag: 'dec-div',     weight: 30 },  // 小数÷小数扩倍长除
+    { tag: 'approximate', weight: 20 },  // 循环小数取近似
   ];
 }
 
@@ -53,11 +50,6 @@ function getDigits(n: number): number[] {
 // Normal (<=5): carry mandatory; Hard/Demon: carry optional
 function isCarrySkippable(difficulty: number): boolean {
   return difficulty > 5;
-}
-
-function formatNum(n: number): string {
-  if (Number.isInteger(n)) return String(n);
-  return n.toFixed(4).replace(/0+$/, '').replace(/\.$/, '');
 }
 
 function generateAdditionSteps(a: number, b: number, difficulty: number): VerticalCalcStep[] {
@@ -233,39 +225,43 @@ function generateMultiDigitMult(difficulty: number, id: string): Question {
   };
 }
 
-/** Generate a numeric-input question for long division */
+/** 整数除法竖式（vertical-fill 格式，低档使用；中档走整数÷出小数）*/
 function generateDivision(difficulty: number, id: string): Question {
-  let a: number, b: number, quotient: number;
-
+  // v2.1：低档整数÷整数（整除）；中档整数÷出小数；高档已不走此函数（dec-div 承担）
   if (difficulty <= 5) {
-    // Normal: 2~3-digit ÷ 1-digit, exact
-    b = randInt(2, 9);
-    quotient = randInt(11, Math.floor(999 / b));
-    a = b * quotient;
-  } else if (difficulty <= 7) {
-    // Hard: 3-digit ÷ 1-digit, exact
-    b = randInt(2, 9);
-    quotient = randInt(11, Math.floor(999 / b));
-    a = b * quotient;
-    if (a < 100) { quotient = randInt(20, Math.floor(999 / b)); a = b * quotient; }
-  } else {
-    // Demon: 3~4-digit ÷ 2-digit, exact
-    b = randInt(11, 99);
-    quotient = randInt(11, 99);
-    a = b * quotient;
-    // Ensure 3-4 digit dividend
-    if (a < 100) { quotient = randInt(20, 99); a = b * quotient; }
-    if (a > 9999) { quotient = randInt(11, Math.floor(9999 / b)); a = b * quotient; }
+    const b = randInt(2, 9);
+    const quotient = randInt(11, Math.floor(999 / b));
+    const a = b * quotient;
+    const steps = longDivisionSolution(a, b);
+    return {
+      id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+      prompt: `用竖式计算: ${a} ÷ ${b}`,
+      data: { kind: 'vertical-calc', operation: '÷' as const, operands: [a, b], steps: [] },
+      solution: { answer: quotient, steps, explanation: `${a} ÷ ${b} = ${quotient}` },
+      hints: ['从最高位开始，逐位试商'],
+      xpBase: 10 + (difficulty - 1) * 5,
+    };
   }
-
-  const steps = longDivisionSolution(a, b);
-
+  // 中档：整数÷整数，商是一位或两位小数（如 7÷4=1.75、9÷4=2.25、15÷4=3.75）
+  // 选择能整除到 .25 或 .5 或 .75 的组合
+  const patterns: Array<[number, number, number]> = [
+    [7, 4, 1.75], [9, 4, 2.25], [15, 4, 3.75], [13, 4, 3.25], [11, 4, 2.75],
+    [9, 2, 4.5], [13, 2, 6.5], [21, 2, 10.5], [15, 2, 7.5],
+    [9, 5, 1.8], [17, 5, 3.4], [21, 5, 4.2], [33, 5, 6.6], [29, 5, 5.8],
+    [18, 8, 2.25], [14, 8, 1.75], [30, 8, 3.75],
+  ];
+  const [a, b, q] = patterns[randInt(0, patterns.length - 1)];
+  const steps = [
+    `${a} ÷ ${b}，商的整数部分 ${Math.floor(a / b)}`,
+    `余数不够除时，商上加小数点，余数后补0继续除`,
+    `${a} ÷ ${b} = ${q}`,
+  ];
   return {
     id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
-    prompt: `用竖式计算: ${a} ÷ ${b}`,
+    prompt: `用竖式计算: ${a} ÷ ${b}（除不尽时继续补0）`,
     data: { kind: 'vertical-calc', operation: '÷' as const, operands: [a, b], steps: [] },
-    solution: { answer: quotient, steps, explanation: `${a} ÷ ${b} = ${quotient}` },
-    hints: ['从最高位开始，逐位试商'],
+    solution: { answer: formatNum(q), steps, explanation: `${a} ÷ ${b} = ${q}` },
+    hints: ['整数除完后，商上加小数点，余数后补0继续除'],
     xpBase: 10 + (difficulty - 1) * 5,
   };
 }
@@ -317,18 +313,20 @@ function generateDecimalAddSub(difficulty: number, id: string): Question {
 }
 
 // ===== 小数乘法 (numeric-input) =====
+// v2.1: 中档 = 小数×整数；高档 = 小数×小数（多位，避免可口算的简单题）
 function generateDecimalMul(difficulty: number, id: string): Question {
-  let a: number, b: number, answer: number, expression: string;
-  if (difficulty <= 5) {
-    const dp = randInt(1, 2);
+  if (difficulty <= 7) {
+    // 中档：小数×整数（2 位小数 × 一位整数，或 1 位小数 × 两位整数）
+    const dp = Math.random() < 0.5 ? 1 : 2;
     const factor = Math.pow(10, dp);
-    let aScaled = randInt(101, 9999);
+    // 三位数级别的 scaled，确保不能简单口算
+    let aScaled = randInt(dp === 1 ? 25 : 105, dp === 1 ? 999 : 9999);
     while (aScaled % 10 === 0) aScaled++;
-    a = aScaled / factor;
-    b = randInt(2, 9);
+    const a = aScaled / factor;
+    const b = dp === 1 ? randInt(3, 9) : randInt(3, 9);
     const productScaled = aScaled * b;
-    answer = productScaled / factor;
-    expression = `${a.toFixed(dp)} × ${b}`;
+    const answer = productScaled / factor;
+    const expression = `${a.toFixed(dp)} × ${b}`;
     return {
       id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
       prompt: `列竖式计算: ${expression}`,
@@ -348,63 +346,63 @@ function generateDecimalMul(difficulty: number, id: string): Question {
       hints: ['先忽略小数点按整数算，再数两个因数的小数位数之和'],
       xpBase: 10 + (difficulty - 1) * 5,
     };
-  } else {
-    const dp1 = randInt(1, 2);
-    const dp2 = randInt(1, 2);
-    const f1 = Math.pow(10, dp1);
-    const f2 = Math.pow(10, dp2);
-    let aScaled = randInt(11, dp1 === 1 ? 999 : 9999);
-    while (aScaled % 10 === 0) aScaled++;
-    let bScaled = randInt(11, dp2 === 1 ? 99 : 999);
-    while (bScaled % 10 === 0) bScaled++;
-    a = aScaled / f1;
-    b = bScaled / f2;
-    const productScaled = aScaled * bScaled;
-    const totalDp = dp1 + dp2;
-    answer = productScaled / Math.pow(10, totalDp);
-    expression = `${a.toFixed(dp1)} × ${b.toFixed(dp2)}`;
-    return {
-      id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
-      prompt: `列竖式计算: ${expression}`,
-      data: {
-        kind: 'vertical-calc', operation: '×', operands: [a, b], steps: [],
-        trainingFields: [
-          { label: `${a.toFixed(dp1)} 有几位小数`, answer: String(dp1) },
-          { label: `${b.toFixed(dp2)} 有几位小数`, answer: String(dp2) },
-          { label: '积共有几位小数', answer: String(dp1 + dp2) },
-        ],
-      },
-      solution: {
-        answer: formatNum(answer),
-        steps: ['先按整数乘法计算', '再数两个因数共有几位小数，积就有几位小数'],
-        explanation: `${expression} = ${formatNum(answer)}`,
-      },
-      hints: ['先忽略小数点按整数算，再数两个因数的小数位数之和'],
-      xpBase: 10 + (difficulty - 1) * 5,
-    };
   }
+  // 高档：小数 × 小数，两端均多位且不可口算（禁止 0.2×0.3 这种）
+  // 生成策略：a 是两位小数 X.YZ（每位都非零且不是 0.25/0.5），b 是两位小数
+  const pickNonTrivial = (): number => {
+    for (let tries = 0; tries < 50; tries++) {
+      const s = randInt(105, 999); // 1.05 ~ 9.99
+      const dp = s % 10 !== 0 ? 2 : 1;
+      const v = dp === 2 ? s / 100 : Math.round(s / 10) / 10;
+      // 排除"简单数字"：末位为 0、5，整数部分为 0 的过简小数
+      if ((s * 10) % 25 === 0 && dp === 2) continue;
+      return v;
+    }
+    return 3.14;
+  };
+  const a = pickNonTrivial();
+  const b = pickNonTrivial();
+  const aS = Math.round(a * 100);
+  const bS = Math.round(b * 100);
+  const answer = (aS * bS) / 10000;
+  const expression = `${a.toFixed(2)} × ${b.toFixed(2)}`;
+  return {
+    id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+    prompt: `列竖式计算: ${expression}`,
+    data: {
+      kind: 'vertical-calc', operation: '×', operands: [a, b], steps: [],
+    },
+    solution: {
+      answer: formatNum(answer),
+      steps: [
+        '先按整数乘法计算：忽略小数点',
+        '再数两个因数共有几位小数，积就有几位小数',
+      ],
+      explanation: `${expression} = ${formatNum(answer)}`,
+    },
+    hints: ['两个两位小数相乘，积最多有 4 位小数（末尾0可略）'],
+    xpBase: 10 + (difficulty - 1) * 5,
+  };
 }
 
 // ===== 小数除法 (numeric-input) =====
+// v2.1: 中档 = 小数÷整数；高档 = 小数÷小数扩倍长除
 function generateDecimalDiv(difficulty: number, id: string): Question {
-  let dividend: number, divisor: number, quotient: number, expression: string;
-  let steps: string[];
-  if (difficulty <= 5) {
+  if (difficulty <= 7) {
+    // 中档：小数÷整数
     const intDivisor = randInt(2, 9);
     const qDp = randInt(1, 2);
     const qFactor = Math.pow(10, qDp);
     let qScaled = randInt(11, 999);
-    // 确保商有小数位（末位非零）
     while (qScaled % 10 === 0) qScaled++;
-    quotient = qScaled / qFactor;
-    dividend = (qScaled * intDivisor) / qFactor;
-    divisor = intDivisor;
-    expression = `${formatNum(dividend)} ÷ ${divisor}`;
-    steps = [`商的小数点与被除数的小数点对齐`, `${expression} = ${formatNum(quotient)}`];
+    const quotient = qScaled / qFactor;
+    const dividend = (qScaled * intDivisor) / qFactor;
+    const expression = `${formatNum(dividend)} ÷ ${intDivisor}`;
+    const steps = [`商的小数点与被除数的小数点对齐`, `${expression} = ${formatNum(quotient)}`];
     return {
       id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
       prompt: `列竖式计算: ${expression}`,
-      data: { kind: 'vertical-calc', operation: '÷', operands: [dividend, divisor], steps: [] },
+      data: { kind: 'vertical-calc', operation: '÷', operands: [dividend, intDivisor], steps: [] },
       solution: {
         answer: formatNum(quotient),
         steps,
@@ -413,72 +411,97 @@ function generateDecimalDiv(difficulty: number, id: string): Question {
       hints: ['商的小数点要和被除数的小数点对齐'],
       xpBase: 10 + (difficulty - 1) * 5,
     };
-  } else {
-    const divisorDp = randInt(1, 2);
+  }
+  // 高档：小数÷小数，扩倍后仍需多步试商
+  // 要求扩倍后被除数 ≥ 100（保证长除法非一步到位）
+  let divisor: number, dividend: number, quotient: number, divisorDp: number;
+  for (let tries = 0; tries < 50; tries++) {
+    divisorDp = randInt(1, 2);
     const divisorFactor = Math.pow(10, divisorDp);
-    let divisorScaled = randInt(11, divisorDp === 1 ? 99 : 999);
+    let divisorScaled = randInt(divisorDp === 1 ? 11 : 11, divisorDp === 1 ? 99 : 99);
     while (divisorScaled % 10 === 0) divisorScaled++;
     divisor = divisorScaled / divisorFactor;
-    let qScaled = randInt(11, 999);
-    while (qScaled % 10 === 0) qScaled++;
+
+    // 商是整数或一位小数
     const qDp = randInt(0, 1);
     const qFactor = Math.pow(10, qDp);
+    let qScaled = randInt(20, 199);
+    while (qScaled % 10 === 0 && qDp > 0) qScaled++;
     quotient = qScaled / qFactor;
+
     const dividendScaled = qScaled * divisorScaled;
     const totalFactor = qFactor * divisorFactor;
     dividend = dividendScaled / totalFactor;
-    const shiftedDividend = dividend * divisorFactor;
-    const shiftedDivisor = divisorScaled;
-    expression = `${formatNum(dividend)} ÷ ${formatNum(divisor)}`;
-    steps = [
-      `除数是小数，被除数和除数同时 ×${divisorFactor}`,
-      `变为 ${formatNum(shiftedDividend)} ÷ ${shiftedDivisor} = ${formatNum(quotient)}`,
-    ];
-    return {
-      id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
-      prompt: `列竖式计算: ${expression}`,
-      data: {
-        kind: 'vertical-calc', operation: '÷', operands: [dividend, divisor], steps: [],
-        trainingFields: [
-          { label: `除数 ${formatNum(divisor)} 有几位小数`, answer: String(divisorDp) },
-          { label: '除数变成', answer: String(divisorScaled) },
-          { label: '被除数变成', answer: formatNum(dividend * divisorFactor) },
-        ],
-      },
-      solution: {
-        answer: formatNum(quotient),
-        steps,
-        explanation: `${expression} = ${formatNum(quotient)}`,
-      },
-      hints: ['先把除数变成整数，被除数也同时乘相同的数'],
-      xpBase: 10 + (difficulty - 1) * 5,
-    };
+
+    // 扩倍后被除数 = dividend * divisorFactor，必须 ≥ 100（非可口算）
+    if (dividend * divisorFactor >= 100) break;
   }
+  divisor = divisor!;
+  const divisorFactor = divisorDp! === 1 ? 10 : 100;
+  const shiftedDividend = Math.round(dividend! * divisorFactor);
+  const shiftedDivisor = Math.round(divisor * divisorFactor);
+  const expression = `${formatNum(dividend!)} ÷ ${formatNum(divisor)}`;
+  const steps = [
+    `除数是小数，被除数和除数同时 ×${divisorFactor}`,
+    `变为 ${shiftedDividend} ÷ ${shiftedDivisor}`,
+    `长除法得到商 = ${formatNum(quotient!)}`,
+  ];
+  return {
+    id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+    prompt: `列竖式计算: ${expression}`,
+    data: {
+      kind: 'vertical-calc', operation: '÷', operands: [dividend!, divisor], steps: [],
+      trainingFields: [
+        { label: `除数 ${formatNum(divisor)} 有几位小数`, answer: String(divisorDp!) },
+        { label: '除数变成', answer: String(shiftedDivisor) },
+        { label: '被除数变成', answer: String(shiftedDividend) },
+      ],
+    },
+    solution: {
+      answer: formatNum(quotient!),
+      steps,
+      explanation: `${expression} = ${formatNum(quotient!)}`,
+    },
+    hints: ['先把除数变成整数，被除数同倍扩大；再按整数长除法进行多步试商'],
+    xpBase: 10 + (difficulty - 1) * 5,
+  };
 }
 
 // ===== 取近似值: 竖式计算后四舍五入 (numeric-input) =====
+// v2.1 高档重点：除不尽需要取近似（循环小数）
 function generateApproximate(difficulty: number, id: string): Question {
-  const isMul = Math.random() < 0.5;
-  const places = difficulty <= 7 ? 2 : 1;
+  const isMul = Math.random() < 0.3; // 高档更多走除法取近似
+  const places = randInt(1, 2);
   const placeText = places === 2 ? '百分位' : '十分位';
   let a: number, b: number, exactAnswer: number, expression: string, opChar: '×' | '÷';
   if (isMul) {
-    const aScaled = randInt(101, 999);
-    const bScaled = randInt(11, 99);
+    // 小数×小数取近似
+    const aScaled = randInt(201, 999);
+    const bScaled = randInt(21, 99);
     a = aScaled / 100;
     b = bScaled / 100;
     exactAnswer = (aScaled * bScaled) / 10000;
     opChar = '×';
     expression = `${a.toFixed(2)} × ${b.toFixed(2)}`;
   } else {
-    const divisorScaled = randInt(11, 99);
-    let dividendScaled = randInt(100, 9999);
-    if (dividendScaled % divisorScaled === 0) dividendScaled += 1;
-    a = dividendScaled / 100;
-    b = divisorScaled / 100;
-    exactAnswer = a / b;
-    opChar = '÷';
-    expression = `${formatNum(a)} ÷ ${formatNum(b)}`;
+    // 高档重点：整数÷整数除不尽（如 7÷3, 22÷7 这种）
+    if (difficulty >= 8 && Math.random() < 0.5) {
+      const patterns: Array<[number, number]> = [
+        [7, 3], [22, 7], [11, 9], [13, 6], [17, 6], [23, 7], [31, 9], [5, 3], [8, 3], [25, 7],
+      ];
+      const [aa, bb] = patterns[randInt(0, patterns.length - 1)];
+      a = aa; b = bb; exactAnswer = aa / bb; opChar = '÷';
+      expression = `${aa} ÷ ${bb}`;
+    } else {
+      const divisorScaled = randInt(21, 99);
+      let dividendScaled = randInt(200, 9999);
+      if (dividendScaled % divisorScaled === 0) dividendScaled += 1;
+      a = dividendScaled / 100;
+      b = divisorScaled / 100;
+      exactAnswer = a / b;
+      opChar = '÷';
+      expression = `${formatNum(a)} ÷ ${formatNum(b)}`;
+    }
   }
   const rounded = Number(exactAnswer.toFixed(places));
   return {
@@ -531,35 +554,35 @@ function generateIntMul(difficulty: number, id: string): Question {
   };
 }
 
+function generateIntDiv(difficulty: number, id: string): Question {
+  return generateDivision(difficulty, id);
+}
+
 export function generateVerticalCalc(params: GeneratorParams): Question {
   const { difficulty, id = '', subtypeFilter } = params;
 
+  // v2.1：
+  //   低档 (d≤5)：纯整数
+  //   中档 (6≤d≤7)：小数加减、小数×整数、整数÷出小数、多位×多位整数
+  //   高档 (d≥8)：小数÷小数扩倍、多位小数×小数、循环小数取近似、高位含中间0乘法
   const entries: SubtypeEntry[] = difficulty <= 5 ? [
-    { tag: 'int-add', weight: 15, gen: () => generateIntAdd(difficulty, id) },
-    { tag: 'int-sub', weight: 15, gen: () => generateIntSub(difficulty, id) },
-    { tag: 'int-mul', weight: 10, gen: () => generateIntMul(difficulty, id) },
-    { tag: 'int-div', weight: 10, gen: () => generateDivision(difficulty, id) },
-    { tag: 'dec-add-sub', weight: 25, gen: () => generateDecimalAddSub(difficulty, id) },
-    { tag: 'dec-mul', weight: 15, gen: () => generateDecimalMul(difficulty, id) },
-    { tag: 'dec-div', weight: 10, gen: () => generateDecimalDiv(difficulty, id) },
+    { tag: 'int-add', weight: 30, gen: () => generateIntAdd(difficulty, id) },
+    { tag: 'int-sub', weight: 30, gen: () => generateIntSub(difficulty, id) },
+    { tag: 'int-mul', weight: 20, gen: () => generateIntMul(difficulty, id) },
+    { tag: 'int-div', weight: 20, gen: () => generateIntDiv(difficulty, id) },
   ] : difficulty <= 7 ? [
-    { tag: 'int-add', weight: 5, gen: () => generateIntAdd(difficulty, id) },
-    { tag: 'int-sub', weight: 5, gen: () => generateIntSub(difficulty, id) },
-    { tag: 'int-mul', weight: 10, gen: () => generateIntMul(difficulty, id) },
-    { tag: 'int-div', weight: 10, gen: () => generateDivision(difficulty, id) },
+    { tag: 'int-mul', weight: 15, gen: () => generateIntMul(difficulty, id) },
+    { tag: 'int-div', weight: 10, gen: () => generateIntDiv(difficulty, id) },
     { tag: 'dec-add-sub', weight: 30, gen: () => generateDecimalAddSub(difficulty, id) },
-    { tag: 'dec-mul', weight: 15, gen: () => generateDecimalMul(difficulty, id) },
+    { tag: 'dec-mul', weight: 20, gen: () => generateDecimalMul(difficulty, id) },
     { tag: 'dec-div', weight: 15, gen: () => generateDecimalDiv(difficulty, id) },
     { tag: 'approximate', weight: 10, gen: () => generateApproximate(difficulty, id) },
   ] : [
-    { tag: 'int-add', weight: 5, gen: () => generateIntAdd(difficulty, id) },
-    { tag: 'int-sub', weight: 5, gen: () => generateIntSub(difficulty, id) },
-    { tag: 'int-mul', weight: 10, gen: () => generateIntMul(difficulty, id) },
-    { tag: 'int-div', weight: 10, gen: () => generateDivision(difficulty, id) },
-    { tag: 'dec-add-sub', weight: 20, gen: () => generateDecimalAddSub(difficulty, id) },
-    { tag: 'dec-mul', weight: 20, gen: () => generateDecimalMul(difficulty, id) },
-    { tag: 'dec-div', weight: 20, gen: () => generateDecimalDiv(difficulty, id) },
-    { tag: 'approximate', weight: 10, gen: () => generateApproximate(difficulty, id) },
+    { tag: 'int-mul', weight: 15, gen: () => generateIntMul(difficulty, id) },
+    { tag: 'dec-add-sub', weight: 10, gen: () => generateDecimalAddSub(difficulty, id) },
+    { tag: 'dec-mul', weight: 25, gen: () => generateDecimalMul(difficulty, id) },
+    { tag: 'dec-div', weight: 30, gen: () => generateDecimalDiv(difficulty, id) },
+    { tag: 'approximate', weight: 20, gen: () => generateApproximate(difficulty, id) },
   ];
 
   return pickSubtype(entries, subtypeFilter);

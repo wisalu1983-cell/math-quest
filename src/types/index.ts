@@ -27,7 +27,11 @@ export interface UserSettings {
 export type QuestionType =
   | 'numeric-input'
   | 'multiple-choice'
+  | 'multi-select'
   | 'vertical-fill'
+  | 'multi-blank'
+  | 'expression-input'
+  | 'equation-input'
   | 'multi-step-input'
   | 'expression-select'
   | 'true-false';
@@ -101,6 +105,19 @@ export interface MultiStepData {
   expression: string;
   steps: ComputationStep[];
   options?: string[];
+  /** v2.2 新增：子题型标识，用于陷阱诊断、分档筛选、A04 S2-LB 等 lane 语义对齐 */
+  subtype?:
+    | 'recognize-simplifiable'
+    | 'recognize-not-simplifiable'
+    | 'fill-split-low'
+    | 'fill-split-mid'
+    | 'mid-pick-transform'
+    | 'recognize-method'
+    | 'recognize-multi'
+    | 'error-diagnose'
+    | 'hidden-factor-exec';
+  /** v2.2 新增：multi-blank 题型展示用的模板字符串（含 ___ 占位） */
+  template?: string;
 }
 
 export interface ComputationStep {
@@ -113,7 +130,7 @@ export interface ComputationStep {
 export interface DecimalOpsData {
   kind: 'decimal-ops';
   expression: string;
-  subtype: 'add-sub' | 'mul' | 'div' | 'shift' | 'compare';
+  subtype: 'add-sub' | 'mul' | 'div' | 'shift' | 'compare' | 'trap';
   options?: string[];
 }
 
@@ -127,9 +144,19 @@ export interface OperationLawsData {
 
 export interface BracketOpsData {
   kind: 'bracket-ops';
-  subtype: 'add-bracket' | 'remove-bracket' | 'division-property';
+  subtype:
+    | 'add-bracket'
+    | 'remove-bracket'
+    | 'division-property'
+    | 'nested-bracket'
+    | 'four-items-sign'
+    | 'error-diagnose';
   originalExpression: string;
   options?: string[];
+  /** v2.2 remove-bracket 新增：括号在原表达式中的相对位置（题面多样化用） */
+  position?: 'front' | 'middle' | 'tail';
+  /** v2.2 remove-bracket 新增：括号前的运算符（加法侧/减法侧），驱动去括号变号规则 */
+  bracketSide?: 'plus' | 'minus';
 }
 
 export interface EquationTransposeData {
@@ -138,10 +165,30 @@ export interface EquationTransposeData {
   variable: string;
   steps: string[];
   options?: string[];
+  /** v2.2 新增：子题型标识，用于 A08 陷阱体系和 lane 语义对齐 */
+  subtype?:
+    | 'move-constant'
+    | 'move-from-linear'
+    | 'bracket-equation'
+    | 'move-both-sides'
+    | 'error-diagnose';
+  /** v2.2 新增：A08 陷阱诊断使用的 trap 编号（T1/T2/T3/T4/T3+T4/T1-lite 等） */
+  trap?: string;
 }
 
 export interface Solution {
+  /** 单值答案（numeric-input / multiple-choice / vertical-fill） */
   answer: number | string;
+  /** 多选答案（multi-select）——正确选项字母集合，如 ['A','C'] */
+  answers?: string[];
+  /** 多步填空答案（multi-blank）——按空位顺序的数组 */
+  blanks?: Array<string | number>;
+  /** 表达式/等式题的标准答案（expression-input / equation-input），供验证器调用 */
+  standardExpression?: string;
+  /** equation-input 题的变量名，默认 'x' */
+  variable?: string;
+  /** expression-input 题的附加约束，如 "去括号后不得含括号" */
+  bracketPolicy?: 'must-not-have' | 'must-have' | 'none';
   steps?: string[];
   explanation: string;
 }

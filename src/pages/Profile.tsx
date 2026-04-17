@@ -100,6 +100,9 @@ export default function Profile() {
                 <div className="text-xs text-text-2">练习时的音效反馈</div>
               </div>
               <button
+                role="switch"
+                aria-checked={soundEnabled}
+                aria-label="音效开关"
                 onClick={toggleSound}
                 className={`w-12 h-6 rounded-full transition-all ${soundEnabled ? 'bg-primary' : 'bg-border'}`}
               >

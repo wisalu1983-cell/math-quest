@@ -1,0 +1,44 @@
+[
+  {
+    "id": "B3-01",
+    "title": "首页加载 + A01 主题卡可见",
+    "expect": "看到首页，包含 8 个题型主题卡（A01 基础计算可见）",
+    "observe": "title=\"数学大冒险 · 学习\", hasA01=true",
+    "verdict": "PASS"
+  },
+  {
+    "id": "B3-02",
+    "title": "A01 CampaignMap 显示\"档1 / 档2 / Boss\"三段（无\"低/中/高档\"）",
+    "expect": "看到\"档1·纯算术口算\"、\"档2·运算顺序与口算陷阱\"、\"Boss战\"三段，无\"低档/中档/高档\"字样",
+    "observe": "档1=true, 档2=true, Boss=true, 残留低/中档=false",
+    "verdict": "PASS"
+  },
+  {
+    "id": "B3-03",
+    "title": "A04 CampaignMap 显示\"档1 / 档2 / Boss\"三段",
+    "expect": "与 A01 同构，无低/中档",
+    "observe": "档1=true, 档2=true, Boss=true, 残留低/中档=false",
+    "verdict": "PASS"
+  },
+  {
+    "id": "B3-04",
+    "title": "A02 CampaignMap 显示\"低/中/高档 + Boss\"四段，且各段有聚焦 lane 名",
+    "expect": "四段完整 + 至少 4 个聚焦 lane 名（估算/比较/四舍五入等）",
+    "observe": "低=true, 中=true, 高=true, Boss=true, 聚焦lane数=6",
+    "verdict": "PASS"
+  },
+  {
+    "id": "B3-05",
+    "title": "A01 S1-LA L1 进入 Practice，首题为加减类（不含 ×÷）",
+    "expect": "subtypeFilter=[add,sub] 生效：首题算式只含 + 或 -",
+    "observe": "有+-=true, 有×÷=false",
+    "verdict": "PASS"
+  },
+  {
+    "id": "B3-06",
+    "title": "注入旧 Boss 存档 reload → 新结构全关满星，无旧 S4 遗留",
+    "expect": "迁移后 completedLevels 数=11（新结构总数），bestHearts=3 全满，无 S4 levelId",
+    "observe": "总关=11, 全满星=true, 无旧S4=true",
+    "verdict": "PASS"
+  }
+]

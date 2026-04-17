@@ -1,4 +1,5 @@
 // src/pages/CampaignMap.tsx
+import { useEffect, useRef } from 'react';
 import { useUIStore, useSessionStore, useGameProgressStore } from '@/store';
 import { TOPICS } from '@/constants';
 import { CAMPAIGN_MAPS } from '@/constants/campaign';
@@ -89,6 +90,17 @@ export default function CampaignMap() {
     setPage('practice');
   }
 
+  // 推荐关卡自动滚动
+  const recommendedRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (recommendedRef.current) {
+      const timer = setTimeout(() => {
+        recommendedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [recommendedLevelId]);
+
   return (
     <div className="min-h-dvh bg-bg safe-top">
 
@@ -147,14 +159,35 @@ export default function CampaignMap() {
           return (
             <div key={stage.stageId} className={`${stageUnlocked ? '' : 'opacity-50'} stagger-${Math.min(stageIdx + 2, 6)}`}>
               {/* 章节分隔符 */}
-              <div className="flex items-center gap-2 mx-5 my-3.5">
-                <div className="flex-1 h-px bg-border-2" />
-                <span className="text-[12px] font-extrabold text-text-3 tracking-widest uppercase">
-                  {stage.stageLabel}
-                  {!stageUnlocked && ' · 🔒 完成上一章解锁'}
-                </span>
-                <div className="flex-1 h-px bg-border-2" />
-              </div>
+              {stage.isBoss ? (
+                <div className="mx-5 my-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent via-danger to-transparent" />
+                  </div>
+                  <div className="flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl bg-danger/10 border-2 border-danger/30">
+                    <span className="text-lg">🔥</span>
+                    <span className="text-[14px] font-black text-danger tracking-widest uppercase">
+                      {stage.stageLabel}
+                    </span>
+                    <span className="text-lg">🔥</span>
+                    {!stageUnlocked && (
+                      <span className="text-[11px] font-bold text-text-3 ml-1">🔒 完成上一章解锁</span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 mt-2">
+                    <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent via-danger to-transparent" />
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 mx-5 my-3.5">
+                  <div className="flex-1 h-px bg-border-2" />
+                  <span className="text-[12px] font-extrabold text-text-3 tracking-widest uppercase">
+                    {stage.stageLabel}
+                    {!stageUnlocked && ' · 🔒 完成上一章解锁'}
+                  </span>
+                  <div className="flex-1 h-px bg-border-2" />
+                </div>
+              )}
 
               {/* 每条 lane */}
               {stage.lanes.map((lane, laneIdx) => (
@@ -176,10 +209,17 @@ export default function CampaignMap() {
                       else if (playable) state = 'play';
 
                       let btnClass = 'w-full rounded-[18px] border-2 flex flex-col items-center justify-between transition-all active:scale-95';
-                      let btnStyle: React.CSSProperties = { height: 96, padding: '10px 8px 10px' };
+                      let btnStyle: React.CSSProperties = stage.isBoss
+                        ? { height: 120, padding: '12px 8px 12px' }
+                        : { height: 96, padding: '10px 8px 10px' };
 
                       if (completed) {
                         btnClass += ' bg-success-lt border-success-mid text-success';
+                      } else if (stage.isBoss && isRec) {
+                        btnClass += ' bg-danger border-danger text-white animate-bounce-rec';
+                        btnStyle.boxShadow = '0 4px 16px rgba(255,75,75,.45)';
+                      } else if (stage.isBoss && playable) {
+                        btnClass += ' bg-danger/10 border-danger/60 text-danger hover:border-danger';
                       } else if (isRec) {
                         btnClass += ' bg-primary border-primary-dark text-white animate-bounce-rec';
                         btnStyle.boxShadow = '0 4px 14px rgba(255,107,53,.38)';
@@ -190,7 +230,7 @@ export default function CampaignMap() {
                       }
 
                       return (
-                        <div key={level.levelId} className="relative">
+                        <div key={level.levelId} className="relative" ref={isRec ? recommendedRef : undefined}>
                           {/* NEW 徽章 */}
                           {isRec && (
                             <span
@@ -208,13 +248,13 @@ export default function CampaignMap() {
                               onClick={() => handleLevelClick(level.levelId)}
                               className={btnClass}
                               style={btnStyle}
-                              aria-label={`第${num}关，${level.questionCount}题，${completed ? '已完成' : isRec ? '推荐关卡' : '可挑战'}`}
+                              aria-label={`${stage.isBoss ? 'Boss关' : `第${num}关`}，${level.questionCount}题，${completed ? '已完成' : isRec ? '推荐关卡' : '可挑战'}`}
                             >
                               <span className="self-start text-[12px] font-extrabold opacity-60 leading-none">
-                                第{num}关
+                                {stage.isBoss ? '👹 Boss' : `第${num}关`}
                               </span>
                               <span className="flex flex-1 items-center justify-center">
-                                <LvlIcon state={state} size={36} />
+                                <LvlIcon state={state} size={stage.isBoss ? 44 : 36} />
                               </span>
                               <span className="text-[12px] font-extrabold text-center leading-none">
                                 {completed && bestHearts !== null
@@ -227,13 +267,13 @@ export default function CampaignMap() {
                               className={btnClass}
                               style={btnStyle}
                               role="img"
-                              aria-label={`第${num}关，${level.questionCount}题，未解锁，完成前序关卡解锁`}
+                              aria-label={`${stage.isBoss ? 'Boss关' : `第${num}关`}，${level.questionCount}题，未解锁，完成前序关卡解锁`}
                             >
                               <span className="self-start text-[12px] font-extrabold opacity-60 leading-none">
-                                第{num}关
+                                {stage.isBoss ? '👹 Boss' : `第${num}关`}
                               </span>
                               <span className="flex flex-1 items-center justify-center">
-                                <LvlIcon state={state} size={36} />
+                                <LvlIcon state={state} size={stage.isBoss ? 44 : 36} />
                               </span>
                               <span className="text-[12px] font-extrabold text-center leading-none">
                                 {level.questionCount}题

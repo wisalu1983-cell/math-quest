@@ -1,0 +1,191 @@
+---
+name: qa-leader
+description: |
+  math-quest 项目 QA Leader 编排器：测试用例设计、三层 QA 流程
+  （Code Review → 自动化 → 拟真人工）、缺陷分流与文档回写。
+  触发词：QA、测试、视觉QA、体验测试、拟真QA、跑一轮QA、全量测试。
+---
+
+<!-- QA Leader 编排器 — Claude Code 适配件 -->
+<!-- 规范源: math-quest/QA/qa-leader-canonical.md -->
+<!-- 编辑请只改规范源文件，本文件由规范源生成 -->
+
+# QA Leader 编排器
+
+本文件是 math-quest 项目 QA 体系的规范源（canonical source）。
+Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skills/qa-leader/SKILL.md`）
+各自加环境特定 frontmatter 后引用本文件内容。编辑请只改本文件。
+
+## 触发条件
+
+当用户要求以下操作时，启动本编排器：
+- "跑一轮 QA" / "全量测试" / "QA 测试"
+- "写测试用例" / "设计测试方案"
+- "视觉 QA" / "体验测试" / "拟真 QA"
+- 指定某个 phase 或 batch 的测试执行
+
+---
+
+## 步骤 0：测试用例设计规范
+
+用例不是凭空写的，必须从设计文档出发。
+
+### 输入要求
+
+1. 先通读 `ProjectManager/Overview.md`（项目目标和当前状态）
+2. 再通读相关 `ProjectManager/Specs/*.md`（各功能规格）
+3. 对照 `src/` 实际实现理解当前能力边界
+4. 查阅 `ProjectManager/ISSUE_LIST.md` 了解已知问题
+
+### 用例表结构
+
+每个模块以"设计意图"一句话开头（从 Spec 提取），然后是用例表：
+
+| 列 | 必填 | 说明 |
+|----|------|------|
+| ID | 是 | 模块缩写-序号，如 `A-01`、`I-05` |
+| 用例名称 | 是 | 简短描述测试什么 |
+| 操作 | 是 | 具体操作步骤 |
+| 预期结果 | 是 | 功能层面的正确结果 |
+| **预期体验** | 是 | 用户视角的感受（如"流畅过渡"、"成就感"、"教学价值"） |
+| 优先级 | 是 | P0(必须)/P1(重要)/P2(增强) |
+| 验证方式 | 是 | `自动化` 或 `模拟人工` |
+
+### 模块划分原则
+
+按游戏生命周期映射，不按代码模块：
+
+1. **A — 迭代验证**：版本间的回归和已修 ISSUE 确认
+2. **B — 注册与首页**：新用户注册、主页信息展示
+3. **C — 闯关地图**：关卡解锁、路线选择、进度展示
+4. **D — 答题通用**：开始答题、提交、退出确认
+5. **E — 结算与进度**：答题结果、历史记录、成就
+6. **F — 题目生成**：各生成器的正确性、分布、边界
+7. **G — 数字输入**：数字键盘交互
+8. **H — 选择题**：选项展示、选择反馈
+9. **I — 竖式填空**：竖式计算板交互
+10. **J — 辅助页面**：设置、帮助、关于
+11. **K — 全局边界**：网络异常、存储极限、多标签页
+
+### 版本迭代规则
+
+- 每轮修复/迭代后，在上一版基础上创建新版（v1 -> v2 -> v3...）
+- 新版必须覆盖：新功能正向验证 + 旧缺陷回归检查 + 已修 ISSUE 的确认关闭
+- 已知缺陷用 `[KNOWN-DEFECT]` 标记；修复后转为正向验证用例
+- 文件命名：`test-results/{phase}/test-cases-v{N}.md`
+
+### 覆盖度分类
+
+每条用例必须标注验证方式，供后续分层执行：
+
+- **自动化**：可通过代码审查、Vitest、Playwright DOM 检查验证
+- **模拟人工**：需要体验判定、视觉校验、交互流畅度评估
+
+---
+
+## 第一层：Code Review
+
+静态代码审查，在写测试之前先过一遍代码质量。
+
+### 环境适配
+
+| 环境 | 调用的 skill/plugin |
+|------|-------------------|
+| **Cursor** | `requesting-code-review`（obra/superpowers） |
+| **Claude Code** | `code-review` plugin（官方） |
+
+### 关注重点
+
+- 架构合规：组件是否按约定组织，store 是否正确分层
+- 死代码：未使用的 import、函数、组件
+- 类型安全：TypeScript 类型是否完整，是否有 `any` 逃逸
+- 格式一致性：命名风格、文件组织
+
+---
+
+## 第二层：自动化测试
+
+覆盖用例表中标记为"自动化"的部分。
+
+### 环境适配
+
+| 工具 | Cursor | Claude Code |
+|------|--------|-------------|
+| 单元测试 | Vitest | Vitest |
+| 浏览器测试 | Playwright（引用 `webapp-testing`） | Playwright + 可选 gstack `qa-only` |
+| 测试纪律 | `test-driven-development`（obra） | 同左（superpowers plugin） |
+| UI 回归 | `visual-screenshot-qa` | 同左 |
+
+---
+
+## 第三层：拟真人工 QA
+
+覆盖用例表中标记为"模拟人工"的部分。
+
+### 调用 skill
+
+| skill | 用途 |
+|-------|------|
+| `agent-as-user-qa` | 方法论：四栏协议、PASS/FAIL/RISK 判定、执行纪律 |
+| `visual-screenshot-qa` | 涉及设计稿对照的视觉验证场景 |
+| `verification-before-completion`（obra） | 证据纪律 |
+
+### 执行要求
+
+1. 测试前确定目标用户画像（math-quest：6-12 岁小学生，数学能力中等）
+2. 按批次执行，每批 10-20 条用例
+3. 遵守 `agent-as-user-qa` 定义的四栏协议和执行纪律
+4. 每条 FAIL 和 RISK 必须附带截图证据
+
+---
+
+## 缺陷流转规范
+
+### 发现阶段
+
+QA 发现问题后，写入 `ProjectManager/ISSUE_LIST.md`，每条包含：
+编号（ISSUE-NNN）、优先级（P0/P1/P2）、来源（CR/Auto/Manual + 用例 ID）、
+现象、用户感知、建议方向、状态。
+
+### 产品裁决
+
+| 裁决 | 状态变更 | 后续动作 |
+|------|---------|---------|
+| **接受** | `✅ 按产品决策接受（不修复）` | 添加产品结论；下轮移除 FAIL 预期 |
+| **修复** | `⬜ 待修复` → `✅ 已修复` | 进入修复排期；下轮添加回归验证 |
+| **降级/跟踪** | 调整优先级 | 保留为体验增强项持续跟踪 |
+
+### 回写要求
+
+裁决后同步更新：`Overview.md`、`ISSUE_LIST.md`、QA 计划文件、QA 结果报告。
+
+---
+
+## 产出物规范
+
+```
+test-results/{phase}/
+  test-cases-v{N}.md              # 测试用例表
+  {batch-name}-result.md          # 批次执行报告
+  {batch-name}-artifacts/         # 截图证据
+  {script-name}.test.ts           # Vitest 脚本
+  {script-name}.ts                # Playwright 脚本
+```
+
+---
+
+## 执行编排
+
+```
+步骤 0: 设计/更新测试用例
+    ↓
+第一层: Code Review（可选）
+    ↓
+第二层: 自动化测试（Vitest + Playwright + 视觉回归）
+    ↓
+第三层: 拟真人工 QA（体验测试 + 视觉对照）
+    ↓
+汇总: 缺陷分流 → ISSUE_LIST → 产品裁决 → 文档回写
+```
+
+用户可指定范围："只跑自动化" / "只做体验测试" / "全量 QA" / "视觉回归"。

@@ -90,7 +90,7 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (inputRef.current && !completed) inputRef.current.focus();
+    if (inputRef.current && !completed) inputRef.current.focus({ preventScroll: true });
   }, [activeCell, completed]);
 
   const cellKey = (type: string, col: number) => `${type}-${col}`;
@@ -99,7 +99,7 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
     if (completed) return;
     setActiveCell(cell);
     setPendingMinus(false);
-    inputRef.current?.focus();
+    inputRef.current?.focus({ preventScroll: true });
   };
 
   // Find the next mandatory empty cell after `from`, considering current filled state
@@ -353,6 +353,11 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
     return true;
   }, [digitValues, highestNonZeroCol]);
 
+  // 进位/退位提示：存在辅助格且用户尚未填入任何进位值时显示
+  const hasCarryCells = columns.some(col => col.carryMandatory);
+  const hasAnyCarryFilled = Object.keys(carryValues).length > 0;
+  const showCarryHint = hasCarryCells && !hasAnyCarryFilled && !completed;
+
   return (
     <div className="flex flex-col items-center gap-3 mb-6">
       <input
@@ -360,6 +365,7 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
         type="text"
         inputMode="text"
         className="opacity-0 absolute w-0 h-0"
+        style={{ scrollMargin: 0 }}
         value=""
         onKeyDown={e => {
           if (e.key === 'Backspace' || e.key === 'Delete') {
@@ -378,6 +384,11 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
       />
 
       <div className="card p-4 inline-block">
+        {showCarryHint && (
+          <div className="text-[11px] text-text-2 text-center mb-2 animate-pulse font-bold">
+            💡 上方小格用于记录退位/进位
+          </div>
+        )}
         {/* Carry row */}
         <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
           {Array.from({ length: gridCols }).map((_, i) => renderCarryCell(i))}

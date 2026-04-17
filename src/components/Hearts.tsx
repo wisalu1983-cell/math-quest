@@ -19,7 +19,7 @@ export default function Hearts({ count, max = 3 }: HeartsProps) {
         <span
           key={i}
           aria-hidden="true"
-          className={`text-xl transition-colors ${i < count ? 'text-danger' : 'text-text-3'}`}
+          className={`text-xl transition-all ${i < count ? 'text-danger' : 'text-danger opacity-20'}`}
         >
           ❤
         </span>

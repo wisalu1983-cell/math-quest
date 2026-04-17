@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-15（视觉全量 QA：86 条用例 82 PASS / 4 FAIL，1 个 P1 布局 Bug（关卡宽度不一致），颜色/字体/尺寸/可访问性全面达标；5 个截图审视发现）
+> 最后更新：2026-04-17（v2.2 生成器重写收口；**当前阶段主计划** = [`Plan/2026-04-16-open-backlog-consolidation.md`](Plan/2026-04-16-open-backlog-consolidation.md)；**进行中子计划** = [`Plan/2026-04-17-campaign-advance-stabilization.md`](Plan/2026-04-17-campaign-advance-stabilization.md) 闯关+进阶稳定化）
 
 ---
 
@@ -39,7 +39,11 @@
 | Phase 2 CR+QA | Code Review 17项 + 冒烟107条 + 可信44条深度QA | ✅ [冒烟](Reports/2026-04-15-full-qa-results.md) + [可信](Reports/2026-04-15-credible-qa-results.md) |
 | Bug 修复 | CR-002 竖式浮点 + 进阶结算页无限重渲染 | ✅ 已修复并验证 |
 | 视觉全量 QA | 86 条：颜色/字体/尺寸/布局/交互/可访问性/截图审视 | ✅ [报告](Reports/2026-04-15-visual-qa-results.md)（82 PASS / 4 FAIL）|
-| Phase 3 | 段位赛系统（BO3/BO5/BO7） | ⬜ 待开始 |
+| 视觉修复回归 | 6 项修复验证：关卡宽度/边框/Progress留白/答题居中/庆祝动画/弹窗遮罩 | ✅ [报告](Reports/2026-04-15-regression-visual-results.md)（6/6 PASS）|
+| P1+P2 修复 QA | CR + Vitest 167/167 + Playwright 16/16 PASS，0 新缺陷 | ✅ [报告](../test-results/phase2-p1p2-fixes/qa-result.md) |
+| Phase 2 浏览器验收 | 进阶系统 A1-A6 全量验收：Vitest 167/167 + Playwright 31 条 30 PASS / 拟真 QA 10 条 9 PASS，0 新缺陷 | ✅ [报告](../test-results/phase2-advance-acceptance/qa-result.md) |
+| P1 UI/a11y 批量修复 | ISSUE-022~024/028/032/034/035 共 7 项关闭：Playwright 19/19 PASS | ✅ [报告](../test-results/p1-ui-a11y-batch/qa-result.md) |
+| Phase 3 | 段位赛系统（BO3/BO5/BO7） | ⬜ 下阶段 |
 
 ### UI 重设计（阳光版 v5）
 
@@ -60,7 +64,7 @@
 | Phase 0~3 | A01-A08 全主题 P0/P1/P2 改进 | ✅ 全部完成 |
 | A03 块A/B | 小数支持 + 竖式组件重构 | ✅ 完成 |
 
-**当前状态**：88 测试通过，构建成功
+**当前状态**：A01-A08 生成器能力已并入主线验证，当前总测试 225/225 通过，构建成功
 
 ### 真题参考库
 
@@ -86,50 +90,62 @@
 
 ### P1 — 全部关闭 ✅
 
-### P2 — 增强（待解决）
-- **ISSUE-008** 约 40% 子函数无直接测试覆盖
-- **ISSUE-009** 提示文本质量不一致
-- **ISSUE-010** 答案格式不统一
-- **ISSUE-017** 竖式减法退位提示可发现性偏弱
+### P2 — 生成器增强 ✅ 全部关闭
+- **ISSUE-008** ✅ 新增 58 条三档覆盖测试（difficulty-tiers.test.ts）
+- **ISSUE-009** ✅ 降级关闭（hints 字段 UI 未使用，属死数据）
+- **ISSUE-010** ✅ formatNum 提取到 utils.ts，消除 4 处重复
 
-### UI 问题（已关闭）
+### UI / 无障碍开放项（待排期）
+- **UI / 交互**：ISSUE-020、025、026、029~031 仍开放，涉及导航复用、token/字号统一、类型与代码整洁
+- **a11y / 体验**：ISSUE-037、038、041~043、045 仍开放，涉及颜色语义、skip-link、焦点管理
 
-| Issue | 描述 | 状态 |
-|-------|------|------|
-| ISSUE-018 | bg-error → bg-danger | ✅ 关闭 |
-| ISSUE-019 | setPage 移入 useEffect | ✅ 关闭 |
-| ISSUE-020 | BottomNav 5 份重复代码 | ✅ 关闭（提取为组件）|
-| ISSUE-021 | useGameProgressStore 导入路径统一 | ✅ 关闭（统一改为 @/store barrel import）|
-| ISSUE-022 | 关卡按钮触控区偏小 | ✅ 关闭（min-height 92px）|
-| ISSUE-023 | 错题本仅展 5 题 | ✅ 关闭（移除限制）|
-| ISSUE-024 | 页面加载无 Loading 状态 | ✅ 关闭（LoadingScreen 组件）|
-| ISSUE-025~031 | Minor UI 问题 | ⚠️ 部分关闭，详见 ISSUE_LIST.md |
-| ISSUE-027 | 动态 document.title | ✅ 关闭 |
-| ISSUE-028 | 图标按钮缺 aria-label | ✅ 关闭 |
-| ISSUE-032 | 主按钮白字对比度 | ✅ 关闭（产品决策：保留白字）|
-| ISSUE-033 | user-scalable=no | ✅ 关闭 |
-| ISSUE-034 | 退出弹窗缺 dialog 规范 | ✅ 关闭（Dialog 组件）|
-| ISSUE-035 | 进度条无 ARIA | ✅ 关闭（ProgressBar 组件）|
-| ISSUE-036 | aria-live 答题反馈 | ✅ 关闭 |
-| ISSUE-037 | DecimalTrainingGrid 颜色 | ✅ 关闭（设计 token 替换）|
-| ISSUE-039 | prefers-reduced-motion | ✅ 关闭 |
-| ISSUE-040 | 心数 aria-label | ✅ 关闭（Hearts 组件）|
+### 2026-04-16 试玩反馈（全部已修复）
+- **ISSUE-046** ✅ 结算面板心数不更新（store/index.ts submitAnswer 同步 heartsRemaining）
+- **ISSUE-047** ✅ 除法整除比例异常（difficulty 6-7: 40% 有余数；8+: 30% 有余数）
+- **ISSUE-048** ✅ Boss 关无视觉差异（CampaignMap 火焰横幅 + danger 配色 + 120px 按钮）
+- **ISSUE-049** ✅ Boss 关内容与综合挑战关雷同（Boss diff→9 题数→25；S3-L3→8；S2-L3→6）
+- **ISSUE-050** ✅ 进阶/段位赛对新用户不可见（Home 始终显示进阶入口，未解锁呈锁定态）
+- **ISSUE-051** ✅ 关卡难度梯度缺失（并入 ISSUE-049 处理）
+- **ISSUE-052** ✅ 进度圆点挤压心数（>15 题改为数字 N/M）
+- **ISSUE-053** ✅ 关卡地图未自动滚到当前关（scrollIntoView + 300ms 延迟）
+- **ISSUE-054** ✅ 算式折行（whitespace-nowrap + 动态字号）
+- **ISSUE-055** ✅ 余数框获焦页面跳动（focus preventScroll: true）
+- **ISSUE-017** ✅ 竖式退位提示（首次进入竖式题显示脉冲提示）
+
+### UI / 无障碍审查跟踪
+
+| 类别 | 条目 | 状态 |
+|------|------|------|
+| 已关闭 | ISSUE-018、019、021~024、027、028、032~036、039、040、044 | ✅ 已关闭 |
+| 仍待处理 | ISSUE-020、025、026、029~031、037、038、041~043、045 | ⬜ 详见 ISSUE_LIST.md |
 
 ---
 
 ## 后续待办
 
-### 近期（建议排期）
+**当前阶段主计划**：[`Plan/2026-04-16-open-backlog-consolidation.md`](Plan/2026-04-16-open-backlog-consolidation.md)（2026-04-17 刷新）  
+**进行中子计划**：[`Plan/2026-04-17-campaign-advance-stabilization.md`](Plan/2026-04-17-campaign-advance-stabilization.md) — 闯关+进阶模式稳定化
+
+### 当前阶段：闯关 + 进阶模式稳定化
+
+| 优先级 | 事项 | 状态 |
+|--------|------|------|
+| ~~P1~~ | Phase 2 浏览器验收 | ✅ [报告](../test-results/phase2-advance-acceptance/qa-result.md) |
+| ~~P1~~ | 高优先级 UI/a11y 修复 ISSUE-022~024/028/032/034/035 | ✅ [报告](../test-results/p1-ui-a11y-batch/qa-result.md) |
+| ~~P1~~ | 生成器质量补强 ISSUE-008~010 | ✅ 已完成（2026-04-16）|
+| ~~P1~~ | 生成器 v2.2 系统性重写 | ✅ 已完成（2026-04-17）|
+| **P0** | **v2.2 稳定化 S1 阻塞级**：ISSUE-058（tsc 24 错误）+ BUG-v2-SMOKE-02（A05 指令丢失）| ✅ 代码完成（2026-04-17），浏览器截图回归待执行，见子计划 2.5 §S1 |
+| **P1** | **v2.2 稳定化 S2 重要 bug**：SMOKE-01/03 + Q-057-F01/F02 | 🟡 进行中，见子计划 2.5 §S2 |
+| **P1** | **v2.2 稳定化 S3 深度体验 QA**：梯度打分 / 新答题形式 / A08 陷阱 / 节奏+hearts | 🟡 进行中，见子计划 2.5 §S3 |
+| **P1** | **v2.2 稳定化 S4 进阶专项**：压档后 buildAdvanceSlots + 进阶冒烟 + multi-blank 在进阶的表现 | 🟡 进行中，见子计划 2.5 §S4 |
+| P2 | UI 一致性清理 | 子计划 3（未启动，稳定化后）|
+| P2 | 真题参考库补充（312/525，差 213）| 可并行推进 |
+
+### 下阶段：新功能扩展
 
 | 优先级 | 事项 | 说明 |
 |--------|------|------|
-| P1 | **Phase 2 浏览器验收** | 进阶系统首次在真实浏览器中测试（AdvanceSelect/进阶答题/结算视图/星级进度） |
-| P1 | **游戏化 Phase 3** | 段位赛系统（BO3/BO5/BO7），先写规格再开发 |
-
-### 中期
-
-| 优先级 | 事项 | 说明 |
-|--------|------|------|
-| P2 | 真题参考库补充 | 目标 525，当前 312，差 213 题 |
-| P2 | ISSUE-025~031 Minor UI | 部分仍开放，详见 ISSUE_LIST.md |
-| P3 | ISSUE-008~010/017 | 生成器测试覆盖、提示文本、答案格式、竖式退位提示 |
+| P2 | **游戏化 Phase 3** | 段位赛系统（BO3/BO5/BO7），闯关+进阶稳定化完成后启动 |
+| P3 | A03 块B Plus | 竖式题型深化（乘法部分积、除法试商） |
+| P3 | A09 分数运算生成器 | 新题型开发 |
+| P3 | B/C/D 领域开发 | 新领域内容扩展 |

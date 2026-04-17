@@ -190,9 +190,13 @@ export default function Home() {
                 <div className="text-[12px] font-extrabold mt-1.5 flex items-center gap-1.5"
                      style={{ color: pct > 0 ? topic.color : 'var(--color-text-3)' }}>
                   {allDone ? '✓ 全部完成' : `${completedLevels}/${totalLevels} 关`}
-                  {isAdvUnlocked && (
+                  {isAdvUnlocked ? (
                     <span className="text-warning text-[12px]">
                       {'★'.repeat(advStars)}{'☆'.repeat(advCap - advStars)}
+                    </span>
+                  ) : allDone ? null : (
+                    <span className="text-text-3 text-[11px] opacity-60">
+                      {'☆'.repeat(advCap)} 通关解锁
                     </span>
                   )}
                 </div>
@@ -201,9 +205,9 @@ export default function Home() {
           })}
         </div>
 
-        {/* ── 进阶训练入口（有解锁题型时显示）── */}
-        {TOPICS.some(t => !!gameProgress.advanceProgress[t.id as TopicId]) && (
-          <div className="pb-4 stagger-4">
+        {/* ── 进阶训练入口（始终显示，未解锁时呈锁定态）── */}
+        <div className="pb-4 stagger-4">
+          {TOPICS.some(t => !!gameProgress.advanceProgress[t.id as TopicId]) ? (
             <button
               onClick={() => setPage('advance-select')}
               className="w-full bg-card rounded-[18px] border-2 border-warning/40 p-4 text-left
@@ -214,13 +218,27 @@ export default function Home() {
                 ⭐
               </div>
               <div className="flex-1">
-                <p className="font-black text-text-1 text-[15px]">进阶训练</p>
+                <p className="font-black text-text text-[15px]">进阶训练</p>
                 <p className="text-[12px] text-text-2 mt-0.5">刷星升级，向段位赛进发</p>
               </div>
               <span className="text-text-2 text-lg">›</span>
             </button>
-          </div>
-        )}
+          ) : (
+            <div
+              className="w-full bg-card rounded-[18px] border-2 border-border-2 p-4
+                         flex items-center gap-4 opacity-70"
+              style={{ boxShadow: '0 1px 5px rgba(0,0,0,.07)' }}
+            >
+              <div className="w-12 h-12 rounded-2xl bg-border-2/50 flex items-center justify-center text-2xl shrink-0">
+                🔒
+              </div>
+              <div className="flex-1">
+                <p className="font-black text-text-3 text-[15px]">进阶训练</p>
+                <p className="text-[12px] text-text-3 mt-0.5">通关任意主题解锁进阶星级挑战</p>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       <BottomNav activeTab="home" />

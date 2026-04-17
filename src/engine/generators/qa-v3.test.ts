@@ -137,19 +137,23 @@ describe('F-I. 通用生成质量', () => {
         if (data.options.length === 2 && data.options.includes('是') && data.options.includes('不是')) {
           continue; // DEFECT-001: 已知2选项判断题
         }
+        if (data.options.length === 2 && data.options.includes('满足') && data.options.includes('不满足')) {
+          continue; // A04 simple-judge：满足/不满足 两项判断本身就是题型的表达方式
+        }
         expect(data.options.length).toBeGreaterThanOrEqual(3);
       }
     }
   });
 
-  // DEFECT-001 explicit check
-  it('DEFECT-001: equation-transpose 概念题存在2选项MC', () => {
+  // DEFECT-001 FIXED: equation-transpose 概念题升级为 4 选项 MC
+  it('DEFECT-001 (fixed): equation-transpose 概念题为 ≥3 选项 MC', () => {
     const qs = genBatch('equation-transpose', 5, 200, ['equation-concept']);
-    const twoOptQs = qs.filter(q => {
+    const mcQs = qs.filter(q => q.type === 'multiple-choice');
+    expect(mcQs.length).toBeGreaterThan(0);
+    for (const q of mcQs) {
       const data = q.data as any;
-      return q.type === 'multiple-choice' && data.options?.length === 2;
-    });
-    expect(twoOptQs.length).toBeGreaterThan(0);
+      expect(data.options?.length).toBeGreaterThanOrEqual(3);
+    }
   });
 });
 
@@ -213,18 +217,24 @@ describe('F-II. subtypeFilter 逐题型验证', () => {
     expect(qs.length).toBe(30);
   });
 
-  // F-12: DEFECT-002 — A04 d≤5 不含 distributive entry，subtypeFilter 失效
-  it('F-12: DEFECT-002 — A04 d≤5 distributive filter 失效（退化为全量池）', () => {
-    const qs = genBatch('operation-laws', 5, 30, ['distributive']);
-    const matchCount = qs.filter(q => (q.data as any).law === 'distributive').length;
-    // 期望100%，但实际 ≈ 13%，因为生成器 d≤5 没有 distributive entry
-    expect(matchCount / qs.length).toBeLessThan(0.5);
+  // F-12: A04 v2.2 — 档 1 identify-law 过滤器
+  it('F-12: A04 档 1 identify-law filter 100% 命中', () => {
+    const qs = genBatch('operation-laws', 5, 30, ['identify-law']);
+    const matchCount = qs.filter(q => q.type === 'multiple-choice').length;
+    expect(matchCount / qs.length).toBe(1);
   });
 
-  // 验证 d≥6 时 distributive 正常工作
-  it('F-12b: A04 d≥6 distributive filter 正常', () => {
-    const qs = genBatch('operation-laws', 7, 30, ['distributive']);
-    const matchCount = qs.filter(q => (q.data as any).law === 'distributive').length;
+  // F-12b: A04 v2.2 — 档 1 reverse-blank 过滤器（multi-blank 反用律）
+  it('F-12b: A04 档 1 reverse-blank filter 100% 命中 multi-blank', () => {
+    const qs = genBatch('operation-laws', 5, 30, ['reverse-blank']);
+    const matchCount = qs.filter(q => q.type === 'multi-blank').length;
+    expect(matchCount / qs.length).toBe(1);
+  });
+
+  // F-12c: A04 v2.2 — 档 2 distributive-trap 过滤器（MC 分配律陷阱）
+  it('F-12c: A04 档 2 distributive-trap filter 100% 命中 MC', () => {
+    const qs = genBatch('operation-laws', 8, 30, ['distributive-trap']);
+    const matchCount = qs.filter(q => q.type === 'multiple-choice').length;
     expect(matchCount / qs.length).toBe(1);
   });
 
@@ -235,9 +245,9 @@ describe('F-II. subtypeFilter 逐题型验证', () => {
     expect(matchCount / qs.length).toBe(1);
   });
 
-  // F-14: A06 添括号路线
+  // F-14: A06 添括号路线（v2.1：添括号为中档题，改用 d=7）
   it('F-14: A06 添括号路线 100% add-bracket', () => {
-    const qs = genBatch('bracket-ops', 3, 30, ['add-bracket']);
+    const qs = genBatch('bracket-ops', 7, 30, ['add-bracket']);
     const matchCount = qs.filter(q => (q.data as any).subtype === 'add-bracket').length;
     expect(matchCount / qs.length).toBe(1);
   });
@@ -313,15 +323,17 @@ describe('A-07/A-08: 方程MC选项数', () => {
 
 describe('Campaign 结构验证', () => {
   it('B-09: 各题型总关卡数正确', () => {
+    // ISSUE-057（2026-04-17）范围扩张后：8 题型全面重构，"S3 综合无 filter"段
+    // 被拆成聚焦 lane；A01/A04/A08 压为 2 档 + Boss。详见 Reports 迁移说明。
     const expected: Record<string, number> = {
-      'mental-arithmetic': 12,
-      'number-sense': 15,
-      'vertical-calc': 12,
-      'operation-laws': 10,
-      'decimal-ops': 12,
-      'bracket-ops': 10,
-      'multi-step': 14,
-      'equation-transpose': 11,
+      'mental-arithmetic': 11, // 原 12，档 2 拆 2 lane、删去"综合挑战"段
+      'number-sense': 15,      // 原 15，S3"综合估算"改为聚焦估算 + 比较深化
+      'vertical-calc': 12,     // 原 12，S3"高阶笔算"改为大数乘法 + 除法近似
+      'operation-laws': 8,     // 原 10，压 2 档后 S2/S3 合并为"律的深化"
+      'decimal-ops': 12,       // 原 12，S3"综合"改为循环小数 + 反直觉性质
+      'bracket-ops': 10,       // 原 10，S3 原"division-property"在 v2.2 已降权为 0
+      'multi-step': 13,        // 原 14，S3"高阶综合"改为错误诊断 + 隐藏因数
+      'equation-transpose': 9, // 原 11，压 2 档后 S2/S3 合并为"双向移项与陷阱"
     };
     for (const [topicId, map] of Object.entries(CAMPAIGN_MAPS)) {
       let count = 0;
@@ -334,7 +346,7 @@ describe('Campaign 结构验证', () => {
     }
   });
 
-  it('A-24: 44条Lane难度单调不减 + S1≥2 + S4 Boss=7', () => {
+  it('A-24: 50条Lane难度单调不减 + S1首关≥2 + Boss=9', () => {
     let totalLanes = 0;
     for (const [_, map] of Object.entries(CAMPAIGN_MAPS)) {
       for (const stage of map.stages) {
@@ -353,12 +365,12 @@ describe('Campaign 结构验证', () => {
         if (stage.isBoss) {
           for (const lane of stage.lanes) {
             for (const level of lane.levels) {
-              expect(level.difficulty).toBe(7);
+              expect(level.difficulty).toBe(9);
             }
           }
         }
       }
     }
-    expect(totalLanes).toBe(44);
+    expect(totalLanes).toBe(50);
   });
 });

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGameProgressStore, useUIStore } from '@/store';
 import { TOPICS } from '@/constants';
 import type { WrongQuestion } from '@/types';
@@ -5,9 +6,12 @@ import BottomNav from '@/components/BottomNav';
 import LoadingScreen from '@/components/LoadingScreen';
 import { TopicIcon } from '@/components/TopicIcon';
 
+const COLLAPSED_LIMIT = 5;
+
 export default function WrongBook() {
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const { setPage } = useUIStore();
+  const [expandedTopics, setExpandedTopics] = useState<Set<string>>(new Set());
 
   if (!gameProgress) return <LoadingScreen />;
 
@@ -20,6 +24,15 @@ export default function WrongBook() {
     if (!grouped[topicId]) grouped[topicId] = [];
     grouped[topicId].push(wq);
   }
+
+  const toggleTopic = (topicId: string) => {
+    setExpandedTopics(prev => {
+      const next = new Set(prev);
+      if (next.has(topicId)) next.delete(topicId);
+      else next.add(topicId);
+      return next;
+    });
+  };
 
   return (
     <div className="min-h-dvh bg-bg pb-[88px] safe-top">
@@ -49,6 +62,11 @@ export default function WrongBook() {
               const topic = TOPICS.find(t => t.id === topicId);
               if (!topic) return null;
 
+              const isExpanded = expandedTopics.has(topicId);
+              const hasMore = questions.length > COLLAPSED_LIMIT;
+              const visible = hasMore && !isExpanded ? questions.slice(0, COLLAPSED_LIMIT) : questions;
+              const hiddenCount = questions.length - COLLAPSED_LIMIT;
+
               return (
                 <div key={topicId}>
                   <div className="flex items-center gap-2 mb-3">
@@ -60,7 +78,7 @@ export default function WrongBook() {
                   </div>
 
                   <div className="space-y-2">
-                    {questions.map((wq, i) => (
+                    {visible.map((wq, i) => (
                       <div key={i} className="bg-card rounded-2xl border-2 border-border-2 p-3"
                            style={{ boxShadow: '0 1px 5px rgba(0,0,0,.07)' }}>
                         <div className="text-sm font-bold mb-1.5">{wq.question.prompt}</div>
@@ -75,6 +93,16 @@ export default function WrongBook() {
                         )}
                       </div>
                     ))}
+
+                    {hasMore && (
+                      <button
+                        onClick={() => toggleTopic(topicId)}
+                        className="w-full py-2.5 text-[13px] font-bold text-primary bg-primary-lt
+                                   rounded-xl transition-colors hover:bg-primary-mid"
+                      >
+                        {isExpanded ? '收起' : `显示全部 ${questions.length} 题（还有 ${hiddenCount} 题）`}
+                      </button>
+                    )}
                   </div>
                 </div>
               );

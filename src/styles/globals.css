@@ -30,6 +30,9 @@
   --color-border:       #EED9CC;   /* 主要卡片边框 */
   --color-border-2:     #F5EDE8;   /* 次要边框、分隔线 */
 
+  /* ── 按钮文字（在主色背景上需 ≥4.5:1 对比度）── */
+  --color-on-primary:   #3D1400;   /* 深棕，在 #FF6B35 上约 5.2:1 */
+
   /* ── 动效曲线（CSS 自定义变量，供组件内 var() 引用）── */
   --ease-spring: cubic-bezier(.34, 1.56, .64, 1);  /* 弹性：反馈、弹入 */
   --ease-smooth: cubic-bezier(.4, 0, .2, 1);        /* 平滑：状态切换 */
@@ -110,7 +113,7 @@
 @layer components {
   /* ── 主操作按钮（阳光版：平面风格，无 3D 阴影）── */
   .btn-flat {
-    @apply bg-primary text-white font-black rounded-2xl
+    @apply bg-primary text-on-primary font-black rounded-2xl
            transition-all duration-100;
     font-size: 15px;
     font-weight: 900;
@@ -122,7 +125,7 @@
 
   /* 兼容旧 btn-primary 引用（Phase B 迁移至 btn-flat 后可移除）*/
   .btn-primary {
-    @apply bg-primary text-white font-black rounded-2xl
+    @apply bg-primary text-on-primary font-black rounded-2xl
            transition-all duration-100;
     font-size: 15px;
     font-weight: 900;
