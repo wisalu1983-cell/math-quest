@@ -16,7 +16,7 @@ import {
 export default function Practice() {
   const {
     currentQuestion, currentIndex, totalQuestions,
-    hearts, showFeedback, lastAnswerCorrect,
+    hearts, showFeedback, lastAnswerCorrect, lastTrainingFieldMistakes,
     submitAnswer, nextQuestion, endSession, abandonSession,
     session,
   } = useSessionStore();
@@ -29,6 +29,7 @@ export default function Practice() {
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
   const [blankValues, setBlankValues] = useState<string[]>([]);
   const [trainingComplete, setTrainingComplete] = useState(false);
+  const [trainingValues, setTrainingValues] = useState<string[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
   const [shakeWrong, setShakeWrong] = useState(false);
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
@@ -41,6 +42,7 @@ export default function Practice() {
     setSelectedOption(null);
     setSelectedOptions([]);
     setTrainingComplete(false);
+    setTrainingValues([]);
     if (currentQuestion?.type === 'multi-blank' && currentQuestion.solution.blanks) {
       setBlankValues(Array(currentQuestion.solution.blanks.length).fill(''));
     } else {
@@ -98,7 +100,7 @@ export default function Practice() {
     }
     if (!userAnswer.trim()) return;
 
-    const result = submitAnswer(userAnswer);
+    const result = submitAnswer(userAnswer, hasTrainingFields ? { trainingValues } : undefined);
 
     if (result.correct) {
       setShowConfetti(true);
@@ -107,7 +109,7 @@ export default function Practice() {
       setShakeWrong(true);
       setTimeout(() => setShakeWrong(false), 300);
     }
-  }, [showFeedback, isMultipleChoice, isMultiSelect, isMultiBlank, isDivisionMental, selectedOption, selectedOptions, blankValues, answer, remainderInput, submitAnswer]);
+  }, [showFeedback, isMultipleChoice, isMultiSelect, isMultiBlank, isDivisionMental, selectedOption, selectedOptions, blankValues, answer, remainderInput, submitAnswer, hasTrainingFields, trainingValues]);
 
   const handleNext = useCallback(() => {
     if (hearts <= 0 || currentIndex >= totalQuestions) {
@@ -350,6 +352,7 @@ return (
                   fields={dataTrainingFields}
                   difficulty={currentQuestion.difficulty}
                   onComplete={() => setTrainingComplete(true)}
+                  onValuesChange={setTrainingValues}
                 />
               )}
 
@@ -481,6 +484,25 @@ return (
                 {currentQuestion.solution.explanation && (
                   <p className="text-xs text-text-2 mt-1">{currentQuestion.solution.explanation}</p>
                 )}
+              </div>
+            )}
+
+            {lastAnswerCorrect && lastTrainingFieldMistakes.length > 0 && (
+              <div className="mb-3 rounded-xl border-2 border-warning bg-warning-lt px-4 py-3">
+                <p className="text-sm font-black" style={{ color: '#7A5C00' }}>
+                  过程格有 {lastTrainingFieldMistakes.length} 处错误，但本题仍判定通过
+                </p>
+                <ul className="mt-2 space-y-2 text-sm text-text">
+                  {lastTrainingFieldMistakes.map((mistake, index) => (
+                    <li key={`${mistake.label}-${index}`} className="rounded-lg bg-card/70 px-3 py-2">
+                      <p className="font-bold text-text-2">{mistake.label}</p>
+                      <p className="mt-1">
+                        你填 <span className="font-black text-danger">{mistake.userValue || '空白'}</span>
+                        ，正确是 <span className="font-black text-success">{mistake.expectedValue}</span>
+                      </p>
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
 

@@ -1,6 +1,6 @@
 # Specs 规格矩阵（_index）
 
-> 版本：v1.0 | 创建：2026-04-17  
+> 版本：v1.2 | 创建：2026-04-17 | 上次修订：2026-04-18（子计划 4 二次重排：A03+ 设计规格状态改为"历史参考（本阶段废弃）"）  
 > 用途：**新计划启动前的必查清单**——按讨论维度定位已有规格，避免漏检历史约束。
 
 ## 为什么要这个文件
@@ -32,6 +32,7 @@
 | `2026-04-08-generator-improvements.md` | **生效（部分落地）** | 基于 280 道真题校准的生成器盲区清单 |
 | `2026-04-08-reference-bank-extraction-design.md` | 生效 | 真题库提取方法和覆盖策略 |
 | `2026-04-09-a03-block-b-design.md` | **生效（已落地）** | A03 VerticalCalcBoard 组件设计 |
+| `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 2026-04-18 二次重排后 A03+ 不进入代码实施；设计规格文件保留以备未来重启时参考；本阶段任何改动都**不得**再引用其作为生效规格 |
 
 **本维度的跨系统硬约束**：
 - 所有新题型设计必须参考"档位定义主规格"`2026-04-16-generator-difficulty-tiering-spec.md`
@@ -42,8 +43,10 @@
 | Spec | 状态 | 关键断言 |
 |------|------|---------|
 | `2026-04-15-gamification-phase2-advance-spec.md` | **生效** | ⚠️ **硬约束**：`TOPIC_STAR_CAP`——A01/A04/A08 为 3★（2 梯度），其余 5 题型为 5★（3 梯度）；进阶难度档位权重表 |
-| `2026-04-13-star-rank-numerical-design.md` | **生效** | 统一星级与段位数值基线 |
-| `2026-04-10-gamification-redesign.md` | **生效** | 游戏化整体设计（Phase 1 已落地） |
+| `2026-04-13-star-rank-numerical-design.md` | **生效** | 统一星级与段位数值基线；**Phase 3 段位赛事实源分工**：本文件为段位入场星级数值表（§3.2）、心→星级换算、时间节奏的单一事实源；段位赛 BO 编排规则引用 `2026-04-10` |
+| `2026-04-10-gamification-redesign.md` | **生效** | 游戏化整体设计；**Phase 3 段位赛事实源分工**：本文件为段位赛出题范围（§5.2）、BO 赛制（§5.3）、胜场编排（§8 Q9）的单一事实源；段位入场星级数值引用 `2026-04-13` §3.2 |
+| `2026-04-18-rank-match-phase3-implementation-spec.md` | **生效（实施级；2026-04-18 落盘）** | Phase 3 段位赛实施级唯一入口；定义 `RankTier`/`RankMatchSession`/`RankMatchGame`/`RankProgress` 数据模型；双结构会话（BO 用 `RankMatchSession` 包装，每局仍是 `PracticeSession`）；`CURRENT_VERSION 2→3` + `rankProgress` 追加式迁移（禁用旧 init 清数据逻辑）；跨题型抽题器按段位新内容点编排（主考项 ≥40%、复习题 ≤25%、每场题量首版 20/25/25/30）|
+| `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 通过判定优化规则本阶段不落地；文件保留以备未来重启时参考 |
 
 **本维度的跨系统硬约束**：
 - **`TOPIC_STAR_CAP` 是题型梯度数的权威定义**——生成器梯度 / campaign 关卡分段 / 进阶难度档位都必须继承它
@@ -55,6 +58,8 @@
 | Spec | 状态 | 关键断言 |
 |------|------|---------|
 | `2026-04-14-ui-redesign-spec.md` | **生效**（阳光版 v5 已批准） | 全产品视觉语言 + 组件规范；字号下限 11px；关卡卡片固定 96px |
+| `2026-04-18-rank-match-phase3-implementation-spec.md` | **生效（实施级；2026-04-18 落盘）** | Phase 3 段位赛 UI 信息架构：新增 `/rank-match` / `/rank-match/session` / `/rank-match/game-result` / `/rank-match/match-result` 四个页面；Home 段位赛入口需独立卡片化（替代现有"进阶训练"里的占位文案）；段位徽标色需作为 token 进入 `globals.css`，不允许在组件里写死 |
+| `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 过程格错误提示 UI 方案本阶段不落地；文件保留以备未来重启时参考 |
 
 **本维度的跨系统硬约束**：
 - 任何新增 UI 组件 / 页面必须遵守阳光版 v5 的色彩、字号、间距约定
@@ -70,8 +75,10 @@
 | 修改关卡结构 / campaign.ts | A 的档位主规格 + **B 全部** + C 的关卡卡片视觉 |
 | 修改星级/进阶/段位逻辑 | **B 全部** |
 | 新增答题形式 / Practice 页面改造 | A 的题型规格 + C 全部 |
+| 调整现有题型的过程格/反馈判定 | A 的 `2026-04-18-a03-block-b-plus-design.md` + B 的进阶/通过语义约束 + C 的反馈面板表现规范 |
 | 真题库扩充 | A 的 `generator-improvements` + `reference-bank-extraction-design` |
 | 跨题型难度系统改动 | A + B 全部（高风险区） |
+| 段位赛 / Phase 3 相关改动 | B 的 `2026-04-10 §5 / §8 Q9` + `2026-04-13 §3 / §4` + `2026-04-18-rank-match-phase3-implementation-spec.md` + C 的 UI 视觉语言 |
 
 ---
 

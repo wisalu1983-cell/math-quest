@@ -100,6 +100,12 @@ export interface TrainingField {
   placeholder?: string;
 }
 
+export interface TrainingFieldMistake {
+  label: string;
+  userValue: string;
+  expectedValue: string;
+}
+
 export interface MultiStepData {
   kind: 'multi-step';
   expression: string;

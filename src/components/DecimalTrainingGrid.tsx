@@ -5,9 +5,10 @@ interface Props {
   fields: TrainingField[];
   difficulty: number;
   onComplete: () => void;
+  onValuesChange?: (values: string[]) => void;
 }
 
-export default function DecimalTrainingGrid({ fields, difficulty, onComplete }: Props) {
+export default function DecimalTrainingGrid({ fields, difficulty, onComplete, onValuesChange }: Props) {
   const [values, setValues] = useState<Record<number, string>>({});
   const [results, setResults] = useState<Record<number, 'correct' | 'wrong' | null>>({});
   const [allDone, setAllDone] = useState(false);
@@ -20,6 +21,7 @@ export default function DecimalTrainingGrid({ fields, difficulty, onComplete }: 
   const handleChange = useCallback((idx: number, value: string) => {
     const newValues = { ...values, [idx]: value };
     setValues(newValues);
+    onValuesChange?.(fields.map((_, i) => (i === idx ? value : newValues[i] ?? '')));
 
     if (!value.trim()) {
       setResults(prev => ({ ...prev, [idx]: null }));
@@ -48,7 +50,7 @@ export default function DecimalTrainingGrid({ fields, difficulty, onComplete }: 
       setAllDone(true);
       onComplete();
     }
-  }, [values, fields, showFeedback, allDone, onComplete]);
+  }, [values, fields, showFeedback, allDone, onComplete, onValuesChange]);
 
   return (
     <div className="bg-primary-lt border-2 border-primary-mid rounded-xl p-4 mb-4">

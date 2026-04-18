@@ -1,6 +1,15 @@
 // src/store/index.ts
 import { create } from 'zustand';
-import type { User, TopicId, PracticeSession, Question, QuestionAttempt, WrongQuestion } from '@/types';
+import type {
+  User,
+  TopicId,
+  PracticeSession,
+  Question,
+  QuestionAttempt,
+  WrongQuestion,
+  TrainingField,
+  TrainingFieldMistake,
+} from '@/types';
 import { repository } from '@/repository/local';
 import { useGameProgressStore } from './gamification';
 import { nanoid } from 'nanoid';
@@ -19,6 +28,52 @@ import {
   hasAnyBracket,
   hasBracketAndEquivalent,
 } from '@/engine/answerValidation';
+
+interface SubmitAnswerOptions {
+  trainingValues?: string[];
+}
+
+interface SubmitAnswerResult {
+  correct: boolean;
+  trainingFieldMistakes: TrainingFieldMistake[];
+}
+
+function getTrainingFields(question: Question): TrainingField[] {
+  if (
+    question.type !== 'numeric-input' ||
+    question.difficulty < 6 ||
+    question.difficulty > 7 ||
+    question.data == null ||
+    !('trainingFields' in question.data)
+  ) {
+    return [];
+  }
+
+  return question.data.trainingFields ?? [];
+}
+
+function collectTrainingFieldMistakes(
+  question: Question,
+  trainingValues?: string[],
+): TrainingFieldMistake[] {
+  const fields = getTrainingFields(question);
+  if (fields.length === 0 || !trainingValues || trainingValues.length === 0) {
+    return [];
+  }
+
+  return fields.flatMap((field, index) => {
+    const userValue = trainingValues[index]?.trim() ?? '';
+    if (!userValue || userValue === field.answer) {
+      return [];
+    }
+
+    return [{
+      label: field.label,
+      userValue,
+      expectedValue: field.answer,
+    }];
+  });
+}
 
 // ─── User Store ───
 interface UserStore {
@@ -49,12 +104,13 @@ interface SessionStore {
   questionStartTime: number;
   showFeedback: boolean;
   lastAnswerCorrect: boolean;
+  lastTrainingFieldMistakes: TrainingFieldMistake[];
   pendingWrongQuestions: WrongQuestion[];
 
   startCampaignSession: (topicId: TopicId, levelId: string) => void;
   startAdvanceSession: (topicId: TopicId) => void;
   nextQuestion: () => void;
-  submitAnswer: (answer: string) => { correct: boolean };
+  submitAnswer: (answer: string, options?: SubmitAnswerOptions) => SubmitAnswerResult;
   endSession: () => PracticeSession;
   abandonSession: () => void;
 }
@@ -69,6 +125,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   questionStartTime: 0,
   showFeedback: false,
   lastAnswerCorrect: false,
+  lastTrainingFieldMistakes: [],
   pendingWrongQuestions: [],
 
   startCampaignSession: (topicId, levelId) => {
@@ -98,6 +155,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       totalQuestions: levelDef.questionCount,
       hearts: CAMPAIGN_MAX_HEARTS,
       showFeedback: false,
+      lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
     });
 
@@ -133,6 +191,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       totalQuestions: ADVANCE_QUESTION_COUNT,
       hearts: CAMPAIGN_MAX_HEARTS,
       showFeedback: false,
+      lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
     });
 
@@ -165,12 +224,15 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       currentQuestion: question,
       questionStartTime: Date.now(),
       showFeedback: false,
+      lastTrainingFieldMistakes: [],
     });
   },
 
-  submitAnswer: (answer) => {
+  submitAnswer: (answer, options) => {
     const { currentQuestion, questionStartTime, session, currentIndex, hearts } = get();
-    if (!currentQuestion || !session) return { correct: false };
+    if (!currentQuestion || !session) {
+      return { correct: false, trainingFieldMistakes: [] };
+    }
 
     const timeMs = Date.now() - questionStartTime;
     const correctAnswer = String(currentQuestion.solution.answer);
@@ -218,6 +280,10 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       correct = isNumericEqual(answer, correctAnswer);
     }
 
+    const trainingFieldMistakes = correct
+      ? collectTrainingFieldMistakes(currentQuestion, options?.trainingValues)
+      : [];
+
     const attempt: QuestionAttempt = {
       questionId: currentQuestion.id,
       question: currentQuestion,
@@ -243,6 +309,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       hearts: newHearts,
       showFeedback: true,
       lastAnswerCorrect: correct,
+      lastTrainingFieldMistakes: trainingFieldMistakes,
       currentIndex: currentIndex + 1,
     });
 
@@ -255,7 +322,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       set(s => ({ pendingWrongQuestions: [...s.pendingWrongQuestions, wq] }));
     }
 
-    return { correct };
+    return { correct, trainingFieldMistakes };
   },
 
   endSession: () => {
@@ -295,6 +362,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       session: null,
       currentQuestion: null,
       showFeedback: false,
+      lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
     });
 
@@ -330,6 +398,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       hearts: CAMPAIGN_MAX_HEARTS,
       showFeedback: false,
       lastAnswerCorrect: false,
+      lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
     });
   },
@@ -376,8 +445,8 @@ export const useUIStore = create<UIStore>((set) => ({
 // 让其他文件可从 store/index 直接导入 useGameProgressStore
 export { useGameProgressStore } from './gamification';
 
-// E2E 测试钩子：DEV 模式下暴露 store，供 Playwright 读取当前题目的正确答案
-if (import.meta.env.DEV) {
+// E2E 测试钩子：仅在浏览器 DEV 环境暴露 store，供 Playwright 读取当前题目的正确答案
+if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as any).__MQ_SESSION__ = useSessionStore;
   (window as any).__MQ_GAME_PROGRESS__ = useGameProgressStore;
 }

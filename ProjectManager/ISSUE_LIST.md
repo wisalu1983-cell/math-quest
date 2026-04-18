@@ -448,3 +448,16 @@
   - `src/engine/generators/mental-arithmetic.ts` 删除零引用死函数 `pickTwoDigitDivisor`
   - 验证：`npx tsc -b` 24→0；`npm run build` 产出 dist；`npx vitest run` 270/270 PASS
   - 详见 `Plan/2026-04-17-campaign-advance-stabilization.md` §八 S1 执行结果
+
+### ISSUE-059 (实现一致性/P2): `dec-div` 高档残留隐藏 `trainingFields`
+- **状态**: ⬜ 新发现（2026-04-18）；挂靠 A03 块B Plus 实施子子计划评估处理
+- **位置**: `src/engine/generators/vertical-calc.ts` / `src/pages/Practice.tsx`
+- **现象**: `vertical-calc.ts` 的高档 `dec-div` 仍会生成 `trainingFields`，但 `Practice.tsx` 仅在 `difficulty < 8` 时渲染训练格，导致这批字段对用户完全不可见
+- **影响**:
+  - 当前不构成直接用户可见 bug，因为高档题实际上仍按“直接答数”工作
+  - 但实现和规格容易被误读，后续开发者可能误以为高档小数除法应显示训练格
+- **产品口径**: 以 `Specs/2026-04-18-a03-block-b-plus-design.md` 为准——A03 当前版本 `difficulty >= 8` 不显示训练格；这些隐藏字段不是产品承诺
+- **建议处理方向**:
+  - 要么在生成器侧移除这批隐藏 `trainingFields`
+  - 要么在提交流程/渲染流程里显式忽略它们，并补注释说明
+  - 处理目标不是新增功能，而是消除“数据层有、UI 层无”的实现歧义

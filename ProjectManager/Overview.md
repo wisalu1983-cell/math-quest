@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-18（**子计划 4 Umbrella 落盘并同日重排**——[`Plan/2026-04-18-subplan-4-next-stage-expansion.md`](Plan/2026-04-18-subplan-4-next-stage-expansion.md)；tsc 0 / vitest 328/328 / pm-sync-check 全绿；**当前阶段主计划** = [`Plan/2026-04-16-open-backlog-consolidation.md`](Plan/2026-04-16-open-backlog-consolidation.md)；**下一步** = 起草 A03 块B Plus 设计级 / 实施级规格（子计划 4 顺位 1，用户 2026-04-18 调整为"先闯关+进阶内容补强，段位赛最后"）。子计划 4 收敛为三块：A03+ → A09 → Phase 3；B/C/D 已移出，后续作独立"子计划 5 领域扩展 roadmap"（待立）。真题参考库补充 **合流**：A09 归子计划 4 Step 0；B/C/D 归未来子计划 5 Step 0）
+> 最后更新：2026-04-18（**Phase 3 三层落盘完成**——子计划 4 Umbrella 收敛为单块 + Phase 3 实施级规格 `Specs/2026-04-18-rank-match-phase3-implementation-spec.md` + 实施子子计划 `Plan/2026-04-18-rank-match-phase3-implementation.md` 均已落盘；tsc 0 / vitest 328/328 / pm-sync-check 全绿；**当前阶段主计划** = [`Plan/2026-04-16-open-backlog-consolidation.md`](Plan/2026-04-16-open-backlog-consolidation.md)；**下一步** = Phase 3 实施子子计划 M1 代码启动。A03+ 本阶段**废弃**（设计规格保留作历史参考）；A09 / B/C/D 本阶段不做）
 
 ---
 
@@ -129,9 +129,9 @@
 - [`Plan/2026-04-18-ui-consistency-cleanup.md`](Plan/2026-04-18-ui-consistency-cleanup.md) — UI 一致性与代码整洁清理 ✅（2026-04-18）
 
 **进行中子计划**：
-- [`Plan/2026-04-18-subplan-4-next-stage-expansion.md`](Plan/2026-04-18-subplan-4-next-stage-expansion.md) — 子计划 4 Umbrella（下阶段扩展总纲）🟡 Umbrella 落盘并重排，三块 = A03+ → A09 → Phase 3；**顺位 1 = A03 块B Plus 设计级 / 实施级规格待起草**；B/C/D 已从本 Umbrella 移出
+- [`Plan/2026-04-18-subplan-4-next-stage-expansion.md`](Plan/2026-04-18-subplan-4-next-stage-expansion.md) — 子计划 4 Umbrella（下阶段扩展总纲）🟡 **二次重排**后收敛为单块 = Phase 3 段位赛；A03+ 本阶段废弃（设计规格保留作历史参考）；A09 / B/C/D 本阶段不做
 
-**下一步**：起草 A03 块B Plus 设计级规格 `Specs/2026-04-XX-a03-block-b-plus-design.md` + 实施级相关字段（不动代码，三层落盘纪律——规格 → 实施子子计划 → 代码）
+**下一步**：用户领取 Phase 3 实施子子计划 M1 —— 类型层 `RankTier/RankMatchSession/...` + 常量 `src/constants/rank-match.ts` + 持久化迁移 `CURRENT_VERSION 2→3` + store 最小骨架；实施级规格 `Specs/2026-04-18-rank-match-phase3-implementation-spec.md` 与实施子子计划 `Plan/2026-04-18-rank-match-phase3-implementation.md` 已同步落盘，三层落盘链路已闭合
 
 ### 已完成阶段
 
@@ -153,12 +153,14 @@
 |--------|------|------|------|
 | P2 | 真题参考库补充（312/525，差 213）| 暂缓，**拆分到两个子计划**的 Step 0 | 缺口 213 题落在 A09 + B/C/D 六个主题，这些主题生成器尚未开发。**子计划 4 范围内只涉及 A09**：开工时 Step 0 提 30-35 题 A09 真题。**B/C/D 已从子计划 4 移出**，归未来子计划 5（领域扩展 roadmap，待立）——B01/B02/C01/C02/D01 各主题启动时各自 Step 0 提 30-35 题。A01-A08 已 312 题且生成器已 v2.2 稳定，再补的边际校准价值有限。 |
 
-### 下阶段：新功能扩展（归属 [子计划 4 Umbrella](Plan/2026-04-18-subplan-4-next-stage-expansion.md)，2026-04-18 同日重排）
+### 下阶段：新功能扩展（归属 [子计划 4 Umbrella](Plan/2026-04-18-subplan-4-next-stage-expansion.md)，2026-04-18 二次重排后收敛为单块主线）
 
 | 顺位 | 事项 | 状态 | 说明 |
 |------|------|------|------|
-| 1 | **A03 块B Plus** | 🟡 设计级 / 实施级规格待起草 | 竖式题型深化（乘法部分积、除法试商）；**对现有闯关+进阶模式的内容补强**；风险最小 |
-| 2 | A09 分数运算生成器 | ⬜ 等顺位 1 闭环 | 全新题型但进入现有闯关+进阶模式；开工 Step 0 先提 30-35 题真题；为段位赛补题库多样性 |
-| 3 | Phase 3 段位赛 | ⬜ 等顺位 2 闭环 | BO3/BO5/BO7；**全新模式**，补齐三层游戏化闭环；规格最齐（`2026-04-10 gamification-redesign §5` + `2026-04-13 star-rank-numerical-design`），仅差实施级 Specs；启动前置 = A03+ / A09 闭环 |
+| **1（本阶段唯一）** | **Phase 3 段位赛** | 🟡 主线进行中；实施级规格 + 实施子子计划正在落盘 | BO3/BO5/BO7；**全新模式**，补齐三层游戏化闭环；产品层规格最齐（`2026-04-10 gamification-redesign §5` + `2026-04-13 star-rank-numerical-design §3`），仅差实施级 Specs；启动前置简化为"无额外代码前置"，直接进实施链路 |
 
-> **B/C/D 领域扩展**（几何 / 应用题 / 统计）—— **已从子计划 4 移出**，后续作为独立"**子计划 5 领域扩展 roadmap**"（待立）承载。原因：B/C/D 是新领域而非"闯关+进阶的内容补强"；规模属多季度工程。每领域独立 Plan；每主题开工 Step 0 先提 30-35 题真题。
+> **A03 块B Plus**（~~原顺位 1~~）：**本阶段废弃**；设计规格 `Specs/2026-04-18-a03-block-b-plus-design.md` 保留作历史参考，不进入代码实施；Phase 3 落地后再评估是否重启。
+>
+> **A09 分数运算生成器**（~~原顺位 2~~）：**本阶段不做**；若未来启动再单独立子计划承载。
+>
+> **B/C/D 领域扩展**（几何 / 应用题 / 统计）：**本阶段不做**；不再以"子计划 5 领域扩展 roadmap"预立名；视 Phase 3 落地后整体节奏再评估。
