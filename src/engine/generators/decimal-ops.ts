@@ -259,7 +259,7 @@ function generateMidMulPattern(id: string, difficulty: number): Question {
     const expression = `${formatNum(a)} × ${formatNum(shift)}`;
     return {
       id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-      prompt: `计算: ${expression}（乘以小于 1 的数，积会怎么变？）`,
+      prompt: `计算: ${expression}`,
       data: { kind: 'decimal-ops', expression, subtype: 'mul' },
       solution: {
         answer: formatNum(round(answer, 4)),
@@ -288,7 +288,7 @@ function generateMidMulPattern(id: string, difficulty: number): Question {
     const expression = `${a} × ${formatNum(mul)}`;
     return {
       id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-      prompt: `计算: ${expression}（想一想：乘 ${formatNum(mul)} 和 ${equiv} 的效果？）`,
+      prompt: `计算: ${expression}`,
       data: { kind: 'decimal-ops', expression, subtype: 'mul' },
       solution: {
         answer: formatNum(answer),
@@ -310,7 +310,7 @@ function generateMidMulPattern(id: string, difficulty: number): Question {
     const expression = `${formatNum(a)} × ${formatNum(b)}`;
     return {
       id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-      prompt: `计算: ${expression}（思考：两个因数共几位小数？积应有几位小数？）`,
+      prompt: `计算: ${expression}`,
       data: { kind: 'decimal-ops', expression, subtype: 'mul' },
       solution: {
         answer: formatNum(round(answer, 4)),
@@ -353,7 +353,7 @@ function generateMidDivPattern(id: string, difficulty: number): Question {
     const expression = `${formatNum(a)} ÷ ${formatNum(b)}`;
     return {
       id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-      prompt: `计算: ${expression}（思考：除以小于 1 的数，商会变大还是变小？）`,
+      prompt: `计算: ${expression}`,
       data: { kind: 'decimal-ops', expression, subtype: 'div' },
       solution: {
         answer: formatNum(round(answer, 4)),
@@ -379,7 +379,7 @@ function generateMidDivPattern(id: string, difficulty: number): Question {
   const expression = `${a} ÷ ${formatNum(div)}`;
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}（想一想：除以 ${formatNum(div)} 和 ${equiv} 的效果？）`,
+      prompt: `计算: ${expression}`,
     data: { kind: 'decimal-ops', expression, subtype: 'div' },
     solution: {
       answer: formatNum(answer),
@@ -422,7 +422,7 @@ function generateShiftChain(id: string, difficulty: number): Question {
   const expression = useDiv ? `${formatNum(a)} ÷ ${m} × ${n}` : `${formatNum(a)} × ${m} ÷ ${n}`;
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}（按顺序做移位）`,
+    prompt: `计算: ${expression}`,
     data: { kind: 'decimal-ops', expression, subtype: 'shift' },
     solution: {
       answer: formatNum(round(answer, 4)),
@@ -445,7 +445,7 @@ function generateLt1Trap(id: string, difficulty: number): Question {
   const expression = `${formatNum(a)} × ${formatNum(b)}`;
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}（注意积的大小和两个因数的关系）`,
+    prompt: `计算: ${expression}`,
     data: { kind: 'decimal-ops', expression, subtype: 'mul' },
     solution: {
       answer: formatNum(round(answer, 4)),
@@ -456,52 +456,206 @@ function generateLt1Trap(id: string, difficulty: number): Question {
   };
 }
 
-// ==================== 中档 compare：移位等价比较（>/</=） ====================
+// ==================== compare：按难度分档的比较题 ====================
 
-function generateShiftEquivCompare(id: string, difficulty: number): Question {
-  const a = randInt(11, 99) / 10; // 1.1~9.9
-  // 三类：
-  //   等价：a × 10ᵏ vs a ÷ 10⁻ᵏ（= 相等）
-  //   左偏（>）：a × 10ᵏ > a × 10ᵏ⁻¹
-  //   右偏（<）：a × 10ᵏ⁻¹ < a × 10ᵏ
-  // 控制"="概率 ≤20%：20% 等价 / 40% 左大 / 40% 左小
-  const roll = Math.random();
+/** 低档 compare：移位结果与具体数比较（需要先算出移位结果，再和目标数比） */
+function generateCompareLow_A05(id: string, difficulty: number): Question {
   let leftExpr: string;
   let rightExpr: string;
   let answer: '>' | '<' | '=';
-  if (roll < 0.20) {
-    // 等价对（×10ᵏ = ÷10⁻ᵏ）
+  let explanation: string;
+
+  const roll = Math.random();
+  if (roll < 0.10) {
+    // 移位等价识别（=）：a × 100 ○ a ÷ 0.01
+    const a = randInt(11, 99) / 10;
     const pairs: Array<[string, string]> = [
       [`${formatNum(a)} × 100`, `${formatNum(a)} ÷ 0.01`],
       [`${formatNum(a)} × 10`, `${formatNum(a)} ÷ 0.1`],
       [`${formatNum(a)} ÷ 100`, `${formatNum(a)} × 0.01`],
-      [`${formatNum(a)} ÷ 10`, `${formatNum(a)} × 0.1`],
     ];
     [leftExpr, rightExpr] = pairs[randInt(0, pairs.length - 1)];
     answer = '=';
-  } else if (roll < 0.60) {
-    leftExpr = `${formatNum(a)} × 100`;
-    rightExpr = `${formatNum(a)} × 10`;
-    answer = '>';
+    explanation = `两边等价：× 10 = ÷ 0.1，× 100 = ÷ 0.01`;
   } else {
-    leftExpr = `${formatNum(a)} × 10`;
-    rightExpr = `${formatNum(a)} × 100`;
-    answer = '<';
+    // 移位运算 vs 具体数（需要先算出结果，再比较）
+    const a = randInt(1, 99) / 10;
+    const shift = [10, 100][randInt(0, 1)];
+    const isDiv = Math.random() < 0.3;
+    const computed = isDiv ? round(a / shift, 4) : a * shift;
+    const opStr = isDiv ? '÷' : '×';
+
+    // 生成偏移后的目标数：60% 不等，40% 相等
+    const makeEqual = Math.random() < 0.05; // 总体 ~14.5% 相等
+    let target: number;
+    if (makeEqual) {
+      target = computed;
+    } else {
+      const offset = randInt(1, 5) * (Math.random() < 0.5 ? 1 : -1);
+      target = computed + offset;
+      if (target < 0) target = computed + Math.abs(offset);
+    }
+    leftExpr = `${formatNum(a)} ${opStr} ${shift}`;
+    rightExpr = `${formatNum(target)}`;
+    answer = computed > target ? '>' : computed < target ? '<' : '=';
+    explanation = `${formatNum(a)} ${opStr} ${shift} = ${formatNum(computed)}，${formatNum(computed)} ${answer} ${formatNum(target)}`;
   }
+
   const comparison = `${leftExpr} ○ ${rightExpr}`;
   return {
     id, topicId: 'decimal-ops', type: 'multiple-choice', difficulty,
     prompt: `在 ○ 里填上合适的符号：${comparison}`,
     data: { kind: 'decimal-ops', expression: comparison, subtype: 'compare', options: ['>', '<', '='] },
-    solution: {
-      answer,
-      explanation: answer === '='
-        ? `${leftExpr} 和 ${rightExpr} 都等于 ${formatNum(a * 100)}，所以相等`
-        : `左右两边分别算一下：${leftExpr} 与 ${rightExpr}，比大小即可`,
-    },
-    hints: ['×10 和 ÷0.1 效果相同，×100 和 ÷0.01 效果相同'],
+    solution: { answer, explanation },
+    hints: ['先算出左边的结果，再和右边比较'],
     xpBase: 10 + (difficulty - 1) * 5,
   };
+}
+
+/** 中档 compare：与原数比较（a op b ○ a，需判断 b 和 1 的关系） */
+/**
+ * 中档 compare：多步推理 / 跨运算对比
+ *
+ * 四种题型（均来自真实考卷中档）：
+ * V0 — 跨运算对比：a ÷ b ○ a × b（同数两种运算，需同时推理两条规则）
+ * V1 — 商与 1 比较：a ÷ b ○ 1（需判断 a、b 大小关系）
+ * V2 — 等价乘除识别：a × 0.25 ○ a ÷ 4（需知道 ×0.25 = ÷4）
+ * V3 — 接近 1 的乘数：a × 0.99 ○ a（数值接近产生心理犹豫）
+ */
+function generateCompareMid_A05(id: string, difficulty: number): Question {
+  const variant = randInt(0, 3);
+  let leftExpr: string;
+  let rightExpr: string;
+  let answer: '>' | '<' | '=';
+  let explanation: string;
+
+  if (variant === 0) {
+    // V0: a ÷ b ○ a × b （b < 1 → 左大右小；b > 1 → 左小右大）
+    const a = Number((randInt(11, 99) / 10).toFixed(1));
+    const bLt1 = Math.random() < 0.5;
+    const b = bLt1
+      ? Number((randInt(2, 8) / 10).toFixed(1))   // 0.2~0.8
+      : Number((randInt(12, 25) / 10).toFixed(1)); // 1.2~2.5
+    leftExpr = `${formatNum(a)} ÷ ${formatNum(b)}`;
+    rightExpr = `${formatNum(a)} × ${formatNum(b)}`;
+    answer = bLt1 ? '>' : '<';
+    explanation = bLt1
+      ? `b < 1 时，÷b 放大而 ×b 缩小，所以 ÷${formatNum(b)} > ×${formatNum(b)}`
+      : `b > 1 时，÷b 缩小而 ×b 放大，所以 ÷${formatNum(b)} < ×${formatNum(b)}`;
+  } else if (variant === 1) {
+    // V1: a ÷ b ○ 1 （a > b → >1；a < b → <1；a = b → =1）
+    const base = randInt(11, 90) / 10;
+    const offset = randInt(1, 15) / 10;
+    const aGtB = Math.random() < 0.5;
+    const a = aGtB ? round(base + offset, 1) : round(base, 1);
+    const b = aGtB ? round(base, 1) : round(base + offset, 1);
+    leftExpr = `${formatNum(a)} ÷ ${formatNum(b)}`;
+    rightExpr = '1';
+    answer = a > b ? '>' : '<';
+    explanation = `被除数${a > b ? '大于' : '小于'}除数，商${a > b ? '大于' : '小于'} 1`;
+  } else if (variant === 2) {
+    // V2: a × 0.25 ○ a ÷ 4（等价 =）或 a × 0.5 ○ a ÷ 2 等
+    const a = Number((randInt(12, 88) / 10).toFixed(1));
+    const pairs: Array<[string, string, string]> = [
+      [`${formatNum(a)} × 0.25`, `${formatNum(a)} ÷ 4`, '×0.25 = ÷4'],
+      [`${formatNum(a)} × 0.5`, `${formatNum(a)} ÷ 2`, '×0.5 = ÷2'],
+      [`${formatNum(a)} × 0.125`, `${formatNum(a)} ÷ 8`, '×0.125 = ÷8'],
+      [`${formatNum(a)} ÷ 0.5`, `${formatNum(a)} × 2`, '÷0.5 = ×2'],
+      [`${formatNum(a)} ÷ 0.25`, `${formatNum(a)} × 4`, '÷0.25 = ×4'],
+    ];
+    const [l, r, rule] = pairs[randInt(0, pairs.length - 1)];
+    leftExpr = l; rightExpr = r; answer = '=';
+    explanation = rule;
+  } else {
+    // V3: a × 接近1的数 ○ a（0.99/1.01/0.98 等，制造心理犹豫）
+    const a = Number((randInt(15, 95) / 10).toFixed(1));
+    const nearOnes = [0.98, 0.99, 1.01, 1.02];
+    const b = nearOnes[randInt(0, nearOnes.length - 1)];
+    const op = Math.random() < 0.5 ? '×' : '÷';
+    leftExpr = `${formatNum(a)} ${op} ${b}`;
+    rightExpr = `${formatNum(a)}`;
+    if (op === '×') {
+      answer = b > 1 ? '>' : '<';
+    } else {
+      answer = b > 1 ? '<' : '>';
+    }
+    explanation = `${op === '×' ? '乘以' : '除以'}${b > 1 ? '大于' : '小于'} 1 的数，结果${answer === '>' ? '大于' : '小于'}原数`;
+  }
+
+  const comparison = `${leftExpr} ○ ${rightExpr}`;
+  return {
+    id, topicId: 'decimal-ops', type: 'multiple-choice', difficulty,
+    prompt: `在 ○ 里填上合适的符号：${comparison}`,
+    data: { kind: 'decimal-ops', expression: comparison, subtype: 'compare', options: ['>', '<', '='] },
+    solution: { answer, explanation },
+    hints: ['关键：运算的数和 1 比较'],
+    xpBase: 12 + (difficulty - 1) * 5,
+  };
+}
+
+/** 高档 compare：跨表达式变换 + 代数推理 */
+function generateCompareHigh_A05(id: string, difficulty: number): Question {
+  const variant = randInt(0, 2);
+
+  if (variant === 0) {
+    // 跨表达式位移等价：3.6 × 5.2 ○ 52 × 0.36（相等，小数点移动）
+    const a10 = randInt(11, 99);
+    const b10 = randInt(11, 99);
+    const a = a10 / 10;
+    const b = b10 / 10;
+    const leftExpr = `${formatNum(a)} × ${formatNum(b)}`;
+    const rightExpr = `${b10} × ${formatNum(a10 / 100)}`;
+    return {
+      id, topicId: 'decimal-ops', type: 'multiple-choice', difficulty,
+      prompt: `在 ○ 里填上合适的符号：${leftExpr} ○ ${rightExpr}`,
+      data: { kind: 'decimal-ops', expression: `${leftExpr} ○ ${rightExpr}`, subtype: 'compare', options: ['>', '<', '='] },
+      solution: { answer: '=', explanation: `${formatNum(a)} × ${formatNum(b)} = ${formatNum(a10 / 100)} × ${b10}，小数点位移不改变乘积` },
+      hints: ['观察两边的因数，小数点移动了几位？'],
+      xpBase: 16 + (difficulty - 1) * 5,
+    };
+  }
+
+  if (variant === 1) {
+    // 两个因数都 <1 的积 vs 某个因数：0.8 × 0.6 ○ 0.8
+    const a = Number((randInt(2, 9) / 10).toFixed(1));
+    const b = Number((randInt(2, 9) / 10).toFixed(1));
+    const leftExpr = `${formatNum(a)} × ${formatNum(b)}`;
+    const rightExpr = `${formatNum(a)}`;
+    return {
+      id, topicId: 'decimal-ops', type: 'multiple-choice', difficulty,
+      prompt: `在 ○ 里填上合适的符号：${leftExpr} ○ ${rightExpr}`,
+      data: { kind: 'decimal-ops', expression: `${leftExpr} ○ ${rightExpr}`, subtype: 'compare', options: ['>', '<', '='] },
+      solution: { answer: '<', explanation: `两个因数都小于 1，积比任何一个因数都小` },
+      hints: ['两个因数和 1 的关系？'],
+      xpBase: 16 + (difficulty - 1) * 5,
+    };
+  }
+
+  // 除法 vs 乘法等价：a ÷ 0.25 ○ a × 4（相等）
+  const a = randInt(2, 20);
+  const pairs: Array<{ divExpr: string; mulExpr: string }> = [
+    { divExpr: `${a} ÷ 0.25`, mulExpr: `${a} × 4` },
+    { divExpr: `${a} ÷ 0.5`, mulExpr: `${a} × 2` },
+    { divExpr: `${a} ÷ 0.125`, mulExpr: `${a} × 8` },
+  ];
+  const p = pairs[randInt(0, pairs.length - 1)];
+  const swap = Math.random() < 0.5;
+  const leftExpr = swap ? p.mulExpr : p.divExpr;
+  const rightExpr = swap ? p.divExpr : p.mulExpr;
+  return {
+    id, topicId: 'decimal-ops', type: 'multiple-choice', difficulty,
+    prompt: `在 ○ 里填上合适的符号：${leftExpr} ○ ${rightExpr}`,
+    data: { kind: 'decimal-ops', expression: `${leftExpr} ○ ${rightExpr}`, subtype: 'compare', options: ['>', '<', '='] },
+    solution: { answer: '=', explanation: `÷ 0.25 = × 4，÷ 0.5 = × 2，÷ 0.125 = × 8` },
+    hints: ['除以一个小数，等于乘以它的倒数'],
+    xpBase: 16 + (difficulty - 1) * 5,
+  };
+}
+
+function generateCompare_A05(id: string, difficulty: number): Question {
+  if (difficulty >= 8) return generateCompareHigh_A05(id, difficulty);
+  if (difficulty >= 6) return generateCompareMid_A05(id, difficulty);
+  return generateCompareLow_A05(id, difficulty);
 }
 
 // ==================== 中/高档 cyclic-div：循环小数保留 n 位 ====================
@@ -589,7 +743,7 @@ function generateHighMulLt1(id: string, difficulty: number): Question {
   const expression = `${formatNum(a)} × ${formatNum(b)}`;
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}（注意：两个因数都小于 1）`,
+    prompt: `计算: ${expression}`,
     data: { kind: 'decimal-ops', expression, subtype: 'mul' },
     solution: {
       answer: formatNum(round(answer, 4)),
@@ -610,7 +764,7 @@ function generateConceptTrapCalc(id: string, difficulty: number): Question {
   const expression = `${formatNum(aScaled)} × ${formatNum(b)}`;
   return {
     id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
-    prompt: `计算: ${expression}（思考：这道题乘以小数后，积比原数大还是小？）`,
+    prompt: `计算: ${expression}`,
     data: { kind: 'decimal-ops', expression, subtype: 'trap' },
     solution: {
       answer: formatNum(answer),
@@ -630,19 +784,19 @@ export function generateDecimalOps(params: GeneratorParams): Question {
     { tag: 'add-sub', weight: 30, gen: () => generatePlaceValueOrConvert(id, difficulty) },
     { tag: 'mul',     weight: 30, gen: () => generateLowMul(id, difficulty) },
     { tag: 'div',     weight: 25, gen: () => generateLowDiv(id, difficulty) },
-    { tag: 'compare', weight: 15, gen: () => generateShiftEquivCompare(id, difficulty) },
+    { tag: 'compare', weight: 15, gen: () => generateCompare_A05(id, difficulty) },
   ] : difficulty <= 7 ? [
     { tag: 'mul',        weight: 25, gen: () => generateMidMulPattern(id, difficulty) },
     { tag: 'div',        weight: 20, gen: () => generateMidDivPattern(id, difficulty) },
     { tag: 'add-sub',    weight: 15, gen: () => generateMidPlaceExtend(id, difficulty) },
     { tag: 'shift',      weight: 10, gen: () => generateShiftChain(id, difficulty) },
     { tag: 'trap',       weight: 10, gen: () => generateLt1Trap(id, difficulty) },
-    { tag: 'compare',    weight: 10, gen: () => generateShiftEquivCompare(id, difficulty) },
+    { tag: 'compare',    weight: 10, gen: () => generateCompare_A05(id, difficulty) },
     { tag: 'cyclic-div', weight: 10, gen: () => generateCyclicApprox(id, difficulty) },
   ] : [
     { tag: 'mul',        weight: 35, gen: () => generateHighMulLt1(id, difficulty) },
     { tag: 'div',        weight: 30, gen: () => generateCyclicPosition(id, difficulty) },
-    { tag: 'compare',    weight: 15, gen: () => generateShiftEquivCompare(id, difficulty) },
+    { tag: 'compare',    weight: 15, gen: () => generateCompare_A05(id, difficulty) },
     { tag: 'cyclic-div', weight: 10, gen: () => generateCyclicApprox(id, difficulty) },
     { tag: 'trap',       weight: 10, gen: () => generateConceptTrapCalc(id, difficulty) },
   ];

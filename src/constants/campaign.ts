@@ -401,7 +401,7 @@ const decimalOpsMap: CampaignMap = {
         {
           laneId: 'decimal-ops-S2-LB',
           laneLabel: '反直觉与比较',
-          subtypeFilter: ['compare', 'trap', 'cyclic-div'],
+          subtypeFilter: ['compare', 'trap'],
           levels: [
             { levelId: 'decimal-ops-S2-LB-L1', difficulty: 6, questionCount: 15 },
             { levelId: 'decimal-ops-S2-LB-L2', difficulty: 7, questionCount: 18 },

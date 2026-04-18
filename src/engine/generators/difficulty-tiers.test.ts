@@ -345,11 +345,11 @@ describe('A04 运算律 2 档（v2.2）', () => {
     }
   });
 
-  it('档 1 simple-judge：MC，答案是"满足"或"不满足"', () => {
+  it('档 1 simple-judge：MC，答案含"满足"或"不满足"', () => {
     const qs = genFiltered(generateOperationLaws, 5, ['simple-judge'], 20);
     for (const q of qs) {
       expect(q.type).toBe('multiple-choice');
-      expect(['满足', '不满足']).toContain(q.solution.answer);
+      expect(String(q.solution.answer)).toMatch(/满足|不满足/);
     }
   });
 

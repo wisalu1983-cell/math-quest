@@ -111,9 +111,10 @@ const topics: TopicConfig[] = [
 ];
 
 function formatQuestion(q: Question, idx: number): string {
-  const lines: string[] = [];
-  lines.push(`| ${idx} | ${q.type} | ${q.prompt} | ${q.solution.answer} |`);
-  return lines.join('\n');
+  // prompt/answer 中的换行和管道符会破坏 markdown 表格，需要转义
+  const safePrompt = String(q.prompt).replace(/\|/g, '∣').replace(/\n/g, '<br>');
+  const safeAnswer = String(q.solution.answer).replace(/\|/g, '∣').replace(/\n/g, ' ');
+  return `| ${idx} | ${q.type} | ${safePrompt} | ${safeAnswer} |`;
 }
 
 function main() {

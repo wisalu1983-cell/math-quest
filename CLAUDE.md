@@ -1,31 +1,20 @@
 # math-quest CLAUDE.md
 
-项目专属指引。
+项目专属指引。渐进式披露：主文件只放高频约束，低频细节走索引。
 
 ---
 
-## 项目管理规则（每次必须执行）
+## Session 启动检查清单
 
-### ProjectManager 目录结构
+1. 读 `ProjectManager/Overview.md`，确认当前主计划/子计划与待解决问题
+2. 若任务涉及 `ProjectManager/**.md`、生成器源码、`src/constants/advance.ts`、规格/档位/难度/关卡等跨系统维度 → **开工前 + 收尾前必跑** `pm-sync-check`
+3. 纯闲聊、纯查阅代码、纯样式微调可豁免（完整豁免规则见 `.cursor/rules/pm-sync-check.mdc`）
 
-所有项目管理文档统一存放于 `ProjectManager/`：
+---
 
-```
-ProjectManager/
-├── Overview.md        # 项目概览：目标 + 进展概况 + Issue 清单（四要素入口）
-├── ISSUE_LIST.md      # 待解决问题清单（完整版）
-├── Plan/
-│   ├── README.md      # 计划汇总索引（含所有计划状态）
-│   └── *.md           # 各阶段实施计划
-├── Specs/
-│   └── *.md           # 设计规格文档（计划的前置设计）
-└── Reports/
-    └── *.md           # 调研/审视报告
-```
+## ProjectManager 更新机制（硬约束）
 
-### 更新机制
-
-**新 session 开始时：** 读取 `ProjectManager/Overview.md`，了解当前目标、进展和待解决问题。
+目录入口：`ProjectManager/Overview.md`（进展总览）、`ProjectManager/ISSUE_LIST.md`（完整 Issue 清单）、`ProjectManager/Plan/README.md`（计划索引）、`ProjectManager/Specs/_index.md`（规格索引）、`ProjectManager/Reports/`、`ProjectManager/QA/<date>-<tag>/`。
 
 **完成任务后立即更新（不能等 session 结束）：**
 
@@ -34,23 +23,24 @@ ProjectManager/
 | 完成一个计划/阶段 | `Plan/README.md` 对应条目状态改为 ✅ |
 | 发现新问题 | `ISSUE_LIST.md` 追加条目，同步到 `Overview.md` |
 | 关闭一个 Issue | `ISSUE_LIST.md` 标记，`Overview.md` 更新清单 |
-| 新建设计规格 | 放入 `Specs/`，在 `Plan/README.md` 添加索引 |
+| 新建设计规格 | 放入 `Specs/`，在 `_index.md` 和 `Plan/README.md` 添加索引 |
 | 新建实施计划 | 放入 `Plan/`，在 `Plan/README.md` 添加索引 |
 | 真题库题数变化 | `Overview.md` 更新进展表格 |
+| 新建 QA 运行产物 | 放入 `QA/<date>-<tag>/`，在对应 Plan 或 Reports 里引用 |
 
 ---
 
-## 技术栈
+## 技术栈与核心约束
 
-- React 19 + TypeScript 5.9 + Vite 8
-- 状态管理: Zustand 5
-- 样式: TailwindCSS v4（通过 @tailwindcss/vite 插件）
-- 数学渲染: KaTeX
-- 动画: Framer Motion
-- 音频: Howler.js
-- 图表: Recharts
-- 数据持久化: localStorage（通过 `src/repository/local.ts`）
-- 路径别名: `@/` → `src/`
+- React 19 + TypeScript 5.9 + Vite 8 + TailwindCSS v4（`@tailwindcss/vite` 插件）
+- 状态管理：Zustand 5，**拆两文件**：
+  - `src/store/index.ts` → `useUserStore` / `useSessionStore` / `useUIStore`
+  - `src/store/gamification.ts` → `useGameProgressStore`
+  - 注意：没有 `useProgressStore`（旧名，已废弃）
+- 路径别名：`@/` → `src/`
+- 数学渲染 KaTeX；表达式/等价性判定 mathjs；动画 Framer Motion；图表 Recharts；音频 Howler；ID nanoid；日期 date-fns
+- 持久化：localStorage（`src/repository/local.ts`）
+- `react-router-dom` 已安装但**禁用**，页面路由统一用 `useUIStore.currentPage` 驱动
 
 ---
 
@@ -59,90 +49,79 @@ ProjectManager/
 ```bash
 # 开发
 npm run dev          # 启动开发服务器 (localhost:5173)
-npm run build        # TypeScript 编译 + Vite 构建 (tsc -b && vite build)
-npm run lint         # ESLint 检查
-npm run preview      # 预览生产构建
+npm run build        # tsc -b && vite build
+npm run lint         # ESLint
+npm run preview
 
 # 测试
-npx vitest           # 运行单元测试
-npx vitest run       # 单次运行（不 watch）
-npx vitest run src/engine/generators/generators.test.ts  # 运行单个测试文件
+npx vitest                                                # watch
+npx vitest run                                            # 单次
+npx vitest run src/engine/generators/generators.test.ts   # 单文件
 
-# Playwright（首次需安装浏览器）
+# 项目管理文档一致性校验（开工/收尾前必跑）
+npx tsx scripts/pm-sync-check.ts
+
+# Playwright（首次需安装）
 python -m playwright install chromium
 ```
 
 ---
 
-## 架构
+## 架构速查
+
+实时文件清单用 `ls`/Glob 查，这里只列层级语义和**容易踩坑的事实**。
 
 ```
 src/
-├── App.tsx              # 根组件，基于 useUIStore 的页面状态路由（非 react-router）
-├── main.tsx             # 入口
-├── types/index.ts       # 所有类型定义（Question, TopicId, UserProgress, Achievement 等）
-├── constants/index.ts   # 等级定义、成就列表、XP 计算公式、主题元数据
-├── store/index.ts       # Zustand stores（useUserStore, useProgressStore, useUIStore, useSessionStore）
-├── repository/local.ts  # localStorage CRUD 封装
-├── engine/              # 题目生成引擎
-│   ├── index.ts         # generateQuestion() / generateMixedQuestions() 分发器
-│   └── generators/      # 8 个主题生成器（每个主题一个文件）
-│       ├── mental-arithmetic.ts   # 基础计算（口算 + 运算顺序）
-│       ├── number-sense.ts        # 数感估算
-│       ├── vertical-calc.ts       # 竖式笔算
-│       ├── operation-laws.ts      # 运算律
-│       ├── decimal-ops.ts         # 小数计算
-│       ├── bracket-ops.ts         # 括号变换
-│       ├── multi-step.ts          # 简便计算
-│       └── equation-transpose.ts  # 方程移项
-├── components/
-│   ├── VerticalCalcBoard.tsx     # 竖式计算交互组件（支持小数点列）
-│   └── DecimalTrainingGrid.tsx   # 小数乘除法训练格（难度分级反馈）
-└── pages/               # 10 个页面组件
-    ├── Onboarding.tsx    # 首次注册（欢迎 + 昵称，2步完成）
-    ├── Home.tsx          # 首页（主题列表 + 每日目标）
-    ├── TopicSelect.tsx   # 难度与题数选择
-    ├── Practice.tsx      # 答题页面（核心交互）
-    ├── SessionSummary.tsx # 练习结算
-    ├── Progress.tsx      # 学习进度总览
-    ├── History.tsx       # 练习历史
-    ├── SessionDetail.tsx # 单次练习详情
-    ├── WrongBook.tsx     # 错题本
-    └── Profile.tsx       # 个人资料与设置
+├── App.tsx              根组件，按 useUIStore.currentPage 切页（非 react-router）
+├── types/               核心类型 + gamification 类型（CampaignMap / AdvanceSlot / GameSessionMode）
+├── constants/           TOPICS / DIFFICULTY_TIERS / CAMPAIGN_MAX_HEARTS / campaign 地图 / advance 常量
+├── store/               拆两文件（见技术栈）
+├── repository/local.ts  localStorage CRUD
+├── utils/               a11y 等共享工具
+├── engine/              题目生成与校验三块：
+│   ├── index.ts             generateQuestion / generateMixedQuestions / pickSubtype
+│   ├── advance.ts           buildAdvanceSlots / 心→星映射
+│   ├── answerValidation.ts  数值/多选/多空/表达式/方程等价性
+│   └── generators/          8 个 A 领域生成器（v2.2 已全部重写）
+├── components/          UI 组件库（VerticalCalcBoard / DecimalTrainingGrid 是核心交互）
+└── pages/               页面组件
 ```
 
----
-
-## 真题参考库
-
-```
-reference-bank/
-├── README.md              # 题库总览（14主题 × 2难度档，目标 525 题）
-├── CONTRIBUTING.md        # 录入格式规范
-├── CHANGELOG.md           # 变更日志
-├── 题库-五年级上/          # 试卷/练习/真题（按教材单元）
-├── 题库-五年级下/          # 试卷/练习/真题（按教材单元）
-├── 题库-其他/              # 未分类试卷
-├── curriculum/            # 沪教版课程目录（1-6年级完整）
-├── sources/               # 数据来源索引 + 原始抓取数据
-├── A-numbers-and-operations/  # 领域A：数与运算（A01-A09）
-├── B-geometry/                # 领域B：图形与几何（B01-B02）
-├── C-word-problems/           # 领域C：应用题（C01-C02）
-└── D-statistics/              # 领域D：统计（D01）
-```
-
-- `题库-*`：从 21cnjy.com 抓取的试卷原文，按教材单元分文件
-- `A-*` ~ `D-*`：按主题整理的精选真题，含生成器参照标注
-- 题库定位：**设计参考资料**，用于校准生成器，不直接供用户出题
-- 当前提取进展见 `ProjectManager/Overview.md`
+**踩坑提醒：**
+- `src/pages/TopicSelect.tsx` 是**空壳**（已被 `CampaignMap` 替代），不要往里加逻辑
+- `User.grade`、`Question.xpBase` 是**已废弃字段**，新代码不要依赖
+- 生成器是纯函数，签名 `{ difficulty, id?, subtypeFilter? } → Question`，不要引入副作用
+- 子题型过滤走 `CampaignLane.subtypeFilter` + `pickSubtype()`，会重新归一化权重
 
 ---
 
 ## 关键设计决策
 
-- 页面路由用 Zustand `useUIStore.currentPage` 状态驱动，不使用 react-router-dom（虽然已安装）
-- 题目生成是纯函数（`engine/generators/`），接受 `{difficulty, id}` 返回 `Question` 对象
-- 难度值 1-10，映射到三档：普通(1-5)、困难(6-7)、魔王(8-10)
-- 难度基准：所有题目以**上海市五年级小学毕业生小升初**标准能力要求为「普通档」基准，difficulty=5 对应毕业考试标准水平
-- 不区分年级，User.grade 字段已废弃（可选字段，新用户不再写入）
-- 已知问题和待办事项见 `ProjectManager/Overview.md`
+### 难度体系
+- 难度值 1-10，映射三档：普通 (1-5) / 困难 (6-7) / 魔王 (8-10)
+- **基准：上海市五年级小学毕业生小升初标准 = 普通档**，`difficulty=5` 对应毕业考试水平
+- 不区分年级
+
+### 游戏化三层（`GameSessionMode`）
+- `campaign` — **闯关**（当前主力）：stage / lane / level 结构，心数固定 3（`CAMPAIGN_MAX_HEARTS`），含 Boss 关
+- `advance` — **进阶**（Phase 2 已上线）：闯关全通后解锁，session 开始时预生成 20 道题槽位，心→星累积，受 `TOPIC_STAR_CAP` 封顶
+- `rank-match` — **段位赛**（Phase 3 未启动）
+- 额外：`wrong-review` 错题本复习
+- 进度统一走 `GameProgress`（`useGameProgressStore`），旧 `UserProgress` 已废弃
+
+---
+
+## 扩展阅读（低频索引）
+
+| 想了解 | 去哪里 |
+|---|---|
+| 当前主计划 / 子计划 / Issue 全貌 | `ProjectManager/Overview.md` + `ProjectManager/ISSUE_LIST.md` |
+| 历史计划与设计规格 | `ProjectManager/Plan/README.md` · `ProjectManager/Specs/_index.md` |
+| pm-sync-check 6 项检查细节与使用约束 | `.cursor/rules/pm-sync-check.mdc` |
+| 真题参考库（525 题目标、录入规范、主题划分） | `reference-bank/README.md` · `reference-bank/CONTRIBUTING.md` |
+| 生成器 v2.2 规格 / 难度档位 / 子题型桶 | `ProjectManager/Specs/` 下 `2026-04-17-generator-redesign-v2.md` 等 |
+| QA 流程规范 / 自检 / 原始产物 | `QA/qa-leader-canonical.md` · `.qa-artifacts/` · `ProjectManager/QA/` |
+| 人工验证题库（当前 v2） | `ProjectManager/human-verification-bank-v2.md` |
+| UI 审计与设计评审 | `.ui-design/audits/` · `.ui-design/reviews/` |
+| 用户手册 / 对外测试报告 | `MANUAL.md` · `TEST_CASES.md` · `TEST_REPORT.md` |

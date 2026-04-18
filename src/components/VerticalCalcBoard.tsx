@@ -170,6 +170,14 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
     }
   };
 
+  // Find the highest column that has a non-zero expected digit
+  const highestNonZeroCol = useMemo(() => {
+    for (let c = totalCols - 1; c >= 0; c--) {
+      if (columns[c].digit !== 0) return c;
+    }
+    return 0;
+  }, [columns, totalCols]);
+
   const handleSubmit = () => {
     if (completed) return;
     const results: Record<string, 'correct' | 'wrong'> = {};
@@ -299,7 +307,7 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
         <div
           key={gridCol}
           className="digit-cell flex items-end justify-center pb-1"
-          style={{ color: '#e53935', fontWeight: 'bold', fontSize: '1.5rem', border: 'none', cursor: 'default' }}
+          style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.5rem', border: 'none', cursor: 'default' }}
         >
           .
         </div>
@@ -336,14 +344,6 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
       </div>
     );
   };
-
-  // Find the highest column that has a non-zero expected digit
-  const highestNonZeroCol = useMemo(() => {
-    for (let c = totalCols - 1; c >= 0; c--) {
-      if (columns[c].digit !== 0) return c;
-    }
-    return 0;
-  }, [columns, totalCols]);
 
   // Can submit: all columns up to highestNonZeroCol must be filled
   const canSubmit = useMemo(() => {
@@ -405,7 +405,7 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
               // Decimal point column
               return (
                 <div key={i} className="digit-cell flex items-end justify-center pb-1"
-                  style={{ color: '#e53935', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}>
+                  style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}>
                   .
                 </div>
               );
@@ -429,7 +429,7 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
               // Decimal point column
               return (
                 <div key={i} className="digit-cell flex items-end justify-center pb-1"
-                  style={{ color: '#e53935', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}>
+                  style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}>
                   .
                 </div>
               );

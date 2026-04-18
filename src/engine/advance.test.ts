@@ -7,7 +7,8 @@ import {
   getTierCounts,
   buildAdvanceSlots,
 } from './advance';
-import { ADVANCE_QUESTION_COUNT } from '@/constants/advance';
+import { ADVANCE_QUESTION_COUNT, getTier } from '@/constants/advance';
+import type { TopicId } from '@/types';
 
 describe('getStars', () => {
   it('0 hearts → 0★', () => expect(getStars(0, 3)).toBe(0));
@@ -81,5 +82,155 @@ describe('buildAdvanceSlots', () => {
       const slots = buildAdvanceSlots(topicId, 78);
       expect(slots.length).toBe(ADVANCE_QUESTION_COUNT);
     });
+  }
+});
+
+// ─────────────────────────────────────────
+// S4-T1: 3★-cap 题型（A01/A04/A08）压档场景验收
+// 子计划 2.5 §S4-T1 — 验证 v2.2 压档后 buildAdvanceSlots 在 4 个星级边界
+// 的 tierCounts 精确分布 + slots 档位落点一致 + demon 档永不启用 + 子题型不退化
+// ─────────────────────────────────────────
+
+describe('S4-T1: 3★-cap 题型压档场景（A01/A04/A08）', () => {
+  const CAP3_TOPICS: TopicId[] = ['mental-arithmetic', 'operation-laws', 'equation-transpose'];
+
+  /** 边界矩阵：[hearts, 预期 tierCounts.normal/hard/demon] */
+  const BOUNDARY_MATRIX: Array<{ hearts: number; star: string; expected: { normal: number; hard: number; demon: number } }> = [
+    { hearts: 0,  star: '0★', expected: { normal: 20, hard: 0,  demon: 0 } },
+    { hearts: 6,  star: '1★', expected: { normal: 12, hard: 8,  demon: 0 } },
+    { hearts: 18, star: '2★', expected: { normal: 4,  hard: 16, demon: 0 } },
+    { hearts: 38, star: '3★', expected: { normal: 0,  hard: 20, demon: 0 } },
+  ];
+
+  describe('1. getTierCounts 精确分布', () => {
+    for (const { hearts, star, expected } of BOUNDARY_MATRIX) {
+      it(`${star}(${hearts}❤️): {normal:${expected.normal}, hard:${expected.hard}, demon:${expected.demon}}`, () => {
+        const counts = getTierCounts(hearts, 3, 20);
+        expect(counts).toEqual(expected);
+      });
+    }
+  });
+
+  describe('2. buildAdvanceSlots 档位落点与 tierCounts 一致', () => {
+    for (const topicId of CAP3_TOPICS) {
+      for (const { hearts, star, expected } of BOUNDARY_MATRIX) {
+        it(`${topicId} @ ${star}(${hearts}❤️): slots 档位计数 == tierCounts`, () => {
+          const slots = buildAdvanceSlots(topicId, hearts);
+          const actual = { normal: 0, hard: 0, demon: 0 };
+          for (const s of slots) {
+            actual[getTier(s.difficulty)]++;
+          }
+          expect(actual).toEqual(expected);
+        });
+      }
+    }
+  });
+
+  describe('3. 【压档核心】demon 档永不启用', () => {
+    for (const topicId of CAP3_TOPICS) {
+      it(`${topicId}: 四个星级边界下所有 slots difficulty ≤ 7`, () => {
+        for (const { hearts } of BOUNDARY_MATRIX) {
+          const slots = buildAdvanceSlots(topicId, hearts);
+          for (const s of slots) {
+            expect(s.difficulty).toBeLessThanOrEqual(7);
+            expect(s.difficulty).toBeGreaterThanOrEqual(2);
+          }
+        }
+      });
+    }
+  });
+
+  describe('4. 子题型不退化为单一（跨档星级下）', () => {
+    // 只检查 1★ / 2★ 这两个跨档边界；0★ 全 normal 档、3★ 全 hard 档都是单档场景
+    // 但 SWOR 最多选 4 个 tag，只要单档 entries ≥ 2 就应该 ≥ 2 种
+    for (const topicId of CAP3_TOPICS) {
+      it(`${topicId} @ 1★(6❤️): slot.subtypeTag 唯一值数 ≥ 2`, () => {
+        const slots = buildAdvanceSlots(topicId, 6);
+        const uniqueTags = new Set(slots.map(s => s.subtypeTag));
+        expect(uniqueTags.size).toBeGreaterThanOrEqual(2);
+      });
+
+      it(`${topicId} @ 2★(18❤️): slot.subtypeTag 唯一值数 ≥ 2`, () => {
+        const slots = buildAdvanceSlots(topicId, 18);
+        const uniqueTags = new Set(slots.map(s => s.subtypeTag));
+        expect(uniqueTags.size).toBeGreaterThanOrEqual(2);
+      });
+    }
+  });
+});
+
+// ─────────────────────────────────────────
+// S4-T3: 进阶模式新答题形式可达性
+// 子计划 2.5 §S4-T3 — 验证 buildAdvanceSlots 产出的 subtypeTag 能触发
+// multi-blank / expression-input / equation-input 对应的生成器路径
+// ─────────────────────────────────────────
+
+describe('S4-T3: 进阶中新答题形式可达性', () => {
+  // A04(operation-laws) 高档有 multi-blank：tag = 'fill-commutative' / 'fill-distributive'
+  // A06(bracket-ops) 全档都是 expression-input
+  // A08(equation-transpose) 全档都是 equation-input
+
+  it('operation-laws 进阶 slots 包含 fill-* tag（对应 multi-blank）', () => {
+    // 1★ 时既有 normal 档也有 hard 档，fill-* tag 出现概率高
+    let found = false;
+    const blankTags = ['structure-blank', 'reverse-blank'];
+    for (let trial = 0; trial < 10; trial++) {
+      const slots = buildAdvanceSlots('operation-laws', 6);
+      if (slots.some(s => blankTags.includes(s.subtypeTag))) { found = true; break; }
+    }
+    expect(found, 'operation-laws 进阶应能生成 structure-blank / reverse-blank (multi-blank) subtypeTag').toBe(true);
+  });
+
+  it('bracket-ops 进阶 slots 包含去/添括号 tag（对应 expression-input）', () => {
+    const slots = buildAdvanceSlots('bracket-ops', 0);
+    const tags = new Set(slots.map(s => s.subtypeTag));
+    const expressionTags = ['remove-bracket-plus', 'remove-bracket-minus', 'add-bracket', 'nested-bracket', 'four-items-sign', 'error-diagnose', 'division-property'];
+    const hasAny = expressionTags.some(t => tags.has(t));
+    expect(hasAny, 'bracket-ops 进阶应能生成 expression-input 对应 subtypeTag').toBe(true);
+  });
+
+  it('equation-transpose 进阶 slots 包含移项 tag（对应 equation-input）', () => {
+    const slots = buildAdvanceSlots('equation-transpose', 0);
+    const tags = new Set(slots.map(s => s.subtypeTag));
+    const eqTags = ['move-constant', 'move-from-linear', 'equation-concept', 'move-both-sides', 'bracket-equation', 'error-diagnose', 'solve-after-transpose', 'division-equation'];
+    const hasAny = eqTags.some(t => tags.has(t));
+    expect(hasAny, 'equation-transpose 进阶应能生成 equation-input 对应 subtypeTag').toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────
+// S4-T2: 8 主题进阶端到端冒烟
+// 子计划 2.5 §S4-T2 — 每主题各跑一局完整 20 题进阶，
+// 验证 buildAdvanceSlots → generateQuestion 链路全程无 throw、
+// 0 console error（以 question 结构完整性替代 pageerror 检测）
+// ─────────────────────────────────────────
+
+import { generateQuestion } from './index';
+
+describe('S4-T2: 8 主题进阶端到端冒烟（20 题完整局）', () => {
+  const TOPICS: Array<import('@/types').TopicId> = [
+    'mental-arithmetic', 'number-sense', 'vertical-calc', 'operation-laws',
+    'decimal-ops', 'bracket-ops', 'multi-step', 'equation-transpose',
+  ];
+
+  const HEARTS_LEVELS = [0, 18, 38]; // 0★ / 2★ / 3★(或 3★ for 5-cap)
+
+  for (const topicId of TOPICS) {
+    for (const hearts of HEARTS_LEVELS) {
+      it(`${topicId} @ ${hearts}❤️: 20 题生成无 throw + 结构完整`, () => {
+        const slots = buildAdvanceSlots(topicId, hearts);
+        expect(slots.length).toBe(ADVANCE_QUESTION_COUNT);
+
+        for (const slot of slots) {
+          const q = generateQuestion(topicId, slot.difficulty, [slot.subtypeTag]);
+          expect(q, `${topicId}/${slot.subtypeTag}/d${slot.difficulty} 应返回 Question`).toBeTruthy();
+          expect(q.id).toBeTruthy();
+          expect(q.topicId).toBe(topicId);
+          expect(q.prompt).toBeTruthy();
+          expect(q.solution).toBeTruthy();
+          expect(q.solution.answer !== undefined && q.solution.answer !== null).toBe(true);
+        }
+      });
+    }
   }
 });

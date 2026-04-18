@@ -8,7 +8,7 @@ import Dialog from '@/components/Dialog';
 import LoadingScreen from '@/components/LoadingScreen';
 import ConfettiEffect from '@/components/ConfettiEffect';
 import MathText from '@/components/MathText';
-import type { VerticalCalcData } from '@/types';
+import type { VerticalCalcData, TrainingField } from '@/types';
 import {
   getPracticeFeedbackAnnouncement,
 } from '@/utils/ui-accessibility';
@@ -68,12 +68,15 @@ export default function Practice() {
     typeof currentQuestion.solution.answer === 'string' &&
     String(currentQuestion.solution.answer).includes('...');
   // Decimal training grid: numeric-input questions with trainingFields, not demon difficulty
-  const hasTrainingFields =
+  const dataTrainingFields =
     currentQuestion.type === 'numeric-input' &&
     currentQuestion.data != null &&
-    'trainingFields' in currentQuestion.data &&
-    Array.isArray((currentQuestion.data as any).trainingFields) &&
-    (currentQuestion.data as any).trainingFields.length > 0 &&
+    'trainingFields' in currentQuestion.data
+      ? (currentQuestion.data as { trainingFields?: TrainingField[] }).trainingFields
+      : undefined;
+  const hasTrainingFields =
+    dataTrainingFields != null &&
+    dataTrainingFields.length > 0 &&
     currentQuestion.difficulty < 8;
 
   const handleSubmit = useCallback(() => {
@@ -233,7 +236,7 @@ return (
                   </div>
                 </div>
               ) : (
-                <h2 className={`font-black text-center text-text leading-snug tracking-tight mb-0 whitespace-nowrap overflow-x-auto ${
+                <h2 className={`font-black text-center text-text leading-snug tracking-tight mb-0 whitespace-normal break-words ${
                   currentQuestion.prompt.length > 25
                     ? 'text-[20px]'
                     : currentQuestion.prompt.length > 18
@@ -342,9 +345,9 @@ return (
               )}
 
               {/* Training grid */}
-              {hasTrainingFields && (
+              {hasTrainingFields && dataTrainingFields && (
                 <DecimalTrainingGrid
-                  fields={(currentQuestion.data as any).trainingFields}
+                  fields={dataTrainingFields}
                   difficulty={currentQuestion.difficulty}
                   onComplete={() => setTrainingComplete(true)}
                 />
@@ -352,16 +355,22 @@ return (
 
               {/* Regular single input */}
               {currentQuestion.type === 'numeric-input' && !isDivisionMental && (
-                <div className="flex justify-center mb-4">
+                <div className="flex flex-col items-center mb-4 gap-1">
+                  {hasTrainingFields && !trainingComplete && (
+                    <p id="training-hint" className="text-sm font-bold text-warning">
+                      先完成上方训练格
+                    </p>
+                  )}
                   <input
                     ref={inputRef}
                     type="text"
                     inputMode="decimal"
                     value={answer}
                     onChange={e => setAnswer(e.target.value)}
-                    placeholder={hasTrainingFields && !trainingComplete ? '先完成训练格' : '输入答案'}
+                    placeholder="输入答案"
                     disabled={hasTrainingFields && !trainingComplete}
                     aria-label="输入答案"
+                    aria-describedby={hasTrainingFields && !trainingComplete ? 'training-hint' : undefined}
                     className={`w-48 text-center text-2xl font-bold bg-card-2 border-2 border-border
                                rounded-2xl px-4 py-3 text-text focus:border-primary outline-none transition-colors
                                ${hasTrainingFields && !trainingComplete ? 'opacity-40' : ''}`}
@@ -402,7 +411,7 @@ return (
                     type="text"
                     value={answer}
                     onChange={e => setAnswer(e.target.value)}
-                    placeholder={isEquationInput ? '例：4x = 20' : '直接写出变换后的式子'}
+                    placeholder={isEquationInput ? '写出移项后的完整等式' : '直接写出变换后的式子'}
                     aria-label={isEquationInput ? '输入移项后的等式' : '输入变换后的式子'}
                     className="w-full max-w-sm text-center text-xl font-bold bg-card-2 border-2 border-border
                                rounded-2xl px-4 py-3 text-text focus:border-primary outline-none transition-colors"

@@ -51,6 +51,29 @@ describe('A. 版本迭代验证', () => {
     }
   });
 
+  // A-21: A01 S2-LB 乘除在 d≥6 下高档技巧池占主导（useHighPool=0.75，子计划 2.5 §S2-T3 方案 B）
+  it('A-21: A01 S2-LB 乘除 d≥6 高档技巧题占比 ≥ 65%', () => {
+    const qs = genBatch('mental-arithmetic', 7, 400, ['mul', 'div']);
+    // 判据：中档 midMulMidZero/midDiv 的 operand 永不命中「末尾 0」或 {25,50,75,125}；
+    // 高档 highMul*/highDiv* 必命中其一。详见 mental-arithmetic.ts §"高档：末尾0管理/需拆分"。
+    const FRIENDLY = new Set([25, 50, 75, 125]);
+    let hi = 0;
+    for (const q of qs) {
+      const d = q.data as any;
+      if (d.kind !== 'mental-arithmetic' || !d.operands) continue;
+      const [a, b] = d.operands as [number, number];
+      const op = d.operator as string;
+      const isHigh =
+        op === '×'
+          ? FRIENDLY.has(a) || FRIENDLY.has(b) || a % 10 === 0 || b % 10 === 0
+          : op === '÷'
+            ? FRIENDLY.has(b) || b % 10 === 0
+            : false;
+      if (isHigh) hi++;
+    }
+    expect(hi / qs.length).toBeGreaterThan(0.65);
+  });
+
   // A-19: MC 干扰项来源
   it('A-19: 运算顺序MC干扰项均来自表达式', () => {
     const qs = genBatch('mental-arithmetic', 5, 100, ['order']);
@@ -79,6 +102,93 @@ describe('A. 版本迭代验证', () => {
     if (dsQs.length > 0) {
       const dsEqCount = dsQs.filter(q => q.solution.answer === '=').length;
       expect(dsEqCount / dsQs.length).toBeLessThanOrEqual(0.25);
+    }
+  });
+
+  // A-22 ~ A-25: S3-T3 — A08 四类陷阱（T1/T2/T3/T4）反馈质量（子计划 2.5 §S3-T3）
+  // 判据：每类陷阱题的 solution.explanation 必须同时包含
+  //   ① 陷阱标签（"陷阱 T[1-4]" 或对应陷阱编号）
+  //   ② 错误点说明（告诉学生哪里会错）
+  //   ③ 修正指引（怎么改到正确）
+  // 生成采样：每类 ≥ 2 条（子计划原文每类一次，本 session 用户要求每类两次）
+
+  function collectByTrap(difficulty: number, count: number): Record<string, Question[]> {
+    const qs = genBatch('equation-transpose', difficulty, count);
+    const byTrap: Record<string, Question[]> = {};
+    for (const q of qs) {
+      const trap = (q.data as any).trap as string | undefined;
+      if (!trap) continue;
+      (byTrap[trap] ??= []).push(q);
+    }
+    return byTrap;
+  }
+
+  function assertTrapFeedbackQuality(q: Question, trapLabel: string, errorKeywords: RegExp, fixKeywords: RegExp) {
+    const exp = q.solution.explanation ?? '';
+    expect(exp, `${trapLabel} 题必须有 explanation`).toBeTruthy();
+    expect(exp, `${trapLabel} 题的 explanation 必须标注陷阱标签`).toMatch(/陷阱 ?T[1-4]/);
+    expect(exp, `${trapLabel} 题的 explanation 必须说明错误点`).toMatch(errorKeywords);
+    expect(exp, `${trapLabel} 题的 explanation 必须给修正指引`).toMatch(fixKeywords);
+    expect(q.hints?.length ?? 0, `${trapLabel} 题必须有 hints`).toBeGreaterThan(0);
+  }
+
+  it('A-22: A08-T1「减号后 x 丢负号」反馈含陷阱标签+错误点+修正指引（≥2 道）', () => {
+    const byTrap = collectByTrap(7, 200);
+    const t1 = byTrap['T1'] ?? [];
+    expect(t1.length, 'T1 陷阱题应至少生成 2 道').toBeGreaterThanOrEqual(2);
+    for (const q of t1.slice(0, 2)) {
+      assertTrapFeedbackQuality(q, 'T1', /负号|变号|不变/, /保持不变|只变|不能写成/);
+    }
+  });
+
+  it('A-23: A08-T2「同侧多常数漏移」反馈含陷阱标签+错误点+修正指引（≥2 道）', () => {
+    const byTrap = collectByTrap(7, 200);
+    const t2 = byTrap['T2'] ?? [];
+    expect(t2.length, 'T2 陷阱题应至少生成 2 道').toBeGreaterThanOrEqual(2);
+    for (const q of t2.slice(0, 2)) {
+      assertTrapFeedbackQuality(q, 'T2', /常数|都要|两个/, /变号|移到右边|不能只移/);
+    }
+  });
+
+  it('A-24: A08-T3「括号展开漏乘」反馈含陷阱标签+错误点+修正指引（≥2 道）', () => {
+    const byTrap = collectByTrap(7, 200);
+    const t3Keys = ['T3', 'T3+T4'];
+    const t3 = t3Keys.flatMap(k => byTrap[k] ?? []);
+    expect(t3.length, 'T3 / T3+T4 陷阱题应至少生成 2 道').toBeGreaterThanOrEqual(2);
+    for (const q of t3.slice(0, 2)) {
+      assertTrapFeedbackQuality(q, 'T3', /展开|漏乘|不能漏/, /同时乘|再做|分配律/);
+    }
+  });
+
+  it('A-25: A08-T4「双向移项每项变号」反馈含陷阱标签+错误点+修正指引（≥2 道）', () => {
+    const byTrap = collectByTrap(7, 200);
+    const t4Keys = ['T4', 'T3+T4'];
+    const t4 = t4Keys.flatMap(k => byTrap[k] ?? []);
+    expect(t4.length, 'T4 / T3+T4 陷阱题应至少生成 2 道').toBeGreaterThanOrEqual(2);
+    for (const q of t4.slice(0, 2)) {
+      assertTrapFeedbackQuality(q, 'T4', /每个|都要变号|两侧/, /变号|移到/);
+    }
+  });
+
+  // A-26: S3-T2 — multi-select 链路结构验证（子计划 2.5 §S3-T2）
+  // 高档 A04(operation-laws)/ A07(multi-step)/ A02(number-sense) 会出 multi-select
+  it('A-26: multi-select 题 answer 为逗号分隔排序字母 + answers 数组存在', () => {
+    const sources: Array<[string, number, string[]?]> = [
+      ['operation-laws', 7],
+      ['multi-step', 7, ['recognize-multi']],
+      ['number-sense', 7, ['compare']],
+    ];
+    for (const [topic, d, filter] of sources) {
+      const qs = genBatch(topic, d, 200, filter);
+      const ms = qs.filter(q => q.type === 'multi-select');
+      if (ms.length === 0) continue;
+      for (const q of ms.slice(0, 3)) {
+        expect(q.solution.answer, `${topic} multi-select answer 应为逗号分隔大写字母`).toMatch(/^[A-Z](,[A-Z])*$/);
+        expect(q.solution.answers?.length, `${topic} multi-select answers 数组应 ≥ 1`).toBeGreaterThanOrEqual(1);
+        const sorted = q.solution.answer.split(',').sort().join(',');
+        expect(sorted, `${topic} multi-select answer 应已排序`).toBe(q.solution.answer);
+        expect(q.data && 'options' in q.data && (q.data as any).options?.length, `${topic} multi-select 应有 options`).toBeGreaterThanOrEqual(2);
+      }
     }
   });
 });
@@ -137,8 +247,8 @@ describe('F-I. 通用生成质量', () => {
         if (data.options.length === 2 && data.options.includes('是') && data.options.includes('不是')) {
           continue; // DEFECT-001: 已知2选项判断题
         }
-        if (data.options.length === 2 && data.options.includes('满足') && data.options.includes('不满足')) {
-          continue; // A04 simple-judge：满足/不满足 两项判断本身就是题型的表达方式
+        if (data.options.length === 2 && data.options.some((o: string) => o.includes('满足'))) {
+          continue; // A04 simple-judge：二选一判断题
         }
         expect(data.options.length).toBeGreaterThanOrEqual(3);
       }

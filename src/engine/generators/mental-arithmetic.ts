@@ -205,24 +205,39 @@ function highDivFactorSplit(): Trio {
   return pick(patterns);
 }
 
-/** 高档加法：四位数加，含连进位 */
+/** 高档加法：三位数进位为主 + 少量口算友好四位数（补数凑整） */
 function highAdd(): Trio {
-  const a = randInt(1000, 8999);
-  const b = randInt(500, 9999 - a);
+  if (Math.random() < 0.3) {
+    // 口算友好四位数：凑整补数（如 997+3=1000、2998+2=3000）
+    const base = pick([1000, 2000, 3000, 5000] as const);
+    const b = randInt(1, 15);
+    const a = base - b;
+    return [a, b, base];
+  }
+  // 三位数 + 三位数（含进位）
+  const a = randInt(100, 899);
+  const b = randInt(100, 999 - a);
   return [a, b, a + b];
 }
 
-/** 高档减法：四位数含连退位 */
+/** 高档减法：三位数退位为主 + 少量口算友好四位数（凑整差） */
 function highSub(): Trio {
-  const pattern = randInt(0, 1);
+  const pattern = randInt(0, 2);
   if (pattern === 0) {
-    // 退位边界：10000-9997 等
+    // 退位边界：1000-997、10000-9997 等
     const a = pick([1000, 10000] as const);
     const b = a - randInt(1, 20);
     return [a, b, a - b];
   }
-  const a = randInt(1000, 9999);
-  const b = randInt(100, a - 100);
+  if (pattern === 1) {
+    // 三位数 - 三位数（多次退位）
+    const a = randInt(200, 999);
+    const b = randInt(100, a - 10);
+    return [a, b, a - b];
+  }
+  // 三位数 - 两位数
+  const a = randInt(100, 999);
+  const b = randInt(10, 99);
   return [a, b, a - b];
 }
 
@@ -235,8 +250,10 @@ function generatePair(difficulty: number, op: '+' | '-' | '×' | '÷'): Trio {
     if (op === '×') return lowMul();
     return lowDiv();
   }
-  // 档 2：合并原"中档陷阱"+ 原"高档拆分技巧"——50% 取中档陷阱池，50% 取高档池
-  const useHighPool = Math.random() < 0.5;
+  // 档 2：合并原"中档陷阱"+ 原"高档拆分技巧"——75% 取高档技巧池，25% 取中档陷阱池
+  // 权重由 0.5 调至 0.75（子计划 2.5 §S2-T3 方案 B），让 A01 S2-LB「口算拆分技巧」lane
+  // 在 d≥6 时真正以"拆分/末尾0/凑整技巧"为主导，名实对齐
+  const useHighPool = Math.random() < 0.75;
   if (op === '+') return useHighPool ? highAdd() : midAdd();
   if (op === '-') return useHighPool ? highSub() : midSub();
   if (op === '×') {

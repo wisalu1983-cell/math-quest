@@ -307,17 +307,57 @@ function generateReverseBlank(difficulty: number, id: string): Question {
  */
 function generateSimpleJudge(difficulty: number, id: string): Question {
   const cases = [
-    { prompt: '加法满足交换律吗？', answer: '满足' },
-    { prompt: '乘法满足交换律吗？', answer: '满足' },
-    { prompt: '减法满足交换律吗？', answer: '不满足' },
-    { prompt: '除法满足交换律吗？', answer: '不满足' },
-    { prompt: '加法满足结合律吗？', answer: '满足' },
-    { prompt: '乘法满足结合律吗？', answer: '满足' },
-    { prompt: '减法满足结合律吗？', answer: '不满足' },
-    { prompt: '除法满足结合律吗？', answer: '不满足' },
+    {
+      prompt: '计算 5 − 3 和 3 − 5，结果一样吗？这说明减法满足交换律吗？',
+      options: ['结果一样，满足', '结果不一样，不满足'],
+      answer: '结果不一样，不满足',
+      explanation: '5 − 3 = 2，3 − 5 = −2，结果不同，所以减法不满足交换律。',
+    },
+    {
+      prompt: '计算 12 ÷ 4 和 4 ÷ 12，结果一样吗？这说明除法满足交换律吗？',
+      options: ['结果一样，满足', '结果不一样，不满足'],
+      answer: '结果不一样，不满足',
+      explanation: '12 ÷ 4 = 3，4 ÷ 12 ≈ 0.33，结果不同，所以除法不满足交换律。',
+    },
+    {
+      prompt: '计算 3 + 7 和 7 + 3，结果一样吗？这说明加法满足交换律吗？',
+      options: ['结果一样，满足', '结果不一样，不满足'],
+      answer: '结果一样，满足',
+      explanation: '3 + 7 = 10，7 + 3 = 10，结果相同，加法满足交换律。',
+    },
+    {
+      prompt: '计算 (8 − 3) − 2 和 8 − (3 − 2)，结果一样吗？这说明减法满足结合律吗？',
+      options: ['结果一样，满足', '结果不一样，不满足'],
+      answer: '结果不一样，不满足',
+      explanation: '(8−3)−2 = 3，8−(3−2) = 7，结果不同，减法不满足结合律。',
+    },
+    {
+      prompt: '计算 (24 ÷ 6) ÷ 2 和 24 ÷ (6 ÷ 2)，结果一样吗？这说明除法满足结合律吗？',
+      options: ['结果一样，满足', '结果不一样，不满足'],
+      answer: '结果不一样，不满足',
+      explanation: '(24÷6)÷2 = 2，24÷(6÷2) = 8，结果不同，除法不满足结合律。',
+    },
+    {
+      prompt: '计算 (2 + 3) + 4 和 2 + (3 + 4)，结果一样吗？这说明加法满足结合律吗？',
+      options: ['结果一样，满足', '结果不一样，不满足'],
+      answer: '结果一样，满足',
+      explanation: '(2+3)+4 = 9，2+(3+4) = 9，结果相同，加法满足结合律。',
+    },
+    {
+      prompt: '计算 4 × 5 和 5 × 4，结果一样吗？这说明乘法满足交换律吗？',
+      options: ['结果一样，满足', '结果不一样，不满足'],
+      answer: '结果一样，满足',
+      explanation: '4 × 5 = 20，5 × 4 = 20，结果相同，乘法满足交换律。',
+    },
+    {
+      prompt: '计算 (2 × 3) × 4 和 2 × (3 × 4)，结果一样吗？这说明乘法满足结合律吗？',
+      options: ['结果一样，满足', '结果不一样，不满足'],
+      answer: '结果一样，满足',
+      explanation: '(2×3)×4 = 24，2×(3×4) = 24，结果相同，乘法满足结合律。',
+    },
   ];
   const c = choice(cases);
-  const options = shuffle(['满足', '不满足']);
+  const options = shuffle(c.options);
 
   return {
     id,
@@ -334,12 +374,9 @@ function generateSimpleJudge(difficulty: number, id: string): Question {
     },
     solution: {
       answer: c.answer,
-      explanation:
-        c.answer === '满足'
-          ? '加法和乘法既满足交换律也满足结合律。'
-          : '减法和除法都不满足交换律和结合律（可以举反例：5−3≠3−5）。',
+      explanation: c.explanation,
     },
-    hints: ['可以举具体例子验证：5−3 和 3−5 相等吗？'],
+    hints: ['先把两道算式分别算出来，看结果是否相同'],
   };
 }
 

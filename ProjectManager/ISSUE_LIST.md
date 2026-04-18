@@ -132,10 +132,10 @@
 ### UI 设计审查 — 重要（Major）
 
 ### ISSUE-020 (UI/Major): 底部导航栏5份重复代码（DRY 严重违反）
-- **状态**: ⬜ 待修复
-- **位置**: Home.tsx:96-115 / Progress.tsx:94-113 / WrongBook.tsx:83-102 / Profile.tsx:117-136 / History.tsx:97-116
-- **现象**: 完全相同的底部导航 JSX 复制5份，History 页还漏掉了激活状态高亮。任何改动须同步5处
-- **修复**: 提取 `<BottomNav activeTab={...} />` 组件，顺带修复 ISSUE-029
+- **状态**: ✅ 已关闭（子计划 2 / 2.5 附带完成，2026-04-18 子计划 3 §零交叉验证）
+- **位置**: Home.tsx / Progress.tsx / WrongBook.tsx / Profile.tsx / History.tsx
+- **修复**: 已提取 `src/components/BottomNav.tsx`，5 个页面全部改用 `<BottomNav activeTab={...} />`
+- **验证**: `ls src/components/BottomNav.tsx` 存在；5 页均传入 `activeTab` 属性
 
 ### ISSUE-021 (UI/Major): `useGameProgressStore` 导入来源不一致
 - **状态**: ✅ 已关闭（2026-04-15）
@@ -166,16 +166,17 @@
 ### UI 设计审查 — 次要（Minor）
 
 ### ISSUE-025 (UI/Minor): 硬编码颜色值混入设计 token 系统
-- **状态**: ⬜ 待修复
+- **状态**: ✅ 已关闭（2026-04-18，子计划 3 B1-T1）
 - **位置**: VerticalCalcBoard.tsx:302/398/421（`#e53935`）; Home.tsx:83 / Progress.tsx:57（`#58cc02`）
-- **现象**: 绕过 CSS 变量，未来改主题色时需在多处手动搜索替换
-- **修复**: 改用 `var(--color-danger)` / `var(--color-success)` 等 CSS 变量
+- **修复**:
+  - `#58cc02` 在前序迭代中已随 token 体系切换移除（验证：`rg '#58cc02' src/` 零命中）
+  - `#e53935` 三处（VerticalCalcBoard.tsx 小数点渲染行内 style）统一改为 `var(--color-danger)`
+  - 验证：`rg '#e53935' src/` 零命中；tsc -b 0 错误；vitest 328/328 PASS
 
 ### ISSUE-026 (UI/Minor): 多处使用 `text-[10px]`，低于儿童最小可读字号
-- **状态**: ⬜ 待修复
-- **位置**: Profile.tsx:49/52/55; SessionDetail.tsx:67/71/76; CampaignMap 心数
-- **现象**: 10px 对五年级小学生（目标用户）视力负担较大，最小建议 12px
-- **修复**: 全局替换 `text-[10px]` → `text-xs`（12px）
+- **状态**: ✅ 已关闭（子计划 2 / 2.5 附带完成，2026-04-18 子计划 3 §零交叉验证）
+- **位置**: Profile.tsx / SessionDetail.tsx / CampaignMap
+- **验证**: `rg 'text-\[10px\]' src/` 零命中；相关位置已全部改用 `text-xs`（12px）或更大字号
 
 ### ISSUE-027 (UI/Minor): Profile 页昵称下方硬编码”五年级”
 - **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
@@ -189,20 +190,20 @@
 - **修复**: 所有图标按钮加 `aria-label`，内容用 `aria-hidden=”true”`
 
 ### ISSUE-029 (UI/Minor): History 底部导航无激活状态高亮
-- **状态**: ⬜ 待修复（随 ISSUE-020 一并修复）
-- **位置**: `src/pages/History.tsx:105-112`
-- **现象**: 所有 tab 都用 `text-text-secondary`，无选中态
-- **修复**: 提取 BottomNav 后传 `activeTab=”progress”`
+- **状态**: ✅ 已关闭（随 ISSUE-020 附带完成，2026-04-18 子计划 3 §零交叉验证）
+- **位置**: `src/pages/History.tsx`
+- **修复**: History.tsx 使用 `<BottomNav activeTab="progress" />`，激活态高亮由 BottomNav 组件统一处理
 
 ### ISSUE-030 (UI/Minor): VerticalCalcBoard `handleSubmit` 向下引用 `highestNonZeroCol`
-- **状态**: ⬜ 代码整洁问题
+- **状态**: ✅ 已关闭（2026-04-18，子计划 3 B1-T2）
 - **位置**: `src/components/VerticalCalcBoard.tsx:186`（函数定义在 174 行，被引用变量在 342 行）
-- **修复**: 将 `highestNonZeroCol` 的 useMemo 移到 `handleSubmit` 定义之前
+- **修复**: 将 `highestNonZeroCol` 的 useMemo 移到 `handleSubmit` 定义之前；依赖项 `columns` / `totalCols` 在上方已定义，纯代码移动无行为变化；tsc -b 0 + vitest 328/328 PASS
 
 ### ISSUE-031 (UI/Minor): Practice 多处 `as any` 类型断言绕过类型系统
-- **状态**: ⬜ 待修复
-- **位置**: `src/pages/Practice.tsx:46/205`
-- **修复**: 为 question.data 使用判别联合类型（discriminated union）
+- **状态**: ✅ 已关闭（2026-04-18，子计划 3 B1-T3）
+- **位置**: `src/pages/Practice.tsx`（旧 :46/:205，v2.2 后位移至 :75-76 和 :347，共 3 处）
+- **修复**: 提取 `dataTrainingFields` 局部变量，使用结构化类型 `(currentQuestion.data as { trainingFields?: TrainingField[] }).trainingFields` 替代裸 `as any`；JSX 中 `(currentQuestion.data as any).trainingFields` 改为直接引用 `dataTrainingFields`
+- **验证**: `rg 'as any' src/pages/Practice.tsx` 零命中；tsc -b 0 + vitest 328/328 PASS
 
 ---
 
@@ -247,16 +248,16 @@
 ### 无障碍审查 WCAG AA — 中等（Moderate）
 
 ### ISSUE-037 (a11y/Moderate): `text-danger` 在 `bg-card` 背景对比度 4.37:1，低于 AA（WCAG 1.4.3）
-- **状态**: ⬜ 待修复
-- **位置**: `src/pages/WrongBook.tsx:58` / `src/pages/SessionDetail.tsx:117`（均为 `text-xs` 尺寸）
-- **现象**: #ff4b4b 在 #1a2c35 上对比度 4.37:1，低于正文 AA 要求 4.5:1
-- **修复**: 将 `--color-danger` 调整为 `#ff3333`（对比度约 5.3:1），或局部场景用更深红色
+- **状态**: ✅ 已关闭（2026-04-18，子计划 3 B3-E3，评估后直接关闭）
+- **位置**: `src/pages/WrongBook.tsx:58` / `src/pages/SessionDetail.tsx:117` 等
+- **评估**: `--color-danger` 当前值为 `#FF6B6B`（2026-04-14 UI redesign 阶段已从旧 `#ff4b4b` 更新），在 `bg-card: #1a2c35` 上实测对比度 ≈ 4.83:1，**满足 AA 正文阈值 4.5:1**。其他低对比度用法（如 `.digit-cell-wrong` 在 `bg-danger-lt: #FFF5F5` 上 ≈ 2.58:1）均属临时错误态，附带红色边框 + 抖动动画辅助区分，不作为主要信息载体
+- **结论**: 原 issue 基于旧色值陈述，当前色值已满足主要 AA 要求；无需调整
 
 ### ISSUE-038 (a11y/Moderate): DecimalTrainingGrid 使用亮色系，脱离应用暗色主题
-- **状态**: ⬜ 待修复（与 ISSUE-025 方向一致）
-- **位置**: `src/components/DecimalTrainingGrid.tsx:54-93`
-- **现象**: 组件用 `bg-amber-50 border-amber-200 text-gray-600` 等 Tailwind 默认色，在深色背景中形成孤岛，且完全脱离设计 token 系统
-- **修复**: 改用 `bg-bg-elevated border-accent/40 text-text` 等应用 token
+- **状态**: ✅ 已关闭（子计划 2 / 2.5 附带完成，2026-04-18 子计划 3 §零交叉验证）
+- **位置**: `src/components/DecimalTrainingGrid.tsx`
+- **修复**: 组件已改用 `bg-primary-lt` / `border-primary-mid` 等应用 token
+- **验证**: `rg 'amber|gray-600' src/components/DecimalTrainingGrid.tsx` 零命中
 
 ### ISSUE-039 (a11y/Moderate): 心数展示缺可访问文字描述（WCAG 1.1.1）
 - **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
@@ -271,25 +272,36 @@
 - **修复**: 在 globals.css 末尾加 `@media (prefers-reduced-motion: reduce)`，统一压缩动画与过渡时长
 
 ### ISSUE-041 (a11y/Moderate): 关卡完成/可玩/锁定状态仅颜色区分（WCAG 1.4.1）
-- **状态**: ⬜ 待评估
-- **位置**: `src/pages/CampaignMap.tsx:118-127`
-- **现象**: 完成（绿）和可玩（也是绿）两种状态在色盲用户看来差异不足
-- **修复**: 完成状态增加实心背景或额外形状差异
+- **状态**: ✅ 已关闭（2026-04-18，子计划 3 B3-E1，评估后降级关闭）
+- **位置**: `src/pages/CampaignMap.tsx`
+- **评估**: 原 issue 描述"完成（绿）和可玩（也是绿）"，实际代码中两态分别为绿色（完成）/ 橙色（可玩）；且除颜色外同时具备：
+  - 图标差异：完成态打钩（✓），可玩态播放三角（▶）
+  - 底部文字差异：完成态显示心数，可玩态显示题数
+  - aria-label 差异：已分别明确状态
+- **结论**: 非颜色区分手段已充分，符合 WCAG 1.4.1；无需改动
 
 ---
 
 ### 无障碍审查 WCAG AA — 次要（Minor）
 
 ### ISSUE-042 (a11y/Minor): `autoFocus` 干扰屏幕阅读器虚拟光标
-- **状态**: ⬜ 待评估
-- **位置**: Practice.tsx:226 / Onboarding.tsx:52
-- **修复**: 改为 useEffect 中受控焦点管理
+- **状态**: ✅ 已关闭（2026-04-18，子计划 3 B3-E2，评估后降级关闭）
+- **位置**: Practice.tsx / VerticalCalcBoard.tsx / Onboarding.tsx 共 5 处
+- **评估**:
+  - 目标用户为小学五年级儿童，明视用户占绝对主体；`autoFocus` 让进入答题页即可直接输入，体验收益大
+  - 改为 `useEffect` 受控焦点仅为时机调整，不消除"自动移焦"本身；对屏幕阅读器用户影响等价
+  - 已有 `aria-live`、`aria-label`、`aria-describedby` 等配套措施为屏幕阅读器提供上下文
+  - WCAG 将此归为 Minor，严重度低
+- **结论**: UX 收益大于可访问性微影响；维持现状
 
 ### ISSUE-043 (a11y/Minor): 输入框 placeholder 承载关键操作说明（WCAG 3.3.2）
-- **状态**: ⬜ 待修复
-- **位置**: `src/pages/Practice.tsx:219`（`placeholder=”先完成训练格”`）
-- **现象**: 操作说明通过 placeholder 传达，焦点时消失，且对比度通常不达标
-- **修复**: 改为永久可见的 `<p>` 提示文字 + `aria-describedby` 关联
+- **状态**: ✅ 已关闭（2026-04-18，子计划 3 B2-T1）
+- **位置**: `src/pages/Practice.tsx`
+- **修复**:
+  - 输入框 `placeholder` 统一为 `"输入答案"`，不再承载条件提示
+  - 在输入框上方新增持久可见的 `<p id="training-hint" className="text-sm font-bold text-warning">先完成上方训练格</p>`，仅在 `hasTrainingFields && !trainingComplete` 时渲染
+  - 输入框通过 `aria-describedby={hasTrainingFields && !trainingComplete ? 'training-hint' : undefined}` 关联
+- **验证**: tsc -b 0 + vitest 328/328 PASS
 
 ### ISSUE-044 (a11y/Minor): 页面切换无 `document.title` 更新（WCAG 2.4.2）
 - **状态**: ✅ 已修复（2026-04-14 UI hotfix 6.1）
@@ -298,10 +310,10 @@
 - **修复**: App.tsx 使用 `useEffect` 监听 `currentPage` 并按页面映射更新 `document.title`
 
 ### ISSUE-045 (a11y/Minor): 无跳过导航链接（WCAG 2.4.1）
-- **状态**: ⬜ 待评估
-- **位置**: 全局
-- **现象**: 键盘用户每次换页须 Tab 经过顶部栏才能到达主内容
-- **修复**: 每页根元素顶部加隐藏 skip-nav 链接，focus 时可见
+- **状态**: ✅ 已关闭（2026-04-18 子计划 3 B2-T2 浏览器抽测时确认：早已实现）
+- **位置**: `index.html:17` + `src/App.tsx` `<main id="main-content">`
+- **实际情况**: UI redesign 阶段（`.skip-link` CSS 类和 `index.html` 的 `<a href="#main-content" class="skip-link">跳至主要内容</a>` 均已落地，注释明确标注 "WCAG 2.4.1"），且 `App.tsx` 返回的 `<main>` 一直持有 `id="main-content"`，锚点目标有效
+- **验证**: 浏览器 `browser_snapshot` 捕获到 "跳至主要内容" link，Tab 聚焦可见；本轮子计划 3 最初在 `App.tsx` 重复注入的 skip-link 已撤销，避免重复
 
 ---
 

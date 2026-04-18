@@ -41,13 +41,16 @@ export function getSubtypeEntries(_difficulty: number): SubtypeDef[] {
 //   高档：多式估算比较 + 现实取整情境
 // ---------------------------------------------------------------------------
 
+/** 估算取整精度：至多到最大位数小一位（4 位数→百，3 位数→十） */
 function getEstimatePlace(n: number): number {
   const abs = Math.abs(n);
+  const digits = abs < 10 ? 1 : abs < 100 ? 2 : abs < 1000 ? 3 : abs < 10000 ? 4 : 5;
+  // 最大位的量级
+  const maxPlace = Math.pow(10, digits - 1); // 3位数→100, 4位数→1000
+  // 允许的精度范围：从 maxPlace/10 到 maxPlace（即小一位到同位）
   const candidates: number[] = [];
-  if (abs >= 10) candidates.push(10);
-  if (abs >= 100) candidates.push(100);
-  if (abs >= 1000) candidates.push(1000);
-  if (abs >= 10000) candidates.push(10000);
+  const minPlace = Math.max(10, maxPlace / 10);
+  for (let p = minPlace; p <= maxPlace; p *= 10) candidates.push(p);
   if (candidates.length === 0) return 10;
   return candidates[randInt(0, candidates.length - 1)];
 }
@@ -56,24 +59,41 @@ function generateEstimateBasic(difficulty: number, id: string): Question {
   const ops: ('+' | '-' | '×')[] = difficulty <= 5 ? ['+', '-'] : ['+', '-', '×'];
   const op = pick(ops);
   const max = difficulty <= 5 ? 500 : difficulty <= 7 ? 5000 : 50000;
-  let a = randInt(10, max);
-  let b = randInt(10, max);
-  let exact: number;
-  let expression: string;
-  switch (op) {
-    case '+': exact = a + b; expression = `${a} + ${b}`; break;
-    case '-': {
-      if (a < b) [a, b] = [b, a];
-      exact = a - b;
-      if (exact < 10) { exact = a + b; expression = `${a} + ${b}`; }
-      else { expression = `${a} - ${b}`; }
-      break;
+
+  // 难度梯度：控制精确值在取整区间内的偏向程度
+  // bias = 精确值落在区间 [roundDown, roundUp] 中偏向一端的程度
+  // 低档(d≤5): 90% 区间（靠近某一端），中档(d6-7): 70%，高档(d≥8): 50%
+  const biasRange = difficulty <= 5 ? 0.90 : difficulty <= 7 ? 0.70 : 0.50;
+
+  let exact: number = 0;
+  let expression: string = '';
+
+  for (let attempt = 0; attempt < 50; attempt++) {
+    let a = randInt(10, max);
+    let b = randInt(10, max);
+    switch (op) {
+      case '+': exact = a + b; expression = `${a} + ${b}`; break;
+      case '-': {
+        if (a < b) [a, b] = [b, a];
+        exact = a - b;
+        if (exact < 10) { exact = a + b; expression = `${a} + ${b}`; }
+        else { expression = `${a} - ${b}`; }
+        break;
+      }
+      case '×': {
+        a = randInt(10, difficulty <= 7 ? 99 : 999);
+        b = randInt(2, difficulty <= 7 ? 20 : 99);
+        exact = a * b; expression = `${a} × ${b}`; break;
+      }
     }
-    case '×': {
-      a = randInt(10, difficulty <= 7 ? 99 : 999);
-      b = randInt(2, difficulty <= 7 ? 20 : 99);
-      exact = a * b; expression = `${a} × ${b}`; break;
-    }
+
+    const place = getEstimatePlace(exact);
+    const roundDown = Math.floor(exact / place) * place;
+    const fraction = (exact - roundDown) / place; // 0~1 之间
+    // 偏向度：fraction 离 0 或 1 的最小距离占 place 的比例
+    const edgeDist = Math.min(fraction, 1 - fraction);
+    // edgeDist < biasRange/2 表示在允许范围内（越大越靠中间越难）
+    if (edgeDist <= biasRange / 2) break;
   }
 
   const place = getEstimatePlace(exact);
@@ -83,16 +103,6 @@ function generateEstimateBasic(difficulty: number, id: string): Question {
   const roundDown = Math.floor(exact / place) * place;
   const roundUp = roundDown + place;
   const closest = (exact - roundDown <= roundUp - exact) ? roundDown : roundUp;
-  const secondClosest = closest === roundDown ? roundUp : roundDown;
-
-  const halfway = roundDown + place / 2;
-  const bias = Math.abs(exact - halfway) / place;
-  const threshold = difficulty <= 5 ? 0.15 : difficulty <= 7 ? 0.10 : 0;
-  const acceptBoth = bias <= threshold;
-  const acceptedAnswers = acceptBoth ? [closest, secondClosest] : [closest];
-  const acceptedStr = acceptBoth
-    ? `${closest} 或 ${secondClosest} 均算正确`
-    : `最接近的整${placeName}数是 ${closest}`;
 
   return {
     id,
@@ -100,10 +110,10 @@ function generateEstimateBasic(difficulty: number, id: string): Question {
     type: 'numeric-input',
     difficulty,
     prompt: `估算 ${expression}，结果取整${placeName}数`,
-    data: { kind: 'number-sense', subtype: 'estimate', acceptedAnswers },
+    data: { kind: 'number-sense', subtype: 'estimate' },
     solution: {
       answer: closest,
-      explanation: `${expression} = ${exact}，${acceptedStr}`,
+      explanation: `${expression} = ${exact}，最接近的整${placeName}数是 ${closest}`,
     },
     hints: [`把每个数四舍五入到${placeName}位再计算`],
     xpBase: 10 + (difficulty - 1) * 5,
@@ -236,25 +246,6 @@ function generateRoundBasic(difficulty: number, id: string): Question {
   };
 }
 
-/** 高档：多精度对比（同一个数四舍五入到两个不同位，求差） */
-function generateRoundMultiPrecision(difficulty: number, id: string): Question {
-  const num = randInt(300, 9999);
-  const placeA = pick([10, 100] as const);
-  const placeB = placeA === 10 ? 100 : 1000;
-  const rA = Math.round(num / placeA) * placeA;
-  const rB = Math.round(num / placeB) * placeB;
-  const diff = Math.abs(rA - rB);
-  const placeName: Record<number, string> = { 10: '十', 100: '百', 1000: '千' };
-  return {
-    id, topicId: 'number-sense', type: 'numeric-input', difficulty,
-    prompt: `${num} 四舍五入到${placeName[placeA]}位得 ${rA}，到${placeName[placeB]}位得 ${rB}。两个结果相差多少？`,
-    data: { kind: 'number-sense', subtype: 'round' },
-    solution: { answer: diff, explanation: `|${rA} − ${rB}| = ${diff}` },
-    hints: ['取两个结果的差'],
-    xpBase: 10 + (difficulty - 1) * 5,
-  };
-}
-
 /** 高档：方法对比 MC（四舍五入 vs 去尾法） */
 function generateRoundMethodCompare(difficulty: number, id: string): Question {
   // 选 4 个候选，每个候选带着"到某位"，挑出"四舍五入 ≠ 去尾法"的一个
@@ -343,10 +334,8 @@ function generateRoundDecimal(difficulty: number, id: string): Question {
 
 function generateRound(difficulty: number, id: string): Question {
   if (difficulty >= 8) {
-    const r = Math.random();
-    if (r < 0.35) return generateRoundMultiPrecision(difficulty, id);
-    if (r < 0.70) return generateRoundMethodCompare(difficulty, id);
-    return generateRoundBasic(difficulty, id);
+    // 高档：50% 方法对比 MC / 50% 基础取整（大数）
+    return Math.random() < 0.50 ? generateRoundMethodCompare(difficulty, id) : generateRoundBasic(difficulty, id);
   }
   if (difficulty >= 6) {
     // v2.2 中档：70% 小数四舍五入（含 5 边界 / 进位跨位），30% 整数保留为常规训练
