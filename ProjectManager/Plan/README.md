@@ -159,9 +159,11 @@
 | [2026-04-14-phase1-hotfix-and-iteration.md](2026-04-14-phase1-hotfix-and-iteration.md) | Phase 1 热修复 + 优化迭代（去年级区分、History入口、路线匹配修复、出题质量、难度标准） | ✅ 完成 |
 | [2026-04-16-p1p2-fixes.md](2026-04-16-p1p2-fixes.md) | P1+P2 修复（试玩反馈 11 项：心数 bug / Boss 视觉与内容差异化 / 进阶引导 / 难度梯度 / 除法整除比例 / Practice UI / VerticalCalcBoard 焦点与退位提示） | ✅ 完成 |
 | [2026-04-16-generator-difficulty-recalibration.md](2026-04-16-generator-difficulty-recalibration.md) | 生成器难度分档重审（基于题库边界 + 用户感知；为三档主规格重写提供证据与结论） | ✅ 完成 |
-| [2026-04-16-open-backlog-consolidation.md](2026-04-16-open-backlog-consolidation.md) | **当前阶段主计划**——开放 backlog 统一整理 + v2.2 稳定化入口（§七）；A/C 段完成，子计划 1/2 完成，子计划 2.5 进行中，子计划 3/4 待启动 | 🟡 进行中 |
+| [2026-04-16-open-backlog-consolidation.md](2026-04-16-open-backlog-consolidation.md) | **当前阶段主计划**——开放 backlog 统一整理；A/B/C 段完成，子计划 1/2/2.5/3 全部关闭，子计划 4（下阶段扩展）待启动 | 🟡 进行中 |
 | [2026-04-17-generator-redesign-v2-implementation.md](2026-04-17-generator-redesign-v2-implementation.md) | 生成器题型设计 v2.2 实施计划（对应 Specs/2026-04-17-generator-redesign-v2.md；5 阶段 + 阶段 6 二轮修订已全部完成）| ✅ 完成 |
-| [2026-04-17-campaign-advance-stabilization.md](2026-04-17-campaign-advance-stabilization.md) | **子计划 2.5（父=主计划 §四/§七）**——闯关+进阶模式稳定化：S1 阻塞级 / S2 重要 bug / S3 v2.2 深度体验 QA / S4 进阶专项验收 | 🟡 进行中 |
+| [2026-04-17-campaign-advance-stabilization.md](2026-04-17-campaign-advance-stabilization.md) | **子计划 2.5（父=主计划 §四/§七）**——闯关+进阶模式稳定化：S1 阻塞级 / S2 重要 bug / S3 v2.2 深度体验 QA / S4 进阶专项验收 | ✅ 完成（2026-04-18）|
+| [2026-04-18-ui-consistency-cleanup.md](2026-04-18-ui-consistency-cleanup.md) | **子计划 3（父=主计划 §四）**——UI 一致性与代码整洁清理：B1 硬编码色+类型整洁 / B2 a11y 教学细化 / B3 a11y 评估项；12 项 ISSUE 全部关闭或降级关闭 | ✅ 完成（2026-04-18）|
+| [2026-04-18-subplan-4-next-stage-expansion.md](2026-04-18-subplan-4-next-stage-expansion.md) | **子计划 4 Umbrella（父=主计划 §四）**——下阶段扩展总纲：Phase 3 段位赛 / A03 块B Plus / A09 分数 / B-D 领域；推荐切入 = Phase 3；各块实施子子计划各自单立 | 🟡 Umbrella 落盘，等待首个实施子子计划领取（2026-04-18）|
 | [2026-04-17-pm-document-sync-mechanism.md](2026-04-17-pm-document-sync-mechanism.md) | 全局文档同步机制设计（方案 6；pm-sync-check 静态校验 L1 + Plan/README 规则 7/8 钩子 L2；v2.1→v2.2 回溯验证召回 2/2）| ✅ L1+L2 落地，L3 暂不启动 |
 
 ## 设计规格新增
@@ -199,7 +201,7 @@
 
 ## 待排期
 
-> **当前阶段方针**（2026-04-17 刷新）：主计划 = `2026-04-16-open-backlog-consolidation.md`；当前重心 = 子计划 2.5 **闯关+进阶模式稳定化**，段位赛整体后移。
+> **当前阶段方针**（2026-04-18 刷新）：主计划 = `2026-04-16-open-backlog-consolidation.md`；A/B/C 段全部完成，**子计划 4 Umbrella 已落盘**（[`2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md)），推荐从 Phase 3 段位赛起步。**真题参考库补充不再作为独立并行任务**，合流到子计划 4 每个新主题开工的 Step 0，详见主计划 §三 D 段"合流说明"。
 
 | 内容 | 优先级 | 阶段 | 挂靠 |
 |------|--------|------|------|
@@ -207,10 +209,10 @@
 | ~~高优先级 UI/a11y 修复（ISSUE-022~024、028、032、034、035）~~ | ~~高~~ | ✅ 完成（2026-04-16） | 子计划 1 |
 | ~~生成器质量补强（ISSUE-008~010）~~ | ~~高~~ | ✅ 完成（2026-04-16） | 子计划 2 |
 | ~~生成器 v2.2 系统性重写~~ | ~~高~~ | ✅ 完成（2026-04-17） | 子计划 2 扩展 |
-| **闯关+进阶稳定化**（ISSUE-058 + v2.2 遗留 bug + 深度体验 QA + 进阶专项）| 高 | **当前** | [子计划 2.5](2026-04-17-campaign-advance-stabilization.md) |
-| UI 一致性 / 代码整洁（ISSUE-020、025、026、029~031、037、038、041~045）| 中 | 当前（稳定化后）| 子计划 3（未启动）|
-| 真题参考库补充 | 中 | 当前（可并行）| — |
-| 游戏化 Phase 3 — 段位赛（BO3/BO5/BO7）| 中 | 下阶段 | 子计划 4 |
-| A03 块B Plus（乘法部分积、除法试商）| 低 | 下阶段 | 子计划 4 |
-| A09 分数运算生成器 | 低 | 下阶段 | 子计划 4 |
-| B/C/D 领域开发 | 低 | 下阶段 | 子计划 4 |
+| ~~闯关+进阶稳定化~~ | ~~高~~ | ✅ 完成（2026-04-18） | [子计划 2.5](2026-04-17-campaign-advance-stabilization.md) |
+| ~~UI 一致性 / 代码整洁（ISSUE-020、025、026、029~031、037、038、041~045）~~ | ~~中~~ | ✅ 完成（2026-04-18） | [子计划 3](2026-04-18-ui-consistency-cleanup.md) |
+| ~~真题参考库补充~~ | ~~中~~ | **暂缓（2026-04-18）** | 合流到子计划 4（A09/B/C/D 开工 Step 0）|
+| **Phase 3 段位赛实施级规格 + 子子计划**（顺位 1）| 中 | **下一步** | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
+| A03 块B Plus（乘法部分积、除法试商）| 低 | 顺位 2 | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
+| A09 分数运算生成器 | 低 | 顺位 3 | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
+| B/C/D 领域开发 | 低 | 多季度 roadmap | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
