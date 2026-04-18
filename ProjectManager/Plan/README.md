@@ -163,7 +163,7 @@
 | [2026-04-17-generator-redesign-v2-implementation.md](2026-04-17-generator-redesign-v2-implementation.md) | 生成器题型设计 v2.2 实施计划（对应 Specs/2026-04-17-generator-redesign-v2.md；5 阶段 + 阶段 6 二轮修订已全部完成）| ✅ 完成 |
 | [2026-04-17-campaign-advance-stabilization.md](2026-04-17-campaign-advance-stabilization.md) | **子计划 2.5（父=主计划 §四/§七）**——闯关+进阶模式稳定化：S1 阻塞级 / S2 重要 bug / S3 v2.2 深度体验 QA / S4 进阶专项验收 | ✅ 完成（2026-04-18）|
 | [2026-04-18-ui-consistency-cleanup.md](2026-04-18-ui-consistency-cleanup.md) | **子计划 3（父=主计划 §四）**——UI 一致性与代码整洁清理：B1 硬编码色+类型整洁 / B2 a11y 教学细化 / B3 a11y 评估项；12 项 ISSUE 全部关闭或降级关闭 | ✅ 完成（2026-04-18）|
-| [2026-04-18-subplan-4-next-stage-expansion.md](2026-04-18-subplan-4-next-stage-expansion.md) | **子计划 4 Umbrella（父=主计划 §四）**——下阶段扩展总纲：Phase 3 段位赛 / A03 块B Plus / A09 分数 / B-D 领域；推荐切入 = Phase 3；各块实施子子计划各自单立 | 🟡 Umbrella 落盘，等待首个实施子子计划领取（2026-04-18）|
+| [2026-04-18-subplan-4-next-stage-expansion.md](2026-04-18-subplan-4-next-stage-expansion.md) | **子计划 4 Umbrella（父=主计划 §四）**——下阶段扩展总纲（2026-04-18 重排后收敛为三块）：A03 块B Plus / A09 分数 / Phase 3 段位赛；推荐切入 = A03 块B Plus（顺位 1）；各块实施子子计划各自单立；B/C/D 已移出，后续作子计划 5 roadmap | 🟡 Umbrella 落盘并重排，等待首个实施子子计划领取（2026-04-18）|
 | [2026-04-17-pm-document-sync-mechanism.md](2026-04-17-pm-document-sync-mechanism.md) | 全局文档同步机制设计（方案 6；pm-sync-check 静态校验 L1 + Plan/README 规则 7/8 钩子 L2；v2.1→v2.2 回溯验证召回 2/2）| ✅ L1+L2 落地，L3 暂不启动 |
 
 ## 设计规格新增
@@ -201,7 +201,7 @@
 
 ## 待排期
 
-> **当前阶段方针**（2026-04-18 刷新）：主计划 = `2026-04-16-open-backlog-consolidation.md`；A/B/C 段全部完成，**子计划 4 Umbrella 已落盘**（[`2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md)），推荐从 Phase 3 段位赛起步。**真题参考库补充不再作为独立并行任务**，合流到子计划 4 每个新主题开工的 Step 0，详见主计划 §三 D 段"合流说明"。
+> **当前阶段方针**（2026-04-18 刷新 + 同日重排）：主计划 = `2026-04-16-open-backlog-consolidation.md`；A/B/C 段全部完成，**子计划 4 Umbrella 已落盘并重排**（[`2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md)），推荐从 **A03 块B Plus** 起步，切入顺序 = A03+ → A09 → Phase 3 段位赛（段位赛最后）。B/C/D 已从子计划 4 移出，后续作**子计划 5 领域扩展 roadmap**（待立）。**真题参考库补充不再作为独立并行任务**：A09 归子计划 4 开工 Step 0；B/C/D 归未来子计划 5 各主题 Step 0，详见主计划 §三 D 段"合流说明"。
 
 | 内容 | 优先级 | 阶段 | 挂靠 |
 |------|--------|------|------|
@@ -211,8 +211,8 @@
 | ~~生成器 v2.2 系统性重写~~ | ~~高~~ | ✅ 完成（2026-04-17） | 子计划 2 扩展 |
 | ~~闯关+进阶稳定化~~ | ~~高~~ | ✅ 完成（2026-04-18） | [子计划 2.5](2026-04-17-campaign-advance-stabilization.md) |
 | ~~UI 一致性 / 代码整洁（ISSUE-020、025、026、029~031、037、038、041~045）~~ | ~~中~~ | ✅ 完成（2026-04-18） | [子计划 3](2026-04-18-ui-consistency-cleanup.md) |
-| ~~真题参考库补充~~ | ~~中~~ | **暂缓（2026-04-18）** | 合流到子计划 4（A09/B/C/D 开工 Step 0）|
-| **Phase 3 段位赛实施级规格 + 子子计划**（顺位 1）| 中 | **下一步** | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
-| A03 块B Plus（乘法部分积、除法试商）| 低 | 顺位 2 | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
-| A09 分数运算生成器 | 低 | 顺位 3 | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
-| B/C/D 领域开发 | 低 | 多季度 roadmap | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
+| ~~真题参考库补充~~ | ~~中~~ | **暂缓（2026-04-18）** | A09 合流到子计划 4 Step 0；B/C/D 合流到子计划 5 Step 0 |
+| **A03 块B Plus 设计级 / 实施级规格 + 子子计划**（顺位 1）| 中 | **下一步** | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
+| A09 分数运算生成器（顺位 2）| 低 | 等顺位 1 闭环 | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
+| Phase 3 段位赛（顺位 3，BO3/BO5/BO7）| 低 | 等顺位 2 闭环 | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md) |
+| B/C/D 领域开发 | 低 | 已从子计划 4 移出；多季度 roadmap | 子计划 5（待立）|
