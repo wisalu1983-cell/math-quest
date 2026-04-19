@@ -86,8 +86,9 @@
 
 | 文件 | 动作 | 摘要 |
 |------|------|------|
-| `src/engine/rank-match/question-picker.ts` | 新增 | `pickQuestionsForGame(rankSession, gameIndex, advanceProgress)` 返回 `Question[]`；内部调用现有 v2.2 生成器（通过 `engine/generators` 索引）；按 Spec §5 落地主考项 ≥40% / 复习题 ≤25% / 难度倾向 / 胜场游标 |
-| `src/engine/rank-match/question-picker.test.ts` | 新增 | TDD：主考项比例≥40%、复习题比例≤25%、每场题量与首版取值一致、相同输入下确定性（同 seed 或按胜场游标顺序稳定）、抽题失败兜底抛错 |
+| `src/engine/rank-match/question-picker.ts` | 新增 | `pickQuestionsForGame(rankSession, gameIndex, advanceProgress)` 返回 `Question[]`；内部调用现有 v2.2 生成器（通过 `engine/generators` 索引）；按 Spec §5 落地主考项 ≥40% / 复习题 ≤25% / 胜场游标 / §5.5 难度范围硬约束 |
+| `src/engine/rank-match/picker-validators.ts` | 新增 | 按 Spec §5.7 实现 `validateTierDistribution(tier, buckets, totalCount)` 自检钩子；覆盖每桶难度范围、各桶占比、专家 `normal` 甜点 ≤10%、大师 `demon` ≥40% 等硬约束；返回 `{ ok, violations[] }` |
+| `src/engine/rank-match/question-picker.test.ts` | 新增 | TDD：主考项比例≥40%、复习题比例≤25%、每场题量与首版取值一致、相同输入下确定性（同 seed 或按胜场游标顺序稳定）、Spec §5.5 每段位 × 每桶难度范围硬约束、专家 `normal` 甜点上限、大师 `demon` 下限、校验失败按 §5.8 抛异常（不静默降级）|
 | `src/store/index.ts` | 修改 | 扩展 `startCampaignSession`/`startAdvanceSession` 同层增加 `startRankMatchGame(rankSessionId, gameIndex)`；`submitAnswer` 在段位赛模式下，session 结束时调用 `handleGameFinished` 并根据返回的 `nextAction`（开下一局 / 结束赛事）做分支；更新/追加 E2E hook |
 | `src/store/index.test.ts` | 修改 | 补充段位赛单局答题 → 胜 → 下一局；单局答错 ≥3 → 负 → 下一局；第 W 场胜利 → `outcome='promoted'`；BO3 第 3 局未结束但数学上已无法翻盘 → 提前 `eliminated`（可选） |
 

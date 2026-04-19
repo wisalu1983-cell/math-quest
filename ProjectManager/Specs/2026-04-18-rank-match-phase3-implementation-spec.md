@@ -255,24 +255,73 @@ export interface PracticeSession {
 - 抽题器需要维护一个"虚拟胜场游标"——它随 `RankMatchSession.games` 里胜场数递增，而不是 `gameIndex`（因为中间可能有败局）
 - 若用户在第 N 局败北，第 N+1 局仍然使用"原本第 N 胜场"的主考项安排，直到打赢为止
 
-### 5.5 难度倾向
+### 5.5 难度范围硬约束（per tier × per bucket）
 
-每题的 `difficulty` 由"段位出题难度倾向"（`2026-04-10` §5.2）叠加"用户对应题型的当前星级"（`advanceProgress` + `getStars`）共同决定：
+每场抽题必须同时满足三桶（主考项 / 非主考 / 复习题）的难度范围硬约束，**任一桶越界即视为抽题失败**（走 §5.8 兜底）。本表以 `2026-04-10` §5.2 的"段位出题难度"为产品语义底线，在实施级把隐性约束写死：
 
-- 新秀：全部 `normal`（2-5）
-- 高手：主考项按用户星级匹配（`normal`/`hard` 混合），非主考偏 `normal`
-- 专家：主考项 `hard` 为主，偶尔 `demon`（≤20%），非主考 `hard`
-- 大师：主考项 `hard`/`demon` 五五开，非主考 `hard`
+| 段位 | 主考项 difficulty | 非主考 difficulty | 复习题 difficulty（来自之前段位）| 复习题比例 |
+|---|---|---|---|---|
+| 新秀（BO3）| `normal` 2-5 | `normal` 2-5 | — | — |
+| 高手（BO5）| `normal` 3-5 或 `hard` 6（按用户该题型星级动态调配）| `normal` 3-5 | `normal` 2-5（来自新秀） | ≤25% |
+| 专家（BO5）| `hard` 6-7 为主，`demon` 8 允许且 ≤20% 本场题量 | `hard` 6-7 | `hard` 6-7 为主；**允许 ≤10% 本场复习题 落到 `normal` 5（"甜点"回顾，仅此段位开放）** | ≤25% |
+| 大师（BO7）| `hard` 6-7 与 `demon` 8-10 混合，`demon` 占比 ≥40%（兜底下限，避免 BO7 掉档到纯 `hard`）| `hard` 6-7 | `hard` 6-7（来自专家） | ≤25% |
 
-### 5.6 复习题约束
+**关键硬约束（违反即抽题失败，不允许静默降级）**：
 
-- ≤25% 的硬上限不可突破
-- 复习题优先从"用户近 N 局里错题频率较高的题型"中取（按 `wrongQuestions` 最近采样）
-- 无错题历史时按段位历史均等分布
+1. **非主考桶不允许"下放"**：例如专家段位的非主考项不得落到 `normal`，即便用户该题型星级较低——段位即资格线，进入赛场即按段位规格出题
+2. **仅专家段位开放 `normal` 甜点**：专家的复习题池允许最多 10% 的 `normal` 5 做"久违的温暖回顾"以降低整体挫败感；**新秀/高手/大师不开放任何 normal 甜点复习题**
+3. **大师 demon 占比下限**：大师的主考+非主考合起来的 `demon` 占比不得低于 40%，确保终极段位保持峰值难度
+4. **用户星级只在高手主考项内微调 `normal` ↔ `hard` 6 比例**；新秀/专家/大师的主考项按段位硬范围，不受用户星级影响
+5. 本表的 `normal`/`hard`/`demon` 档位与 `difficulty` 数字映射沿用现有约定（见 `src/constants/*` 与既有题型生成器），本 Spec 不重新定义
 
-### 5.7 抽题器失败兜底
+### 5.6 复习题来源采样规则
 
-抽题器若无法满足"主考项 ≥40% 且复习题 ≤25%"硬约束（例如生成器抛错），在开发阶段直接抛异常中断赛事并记录 ISSUE；不允许静默降级出题。
+- ≤25% 的比例硬上限见 §5.5
+- 复习题优先从"用户近 N 局里错题频率较高的题型"中取（按 `wrongQuestions` 最近采样，N 由 M2 实施时取值）
+- 无错题历史时按之前各段位新内容点均等分布
+- 采样后仍需满足 §5.5 的**难度范围硬约束**：例如专家段位如果错题本里恰好是新秀 A01 的 `normal` 2 题，在专家赛场**不允许**整题沿用，需要抽取同题型更高难度（或落入 §5.5 专家"甜点" ≤10% 配额）
+
+### 5.7 校验钩子 `validateTierDistribution`
+
+抽题器**必须**在返回 `Question[]` 之前调用该钩子做"自检"：
+
+```typescript
+// src/engine/rank-match/picker-validators.ts
+export interface TierDistributionBuckets {
+  primary: Question[];
+  nonPrimary: Question[];
+  review: Question[];
+}
+
+export interface TierDistributionResult {
+  ok: boolean;
+  violations: string[];
+}
+
+export function validateTierDistribution(
+  tier: Exclude<RankTier, 'apprentice'>,
+  buckets: TierDistributionBuckets,
+  totalCount: number,
+): TierDistributionResult;
+```
+
+钩子会至少覆盖以下校验项（M2 实施时补齐）：
+
+- 每桶题目的 `difficulty` 落在 §5.5 表格允许范围
+- 各桶占比：主考 ≥40%、复习 ≤25%
+- 专家 `normal` 复习题占比 ≤10%；其他段位复习题池 `normal` 数量 = 0
+- 大师 `demon` 占主考+非主考合集 ≥40%
+- 三桶合计题数 = 本场题量（见 §5.3）
+
+返回 `{ ok: false, violations }` 时，§5.8 据此决定行为。
+
+### 5.8 抽题器失败兜底
+
+当 `validateTierDistribution` 返回 `{ ok: false }` 或生成器抛错时：
+
+- **开发阶段**：直接抛异常中断当前赛事，调用方把 `violations` 写入一条新的 `ISSUE_LIST.md` 记录（含段位、局号、违规项、抽到的题目 id 样本）
+- **正式运行（Phase 3 上线后）**：同样不允许静默降级出题；异常上抛到 `RankMatchSession` 顶层，该局 **标记为"系统故障"回滚**（不计入胜场/败场），用户看到错误提示页而非错误题目
+- **严禁**：在任何代码分支悄悄把越界题目替换成其他难度后继续出题；也严禁为了"让这局打得下去"而私自松绑 §5.5 的硬约束
 
 ---
 
