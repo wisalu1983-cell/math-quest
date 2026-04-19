@@ -9,7 +9,7 @@
 > - [`../Specs/2026-04-13-star-rank-numerical-design.md`](../Specs/2026-04-13-star-rank-numerical-design.md) §3 / §4（星级与数值事实源）
 > - [`../Specs/2026-04-15-gamification-phase2-advance-spec.md`](../Specs/2026-04-15-gamification-phase2-advance-spec.md)（`TOPIC_STAR_CAP`）
 > - [`../Specs/2026-04-14-ui-redesign-spec.md`](../Specs/2026-04-14-ui-redesign-spec.md)（阳光版 v5）  
-> 状态：🟡 待最终收口；全量 QA 阻塞已清，待统一提交与生命周期收口（详见 `ISSUE_LIST.md` 与 §6 最新回写）  
+> 状态：✅ 已完成（代码、验证、项目回写均已入仓；当前检查点 = `master@977933e`）  
 > **M1 启动前必读**：[`../Reports/2026-04-19-m1-kickoff-brief.md`](../Reports/2026-04-19-m1-kickoff-brief.md)（一次性交接简报，M1 领取并启动后即归档；汇总 2026-04-19 session 固化的 5 项关键决策、M1 文件清单同构索引与 6 条项目级硬约束）
 
 ---
@@ -139,10 +139,10 @@
 - [x] `npm run build` 绿（M4 完工节点）
 - [x] `npx tsx scripts/pm-sync-check.ts` ✅（见 §6 M4 段，收口动作）
 - [x] 执行 `ProjectManager/human-verification-bank.md` 里与段位赛相关的新增人工验证项（由 `test-results/phase3-rank-match/m4-user-qa-report.md` 覆盖）
-- [x] 在本文件 §6 回写 M1/M2/M3/M4 的实际证据链（commit hash 待补）
+- [x] 在本文件 §6 回写 M1/M2/M3/M4 的实际证据链（当前检查点：`977933e`）
 - [x] 如当前主线 / 当前状态 / 下一步变化，更新 `ProjectManager/Overview.md`（收口动作）
 - [x] 如本计划生命周期状态变化，更新 `ProjectManager/Plan/README.md`（收口动作）
-- [x] 更新父计划 `2026-04-18-subplan-4-next-stage-expansion.md` 状态面板（本轮同步为“阻塞已清，待统一提交与收口”）
+- [x] 更新父计划 `2026-04-18-subplan-4-next-stage-expansion.md` 状态面板（本轮同步为“本阶段收敛目标已达成，产物已入仓”）
 - [x] 更新祖父计划 `2026-04-16-open-backlog-consolidation.md` §三·D 段（同步最新测试基线与全量 QA 状态）
 - [x] 如本阶段新发现或关闭 ISSUE，更新 `ISSUE_LIST.md`；未关闭的标注"挂靠下一阶段"（ISSUE-062/063 本轮新增并已关闭；晋级动画按用户决策不入单）
 
@@ -481,7 +481,7 @@
 
 **整体思路**：M4 从"单纯回写"扩展为"build 修复 + 真·用户旅程 E2E + 文档收口"。M3 完工后首次跑 `npm run build` 发现 5 个 build-only 报错（`tsc --noEmit` 不覆盖的类型/erasableSyntaxOnly 路径），用户决策"归到 M4 验证项，由 QA leader 一并处理"。E2E 过程暴露两个真 bug（hooks 顺序错、单局推进时 next game placeholder 缺失），一并修复。
 
-**本里程碑实际涉及的改动**（git 未 commit 前的工作目录状态）：
+**本里程碑实际涉及的改动**（当时的工作目录状态；现已入仓）：
 
 1. **Build 修复（M3 设计审查漏网）**：
    - `src/utils/ui-accessibility.ts` 的 `AppPage` 联合类型 + `PAGE_TITLES` 补上 `rank-match-hub / rank-match-game-result / rank-match-result`
@@ -522,8 +522,8 @@
 - [x] `human-verification-bank.md` 段位赛条目：Phase 3 的核心体验条目已由 `m4-user-qa-report.md` 覆盖；人工验证入口文件本批不单独新增，避免与本报告重复
 - [x] 本文件 §6 回写完成（即当前段）
 - [x] `Overview.md` 更新（已同步 `ISSUE-064` 关闭与全量 QA 复跑结果）
-- [x] `Plan/README.md` 更新（已同步“待最终收口”状态）
-- [x] 父计划 `2026-04-18-subplan-4-next-stage-expansion.md` 状态面板更新（已同步“阻塞已清，待统一提交与收口”）
+- [x] `Plan/README.md` 更新（已同步“代码、验证、回写均已入仓”的完成状态）
+- [x] 父计划 `2026-04-18-subplan-4-next-stage-expansion.md` 状态面板更新（已同步“本阶段收敛目标已达成，产物已入仓”）
 - [x] 祖父计划 `2026-04-16-open-backlog-consolidation.md` §三·D 段更新（已同步 `vitest 473/473` 与全量 QA 全绿）
 - [x] `ISSUE_LIST.md`：ISSUE-062 / ISSUE-063 新增并标 ✅ 已关闭；晋级动画（M3 设计审查 m-3 漏网）按用户决策**不入 ISSUE_LIST**，只在本段记录
 
@@ -534,7 +534,7 @@
 - 本阶段决策（用户选 B）：**不挂 ISSUE_LIST、不开子计划**；留待 Phase 3 上线后用真实用户反馈决定是否投入
 - 风险确认：不影响功能闭环与核心体验（晋级信息依然可见 + 段位已落盘）；仅为 P3 惊喜感优化
 
-**Commit hash**：本次 M3+M4 连同 build 修复尚未 commit（工作目录状态如 `git status` 所示）；由 PM 审阅本段 + `m4-user-qa-report.md` 后统一提交，hash 待补回此段。
+**Commit hash**：`977933e`（`更新全量回归测试结果与问题修复记录`）。本次 M3+M4 连同 `ISSUE-064` 修复、全量回归结果与项目回写已一并入仓。
 
 **下一步**：补跑开新号全量回归并判断是否可以真正收口；若出现阻塞项，则先回到实现层修复后再做统一 commit。
 
@@ -630,5 +630,7 @@
 - Phase 3 在“开新号全量回归”口径下的最后一个阻塞项已清除
 - 当前真正开放问题只剩 `ISSUE-059`（非当前主线）
 
-**下一步**：统一提交本轮代码与文档改动，继续执行父计划 / 祖父计划的最终收口动作。
+**当前检查点**：`master@977933e`（提交信息：`更新全量回归测试结果与问题修复记录`）。
+
+**下一步**：本计划已完成。明天若继续开发，不再从本计划里找“补提交/补回写”动作；应先从 `ProjectManager/Overview.md` 读取当前闭环状态，再按已确认方向为“本地用户数据存档 / 账号系统前置数据模型”另建新计划。其余开放问题统一以 `ProjectManager/ISSUE_LIST.md` 为准，但不作为下一轮默认主线。
 

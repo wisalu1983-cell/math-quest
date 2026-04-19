@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-19（`ISSUE-064` 已修复；开新号全量 QA 复跑全绿）  
+> 最后更新：2026-04-19（Phase 3 主线已完成并入仓；开新号全量 QA 复跑全绿）  
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档。
 
 ---
@@ -27,7 +27,7 @@
 
 **阶段目标**：在 A01-A08 生成器与闯关/进阶已稳定的基础上，完成 Phase 3 段位赛最小闭环，让三层游戏化结构真正跑通。
 
-**当前主线**：Phase 3 段位赛。
+**当前主线**：Phase 3 段位赛（已完成；当前处于“等待下一轮主线领取”状态）。
 
 **当前状态**：
 
@@ -41,12 +41,13 @@
 - **M3 已完工**（2026-04-19）：UI 三页（`RankMatchHub` / `RankMatchGameResult` / `RankMatchResult`）+ `RankBadge` 组件 + 三条路由注册（`useUIStore.currentPage`，Spec §8.3）+ `globals.css` 段位徽章色 CSS 变量（`--rank-*`，Spec §8.4）+ `Home.tsx` 独立段位赛入口卡片（活跃赛事/缺口提示/入场引导三态）+ `Practice.tsx` BO 进度徽标 + `endSession` 后路由到单局结算页 + 刷新恢复双层接入（`App.tsx` `loadActiveRankMatch` / `Practice.tsx` `resumeRankMatchGame`）。`RankMatchRecoveryError` 全链路显式路由回 Hub，无静默降级（Spec §5.8）
 - **M4 代码闭环已完成**（2026-04-19，同日完成）：M3 完工后首次 `npm run build` 暴露 5 个 build-only 报错（`tsc --noEmit` 不覆盖的 `erasableSyntaxOnly` 路径 + 未用 import），按用户决策归入 M4 验证项一并处理；拟真 QA 阶段以 Playwright 自写 E2E（`test-results/phase3-rank-match/m4-e2e.mjs`）走完整用户旅程，**22 条用例 / 0 FAIL / 0 RISK**，覆盖主路径（学徒→新秀 BO3 两连胜晋级）+ 失败复盘（连败走 MatchResult + 薄弱题型前 3）+ 刷新恢复（G-01 / G-03）；E2E 过程暴露并当场修复两个 P1 bug：`ISSUE-062`（Practice 早退位于 hooks 之前违反规则）、`ISSUE-063`（`startRankMatchGame` 找不到下一局 placeholder）。四栏报告：`test-results/phase3-rank-match/m4-user-qa-report.md`
 - **2026-04-19 开新号全量回归已复跑全绿**：`ISSUE-064` 修复后再次执行 `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs`。结果：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS；`D-07` 已恢复为“刷新后直达当前 `Practice`”，`D-08` 继续保持 PASS，`console critical total: 0`
+- **当前精确检查点**：`master@977933e`（`更新全量回归测试结果与问题修复记录`）；当前本地与 `origin/master` 对齐，可在另一台机器 `git pull` 后从同一状态继续
 - 工程基线当前口径：`npm run build` 绿，`vitest` **473/473**；`npm run lint` 仍有 **127 条 error**，属于现有基线债务，本轮如实记录在全量 QA 自动化报告中
 - 本阶段明确不做：A03+、A09、B/C/D
 - 当前开放问题与历史关闭项不在本页展开，统一看 `ISSUE_LIST.md`
 - 遗留开放项：晋级动画（M3 设计审查 m-3 漏网）按用户决策不入 `ISSUE_LIST`，Phase 3 上线后按真实反馈再评估；当前真正开放问题只剩 `ISSUE-059`（非当前主线）
 
-**下一步**：统一提交本轮 Phase 3 代码与文档改动，并完成父计划 / 祖父计划的最终收口动作；`ISSUE-059` 留到当前主线收口后单独评估。
+**下一步**：明天继续时，不需要再补提交或补 Phase 3 收口文档；先按 `Overview.md` → `ISSUE_LIST.md` → `Plan/README.md` 复核当前状态，然后按已确认方向决定是否把“本地用户数据存档 / 账号系统前置数据模型”立为下一轮主线。`ISSUE-059` 仍保持开放，但维持低优先级，不抢下一轮主线。
 
 ---
 

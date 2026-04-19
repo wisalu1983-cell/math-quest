@@ -154,8 +154,8 @@
 | [2026-04-17-generator-redesign-v2-implementation.md](2026-04-17-generator-redesign-v2-implementation.md) | 生成器题型设计 v2.2 实施计划（对应 Specs/2026-04-17-generator-redesign-v2.md；5 阶段 + 阶段 6 二轮修订已全部完成）| ✅ 完成 |
 | [2026-04-17-campaign-advance-stabilization.md](2026-04-17-campaign-advance-stabilization.md) | **子计划 2.5（父=主计划 §四/§七）**——闯关+进阶模式稳定化：S1 阻塞级 / S2 重要 bug / S3 v2.2 深度体验 QA / S4 进阶专项验收 | ✅ 完成（2026-04-18）|
 | [2026-04-18-ui-consistency-cleanup.md](2026-04-18-ui-consistency-cleanup.md) | **子计划 3（父=主计划 §四）**——UI 一致性与代码整洁清理：B1 硬编码色+类型整洁 / B2 a11y 教学细化 / B3 a11y 评估项；12 项 ISSUE 全部关闭或降级关闭 | ✅ 完成（2026-04-18）|
-| [2026-04-18-subplan-4-next-stage-expansion.md](2026-04-18-subplan-4-next-stage-expansion.md) | **子计划 4 Umbrella（父=主计划 §四）**——下阶段扩展总纲；当前已收敛为单块 = Phase 3 段位赛 | 🟡 进行中（存在开放阻塞项，暂未收口） |
-| [2026-04-18-rank-match-phase3-implementation.md](2026-04-18-rank-match-phase3-implementation.md) | **Phase 3 段位赛实施子子计划（父=子计划 4 Umbrella）**——按实施级规格落代码：M1 地基 → M2 抽题器 + 答题流驳接 → M3 UI → M4 验证 + 回写 | 🟡 待最终收口（全量 QA 复跑通过，待统一提交） |
+| [2026-04-18-subplan-4-next-stage-expansion.md](2026-04-18-subplan-4-next-stage-expansion.md) | **子计划 4 Umbrella（父=主计划 §四）**——下阶段扩展总纲；当前已收敛为单块 = Phase 3 段位赛 | ✅ 完成（收敛目标已达成；下一轮工作另起计划） |
+| [2026-04-18-rank-match-phase3-implementation.md](2026-04-18-rank-match-phase3-implementation.md) | **Phase 3 段位赛实施子子计划（父=子计划 4 Umbrella）**——按实施级规格落代码：M1 地基 → M2 抽题器 + 答题流驳接 → M3 UI → M4 验证 + 回写 | ✅ 完成（代码、验证、回写均已入仓；检查点 `master@977933e`） |
 | [2026-04-17-pm-document-sync-mechanism.md](2026-04-17-pm-document-sync-mechanism.md) | 历史机制方案：记录文档同步机制首次设计、L1+L2 落地与回溯验证背景 | ✅ 历史记录 |
 | [2026-04-19-pm-token-efficiency-optimization.md](2026-04-19-pm-token-efficiency-optimization.md) | 项目管理文档体系轻量化优化方案：以不牺牲可靠性为前提，重排 Overview / Plan / Spec / Issue 的角色分工，并收缩 `pm-sync-check` 触发范围 | ✅ 完成 |
 
