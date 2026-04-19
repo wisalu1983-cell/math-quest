@@ -1,15 +1,17 @@
 // src/store/rank-match.ts
-// 段位赛最小 store · Phase 3 M1
+// 段位赛 store · Phase 3 M1 → M2 遗留补做（ISSUE-060）
 //
-// 职责（最小 API）：
-//   - activeRankSession：当前进行中的 BO 赛事（内存态，未持久化到 localStorage —— M2 再补）
+// 职责：
+//   - activeRankSession：当前进行中的 BO 赛事
 //   - startRankMatch(targetTier)：入场校验 → 创建 RankMatchSession → 回写 rankProgress.activeSessionId
-//   - handleGameFinished(practiceSessionSnapshot)：根据单局结果推进状态机并同步 rankProgress
+//     + 立即落盘至 mq_rank_match_sessions（ISSUE-060）
+//   - handleGameFinished(practiceSessionSnapshot)：推进状态机 + 同步 rankProgress + 每次落盘
+//   - loadActiveRankMatch(userId)：启动时从存档恢复活跃赛事（ISSUE-060 / Plan §4.1）
 //
 // 明确不做：
-//   - 不调用抽题器（M2）
-//   - 不生成真实 PracticeSession —— 由外部传入 id，store 只持状态
-//   - 不承接 UI 路由跳转（M3）
+//   - 不调用抽题器（由 useSessionStore.startRankMatchGame 负责）
+//   - 不恢复 PracticeSession 层（由 useSessionStore.resumeRankMatchGame 负责）
+//   - 不承接 UI 路由跳转
 
 import { create } from 'zustand';
 import { nanoid } from 'nanoid';
@@ -37,6 +39,22 @@ interface StartRankMatchOptions {
   now?: number;
 }
 
+/**
+ * 段位赛"刷新恢复"一致性异常（ISSUE-060 / Spec §5.8）。
+ * 任一数据不一致（存档缺失 / 状态冲突 / queue 损坏等）都走此异常——不允许静默降级。
+ * 抛错时 store 层已清 rankProgress.activeSessionId + activeRankSession，
+ * UI 捕获后应路由回 RankMatchHub。
+ */
+export class RankMatchRecoveryError extends Error {
+  readonly reason: string;
+
+  constructor(message: string, reason: string) {
+    super(message);
+    this.name = 'RankMatchRecoveryError';
+    this.reason = reason;
+  }
+}
+
 export interface RankMatchStore {
   activeRankSession: RankMatchSession | null;
 
@@ -44,7 +62,7 @@ export interface RankMatchStore {
    * 开始挑战目标段位。
    * - 未满足入场星级 → 抛 Error（由 match-state.createRankMatchSession 抛出）
    * - 已有进行中赛事 → 抛 Error，禁止并存
-   * - 成功后回写 rankProgress.activeSessionId
+   * - 成功后回写 rankProgress.activeSessionId 并将 session 落盘至 mq_rank_match_sessions
    */
   startRankMatch: (
     targetTier: ChallengeableTier,
@@ -55,9 +73,21 @@ export interface RankMatchStore {
    * 单局结束回调。
    * 根据 PracticeSession 快照推导该局胜负（won = completed && heartsRemaining >= 1），
    * 执行状态机并返回 nextAction 供调用方决定 UI 路由。
+   * - 每次调用都将最新 RankMatchSession 落盘（ISSUE-060）
    * - 若赛事结束 → 同步 rankProgress.history / currentTier / activeSessionId
    */
   handleGameFinished: (practiceSessionSnapshot: PracticeSession) => GameFinishedNextAction;
+
+  /**
+   * 启动时从 mq_rank_match_sessions 恢复活跃赛事（ISSUE-060 / Plan §4.1）。
+   * - rankProgress.activeSessionId 缺失 / 存档不存在 / userId 不匹配 / outcome 已出
+   *   → 视为无可恢复赛事，清 activeSessionId 返回 null（不抛异常——启动路径应安静）
+   * - 成功 → 写入 activeRankSession 并返回该 session
+   *
+   * 注意：本方法只恢复"BO 赛事层"。对"正在作答的 PracticeSession"的恢复由
+   * useSessionStore.resumeRankMatchGame 承担；两层拆开便于 UI 分步路由。
+   */
+  loadActiveRankMatch: (userId: string) => RankMatchSession | null;
 
   /** 仅为测试与恢复：直接设置活跃赛事引用 */
   _setActiveRankSession: (s: RankMatchSession | null) => void;
@@ -104,6 +134,9 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => ({
       activeSessionId: session.id,
     }));
 
+    // ISSUE-060：立即落盘，保证刷新后可恢复
+    repository.saveRankMatchSession(session);
+
     set({ activeRankSession: session });
     return session;
   },
@@ -126,6 +159,12 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => ({
     });
 
     if (nextAction.kind === 'start-next') {
+      // ISSUE-060：每一局结束都把最新 session 落盘（BO 中间态）
+      // 注：不在这里 push 下一局 placeholder；由 session 层 `startRankMatchGame`
+      // 在 UI 触发"开始下一局"时按需 inflate（见 store/index.ts），
+      // 这样 `getCurrentGameIndex(nextSession) === undefined` 仍成立，
+      // 刷新恢复时 Hub 能正确走"局间 / GameResult"分支。
+      repository.saveRankMatchSession(nextSession);
       set({ activeRankSession: nextSession });
       return nextAction;
     }
@@ -152,9 +191,50 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => ({
       };
     });
 
+    // ISSUE-060：赛事结束也落盘（完整终态包含 outcome/endedAt，供 analytics 或二次恢复路径读取）
+    repository.saveRankMatchSession(nextSession);
+
     set({ activeRankSession: nextSession });
     return nextAction;
   },
 
+  loadActiveRankMatch: (userId) => {
+    const gp = useGameProgressStore.getState().gameProgress;
+    const activeSessionId = gp?.rankProgress?.activeSessionId;
+    if (!activeSessionId) {
+      return null;
+    }
+
+    const clearActiveId = (): void => {
+      writeRankProgress(prev => ({ ...prev, activeSessionId: undefined }));
+      set({ activeRankSession: null });
+    };
+
+    const stored = repository.getRankMatchSession(activeSessionId);
+    if (!stored) {
+      // 一致性异常：activeSessionId 指向的存档不存在。
+      // 启动路径下视为"无可恢复"并清 id，不抛错（Spec §5.8 允许启动路径安静收尾）。
+      clearActiveId();
+      return null;
+    }
+    if (stored.userId !== userId) {
+      clearActiveId();
+      return null;
+    }
+    if (stored.outcome) {
+      // BO 已出结果但 activeSessionId 残留（可能是 handleGameFinished 写盘后未清 id 的遗留/崩溃）
+      clearActiveId();
+      return null;
+    }
+
+    set({ activeRankSession: stored });
+    return stored;
+  },
+
   _setActiveRankSession: (s) => set({ activeRankSession: s }),
 }));
+
+// E2E 测试钩子：仅在浏览器 DEV 环境暴露 store，供 Playwright / DevTools 读写活跃赛事
+if (import.meta.env.DEV && typeof window !== 'undefined') {
+  (window as any).__MQ_RANK_MATCH__ = useRankMatchStore;
+}

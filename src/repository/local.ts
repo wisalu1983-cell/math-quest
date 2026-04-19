@@ -1,12 +1,14 @@
 // src/repository/local.ts
 import type { User, PracticeSession, TopicId } from '@/types';
-import type { GameProgress, TopicCampaignProgress } from '@/types/gamification';
+import type { GameProgress, RankMatchSession, TopicCampaignProgress } from '@/types/gamification';
 import { CAMPAIGN_MAPS, getAllLevelIds, isCampaignFullyCompleted } from '@/constants/campaign';
 
 const KEYS = {
   user: 'mq_user',
   gameProgress: 'mq_game_progress',
   sessions: 'mq_sessions',
+  /** Spec §6.4：RankMatchSession 独立 key，与 PracticeSession 分存 */
+  rankMatchSessions: 'mq_rank_match_sessions',
   version: 'mq_version',
 } as const;
 
@@ -227,17 +229,58 @@ export const repository = {
     return read<PracticeSession[]>(KEYS.sessions) ?? [];
   },
 
+  /**
+   * 保存 PracticeSession。按 id upsert：已有同 id 条目则覆盖，否则追加。
+   *
+   * 历史行为（2026-04-18 前）是无条件 push —— 这在"每个 session 只 save 一次"的场景下没问题。
+   * ISSUE-060 后段位赛单局会在 start / 每次 submitAnswer / endSession 多次 save，
+   * 必须 upsert 才能保证 getSessions 回放出最新一份；否则恢复路径会拿到空 questions 的初版。
+   * 对其它 sessionMode 也是更合理的语义（不会产生 id 重复条目）。
+   */
   saveSession(session: PracticeSession): void {
     const sessions = this.getSessions();
-    sessions.push(session);
-    if (sessions.length > MAX_SESSIONS) {
-      sessions.splice(0, sessions.length - MAX_SESSIONS);
+    const idx = sessions.findIndex(s => s.id === session.id);
+    if (idx >= 0) {
+      sessions[idx] = session;
+    } else {
+      sessions.push(session);
+      if (sessions.length > MAX_SESSIONS) {
+        sessions.splice(0, sessions.length - MAX_SESSIONS);
+      }
     }
     write(KEYS.sessions, sessions);
   },
 
   getRecentSessions(limit: number): PracticeSession[] {
     return this.getSessions().slice(-limit);
+  },
+
+  // ─── RankMatchSession 持久化（Spec §6.4 / ISSUE-060 M2 遗留补做） ───
+  //
+  // 独立 key mq_rank_match_sessions，按 id 字典存储（upsert 语义）。
+  // Plan §4.1 明文要求：段位赛单局刷新后需从 mq_sessions + mq_rank_match_sessions
+  // 联合恢复；本层只负责 I/O，一致性校验由 store 层承担。
+
+  getRankMatchSessions(): Record<string, RankMatchSession> {
+    return read<Record<string, RankMatchSession>>(KEYS.rankMatchSessions) ?? {};
+  },
+
+  saveRankMatchSession(session: RankMatchSession): void {
+    const all = this.getRankMatchSessions();
+    all[session.id] = session;
+    write(KEYS.rankMatchSessions, all);
+  },
+
+  getRankMatchSession(id: string): RankMatchSession | null {
+    const all = this.getRankMatchSessions();
+    return all[id] ?? null;
+  },
+
+  deleteRankMatchSession(id: string): void {
+    const all = this.getRankMatchSessions();
+    if (!(id in all)) return;
+    delete all[id];
+    write(KEYS.rankMatchSessions, all);
   },
 
   /**
@@ -249,6 +292,7 @@ export const repository = {
     localStorage.removeItem(KEYS.user);
     localStorage.removeItem(KEYS.gameProgress);
     localStorage.removeItem(KEYS.sessions);
+    localStorage.removeItem(KEYS.rankMatchSessions);
     localStorage.removeItem('mq_progress');
   },
 };

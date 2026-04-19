@@ -30,8 +30,9 @@ import {
 } from '@/engine/answerValidation';
 import { pickQuestionsForGame } from '@/engine/rank-match/question-picker';
 import { RANK_QUESTIONS_PER_GAME } from '@/constants/rank-match';
-import { useRankMatchStore } from './rank-match';
+import { useRankMatchStore, RankMatchRecoveryError } from './rank-match';
 import type { GameFinishedNextAction } from '@/engine/rank-match/match-state';
+import { startNextGame as rankStartNextGame } from '@/engine/rank-match/match-state';
 
 interface SubmitAnswerOptions {
   trainingValues?: string[];
@@ -124,6 +125,21 @@ interface SessionStore {
    * - 复用 RankMatchGame.practiceSessionId 作为 session.id（Spec §3.3 避免双写）
    */
   startRankMatchGame: (rankSessionId: string, gameIndex: number) => void;
+  /**
+   * 段位赛单局中途刷新恢复（ISSUE-060 / Spec §5.8 / Plan §4.1）。
+   * 前置：useRankMatchStore.activeRankSession 已由 loadActiveRankMatch 恢复。
+   *
+   * 从 mq_sessions 读 PracticeSession，按以下步骤重建 SessionStore 内存态：
+   *   1) PracticeSession 存在、未 completed、rankMatchMeta 与 activeRankSession 一致
+   *   2) rankQuestionQueue 存在、长度 = RANK_QUESTIONS_PER_GAME[targetTier]
+   *   3) questions.length <= queue.length
+   *   4) 以 currentIndex = questions.length, hearts = heartsRemaining 重建，
+   *      currentQuestion = queue[currentIndex]（若 currentIndex < queue.length）
+   *
+   * 任一项不满足 → 抛 RankMatchRecoveryError，同时清 rankProgress.activeSessionId
+   * 与 activeRankSession（Spec §5.8 明文禁止静默降级）。
+   */
+  resumeRankMatchGame: (practiceSessionId: string) => void;
   nextQuestion: () => void;
   submitAnswer: (answer: string, options?: SubmitAnswerOptions) => SubmitAnswerResult;
   endSession: () => PracticeSession;
@@ -183,7 +199,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const user = useUserStore.getState().user;
     if (!user) throw new Error('Cannot start rank match game: user not loaded');
 
-    const rankSession = useRankMatchStore.getState().activeRankSession;
+    let rankSession = useRankMatchStore.getState().activeRankSession;
     if (!rankSession) throw new Error('Cannot start rank match game: no active rank match session');
     if (rankSession.id !== rankSessionId) {
       throw new Error('Cannot start rank match game: rankSessionId mismatch');
@@ -192,7 +208,21 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const gp = useGameProgressStore.getState().gameProgress;
     if (!gp) throw new Error('Cannot start rank match game: game progress not loaded');
 
-    const targetGame = rankSession.games.find(g => g.gameIndex === gameIndex);
+    // M4 修复：若 UI 在"开始下一局"时传入 games.length + 1 的 gameIndex，
+    // 且当前 session 无 outcome，则按需 inflate 一个 placeholder。
+    // rank-match store 的 handleGameFinished 不会自动 push 下一局，
+    // 以保持 `getCurrentGameIndex` 的"局间 undefined" 语义（刷新恢复依赖此约定）。
+    let targetGame = rankSession.games.find(g => g.gameIndex === gameIndex);
+    if (!targetGame && !rankSession.outcome && gameIndex === rankSession.games.length + 1) {
+      const inflated = rankStartNextGame({
+        session: rankSession,
+        practiceSessionId: nanoid(),
+      });
+      useRankMatchStore.getState()._setActiveRankSession(inflated);
+      repository.saveRankMatchSession(inflated);
+      rankSession = inflated;
+      targetGame = inflated.games.find(g => g.gameIndex === gameIndex);
+    }
     if (!targetGame) {
       throw new Error(`Cannot start rank match game: gameIndex ${gameIndex} not found`);
     }
@@ -204,6 +234,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       session: rankSession,
       gameIndex,
       advanceProgress: gp.advanceProgress,
+      // ISSUE-061：把累积错题喂给抽题器，驱动复习桶按 §5.6 错题频次加权
+      wrongQuestions: gp.wrongQuestions,
     });
 
     const session: PracticeSession = {
@@ -223,7 +255,12 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         targetTier: rankSession.targetTier,
         primaryTopics,
       },
+      // ISSUE-060：把整局题序写进 session，随 mq_sessions 持久化；刷新后可按 questions.length 指针恢复
+      rankQuestionQueue: questions,
     };
+
+    // ISSUE-060：启动瞬间就落盘，保证即使用户刚开局立刻刷新也能恢复
+    repository.saveSession(session);
 
     set({
       active: true,
@@ -239,6 +276,101 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     });
 
     get().nextQuestion();
+  },
+
+  resumeRankMatchGame: (practiceSessionId) => {
+    const user = useUserStore.getState().user;
+    if (!user) throw new RankMatchRecoveryError('User not loaded', 'no-user');
+
+    const clearAndThrow = (reason: string, message: string): never => {
+      // Spec §5.8：一致性异常 → 清活跃赛事，UI 层回 Hub
+      const gp = useGameProgressStore.getState().gameProgress;
+      if (gp?.rankProgress) {
+        const updated = {
+          ...gp,
+          rankProgress: { ...gp.rankProgress, activeSessionId: undefined },
+        };
+        repository.saveGameProgress(updated);
+        useGameProgressStore.setState({ gameProgress: updated });
+      }
+      useRankMatchStore.getState()._setActiveRankSession(null);
+      throw new RankMatchRecoveryError(message, reason);
+    };
+
+    const rankSession = useRankMatchStore.getState().activeRankSession;
+    if (!rankSession) {
+      return clearAndThrow(
+        'no-active-rank-session',
+        'Cannot resume rank match game: no active rank match session',
+      );
+    }
+
+    const stored = repository.getSessions().find(s => s.id === practiceSessionId);
+    if (!stored) {
+      return clearAndThrow(
+        'practice-session-not-found',
+        `Cannot resume rank match game: PracticeSession ${practiceSessionId} not found`,
+      );
+    }
+    if (stored.completed) {
+      return clearAndThrow(
+        'practice-session-already-completed',
+        `Cannot resume rank match game: PracticeSession ${practiceSessionId} already completed`,
+      );
+    }
+    if (!stored.rankMatchMeta) {
+      return clearAndThrow(
+        'missing-rank-match-meta',
+        'Cannot resume rank match game: PracticeSession missing rankMatchMeta',
+      );
+    }
+    if (stored.rankMatchMeta.rankSessionId !== rankSession.id) {
+      return clearAndThrow(
+        'rank-session-id-mismatch',
+        'Cannot resume rank match game: rankSessionId mismatch',
+      );
+    }
+    if (!stored.rankQuestionQueue || stored.rankQuestionQueue.length === 0) {
+      return clearAndThrow(
+        'missing-rank-question-queue',
+        'Cannot resume rank match game: rankQuestionQueue missing or empty',
+      );
+    }
+
+    const expectedLen = RANK_QUESTIONS_PER_GAME[rankSession.targetTier];
+    if (stored.rankQuestionQueue.length !== expectedLen) {
+      return clearAndThrow(
+        'rank-question-queue-length-mismatch',
+        `Cannot resume rank match game: queue length ${stored.rankQuestionQueue.length} != ${expectedLen}`,
+      );
+    }
+    if (stored.questions.length > stored.rankQuestionQueue.length) {
+      return clearAndThrow(
+        'answered-exceeds-queue',
+        'Cannot resume rank match game: answered count exceeds queue length',
+      );
+    }
+
+    const currentIndex = stored.questions.length;
+    const nextQ = currentIndex < stored.rankQuestionQueue.length
+      ? stored.rankQuestionQueue[currentIndex]
+      : null;
+
+    set({
+      active: true,
+      session: stored,
+      currentIndex,
+      totalQuestions: expectedLen,
+      hearts: stored.heartsRemaining,
+      questionStartTime: Date.now(),
+      showFeedback: false,
+      lastAnswerCorrect: false,
+      lastTrainingFieldMistakes: [],
+      pendingWrongQuestions: [],
+      rankQuestionQueue: stored.rankQuestionQueue,
+      currentQuestion: nextQ,
+      lastRankMatchAction: null,
+    });
   },
 
   startAdvanceSession: (topicId) => {
@@ -390,6 +522,11 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 
     useGameProgressStore.getState().recordAttempt(correct);
 
+    // ISSUE-060：段位赛每答一题就增量落盘，保证中途刷新可恢复
+    if (updatedSession.sessionMode === 'rank-match') {
+      repository.saveSession(updatedSession);
+    }
+
     set({
       session: updatedSession,
       hearts: newHearts,
@@ -514,7 +651,10 @@ interface UIStore {
     | 'profile'
     | 'wrong-book'
     | 'history'
-    | 'session-detail';
+    | 'session-detail'
+    | 'rank-match-hub'
+    | 'rank-match-game-result'
+    | 'rank-match-result';
   setPage: (page: UIStore['currentPage']) => void;
   selectedTopicId: TopicId | null;
   setSelectedTopicId: (id: TopicId | null) => void;
@@ -546,4 +686,5 @@ export { useGameProgressStore } from './gamification';
 if (import.meta.env.DEV && typeof window !== 'undefined') {
   (window as any).__MQ_SESSION__ = useSessionStore;
   (window as any).__MQ_GAME_PROGRESS__ = useGameProgressStore;
+  (window as any).__MQ_UI__ = useUIStore;
 }

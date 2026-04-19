@@ -152,8 +152,8 @@ describe('useRankMatchStore · handleGameFinished', () => {
     );
     expect(a1).toEqual({ kind: 'start-next' });
 
-    // 模拟外部调用 startNextGame（M1 store 未封装此动作；但状态机支持）
-    // 这里用 _setActiveRankSession 手工推进：模拟 M2 会做的事
+    // 模拟外部调用 startNextGame（rank-match store 不在 handleGameFinished 里自动 push；
+    // session 层的 startRankMatchGame 在"开始下一局"时负责 inflate）
     const afterStartNext = {
       ...useRankMatchStore.getState().activeRankSession!,
       games: [
@@ -191,7 +191,7 @@ describe('useRankMatchStore · handleGameFinished', () => {
     useRankMatchStore.getState().handleGameFinished(
       makePracticeSnapshot({ rankSessionId: session.id, gameIndex: 1, won: false }),
     );
-    // 手工开第 2 局
+    // 手工开第 2 局（store 层不自动 push，由 session 层 startRankMatchGame 负责 inflate）
     const next = {
       ...useRankMatchStore.getState().activeRankSession!,
       games: [
@@ -236,5 +236,98 @@ describe('useRankMatchStore · handleGameFinished', () => {
           makePracticeSnapshot({ rankSessionId: 'any', gameIndex: 1, won: true }),
         ),
     ).toThrow();
+  });
+});
+
+// ─── ISSUE-060 M2 遗留补做：RankMatchSession 持久化 + 启动恢复 ───
+
+import { repository } from '@/repository/local';
+
+describe('useRankMatchStore · 持久化写入（ISSUE-060）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('startRankMatch 成功后立即 saveRankMatchSession（存档有此 id）', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+    const persisted = repository.getRankMatchSession(session.id);
+    expect(persisted).not.toBeNull();
+    expect(persisted?.targetTier).toBe('rookie');
+    expect(persisted?.games[0].gameIndex).toBe(1);
+  });
+
+  it('handleGameFinished 每次都把最新 session 落盘（胜负状态可从存档读回）', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+    useRankMatchStore.getState().handleGameFinished(
+      makePracticeSnapshot({ rankSessionId: session.id, gameIndex: 1, won: true }),
+    );
+    const persisted = repository.getRankMatchSession(session.id);
+    expect(persisted?.games[0]).toMatchObject({ finished: true, won: true });
+  });
+});
+
+describe('useRankMatchStore · loadActiveRankMatch（ISSUE-060 启动恢复）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('rankProgress.activeSessionId 为空 → 返回 null，不改变 activeRankSession', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const result = useRankMatchStore.getState().loadActiveRankMatch('u1');
+    expect(result).toBeNull();
+    expect(useRankMatchStore.getState().activeRankSession).toBeNull();
+  });
+
+  it('有 activeSessionId 且存档存在 → 恢复到 activeRankSession', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+    useRankMatchStore.setState({ activeRankSession: null }); // 模拟刷新后内存丢失
+
+    const recovered = useRankMatchStore.getState().loadActiveRankMatch('u1');
+    expect(recovered?.id).toBe(session.id);
+    expect(useRankMatchStore.getState().activeRankSession?.id).toBe(session.id);
+  });
+
+  it('activeSessionId 指向的存档不存在（一致性异常）→ 清 activeSessionId 返回 null', () => {
+    const gp = makeGameProgress(rookieAdvance());
+    gp.rankProgress!.activeSessionId = 'missing-id';
+    resetStores(gp);
+    repository.saveGameProgress(gp);
+
+    const result = useRankMatchStore.getState().loadActiveRankMatch('u1');
+    expect(result).toBeNull();
+    expect(useRankMatchStore.getState().activeRankSession).toBeNull();
+    // 副作用：activeSessionId 被清
+    expect(useGameProgressStore.getState().gameProgress?.rankProgress?.activeSessionId).toBeUndefined();
+  });
+
+  it('存档 session.userId 不匹配当前 user → 清 activeSessionId 返回 null', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+
+    // 手动写一条 userId 不一致的存档覆盖
+    const tampered = { ...session, userId: 'someone-else' };
+    repository.saveRankMatchSession(tampered);
+    useRankMatchStore.setState({ activeRankSession: null });
+
+    const result = useRankMatchStore.getState().loadActiveRankMatch('u1');
+    expect(result).toBeNull();
+    expect(useGameProgressStore.getState().gameProgress?.rankProgress?.activeSessionId).toBeUndefined();
+  });
+
+  it('已出 outcome（BO 已结束）的 session → 视为无需恢复，清 activeSessionId 返回 null', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+    const finishedSession: typeof session = { ...session, outcome: 'promoted', endedAt: 2000 };
+    repository.saveRankMatchSession(finishedSession);
+    useRankMatchStore.setState({ activeRankSession: null });
+
+    const result = useRankMatchStore.getState().loadActiveRankMatch('u1');
+    expect(result).toBeNull();
+    expect(useGameProgressStore.getState().gameProgress?.rankProgress?.activeSessionId).toBeUndefined();
   });
 });

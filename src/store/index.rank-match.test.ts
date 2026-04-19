@@ -10,7 +10,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useSessionStore, useUserStore, useGameProgressStore } from './index';
 import { useRankMatchStore } from './rank-match';
-import { startNextGame } from '@/engine/rank-match/match-state';
 import type { GameProgress, AdvanceProgress, TopicAdvanceProgress } from '@/types/gamification';
 import type { User, TopicId } from '@/types';
 import { RANK_QUESTIONS_PER_GAME } from '@/constants/rank-match';
@@ -171,12 +170,9 @@ describe('SessionStore.endSession · rank-match 分支', () => {
     finishCurrentGameWithHearts(0);
     expect(useSessionStore.getState().lastRankMatchAction).toEqual({ kind: 'start-next' });
 
-    // 在 rank layer 追加第 2 局（模拟 UI 跳下一局前调 startNextGame）
-    const afterGame1 = useRankMatchStore.getState().activeRankSession!;
-    const withGame2 = startNextGame({ session: afterGame1, practiceSessionId: 'ps-2' });
-    useRankMatchStore.getState()._setActiveRankSession(withGame2);
-
+    // M4 修复：startRankMatchGame 会按需 inflate 下一局占位（store 层不自动 push）
     useSessionStore.getState().startRankMatchGame(rank.id, 2);
+    expect(useRankMatchStore.getState().activeRankSession!.games).toHaveLength(2);
     finishCurrentGameWithHearts(0);
 
     const action = useSessionStore.getState().lastRankMatchAction;
@@ -192,11 +188,9 @@ describe('SessionStore.endSession · rank-match 分支', () => {
     finishCurrentGameWithHearts(3);
     expect(useSessionStore.getState().lastRankMatchAction).toEqual({ kind: 'start-next' });
 
-    const afterGame1 = useRankMatchStore.getState().activeRankSession!;
-    const withGame2 = startNextGame({ session: afterGame1, practiceSessionId: 'ps-2' });
-    useRankMatchStore.getState()._setActiveRankSession(withGame2);
-
+    // M4 修复：startRankMatchGame 按需 inflate 下一局占位
     useSessionStore.getState().startRankMatchGame(rank.id, 2);
+    expect(useRankMatchStore.getState().activeRankSession!.games).toHaveLength(2);
     finishCurrentGameWithHearts(2);
 
     const action = useSessionStore.getState().lastRankMatchAction;

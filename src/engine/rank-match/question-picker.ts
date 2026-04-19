@@ -4,15 +4,15 @@
 // 职责：
 //   - 按段位 × 胜场游标编排主考项（§5.4 确定性顺序）
 //   - 按桶（主考 / 非主考 / 复习）分配题数与难度（§5.5 硬约束）
+//   - 复习桶主题按近期错题频次加权（§5.6 / ISSUE-061）
 //   - 通过 validateTierDistribution 自检（§5.7）
 //   - 校验失败抛 PickerValidationError，严禁静默降级（§5.8）
 //
 // 不做：
 //   - 不做入场校验（在 entry-gate.ts / createRankMatchSession 前置）
 //   - 不写入 PracticeSession / store（调用方负责装配）
-//   - 复习题错题加权（§5.6）暂用均匀分布，待 Plan §10.1 ISSUE 挂靠优化
 
-import type { Question, TopicId } from '@/types';
+import type { Question, TopicId, WrongQuestion } from '@/types';
 import type {
   AdvanceProgress,
   RankMatchSession,
@@ -32,11 +32,18 @@ import {
   toDifficultyBand,
   type TierDistributionBuckets,
 } from './picker-validators';
+// ISSUE-061：复习桶主题按近期错题频次加权
+import { distributeReviewTopics, REVIEW_WRONG_WINDOW } from './review-weighting';
 
 export interface PickQuestionsParams {
   session: RankMatchSession;
   gameIndex: number;
   advanceProgress: AdvanceProgress;
+  /**
+   * 玩家累积错题（用于 §5.6 复习桶主题加权，ISSUE-061）。
+   * 不传 / 空数组 → 复习桶按均匀分布回落，保持 M2 原行为（rookie 无复习桶不受影响）。
+   */
+  wrongQuestions?: WrongQuestion[];
 }
 
 export interface PickQuestionsResult {
@@ -58,20 +65,25 @@ export interface PickerValidationErrorContext {
 
 /** Spec §5.8：抽题器校验失败抛此异常，上层必须上抛（不得静默降级） */
 export class PickerValidationError extends Error {
+  readonly violations: string[];
+  readonly context: PickerValidationErrorContext;
+
   constructor(
     message: string,
-    public readonly violations: string[],
-    public readonly context: PickerValidationErrorContext,
+    violations: string[],
+    context: PickerValidationErrorContext,
   ) {
     super(message);
     this.name = 'PickerValidationError';
+    this.violations = violations;
+    this.context = context;
   }
 }
 
 // ─── 主算法 ───
 
 export function pickQuestionsForGame(params: PickQuestionsParams): PickQuestionsResult {
-  const { session, gameIndex, advanceProgress: _advanceProgress } = params;
+  const { session, gameIndex, advanceProgress: _advanceProgress, wrongQuestions = [] } = params;
   const tier = session.targetTier;
   const totalCount = RANK_QUESTIONS_PER_GAME[tier];
 
@@ -102,6 +114,7 @@ export function pickQuestionsForGame(params: PickQuestionsParams): PickQuestions
     band: 'nonPrimary',
     tier,
   });
+  // 复习桶：§5.6 按错题频次加权产出 topicsPerSlot；generateBucket 直接按该序列映射主题
   const review = diffCfg.review === null
     ? []
     : generateBucket({
@@ -109,6 +122,13 @@ export function pickQuestionsForGame(params: PickQuestionsParams): PickQuestions
         count: reviewCount,
         band: 'review',
         tier,
+        topicsPerSlot: distributeReviewTopics({
+          reviewTopics,
+          count: reviewCount,
+          wrongQuestions,
+          reviewRange: diffCfg.review,
+          windowSize: REVIEW_WRONG_WINDOW,
+        }),
       });
 
   const buckets: TierDistributionBuckets = { primary, nonPrimary, review };
@@ -162,10 +182,16 @@ interface GenerateBucketParams {
   count: number;
   band: BucketKind;
   tier: ChallengeableTier;
+  /**
+   * 可选：长度必须等于 count 的"每槽主题"序列（当前仅复习桶使用，由
+   * distributeReviewTopics 按错题频次预计算，ISSUE-061）。
+   * 未提供时回落 round-robin `topics[i % topics.length]`（主考 / 非主考 / 无错题的复习桶）。
+   */
+  topicsPerSlot?: TopicId[];
 }
 
 function generateBucket(params: GenerateBucketParams): Question[] {
-  const { topics, count, band, tier } = params;
+  const { topics, count, band, tier, topicsPerSlot } = params;
   if (count === 0 || topics.length === 0) return [];
 
   // 难度配额（§5.5 硬比例约束）
@@ -173,7 +199,9 @@ function generateBucket(params: GenerateBucketParams): Question[] {
 
   const out: Question[] = [];
   for (let i = 0; i < count; i++) {
-    const topic = topics[i % topics.length];
+    const topic = topicsPerSlot
+      ? topicsPerSlot[i] ?? topics[i % topics.length]
+      : topics[i % topics.length];
     const difficulty = difficulties[i];
     out.push(generateQuestion(topic, difficulty));
   }
