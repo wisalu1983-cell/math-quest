@@ -1,4 +1,4 @@
-import type { GameSessionMode, AdvanceSlot } from './gamification';
+import type { GameSessionMode, AdvanceSlot, RankTier } from './gamification';
 
 export type TopicId =
   | 'number-sense'
@@ -212,6 +212,13 @@ export interface QuestionAttempt {
 export interface PracticeSession {
   id: string;
   userId: string;
+  /**
+   * 兼容性主键。
+   * - campaign/advance/wrong-review 场景下承载"本次练习的题型"语义
+   * - rank-match 场景下降级为"兼容占位"：取值 = rankMatchMeta.primaryTopics[0]，
+   *   不再表达该局的唯一语义主题；所有段位赛读路径一律走 rankMatchMeta
+   *   （Spec 2026-04-18 §4.2）
+   */
   topicId: TopicId;
   startedAt: number;
   endedAt?: number;
@@ -222,6 +229,17 @@ export interface PracticeSession {
   heartsRemaining: number;
   completed: boolean;
   advanceSlots?: AdvanceSlot[]; // 进阶模式专用：预生成的20道题槽位
+  /** 段位赛专用：该局在 BO 赛事里的归属与主考项 */
+  rankMatchMeta?: {
+    rankSessionId: string;
+    gameIndex: number;
+    targetTier: Exclude<RankTier, 'apprentice'>;
+    /**
+     * 本局的主考题型集合（长度 ∈ [1, 3]）。
+     * 由抽题器（M2）按 Spec §5.4 胜场编排规则计算；UI 题头据此展示"本局主考"徽标。
+     */
+    primaryTopics: TopicId[];
+  };
 }
 
 export interface WrongQuestion {
@@ -241,4 +259,19 @@ export interface TopicMeta {
   unlockLevel: number;
 }
 
-export type { CampaignLevel, CampaignLane, CampaignStage, CampaignMap, LevelCompletion, TopicCampaignProgress, GameProgress, GameSessionMode } from './gamification';
+export type {
+  CampaignLevel,
+  CampaignLane,
+  CampaignStage,
+  CampaignMap,
+  LevelCompletion,
+  TopicCampaignProgress,
+  GameProgress,
+  GameSessionMode,
+  RankTier,
+  RankMatchBestOf,
+  RankMatchGame,
+  RankMatchSession,
+  RankProgress,
+  AdvanceProgress,
+} from './gamification';

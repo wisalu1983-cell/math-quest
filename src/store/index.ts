@@ -28,6 +28,10 @@ import {
   hasAnyBracket,
   hasBracketAndEquivalent,
 } from '@/engine/answerValidation';
+import { pickQuestionsForGame } from '@/engine/rank-match/question-picker';
+import { RANK_QUESTIONS_PER_GAME } from '@/constants/rank-match';
+import { useRankMatchStore } from './rank-match';
+import type { GameFinishedNextAction } from '@/engine/rank-match/match-state';
 
 interface SubmitAnswerOptions {
   trainingValues?: string[];
@@ -106,9 +110,20 @@ interface SessionStore {
   lastAnswerCorrect: boolean;
   lastTrainingFieldMistakes: TrainingFieldMistake[];
   pendingWrongQuestions: WrongQuestion[];
+  /** 段位赛预生成题序（由 startRankMatchGame 填充，nextQuestion 按 currentIndex 取） */
+  rankQuestionQueue: Question[];
+  /** 段位赛单局结束后的下一步行动（endSession 的 rank-match 分支写入，UI 据此决定路由） */
+  lastRankMatchAction: GameFinishedNextAction | null;
 
   startCampaignSession: (topicId: TopicId, levelId: string) => void;
   startAdvanceSession: (topicId: TopicId) => void;
+  /**
+   * 启动段位赛单局。前置：useRankMatchStore.activeRankSession 存在且 rankSessionId 匹配。
+   * - 调 pickQuestionsForGame 预生成本局 20~30 道题
+   * - 构造 PracticeSession（topicId=primaryTopics[0] 为兼容占位，语义主题走 rankMatchMeta.primaryTopics）
+   * - 复用 RankMatchGame.practiceSessionId 作为 session.id（Spec §3.3 避免双写）
+   */
+  startRankMatchGame: (rankSessionId: string, gameIndex: number) => void;
   nextQuestion: () => void;
   submitAnswer: (answer: string, options?: SubmitAnswerOptions) => SubmitAnswerResult;
   endSession: () => PracticeSession;
@@ -127,6 +142,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   lastAnswerCorrect: false,
   lastTrainingFieldMistakes: [],
   pendingWrongQuestions: [],
+  rankQuestionQueue: [],
+  lastRankMatchAction: null,
 
   startCampaignSession: (topicId, levelId) => {
     const user = useUserStore.getState().user;
@@ -157,6 +174,68 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
+    });
+
+    get().nextQuestion();
+  },
+
+  startRankMatchGame: (rankSessionId, gameIndex) => {
+    const user = useUserStore.getState().user;
+    if (!user) throw new Error('Cannot start rank match game: user not loaded');
+
+    const rankSession = useRankMatchStore.getState().activeRankSession;
+    if (!rankSession) throw new Error('Cannot start rank match game: no active rank match session');
+    if (rankSession.id !== rankSessionId) {
+      throw new Error('Cannot start rank match game: rankSessionId mismatch');
+    }
+
+    const gp = useGameProgressStore.getState().gameProgress;
+    if (!gp) throw new Error('Cannot start rank match game: game progress not loaded');
+
+    const targetGame = rankSession.games.find(g => g.gameIndex === gameIndex);
+    if (!targetGame) {
+      throw new Error(`Cannot start rank match game: gameIndex ${gameIndex} not found`);
+    }
+    if (targetGame.finished) {
+      throw new Error(`Cannot start rank match game: gameIndex ${gameIndex} already finished`);
+    }
+
+    const { questions, primaryTopics } = pickQuestionsForGame({
+      session: rankSession,
+      gameIndex,
+      advanceProgress: gp.advanceProgress,
+    });
+
+    const session: PracticeSession = {
+      id: targetGame.practiceSessionId,
+      userId: user.id,
+      topicId: primaryTopics[0],
+      startedAt: Date.now(),
+      difficulty: questions[0]?.difficulty ?? 0,
+      sessionMode: 'rank-match',
+      targetLevelId: null,
+      questions: [],
+      heartsRemaining: CAMPAIGN_MAX_HEARTS,
+      completed: false,
+      rankMatchMeta: {
+        rankSessionId: rankSession.id,
+        gameIndex,
+        targetTier: rankSession.targetTier,
+        primaryTopics,
+      },
+    };
+
+    set({
+      active: true,
+      session,
+      currentIndex: 0,
+      totalQuestions: RANK_QUESTIONS_PER_GAME[rankSession.targetTier],
+      hearts: CAMPAIGN_MAX_HEARTS,
+      showFeedback: false,
+      lastTrainingFieldMistakes: [],
+      pendingWrongQuestions: [],
+      rankQuestionQueue: questions,
+      lastRankMatchAction: null,
     });
 
     get().nextQuestion();
@@ -199,26 +278,33 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   },
 
   nextQuestion: () => {
-    const { session, currentIndex, totalQuestions } = get();
+    const { session, currentIndex, totalQuestions, rankQuestionQueue } = get();
     if (!session || currentIndex >= totalQuestions) return;
 
-    let difficulty: number;
-    let subtypeFilter: string[] | undefined;
+    let question: Question;
 
-    if (session.sessionMode === 'advance' && session.advanceSlots) {
-      // 进阶：按预生成槽位取 difficulty 和单一子题型
-      const slot = session.advanceSlots[currentIndex];
-      difficulty = slot?.difficulty ?? session.difficulty;
-      subtypeFilter = slot ? [slot.subtypeTag] : undefined;
+    if (session.sessionMode === 'rank-match') {
+      // 段位赛：从 startRankMatchGame 预生成的 queue 取题，不再调 generateQuestion
+      const preGenerated = rankQuestionQueue[currentIndex];
+      if (!preGenerated) return;
+      question = preGenerated;
     } else {
-      // 闯关：固定 difficulty，按路线 subtypeFilter
-      difficulty = session.difficulty;
-      subtypeFilter = session.targetLevelId
-        ? getSubtypeFilter(session.topicId, session.targetLevelId)
-        : undefined;
-    }
+      let difficulty: number;
+      let subtypeFilter: string[] | undefined;
 
-    const question = generateQuestion(session.topicId, difficulty, subtypeFilter);
+      if (session.sessionMode === 'advance' && session.advanceSlots) {
+        const slot = session.advanceSlots[currentIndex];
+        difficulty = slot?.difficulty ?? session.difficulty;
+        subtypeFilter = slot ? [slot.subtypeTag] : undefined;
+      } else {
+        difficulty = session.difficulty;
+        subtypeFilter = session.targetLevelId
+          ? getSubtypeFilter(session.topicId, session.targetLevelId)
+          : undefined;
+      }
+
+      question = generateQuestion(session.topicId, difficulty, subtypeFilter);
+    }
 
     set({
       currentQuestion: question,
@@ -349,12 +435,21 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         );
       }
     } else if (completedSession.sessionMode === 'advance') {
-      // 进阶结算：hearts 即为 heartsEarned（0~3）
       gpStore.recordAdvanceSession(completedSession.topicId, hearts);
     }
 
     for (const wq of pendingWrongQuestions) {
       gpStore.addWrongQuestion(wq);
+    }
+
+    // 段位赛分支：把本局结果回写到 RankMatchSession 并拿到下一步行动
+    // Plan §M2 原文说 "submitAnswer 钩子"，实施时按职责分层落地到 endSession：
+    //   - submitAnswer 只管逐题记录，不承担 session 结束职责
+    //   - endSession 是现有"本局结束"的唯一入口，在此派发 rank-match 分支更贴现有架构
+    //   - 两处语义等价，实际触发时机都是"答完或心归零"那一刻
+    let rankMatchAction: GameFinishedNextAction | null = null;
+    if (completedSession.sessionMode === 'rank-match' && completedSession.rankMatchMeta) {
+      rankMatchAction = useRankMatchStore.getState().handleGameFinished(completedSession);
     }
 
     set({
@@ -364,6 +459,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
+      rankQuestionQueue: [],
+      lastRankMatchAction: rankMatchAction,
     });
 
     return completedSession;
@@ -372,7 +469,6 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   abandonSession: () => {
     const { session, hearts, pendingWrongQuestions } = get();
 
-    // 保存错题（无论哪种模式）
     if (pendingWrongQuestions.length > 0) {
       const gpStore = useGameProgressStore.getState();
       for (const wq of pendingWrongQuestions) {
@@ -380,7 +476,6 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       }
     }
 
-    // 保存中止历史
     if (session) {
       repository.saveSession({
         ...session,
@@ -400,6 +495,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastAnswerCorrect: false,
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
+      rankQuestionQueue: [],
+      lastRankMatchAction: null,
     });
   },
 }));

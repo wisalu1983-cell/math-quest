@@ -9,7 +9,7 @@
 > - [`../Specs/2026-04-13-star-rank-numerical-design.md`](../Specs/2026-04-13-star-rank-numerical-design.md) §3 / §4（星级与数值事实源）
 > - [`../Specs/2026-04-15-gamification-phase2-advance-spec.md`](../Specs/2026-04-15-gamification-phase2-advance-spec.md)（`TOPIC_STAR_CAP`）
 > - [`../Specs/2026-04-14-ui-redesign-spec.md`](../Specs/2026-04-14-ui-redesign-spec.md)（阳光版 v5）  
-> 状态：🟡 子子计划骨架已落盘，等待 M1 领取  
+> 状态：🟡 M2 完成，等待 M3 领取  
 > **M1 启动前必读**：[`../Reports/2026-04-19-m1-kickoff-brief.md`](../Reports/2026-04-19-m1-kickoff-brief.md)（一次性交接简报，M1 领取并启动后即归档；汇总 2026-04-19 session 固化的 5 项关键决策、M1 文件清单同构索引与 6 条项目级硬约束）
 
 ---
@@ -200,3 +200,121 @@
 - 父计划 / 祖父计划 / Overview / `_index.md` 口径已对齐"本阶段只做 Phase 3"
 - `pm-sync-check` ✅ 全绿
 - **下一步**：用户领取 M1 后在本段追加"M1 开工"条目
+
+### 2026-04-19：M1 开工 + 完工（同日收口）
+
+**动作**：按 `Reports/2026-04-19-m1-kickoff-brief.md` 的 6 条硬约束与文件清单一次性落盘。
+
+**代码变更**（新增 / 修改）：
+
+| 文件 | 动作 | 要点 |
+|------|------|------|
+| `src/types/gamification.ts` | 修改 | 加 `RankTier` / `RankMatchBestOf` / `RankMatchGame`（无 `questionIds`/`correctness`）/ `RankMatchSession`（无 `currentGameIndex`）/ `RankProgress`；`GameProgress.rankProgress?`；`GameSessionMode` 加 `'rank-match'`；删 L84/L93 两处占位裸注释 |
+| `src/types/index.ts` | 修改 | `PracticeSession.rankMatchMeta?.{rankSessionId, gameIndex, targetTier, primaryTopics}`；重导出 `RankTier / RankMatchBestOf / RankMatchGame / RankMatchSession / RankProgress / AdvanceProgress` |
+| `src/constants/rank-match.ts` | 新增 | 段位入场表 `RANK_ENTRY_STARS`（引用 `TOPIC_STAR_CAP` + `2026-04-13` §3.2）+ `RANK_BEST_OF` / `RANK_WINS_TO_ADVANCE` / `RANK_QUESTIONS_PER_GAME`（20/25/25/30）/ `RANK_TIMER_MINUTES`（仅 expert/master=30）/ `RANK_NEW_CONTENT_POINTS` |
+| `src/engine/rank-match/entry-gate.ts` | 新增 | `isTierUnlocked(tier, advanceProgress)` + `getTierGaps(tier, advanceProgress)`；只依赖 `advanceProgress` + 常量表；**不依赖 store / repository / RankMatchSession** |
+| `src/engine/rank-match/match-state.ts` | 新增 | `createRankMatchSession`（内部 `require(isTierUnlocked)`）/ `startNextGame`（`gameIndex = games.length + 1`）/ `onGameFinished`（含 Spec §7.4 BO 提前结束强制）/ `getCurrentGameIndex` 派生函数 |
+| `src/repository/local.ts` | 修改 | `CURRENT_VERSION: 2 → 3`；新增 `migrateV2ToV3 = migrateRankProgressIfNeeded` 与 `MIGRATIONS` 登记表；`init()` 重写为"读旧版本 → 串行迁移链 → 失败落 `mq_backup_v{old}_{ts}` 备份 + 告警 + 清 `mq_game_progress` 后升级版本号"；**彻底移除原"版本不一致 `removeItem('mq_progress')`"分支**（Spec §6.3 项目级原则）；`clearAll` 仅保留给显式用户操作 |
+| `src/store/rank-match.ts` | 新增 | 最小 API：`activeRankSession` / `startRankMatch(targetTier, opts?)`（入场校验 + 生成 session + 回写 `rankProgress.activeSessionId`）/ `handleGameFinished(practiceSession)`（`won = completed && heartsRemaining >= 1` → 状态机 → 返回 `nextAction`，结束时回写 `history` + 晋级改 `currentTier`） |
+
+**测试变更**（新增 / 扩展）：
+
+| 文件 | 动作 | 覆盖 |
+|------|------|------|
+| `src/engine/rank-match/match-state.test.ts` | 新增 | 入场校验（rookie 门槛满足 / 缺失 / 空存档 / pro 需全 8 题型 2★）；`getTierGaps` 缺口列表；`createRankMatchSession` 未解锁抛错 / BO3 生成；`getCurrentGameIndex` 派生；`onGameFinished` BO3 胜胜→promoted 不打第 3 局 / 负负→eliminated 不打第 3 局 / 胜负→未决打第 3 局；异常分支（重复 finish / 不存在 gameIndex / 已出 outcome）；`startNextGame` 上一局未完 / 已出 outcome 抛错（共 22 用例） |
+| `src/repository/local.test.ts` | 扩展 | `migrateRankProgressIfNeeded` v2→v3（空 → 默认 apprentice / 已有则幂等 / 等价于 `migrateV2ToV3`）；`repository.init` 项目级原则（全新用户 → 升版本 / v2 存档自动迁移 / v3 幂等 / v1 未知老版本走备份不 clearAll / v2 无 gameProgress 仅升版本号）；`repository.getGameProgress` v2 存档读取时补默认值并回写；`clearAll` 仍作为显式用户操作保留（+11 用例，总 18） |
+| `src/store/rank-match.test.ts` | 新增 | `startRankMatch` 未解锁抛错 / 满足门槛生成 BO3 + 写入 `activeSessionId` / 重复启动抛错；`handleGameFinished` BO3 胜胜 promoted + `currentTier` 升 rookie / BO3 负负 eliminated + `currentTier` 保持 apprentice / 不匹配 `rankSessionId` 抛错 / 无活跃赛事抛错（7 用例） |
+
+**验收证据**：
+
+- `npx tsc --noEmit` → 0 错误
+- `npx vitest run` → **370 passed**（基线 330 + 新增 40；M1 启动简报标的"≥ 328 + 新增"达成）
+- 10 个测试文件全部通过（新增 `match-state.test.ts` 22、`rank-match.test.ts` 7；`local.test.ts` 7→18）
+
+**6 条硬约束核验**：
+
+| # | 硬约束 | 落地证据 |
+|---|--------|---------|
+| 1 | `repository.init` 版本不一致时严禁 `clearAll()`，必须迁移链 + 备份 | `repository/local.ts::init` 改写；`local.test.ts` "未知更老版本（v1）→ 走备份路径，不 clearAll" 用例通过 |
+| 2 | `RankMatchGame` 不加 `questionIds` / `correctness`，走 `practiceSessionId` 反查 | `types/gamification.ts::RankMatchGame` 字段集合确认：`gameIndex / finished / won? / practiceSessionId / startedAt / endedAt?` |
+| 3 | `RankMatchSession` 不加 `currentGameIndex`，走派生函数 | `match-state.ts::getCurrentGameIndex` 派生函数已实现；`RankMatchSession` 类型不含该字段 |
+| 4 | 入场校验必须独立 `entry-gate.ts`，不得内嵌 match-state / store / 组件 | `engine/rank-match/entry-gate.ts` 独立文件；`match-state.createRankMatchSession` 与 `store/rank-match.startRankMatch` 都通过 `isTierUnlocked` 调用入口 |
+| 5 | 禁止旧段位命名（bronze~king） | 全仓搜索 `bronze/silver/gold/platinum/king` 无代码引用；所有段位命名用 `apprentice/rookie/pro/expert/master` |
+| 6 | 视觉 token 落地前禁止硬编码徽章色；M3 才做 UI | M1 未创建任何页面 / 样式 / CSS 变量；`globals.css` 未动 |
+
+**跨源同步**：
+
+- 本文件头部状态：🟡 子子计划骨架已落盘 → 🟡 M1 完成，等待 M2 领取
+- `Plan/README.md` Phase 3 子子计划行：🟡 等待 M1 领取 → 🟡 M1 完成
+- `Overview.md` 当前状态 / 下一步：更新基线测试数（330→370）、把"下一步"从"进入 M1"改为"进入 M2 抽题器"
+- `Reports/2026-04-19-m1-kickoff-brief.md`：按简报自身生命周期规则标注为已归档
+- `ISSUE_LIST.md`：M1 执行过程中无新发现 Issue，不动
+- `Specs/_index.md`：规格状态未变化，不动
+
+**pm-sync-check**：本轮跨源写入 3 处（本文件 + `Overview.md` + `Plan/README.md`），并伴随 kickoff brief 归档，属规则要求运行的节点。运行结果见本段末。
+
+**下一步**：用户领取 M2（抽题器 + 答题流驳接）。M1 不残留阻塞。
+
+### 2026-04-19：M2 开工 + 完工（同日收口）
+
+**动作**：按 Plan §M2 文件清单（抽题器 + validators + store 答题流钩子）一次性落盘；Spec §5 全部硬约束通过自检钩子兜底。
+
+**代码变更**（新增 / 修改）：
+
+| 文件 | 动作 | 要点 |
+|------|------|------|
+| `src/constants/rank-match.ts` | 扩展 | 新增 `RANK_TOPIC_RANGE`（四段位出题范围）/ `RANK_REVIEW_TOPIC_RANGE`（每段复习题来源 = 前一段范围，rookie=[]）/ `RANK_PRIMARY_BY_WIN_SLOT`（胜场→主考项的确定性映射：rookie `[[A01,A02],[A03,A04]]` / pro `[[A01,A02,A03],[A04,A05,A06],[A07,A08,A01]]` 末位复用 / expert `[[A03,A04],[A05,A06],[A07,A08]]` / master `[[A04,A05],[A06,A07],[A08],[A08]]` 即 Plan §4.2 开放项的首版决策）/ `RANK_DIFFICULTY_RANGE`（Spec §5.5 表整张） |
+| `src/engine/rank-match/picker-validators.ts` | 新增 | `validateTierDistribution(tier, buckets, totalCount)` 覆盖 §5.7 全部五类校验：合计题数 / 每桶难度范围 / 主考≥40% + 复习≤25% / 专家 normal 甜点 ≤10% + master 复习禁 normal（pro 复习整池 normal 属正常，不受"甜点"约束）/ master demon 占主考+非主考合集 ≥40%；附 `toDifficultyBand` 档位映射函数 |
+| `src/engine/rank-match/question-picker.ts` | 新增 | `pickQuestionsForGame({ session, gameIndex, advanceProgress })` → `{ questions, primaryTopics, buckets }`：胜场游标 `winSlot = 已胜场数 + 1`（负局不消耗）→ 取主考项 → 分桶配题数（主考 `⌈total×0.40⌉`、复习 `⌊total×0.25⌋`、其余）→ 按段位 × 桶算难度配额（rookie normal 均匀 / pro primary hard=⌊count×0.25⌋ / expert primary demon=⌊count×0.15⌋ 且 expert review 甜点=`min(⌊total×0.10⌋, ⌊count×0.3⌋)` 道 normal 5 / master primary 1 道 hard + 其余 demon 8~10 轮转）→ `generateQuestion(topic, diff)` 取题 → `validateTierDistribution` 自检 → `interleave` 三桶轮转混合；§5.8 失败抛 `PickerValidationError`（携 violations + context，严禁静默降级） |
+| `src/store/index.ts` | 修改 | 新增 `startRankMatchGame(rankSessionId, gameIndex)`：查 `useRankMatchStore.activeRankSession` + `useGameProgressStore.gameProgress.advanceProgress` → `pickQuestionsForGame` → 构造 `PracticeSession{ sessionMode:'rank-match', rankMatchMeta:{rankSessionId,gameIndex,targetTier,primaryTopics}, id=targetGame.practiceSessionId }`（Spec §3.3 id 复用避免双写）→ 置 `rankQuestionQueue`；`nextQuestion` 增 rank-match 分支从 queue 按 `currentIndex` 取题（不调生成器）；`endSession` 增 rank-match 分支调 `useRankMatchStore.handleGameFinished(session)` 并把返回写入 state 字段 `lastRankMatchAction: GameFinishedNextAction \| null`（供 UI 路由判断）；`abandonSession` 同步清 queue + action |
+| `src/store/index.ts`（分层决策） | 注记 | Plan §M2 原文字面是"submitAnswer 在 sessionMode==='rank-match' 时调用 handleGameFinished"，实施时按职责分层落地到 `endSession` 的 rank-match 分支：`submitAnswer` 继续只管逐题记录不承担"局结束"职责，`endSession` 是现有"单局结束"唯一入口，两处触发时机完全等价（都在 "答完或心归零" 那一刻），新位置更贴合现有 campaign / advance 的分层 |
+
+**测试变更**（新增 / 扩展）：
+
+| 文件 | 动作 | 覆盖 |
+|------|------|------|
+| `src/engine/rank-match/picker-validators.test.ts` | 新增 | `toDifficultyBand` 档位映射 3 用例；`validateTierDistribution` 覆盖 17 用例：合计题数一致 / 不一致；rookie normal 2-5 范围 + 越上 / 越下界；expert hard 主 + demon 8 ≤20% / 非主考禁 normal 下放；master demon ≥40% / demon 不足 20% 违规；主考 <40% / 恰好 40%；复习 >25% 违规；expert 甜点 ≤10% / >10% 违规；pro review normal 1 越下界；master review normal 违规；rookie review 非空违规（共 20 用例） |
+| `src/engine/rank-match/question-picker.test.ts` | 新增 | 每段位题量与 `RANK_QUESTIONS_PER_GAME` 一致（4 用例）；主考项 topicIds 来自 `RANK_PRIMARY_BY_WIN_SLOT`（rookie W1/W2、pro 末场复用位、胜场游标：胜-负-胜-? 第 4 局冲第 3 胜场 / 全负仍冲第 1 胜场）；比例（rookie 主考≥40% + 复习=0 / pro 主考≥40% 复习≤25% / master demon ≥40%）；每段×每桶难度范围在 `RANK_DIFFICULTY_RANGE` 内（4 用例）；expert 甜点 normal ≤10% 总题量；primary topic ⊆ primaryTopics 且 expert nonPrimary ⊆ 段位范围 \ primary；连续 3 场不抛错（4 用例）；`PickerValidationError` 异常形状 + context；空 `advanceProgress` 不影响抽题（共 25 用例） |
+| `src/store/index.rank-match.test.ts` | 新增 | `startRankMatchGame` 前置：启动后 session.sessionMode='rank-match' + `rankMatchMeta` 齐全 + id 复用 `RankMatchGame.practiceSessionId` + `rankQuestionQueue` 长度=20；rankSessionId 不匹配抛错 / 无活跃 rank 抛错 / gameIndex 不存在抛错；`endSession` rank-match 分支：BO3 胜 → `lastRankMatchAction.kind='start-next'` + 第 1 局 `finished=true won=true`；BO3 负 → start-next；连负 2 局 → eliminated + `activeSessionId=undefined` + `currentTier` 保持 apprentice；胜胜 → promoted + `games.length=2`（§7.4 不产生第 3 局）+ `currentTier='rookie'`；campaign endSession 不写 `lastRankMatchAction`（共 8 用例） |
+
+**验收证据**：
+
+- `npx tsc --noEmit` → 0 错误
+- `npx vitest run` → **423 passed**（M1 基线 370 + 新增 53 = 423；Plan §M2 门槛 ≥390 达成）
+- 13 个测试文件全部通过（新增 `picker-validators.test.ts` 20、`question-picker.test.ts` 25、`index.rank-match.test.ts` 8）
+- Spec §5.8 异常路径覆盖：`PickerValidationError` 携 violations + context（tier / gameIndex / totalCount / sampledIds），可直接喂给 `ISSUE_LIST.md` 的诊断条目
+
+**M2 关键设计决策**（登记以便 M3/M4 对齐）：
+
+| # | 决策 | 依据与备注 |
+|---|------|-----------|
+| 1 | **主考项确定性顺序**以段位 `TopicId` 书写顺序为准（`RANK_PRIMARY_BY_WIN_SLOT`） | Spec §5.4 明定不允许随机；pro 8 内容点 / 3 胜场 → 末位复用第一个主考位；master 2+2+1 → 第 4 场复用第 3 场 A08 保持"终局仍有主考"语义 |
+| 2 | **难度配额**改随机采样为**确定性配额分配** | 随机采样会概率性触发 `validateTierDistribution` 失败；改配额后 master primary "1 hard + 其余 demon 轮转 8/9/10" 确保 demon/合集 ≈47.8% 稳过 ≥40% 硬线 |
+| 3 | **复习题错题加权（Spec §5.6）**本版本只做均匀分布 | 范围控制：错题加权是"更优"不是"正确性"，先保证核心闭环通过 Plan §M2 验收；后续作为 ISSUE 挂靠规格（Spec §10.1 已挂开放项） |
+| 4 | **`submitAnswer` 钩子**实际落到 `endSession` 分支 | 按职责分层不打破 `submitAnswer` 只管逐题记录的语义；两处触发时机等价；E2E 用例已覆盖正/负/连负 / 连胜 四条路径 |
+| 5 | **Spec §5.5 "其他段位不开放 normal 甜点复习题"**解读为：`master` 明禁 normal，`pro` 复习整池 normal 2-5 属正常范围内（非"甜点"语义），`rookie` 无复习题 | 按 Spec §5.5 表"pro 复习 normal 2-5"与硬约束 2 的"甜点"上下文二次核读；二者协调后得出；validators 按此实现 |
+
+**6 条硬约束核验（延续 M1）**：
+
+| # | 硬约束 | M2 落地证据 |
+|---|--------|------------|
+| 1 | `repository.init` 版本不一致时严禁 `clearAll()` | M2 未触动 `repository/local.ts`，沿用 M1 迁移链 |
+| 2 | `RankMatchGame` 走 `practiceSessionId` 反查 | `startRankMatchGame` id 复用 `targetGame.practiceSessionId`；`handleGameFinished` 只读 `practiceSessionSnapshot.heartsRemaining + completed` 派生 `won`，未冗余到 `RankMatchGame` |
+| 3 | `RankMatchSession` 不加 `currentGameIndex` | M2 未改类型；走 `games` 派生 |
+| 4 | `entry-gate.ts` 独立校验 | picker 不做入场校验（Spec §7.1 已前置到 `createRankMatchSession` / `startRankMatch`） |
+| 5 | 禁止旧段位命名 | M2 新代码（constants / picker / store 分支）全部使用 `rookie/pro/expert/master` |
+| 6 | 视觉 token 未落地前不硬编码徽章色；M3 才做 UI | M2 未新建任何页面 / CSS；picker 与 store 为纯逻辑层 |
+
+**跨源同步**：
+
+- 本文件 §6 追加本 M2 条目；头部状态 🟡 M1 完成，等待 M2 领取 → 🟡 M2 完成，等待 M3 领取
+- `Plan/README.md` Phase 3 子子计划行：🟡 M1 完成（2026-04-19）→ 🟡 M2 完成（2026-04-19）
+- `Overview.md` 当前状态 / 下一步：基线测试数（370 → 423）、把"下一步"从"M2 抽题器"改为"M3 UI 三页（Hub / GameResult / MatchResult + Home 入口真实化）"
+- `ISSUE_LIST.md`：M2 执行过程中无新发现 Issue，不动
+- `Specs/_index.md`：规格未变化，不动
+- 无 Reports 新增：M2 完工无外发简报；若 M3 开工需 kickoff brief 再另行撰写
+
+**pm-sync-check**：本轮跨源写入 3 处（本文件 + `Overview.md` + `Plan/README.md`），属规则要求运行的节点。运行结果见本段末。
+
+**下一步**：用户领取 M3（UI 三页 + 路由 + Home 入口；Spec §8）。M2 不残留阻塞，M3 可直接按 Plan §M3 文件清单继续。
+

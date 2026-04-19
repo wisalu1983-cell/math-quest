@@ -1,11 +1,26 @@
 // src/repository/local.test.ts
 // ISSUE-057 闯关结构重构后的存档迁移（策略 X）单测
-// 纯函数测试，不依赖 DOM / localStorage
+// + Phase 3 M1：v2→v3 迁移链 + 项目级存档升级原则（Spec 2026-04-18 §6.3）
 
-import { describe, it, expect } from 'vitest';
-import { migrateCampaignIfNeeded } from './local';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { migrateCampaignIfNeeded, migrateRankProgressIfNeeded, migrateV2ToV3, repository } from './local';
 import type { GameProgress } from '@/types/gamification';
 import { CAMPAIGN_MAPS, getAllLevelIds } from '@/constants/campaign';
+
+// ─── localStorage mock（node vitest 环境默认无 DOM） ───
+
+function installLocalStorageMock(): void {
+  const store = new Map<string, string>();
+  const mock = {
+    getItem: (k: string) => (store.has(k) ? (store.get(k) as string) : null),
+    setItem: (k: string, v: string) => { store.set(k, v); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => { store.clear(); },
+    key: (i: number) => Array.from(store.keys())[i] ?? null,
+    get length() { return store.size; },
+  };
+  (globalThis as Record<string, unknown>).localStorage = mock;
+}
 
 function emptyProgress(): GameProgress {
   return {
@@ -145,5 +160,196 @@ describe('migrateCampaignIfNeeded（策略 X）', () => {
       total += getAllLevelIds(topicId).length;
     }
     expect(total).toBe(90);
+  });
+});
+
+// ─── Phase 3 M1：v2→v3 迁移链 ───
+
+describe('migrateRankProgressIfNeeded（v2→v3 · Phase 3 M1）', () => {
+  it('旧存档无 rankProgress → 补默认 apprentice + 空 history', () => {
+    const gp = emptyProgress();
+    const result = migrateRankProgressIfNeeded(gp);
+    expect(result).not.toBe(gp); // 触发迁移
+    expect(result.rankProgress).toEqual({ currentTier: 'apprentice', history: [] });
+  });
+
+  it('已有 rankProgress → 幂等，引用相等', () => {
+    const gp: GameProgress = {
+      ...emptyProgress(),
+      rankProgress: { currentTier: 'rookie', history: [], activeSessionId: 'rs1' },
+    };
+    const result = migrateRankProgressIfNeeded(gp);
+    expect(result).toBe(gp);
+  });
+
+  it('migrateV2ToV3 等价于 migrateRankProgressIfNeeded', () => {
+    expect(migrateV2ToV3).toBe(migrateRankProgressIfNeeded);
+  });
+});
+
+// ─── Phase 3 M1：repository.init 迁移链 + 备份（项目级原则） ───
+
+describe('repository.init · 项目级存档升级原则（Spec §6.3）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  it('全新用户（无任何 key）→ 写入当前版本号，不触发备份', () => {
+    repository.init();
+    expect(localStorage.getItem('mq_version')).toBe('3');
+    const keys: string[] = [];
+    for (let i = 0; i < (localStorage as unknown as { length: number }).length; i++) {
+      const k = localStorage.key(i);
+      if (k) keys.push(k);
+    }
+    expect(keys.some(k => k.startsWith('mq_backup_'))).toBe(false);
+  });
+
+  it('v2 存档 + 有 gameProgress → 自动迁移，rankProgress 补默认值', () => {
+    const v2Gp: GameProgress = {
+      userId: 'u1',
+      campaignProgress: {},
+      advanceProgress: {},
+      wrongQuestions: [],
+      totalQuestionsAttempted: 10,
+      totalQuestionsCorrect: 8,
+    };
+    localStorage.setItem('mq_version', '2');
+    localStorage.setItem('mq_game_progress', JSON.stringify(v2Gp));
+
+    repository.init();
+
+    expect(localStorage.getItem('mq_version')).toBe('3');
+    const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
+    expect(stored.rankProgress).toEqual({ currentTier: 'apprentice', history: [] });
+    expect(stored.totalQuestionsAttempted).toBe(10); // 原数据保留
+    expect(stored.totalQuestionsCorrect).toBe(8);
+  });
+
+  it('v3 存档 → noop（幂等）', () => {
+    const v3Gp: GameProgress = {
+      userId: 'u1',
+      campaignProgress: {},
+      advanceProgress: {},
+      rankProgress: { currentTier: 'rookie', history: [] },
+      wrongQuestions: [],
+      totalQuestionsAttempted: 0,
+      totalQuestionsCorrect: 0,
+    };
+    localStorage.setItem('mq_version', '3');
+    localStorage.setItem('mq_game_progress', JSON.stringify(v3Gp));
+
+    repository.init();
+
+    const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
+    expect(stored.rankProgress).toEqual({ currentTier: 'rookie', history: [] });
+  });
+
+  it('未知更老版本（v1）→ 走备份路径，不 clearAll（严禁静默擦除）', () => {
+    const oldGp = {
+      userId: 'u1',
+      someOldField: 'legacy',
+      advanceProgress: {},
+    };
+    localStorage.setItem('mq_version', '1');
+    localStorage.setItem('mq_game_progress', JSON.stringify(oldGp));
+    localStorage.setItem('mq_user', JSON.stringify({ id: 'u1', nickname: 'x', avatarSeed: 's', createdAt: 0, settings: { soundEnabled: true, hapticsEnabled: true } }));
+    localStorage.setItem('mq_sessions', JSON.stringify([{ fake: 'session' }]));
+
+    repository.init();
+
+    // 版本更新到当前版本
+    expect(localStorage.getItem('mq_version')).toBe('3');
+
+    // 旧 gameProgress 落到备份 key
+    const backupKeys: string[] = [];
+    const len = (localStorage as unknown as { length: number }).length;
+    for (let i = 0; i < len; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('mq_backup_v1_')) backupKeys.push(k);
+    }
+    expect(backupKeys).toHaveLength(1);
+    expect(JSON.parse(localStorage.getItem(backupKeys[0]) ?? '{}')).toMatchObject({ someOldField: 'legacy' });
+
+    // 原 gameProgress 被清掉（走新存档路径）
+    expect(localStorage.getItem('mq_game_progress')).toBeNull();
+
+    // 但 user / sessions 未被 clearAll：项目级原则要求只做"gameProgress 备份 + 新起"
+    expect(localStorage.getItem('mq_user')).not.toBeNull();
+    expect(localStorage.getItem('mq_sessions')).not.toBeNull();
+  });
+
+  it('v2 存档但没有 gameProgress（极少数：手动 removeItem 过）→ 仅升级版本号', () => {
+    localStorage.setItem('mq_version', '2');
+
+    repository.init();
+
+    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_game_progress')).toBeNull();
+    // 无备份生成
+    const len = (localStorage as unknown as { length: number }).length;
+    const keys: string[] = [];
+    for (let i = 0; i < len; i++) {
+      const k = localStorage.key(i);
+      if (k) keys.push(k);
+    }
+    expect(keys.some(k => k.startsWith('mq_backup_'))).toBe(false);
+  });
+});
+
+// ─── Phase 3 M1：repository.getGameProgress 默认 rankProgress ───
+
+describe('repository.getGameProgress · 默认 rankProgress（Phase 3 M1）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+  });
+
+  it('不存在的 userId → 返回带默认 apprentice rankProgress 的空进度', () => {
+    const gp = repository.getGameProgress('new-user');
+    expect(gp.rankProgress).toEqual({ currentTier: 'apprentice', history: [] });
+  });
+
+  it('已存在的 v2 存档（无 rankProgress）→ 读取时自动补默认值并回写', () => {
+    const v2Gp = {
+      userId: 'u1',
+      campaignProgress: {},
+      advanceProgress: {},
+      wrongQuestions: [],
+      totalQuestionsAttempted: 0,
+      totalQuestionsCorrect: 0,
+    };
+    localStorage.setItem('mq_game_progress', JSON.stringify(v2Gp));
+
+    const gp = repository.getGameProgress('u1');
+    expect(gp.rankProgress).toEqual({ currentTier: 'apprentice', history: [] });
+
+    const reread = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
+    expect(reread.rankProgress).toEqual({ currentTier: 'apprentice', history: [] });
+  });
+});
+
+// ─── Phase 3 M1：clearAll 作为显式用户操作保留 ───
+
+describe('repository.clearAll · 仅作为显式用户操作保留（Spec §6.3）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+  });
+
+  it('显式调用 clearAll → 清掉 user/gameProgress/sessions/legacy mq_progress', () => {
+    localStorage.setItem('mq_user', 'u');
+    localStorage.setItem('mq_game_progress', 'gp');
+    localStorage.setItem('mq_sessions', 'ss');
+    localStorage.setItem('mq_progress', 'legacy');
+    localStorage.setItem('mq_version', '3');
+
+    repository.clearAll();
+
+    expect(localStorage.getItem('mq_user')).toBeNull();
+    expect(localStorage.getItem('mq_game_progress')).toBeNull();
+    expect(localStorage.getItem('mq_sessions')).toBeNull();
+    expect(localStorage.getItem('mq_progress')).toBeNull();
+    // version 自身保留（显式清数据不等于回滚版本号）
+    expect(localStorage.getItem('mq_version')).toBe('3');
   });
 });

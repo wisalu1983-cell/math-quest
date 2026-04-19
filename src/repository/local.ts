@@ -10,7 +10,16 @@ const KEYS = {
   version: 'mq_version',
 } as const;
 
-const CURRENT_VERSION = 2;
+/**
+ * 当前存档版本。
+ *
+ * 版本升级 · 项目级原则（`CLAUDE.md` 非显然约束 / Spec 2026-04-18 §6.3）：
+ *   - CURRENT_VERSION 每递增 1，必须新增对应的 migrateV{n}ToV{n+1} 纯函数并登记到 MIGRATIONS
+ *   - repository.init 读到旧版本号后按 v{old} → v{old+1} → ... → CURRENT_VERSION 串行迁移
+ *   - 迁移链中任何一步抛错 → 旧 gameProgress 落到 mq_backup_v{old}_{ts} 备份，当次启动走"新存档 + 告警"
+ *   - 严禁用 clearAll() / 单独 removeItem(gameProgress) 作为"版本不一致"的兜底；clearAll 只能作为显式用户操作
+ */
+const CURRENT_VERSION = 3;
 const MAX_SESSIONS = 200;
 
 /**
@@ -75,6 +84,52 @@ export function migrateCampaignIfNeeded(gp: GameProgress): GameProgress {
   return { ...gp, campaignProgress: newCampaignProgress };
 }
 
+/**
+ * Phase 3 M1 v2→v3 迁移：为旧存档补默认 rankProgress。
+ * 幂等：已有 rankProgress 则引用原样返回。
+ */
+export function migrateRankProgressIfNeeded(gp: GameProgress): GameProgress {
+  if (gp.rankProgress) return gp;
+  return {
+    ...gp,
+    rankProgress: {
+      currentTier: 'apprentice',
+      history: [],
+    },
+  };
+}
+
+/** v2 → v3：追加 rankProgress（Phase 3 M1） */
+export const migrateV2ToV3 = migrateRankProgressIfNeeded;
+
+/**
+ * 迁移链登记表：MIGRATIONS[n] 把 v{n} 提升到 v{n+1}。
+ * 新增版本时在此追加条目，配套新增 migrateV{n}ToV{n+1} 纯函数。
+ */
+const MIGRATIONS: Record<number, (gp: GameProgress) => GameProgress> = {
+  2: migrateV2ToV3,
+};
+
+/**
+ * 串行执行 v{oldVersion} → v{CURRENT_VERSION} 的迁移链。
+ * 任一版本缺少对应迁移函数 → 抛错（调用方走备份路径）。
+ */
+function runMigrationChain(oldVersion: number, gp: GameProgress): GameProgress {
+  if (oldVersion === CURRENT_VERSION) return gp;
+  if (oldVersion > CURRENT_VERSION) {
+    throw new Error(`Unknown future version ${oldVersion}; no downgrade path`);
+  }
+  let current = gp;
+  for (let v = oldVersion; v < CURRENT_VERSION; v++) {
+    const step = MIGRATIONS[v];
+    if (!step) {
+      throw new Error(`No migration registered from v${v} to v${v + 1}`);
+    }
+    current = step(current);
+  }
+  return current;
+}
+
 function read<T>(key: string): T | null {
   try {
     const raw = localStorage.getItem(key);
@@ -93,16 +148,46 @@ function write<T>(key: string, data: T): void {
 }
 
 export const repository = {
+  /**
+   * 启动时的版本探测 + 迁移。
+   * - 没有旧版本号（全新用户）→ 写入 CURRENT_VERSION，不动任何数据
+   * - 已是当前版本 → noop
+   * - 旧版本 → 按 MIGRATIONS 串行迁移；失败落到 mq_backup_v{old}_{ts} + 丢弃原 gameProgress
+   *   严禁 clearAll：用户历史进度是不可再生资产，未来任何 Phase 升级也必须沿用此原则
+   */
   init() {
-    const version = read<number>(KEYS.version);
-    if (version !== CURRENT_VERSION) {
-      // 版本升级：清除旧数据，防止结构不兼容
-      localStorage.removeItem('mq_progress');
+    const storedVersion = read<number>(KEYS.version);
+
+    if (storedVersion === CURRENT_VERSION) return;
+
+    if (storedVersion === null) {
       write(KEYS.version, CURRENT_VERSION);
+      return;
+    }
+
+    const rawGp = read<GameProgress>(KEYS.gameProgress);
+
+    if (!rawGp) {
+      write(KEYS.version, CURRENT_VERSION);
+      return;
+    }
+
+    try {
+      const migrated = runMigrationChain(storedVersion, rawGp);
+      write(KEYS.gameProgress, migrated);
+      write(KEYS.version, CURRENT_VERSION);
+    } catch (e) {
+      const backupKey = `mq_backup_v${storedVersion}_${Date.now()}`;
+      write(backupKey, rawGp);
+      localStorage.removeItem(KEYS.gameProgress);
+      write(KEYS.version, CURRENT_VERSION);
+      console.warn(
+        `[repository] 存档从 v${storedVersion} 迁移到 v${CURRENT_VERSION} 失败，已备份至 ${backupKey}，本次启动使用新存档。`,
+        e,
+      );
     }
   },
 
-  // User
   getUser(): User | null {
     return read<User>(KEYS.user);
   },
@@ -111,14 +196,13 @@ export const repository = {
     write(KEYS.user, user);
   },
 
-  // GameProgress
   getGameProgress(userId: string): GameProgress {
     const raw = read<GameProgress>(KEYS.gameProgress);
     if (raw && raw.userId === userId) {
-      // 向前兼容迁移：老数据无 advanceProgress 字段
       if (!raw.advanceProgress) raw.advanceProgress = {};
-      // ISSUE-057 闯关结构重构后的一次性存档迁移
-      const migrated = migrateCampaignIfNeeded(raw);
+
+      const afterCampaign = migrateCampaignIfNeeded(raw);
+      const migrated = migrateRankProgressIfNeeded(afterCampaign);
       if (migrated !== raw) {
         write(KEYS.gameProgress, migrated);
       }
@@ -128,6 +212,7 @@ export const repository = {
       userId,
       campaignProgress: {},
       advanceProgress: {},
+      rankProgress: { currentTier: 'apprentice', history: [] },
       wrongQuestions: [],
       totalQuestionsAttempted: 0,
       totalQuestionsCorrect: 0,
@@ -138,7 +223,6 @@ export const repository = {
     write(KEYS.gameProgress, progress);
   },
 
-  // Sessions
   getSessions(): PracticeSession[] {
     return read<PracticeSession[]>(KEYS.sessions) ?? [];
   },
@@ -156,6 +240,11 @@ export const repository = {
     return this.getSessions().slice(-limit);
   },
 
+  /**
+   * 完整清空本地存档。
+   * 仅保留给"用户显式点击 '清空存档' 按钮"这一路径使用；
+   * 严禁在任何版本升级 / 启动探测分支中调用（Spec 2026-04-18 §6.3 项目级原则）。
+   */
   clearAll(): void {
     localStorage.removeItem(KEYS.user);
     localStorage.removeItem(KEYS.gameProgress);
