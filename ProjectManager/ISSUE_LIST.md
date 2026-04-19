@@ -11,9 +11,13 @@
 
 | 当前开放数 | 是否阻塞当前主线 | 当前需关注项 |
 |---|---|---|
-| 1 | 否 | `ISSUE-059`：`dec-div` 高档残留隐藏 `trainingFields`，属于实现一致性清理，不在当前 Phase 3 主线内 |
+| 1 | 否（不阻塞当前 Phase 3 主线） | `ISSUE-059` P2 实现一致性清理，主线收口后单独评估 |
 
-- `ISSUE-059`（实现一致性 / P2）: `dec-div` 高档残留隐藏 `trainingFields`；当前唯一开放 issue。原始条目保留在文末 `ISSUE-059` 标题处，避免破坏既有引用链。
+- `ISSUE-059`（实现一致性 / P2）: `dec-div` 高档残留隐藏 `trainingFields`；不在当前 Phase 3 主线内，等主线收口后单独评估。原始条目保留在文末 `ISSUE-059` 标题处，避免破坏既有引用链。
+- ~~`ISSUE-060`（段位赛 / P1，2026-04-19）~~ → ✅ 已关闭（2026-04-19，见文末 `2026-04-19 Phase 3 段位赛 M2 遗留补做` 章节关闭记录）
+- ~~`ISSUE-061`（段位赛 / P2，2026-04-19）~~ → ✅ 已关闭（2026-04-19，同章节关闭记录）
+- ~~`ISSUE-062`（段位赛 / P1，2026-04-19）~~ → ✅ 已关闭（2026-04-19 M4 E2E 发现并当场修复；见文末 `2026-04-19 Phase 3 段位赛 M4 E2E 发现问题` 章节）
+- ~~`ISSUE-063`（段位赛 / P1，2026-04-19）~~ → ✅ 已关闭（2026-04-19 M4 E2E 发现并当场修复；同章节）
 
 ---
 
@@ -480,3 +484,153 @@
 - **当前处置**:
   - 不再挂靠已废弃的 A03+ 路线
   - 继续保留在开放 issue 台账中，但默认不进入当前 Phase 3 执行上下文
+
+---
+
+## 2026-04-19 Phase 3 段位赛 M2 遗留补做
+
+> 来源：`Plan/2026-04-18-rank-match-phase3-implementation.md` M2 完工复盘（commit `205e35c`）。M2 主干已合入，但识别出两项遗留——一项是 Plan §4.1 明文风险未兑现验收（P1），一项是 Spec §5.6 要求的体验优化 M2 首版明确挂单为后续处理（P2）。两项都不阻塞 M3 UI 开工，但 `ISSUE-060` 阻塞 Phase 3 上线验收。
+
+### ISSUE-060 (段位赛/P1): 段位赛单局进行中刷新即废局
+- **状态**: ✅ 已关闭（2026-04-19 补做完成）
+- **位置**:
+  - `src/store/index.ts`：`rankQuestionQueue` / `lastRankMatchAction` 只保存在 Zustand store 内存，刷新即丢
+  - `src/engine/rank-match/question-picker.ts`：`pickQuestionsForGame` 是一次性生成，无"续抽"语义
+- **现象**:
+  - 用户在段位赛单局途中刷新页面 / 切后台 / 关标签页再打开：
+    - `PracticeSession`（含已答题对错 / 心数 / 题目列表）走 `mq_sessions` 持久化 → **不丢**
+    - `RankMatchSession`（BO 整体状态）走 `mq_rank_match_sessions` 持久化 → **不丢**
+    - `rankQuestionQueue`（本局**尚未答**的剩余题）只在 store 内存 → **全丢**
+  - 用户点"继续"，`store.nextQuestion()` 从空队列取题 → 当前局直接崩
+  - `RankMatchGame.finished` 保持 `false`，BO 胜负计数卡在 in-progress，`activeSessionId` 无法释放
+- **事实源**:
+  - `Plan/2026-04-18-rank-match-phase3-implementation.md` §4.1 第 173 行：
+    > BO 状态持久化的并发：若用户在单局中途刷新页面，应能恢复到"当前局 + 已答题数"。M2 需要验证 `mq_sessions` + `mq_rank_match_sessions` 两套数据的一致性；若不一致视为异常回到 Hub。
+  - `Specs/2026-04-18-rank-match-phase3-implementation-spec.md` §6.4：`RankMatchSession` 持久化约束
+  - M2 未兑现该验收项（Plan §6 M2 完工段未登记对应测试），是 M2 的实质遗漏而非主动降级
+- **影响**:
+  - P1 · 阻塞 Phase 3 上线验收：用户第一次刷新就遇到"本局报废 + BO 卡住"，上线后会成批量反馈
+  - 当前未上线，但 M3 做完后真人 playtest 立刻会踩到
+- **处理方向**（实施 session 需先评估再拍板）:
+  - 方案 A：把本局完整题目列表放进 `PracticeSession.questions`（原本就是题目容器）或 `RankMatchGame` 新字段，启动恢复时从存档读
+  - 方案 B：启动时根据 `PracticeSession` 已答题数 + `rankMatchMeta.gameIndex` 重新调用 `pickQuestionsForGame` 补齐剩余题（要求 picker 支持"前 N 题已定"续抽语义）
+  - 倾向方案 A（简单、确定性好），但决策理由必须写进 Plan §6
+- **硬约束**:
+  - 异常路径按 Plan §4.1 最后一行"若不一致视为异常回到 Hub"处理
+  - Spec §5.8"不允许静默降级"：数据不一致时抛异常 + 清 `activeSessionId` + 路由回 Hub，不得悄悄补题或续抽
+- **关联**: M2 commit `205e35c`、Plan §4.1、Spec §6.4 / §5.8
+- **关闭记录** (2026-04-19 M2 遗留补做):
+  - **决策**：采用方案 A 变体 A2——把本局预生成题序 `rankQuestionQueue` 写入 `PracticeSession` 本身，随 `mq_sessions` 一并持久化；`RankMatchSession` 独立走 `mq_rank_match_sessions`（Spec §6.4）。刷新恢复路径分两层：`loadActiveRankMatch` 恢复 BO 层，`resumeRankMatchGame` 恢复单局答题层，两层解耦便于 M3 UI 分步路由。
+  - **文件变更**:
+    - `src/types/index.ts`：`PracticeSession` 追加 `rankQuestionQueue?: Question[]` 字段
+    - `src/repository/local.ts`：新增 `mq_rank_match_sessions` 独立 key + CRUD（`saveRankMatchSession` / `getRankMatchSession` / `deleteRankMatchSession` / `getRankMatchSessions`）；`saveSession` 改为按 id upsert（历史 push 行为在多次落盘下会产生重复条目）；`clearAll` 同步清理新 key
+    - `src/store/rank-match.ts`：`startRankMatch` / `handleGameFinished` 每次执行都落盘；新增 `loadActiveRankMatch(userId)` 启动恢复（启动路径对一致性异常安静收尾 + 清 `activeSessionId`）；新增导出 `RankMatchRecoveryError`
+    - `src/store/index.ts`：`startRankMatchGame` 写入 `rankQuestionQueue` 并立即 `saveSession`；`submitAnswer` 在 rank-match 分支每题落盘；新增 `resumeRankMatchGame(practiceSessionId)`——四类一致性异常（PracticeSession 不存在 / 已 completed / rankSessionId 不匹配 / queue 缺失或已答数越界）均抛 `RankMatchRecoveryError` 并清 `activeSessionId`（Spec §5.8"不允许静默降级"）
+  - **测试新增**（TDD Red→Green，共新增 22 条 + 修通原有）:
+    - `src/repository/local.test.ts`：+ 6 条（`RankMatchSession` CRUD / upsert / 多 id 隔离 / 独立 key 不与 `mq_sessions` 混存）
+    - `src/store/rank-match.test.ts`：+ 7 条（`startRankMatch` 落盘 / `handleGameFinished` 每次落盘 / `loadActiveRankMatch` 5 类场景）
+    - `src/store/index.rank-match-resume.test.ts` 新建：+ 9 条（第 1 局途中刷新 / 局间刷新 / 4 类一致性异常 / 启动落盘）
+  - **基线**: `npx tsc --noEmit` 0 错；`npx vitest run` 15 套 / **455 测试** 全绿（本次补做前为 428，其中段位赛相关 +27 条）
+  - **UI 接入说明**：App.tsx 启动钩子 + 刷新后路由决策归属 M3 UI 工作域；本次补做不动 `App.tsx`（用户明示"不碰 M3 UI"），恢复入口由 `useRankMatchStore.loadActiveRankMatch` / `useSessionStore.resumeRankMatchGame` 暴露供 M3 调用。
+
+### ISSUE-061 (段位赛/P2): 复习题未按错题频率加权
+- **状态**: ✅ 已关闭（2026-04-19 补做完成）
+- **位置**: `src/engine/rank-match/question-picker.ts::generateBucket`（`band === 'review'` 分支）
+- **现象**:
+  - 高手 / 专家 / 大师段位的复习题桶（≤25% 本场题量）当前从上一段位 `RANK_REVIEW_TOPIC_RANGE` 均匀抽取题型
+  - 未读取 `GameProgress.wrongQuestions`，用户近期错题高频题型不会被优先复习
+- **事实源**:
+  - `Specs/2026-04-18-rank-match-phase3-implementation-spec.md` §5.6 第 290 行：
+    > 复习题**优先从"用户近 N 局里错题频率较高的题型"中取**（按 `wrongQuestions` 最近采样，N 由 M2 实施时取值）
+  - `Specs/...-spec.md` §10.1 开放项第 553 行（失败局数如何计入薄弱题型）
+  - `Plan/2026-04-18-rank-match-phase3-implementation.md` §6 M2 完工段第 293 行：
+    > **复习题错题加权（Spec §5.6）本版本只做均匀分布**。错题加权是"更优"不是"正确性"，先保证核心闭环通过 Plan §M2 验收；后续作为 ISSUE 挂靠规格（Spec §10.1 已挂开放项）。
+- **影响**:
+  - P2 · 不阻塞段位赛闭环：用户能打能晋级
+  - 但"复习"针对性不足——用户近期 A03 错得一塌糊涂，下一场专家赛复习题仍均匀从 A01~A04 抽，未利用错题本做精准补弱
+- **处理方向**（实施 session 拍板 N 值并写入 Plan §6）:
+  - 数据来源：`GameProgress.wrongQuestions`，按 `attemptedAt` 降序取近 N 条
+  - 对复习题桶题型做加权采样（具体加权函数由实施决定）
+  - 无错题历史时回落均匀分布（Spec §5.6 第 3 条保底）
+- **硬约束**（违反即未完工）:
+  - 继续满足 Spec §5.5 难度范围硬约束，不得为了加权放宽难度
+  - 继续满足现有 `validateTierDistribution` 全部校验
+  - 错题是低档难度（如专家场 A01 normal 2）：不允许整题沿用，只把"该题型"加权并重新抽到本段位硬约束难度内（Spec §5.6 第 4 条）
+  - 专家段位 `normal` 甜点 ≤10% 配额**优先**给"用户确实错过的 normal 题型"——这是甜点的设计意图
+- **关联**: M2 commit `205e35c`、Spec §5.6 / §5.5 / §10.1
+- **关闭记录** (2026-04-19 M2 遗留补做):
+  - **决策**（写入 Plan §6）:
+    - N = **50**（最近错题窗口）；在复习池难度下限以下的错题不参与加权（§5.6 第 4 条"低档错题不沿用"）
+    - 分配算法：保底 1 道/主题 + 余量按原始错题次数最大余数法分配；无错题历史回落均匀分布
+    - 原始次数（非"1+count"平滑权重）作为分配权重的理由：保底 1 已保障主题覆盖，余量按真实次数分配更贴"近期薄弱点"直觉，避免双重平滑稀释信号
+    - 确定性设计：相同输入严格对应相同输出（按 wrongAt desc 排序 + 索引升序平局决），便于复盘与回归
+  - **文件变更**:
+    - `src/engine/rank-match/review-weighting.ts` 新建：`distributeReviewTopics(params)` 纯函数 + `REVIEW_WRONG_WINDOW = 50`
+    - `src/engine/rank-match/question-picker.ts`：`PickQuestionsParams` 追加 `wrongQuestions?`；review 桶通过 `distributeReviewTopics` 预计算主题序列；`generateBucket` 新增 `topicsPerSlot?` 参数，非 review 桶路径保持 round-robin 不变
+    - `src/store/index.ts`：`startRankMatchGame` 把 `gp.wrongQuestions` 传给 `pickQuestionsForGame`
+  - **测试新增**:
+    - `src/engine/rank-match/review-weighting.test.ts` 新建：+ 10 条（基础契约 3 / 无历史回落 2 / 加权分配 3 / 低档过滤 1 / 确定性 1）
+    - 原有 `question-picker.test.ts` 25 条 / `picker-validators.test.ts` 20 条全量继续通过（§5.5 / §5.7 硬约束无回归）
+  - **基线**: `npx tsc --noEmit` 0 错；`npx vitest run` 15 套 / **455 测试** 全绿（本次在任务 A 基础上 +10 条加权专项测试）
+  - **甜点约束落地说明**：专家段 review 桶 normal-5 比例由 `allocateDifficulties` 的难度配额继续约束（≤10% 总题量），本次改动只影响主题分布，不改难度分布；甜点"优先给错过的 normal 题型"效应由"主题加权 × 难度配额"自然组合产生，不额外写死
+
+---
+
+## 2026-04-19 Phase 3 段位赛 M4 E2E 发现问题
+
+> 来源：`Plan/2026-04-18-rank-match-phase3-implementation.md` M4 E2E QA（`test-results/phase3-rank-match/m4-user-qa-report.md`）。M3 已标完工但实际首次跑 `npm run build` + 拟真 E2E 时才暴露的两个 P1 问题；都在 M4 session 内当场修复闭环。未在 M3 漏网是因为 M3 仅跑了 `tsc --noEmit` + 手动截图核对，未做完整用户旅程 E2E。
+
+### ISSUE-062 (段位赛/P1): Practice 组件 hooks 顺序违反 React 规则
+- **状态**: ✅ 已关闭（2026-04-19 M4 当场修复）
+- **位置**: `src/pages/Practice.tsx`
+- **现象**:
+  - 段位赛单局结算、进入 GameResult 的瞬间，React 抛 `Rendered fewer hooks than expected. This may be caused by an accidental early return statement.`
+  - 浏览器控制台同步报 `An error occurred in the <Practice> component`
+  - 严重性：用户在段位赛正常胜利后就能稳定复现，阻塞段位赛主路径上线
+- **根因**:
+  - `Practice.tsx` 顶部有一条 `if (!currentQuestion) return <LoadingScreen />;` 早退
+  - 该早退放在 `useCallback(handleNext) / useEffect(handleVerticalComplete 相关)` **之前**
+  - `currentQuestion` 在单局结束瞬间会变成 `null`（`endSession` 把 queue 清空），导致组件在两次 render 间 hook 数量不一致
+- **事实源**:
+  - React 官方规则：hooks 必须在组件顶层稳定位置调用，早退会跳过后续 hooks
+  - 本 Issue 的典型触发时刻：段位赛 BO 第 N 局最后一题答完 → `endSession` → 下一帧 `currentQuestion = null` → 下一次 render 命中早退 → hook 数量缩减
+- **影响**:
+  - P1 · 阻塞段位赛主路径：任何用户打完一局都会触发
+  - 仅在 dev 模式以 `[Unhandled error]` 形式显式抛出；生产构建 React 会抑制警告但行为仍不确定
+- **修复**:
+  - 把早退从组件顶部移到**所有 hooks 声明之后**
+  - 依赖 `currentQuestion` 的派生量（`isVerticalCalc` 等）改用 `currentQuestion?.` 可空访问
+  - `handleVerticalComplete` 等 handler 在入口加 `if (!currentQuestion) return;` 作为防御
+- **验证**:
+  - `npx vitest run`：459/459 全绿，含 Practice 相关既有单测无回归
+  - E2E `m4-e2e.mjs`：22/22 PASS，不再复现 `Rendered fewer hooks` 报错
+  - 浏览器 console：dev 模式下原 pageerror 消失
+- **关联**: Plan §6 M4 段、`test-results/phase3-rank-match/m4-user-qa-report.md` 新发现问题表
+
+### ISSUE-063 (段位赛/P1): RankMatchGameResult 推进到下一局时 gameIndex 不存在
+- **状态**: ✅ 已关闭（2026-04-19 M4 当场修复）
+- **位置**:
+  - `src/pages/RankMatchGameResult.tsx::navigateNext`：调 `startRankMatchGame(rank.id, rankSession.games.length + 1)`
+  - `src/store/rank-match.ts::handleGameFinished`：BO 推进后**未**往 `games[]` 追加下一局 placeholder
+  - `src/store/index.ts::startRankMatchGame`：`games.find(g => g.gameIndex === gameIndex)` 找不到 target 直接抛错
+- **现象**:
+  - 段位赛第 1 局胜利 → GameResult 倒计时 3 秒后自动推进 → 浏览器报 `Error: Cannot start rank match game: gameIndex 2 not found`
+  - 用户看到 GameResult 后卡住，无法进入第 2 局
+- **根因**:
+  - M2 的 BO 推进设计：`handleGameFinished` 只更新战绩 + 落盘，不生成下一局 placeholder
+  - M2 单测里用 `_setActiveRankSession` 手工 push placeholder 绕过该缺口，没暴露到实机路径
+  - M3 的 `RankMatchGameResult` 实现默认"store 已经自动准备好下一局"，与 M2 的实际语义错位
+- **事实源**:
+  - `Specs/2026-04-18-rank-match-phase3-implementation-spec.md` §6.4：`RankMatchSession.games` 是"已创建 / 进行中 / 已完成"三态集合，下一局什么时候落入 `games[]` Spec 没强约束
+  - 决策：选择在 **session 层的 `startRankMatchGame`** inflate 而非 rank-match store 层 `handleGameFinished` inflate——保持 `getCurrentGameIndex` 的"局间 undefined"语义（刷新恢复依赖此约定，见 `index.rank-match-resume.test.ts` 场景 3）
+- **影响**:
+  - P1 · 阻塞段位赛主路径：任何用户打完第 1 局都会卡住
+  - 实机上现场修复前用户无法走到 BO3 第 2 局
+- **修复**:
+  - `src/store/index.ts::startRankMatchGame` 新增按需 inflate：当 `gameIndex === games.length + 1 && !session.outcome` 且 `targetGame` 未找到时，通过 `match-state.startNextGame({ session, practiceSessionId: nanoid() })` 生成 placeholder，调用 `useRankMatchStore._setActiveRankSession` + `repository.saveRankMatchSession` 落盘
+  - rank-match store 层保持"不自动 push"策略不变
+  - 同步调整单测 `src/store/rank-match.test.ts` / `src/store/index.rank-match.test.ts`：去掉 `index.rank-match.test.ts` 里的手工 `startNextGame` 推进，改用 `startRankMatchGame` 自动 inflate 后断言 `games.length === 2`
+- **验证**:
+  - `npx vitest run`：459/459 全绿（包含新增断言）
+  - E2E `m4-e2e.mjs`：22/22 PASS，D-05 / E-01 / E-02 / E-03 一条龙通过
+- **关联**: Plan §6 M4 段、`test-results/phase3-rank-match/m4-user-qa-report.md` 新发现问题表

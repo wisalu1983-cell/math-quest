@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-19（M2 完工）  
+> 最后更新：2026-04-19（M4 完工：build 修复 + E2E 22/22 PASS + §6 回写完成；待 commit + pm-sync-check 收口）  
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档。
 
 ---
@@ -34,11 +34,18 @@
 - Phase 3 三层落盘已完成：Umbrella、实施级 Spec、实施子子计划均已落盘
 - **M1 已完工**（2026-04-19）：类型层 + 常量层 + `entry-gate.ts` 纯函数入场校验 + `match-state.ts` BO 状态机（含 §7.4 提前结束强制）+ `repository/local.ts` 迁移链（v2→v3，项目级原则落地）+ 段位赛最小 store。6 条项目级硬约束全部核验通过
 - **M2 已完工**（2026-04-19，同日收口）：抽题器（`question-picker.ts` 胜场游标 + 三桶分配 + 难度配额 + 交错混合）+ 自检钩子（`picker-validators.ts` 覆盖 Spec §5.7 五类硬约束）+ 段位赛答题流驳接（`store/index.ts::startRankMatchGame` 预生成题序；`endSession` 的 rank-match 分支调用 `handleGameFinished` 并通过新字段 `lastRankMatchAction` 供 UI 路由）。Spec §5.8 校验失败走 `PickerValidationError`，不允许静默降级
-- 代码基线稳定：`tsc --noEmit` 0 错，`vitest` **370 → 423**（M2 新增 53 用例：validators 20 + picker 25 + store E2E 8），`pm-sync-check` 按节点已跑
+- **M2 遗留补做已完工**（2026-04-19 同日独立 session）：
+  - `ISSUE-060`（P1）段位赛单局中途刷新恢复 —— 方案 A 变体 A2：`PracticeSession.rankQuestionQueue` + `mq_rank_match_sessions` 独立 key，分层恢复入口 `loadActiveRankMatch` + `resumeRankMatchGame`，一致性异常一律抛 `RankMatchRecoveryError` + 清 `activeSessionId`（Spec §5.8）
+  - `ISSUE-061`（P2）复习题错题频次加权 —— `distributeReviewTopics` 纯函数（窗口 N=50，保底 1 道/主题 + 余量原始错题次数最大余数法分配）
+  - M3 UI 作用域零触碰，UI 接入入口通过 store 方法暴露
+- **M3 已完工**（2026-04-19）：UI 三页（`RankMatchHub` / `RankMatchGameResult` / `RankMatchResult`）+ `RankBadge` 组件 + 三条路由注册（`useUIStore.currentPage`，Spec §8.3）+ `globals.css` 段位徽章色 CSS 变量（`--rank-*`，Spec §8.4）+ `Home.tsx` 独立段位赛入口卡片（活跃赛事/缺口提示/入场引导三态）+ `Practice.tsx` BO 进度徽标 + `endSession` 后路由到单局结算页 + 刷新恢复双层接入（`App.tsx` `loadActiveRankMatch` / `Practice.tsx` `resumeRankMatchGame`）。`RankMatchRecoveryError` 全链路显式路由回 Hub，无静默降级（Spec §5.8）
+- **M4 已完工**（2026-04-19，同日收口）：M3 完工后首次 `npm run build` 暴露 5 个 build-only 报错（`tsc --noEmit` 不覆盖的 `erasableSyntaxOnly` 路径 + 未用 import），按用户决策归入 M4 验证项一并处理；拟真 QA 阶段以 Playwright 自写 E2E（`test-results/phase3-rank-match/m4-e2e.mjs`）走完整用户旅程，**22 条用例 / 0 FAIL / 0 RISK**，覆盖主路径（学徒→新秀 BO3 两连胜晋级）+ 失败复盘（连败走 MatchResult + 薄弱题型前 3）+ 刷新恢复（G-01 / G-03）；E2E 过程暴露并当场修复两个 P1 bug：`ISSUE-062`（Practice 早退位于 hooks 之前违反规则）、`ISSUE-063`（`startRankMatchGame` 找不到下一局 placeholder）。四栏报告：`test-results/phase3-rank-match/m4-user-qa-report.md`
+- 代码基线稳定：`tsc --noEmit` 0 错，`npm run build` 绿，`vitest` **459/459**（含 ISSUE-063 修复后对应补测），`pm-sync-check` 按节点已跑
 - 本阶段明确不做：A03+、A09、B/C/D
 - 当前开放问题与历史关闭项不在本页展开，统一看 `ISSUE_LIST.md`
+- 遗留开放项：晋级动画（M3 设计审查 m-3 漏网）按用户决策不入 `ISSUE_LIST`，Phase 3 上线后按真实反馈再评估
 
-**下一步**：领取 Phase 3 实施子子计划 **M3**（UI 三页 + 路由 + Home 入口真实化）——按 Spec §8 落地 `RankMatchHub` / `RankMatchGameResult` / `RankMatchResult` 三个页面、注册三条路由、把 `Home.tsx` 的"刷星升级"文案改造为独立段位赛卡片；段位徽章色通过 `globals.css` 的 `--rank-*` CSS 变量暴露（Spec §8.4）。
+**下一步**：执行 `npx tsx scripts/pm-sync-check.ts` 收口 → 统一 commit M3/M4 工作成果 → 同步 `Plan/README.md`、父计划 P3 状态（🟡→✅）、祖父计划 §三·D 段位赛行 → 关闭 Phase 3 段位赛阶段。
 
 ---
 

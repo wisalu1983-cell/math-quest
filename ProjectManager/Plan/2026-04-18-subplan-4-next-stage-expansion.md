@@ -4,7 +4,7 @@
 > 最后刷新：2026-04-19（活跃状态入口收敛：`Overview.md` 负责主管视图；本文件保留 Phase 3 执行事实、跨系统约束与父级承接）  
 > 父计划：[`2026-04-16-open-backlog-consolidation.md`](2026-04-16-open-backlog-consolidation.md) §四 子计划 4  
 > 设计规格：本计划收敛为单块 Umbrella，只覆盖 Phase 3 段位赛一块扩展工作  
-> 状态：🟡 进行中（本阶段唯一主线仍为 Phase 3；实施级规格与实施子子计划已落盘，代码起点待 M1 领取）
+> 状态：🟢 M4 完工（2026-04-19 Phase 3 段位赛实施子子计划 M1-M4 全部收口；待统一 commit + pm-sync-check 全局校验后将本块置为 ✅）
 
 ---
 
@@ -151,7 +151,7 @@
 
 | 块 | 规格齐备 | 实施子子计划 | 代码起点 | 状态 |
 |---|---|---|---|---|
-| **P3 段位赛（本阶段唯一主线）** | ✅ 产品层两份生效规格 + ✅ 实施级规格 `Specs/2026-04-18-rank-match-phase3-implementation-spec.md`（2026-04-18 落盘）| ✅ `Plan/2026-04-18-rank-match-phase3-implementation.md` 骨架已落盘（2026-04-18，等待 M1 领取）| 仅类型 TODO 注释（`src/types/gamification.ts` L84/L93，M1 内替换）| 🟡 主线进行中（三层落盘已到位，代码起点待领取）|
+| **P3 段位赛（本阶段唯一主线）** | ✅ 产品层两份生效规格 + ✅ 实施级规格 `Specs/2026-04-18-rank-match-phase3-implementation-spec.md`（2026-04-18 落盘）| ✅ `Plan/2026-04-18-rank-match-phase3-implementation.md` M1-M4 全部完工（2026-04-19 同日收口）| 类型/常量/抽题器/Store/UI 三页/路由/Home 入口/刷新恢复/薄弱题型聚合全部落代码；`npm run build` 绿；`npx vitest run` 459/459；E2E 22/22 PASS | 🟢 M4 完工，待统一 commit + pm-sync-check 后置 ✅ |
 
 > A03+（已废弃）、A09（本阶段不做）、B/C/D（本阶段不做）均不计入本面板。
 
