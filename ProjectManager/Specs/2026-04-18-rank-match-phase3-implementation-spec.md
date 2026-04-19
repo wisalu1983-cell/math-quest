@@ -361,11 +361,22 @@ export function migrateRankProgressIfNeeded(gp: GameProgress): GameProgress {
 
 在 `repository.getGameProgress` 中按 `migrateCampaignIfNeeded` → `migrateRankProgressIfNeeded` 顺序调用。
 
-### 6.3 版本跳变时的旧数据处置
+### 6.3 版本跳变时的旧数据处置 · **项目级原则**
 
-`repository.init` 当前逻辑是"版本不一致就清除旧数据"。Phase 3 **不允许**这样做——`CURRENT_VERSION: 2 → 3` 只是追加 `rankProgress` 字段，campaign/advance 数据完全兼容。
+`repository.init` 现行逻辑是"版本不一致就 `clearAll()`"。这在 Phase 1/2 开发期属于可接受的粗犷策略，但**从 Phase 3（M1 里程碑）起永久废弃**，升级为**项目级原则**（同步写入 `CLAUDE.md` 非显然约束）：
 
-实施子子计划 M1 必须把 `init` 改成"版本号递增时调用对应的迁移链"，而不是 `clearAll`。
+> **存档版本升级必须走迁移链（migration chain），严禁以 `clearAll()` 擦除旧数据。**
+>
+> 具体要求：
+>
+> 1. `CURRENT_VERSION` 每递增 1，必须新增一个对应版本号的 `migrateV{n}ToV{n+1}` 函数（纯函数，输入老版 `GameProgress`，输出新版）
+> 2. `repository.init` 在读到旧版本号后，按 `old → old+1 → ... → CURRENT_VERSION` 顺序串行调用迁移链，一次性推进
+> 3. 迁移链中任何一步抛错 → 存档落到 `mq_backup_v{old}_{timestamp}` 备份后，当次启动走"新存档 + 告警提示"路径；**不允许**悄悄 `clearAll` 继续
+> 4. Phase 3 M1 里做的第一步：`migrateV2ToV3` = `migrateRankProgressIfNeeded`（见 §6.2）；并把 `init` 中旧的 `clearAll` 分支整体移除
+>
+> **背景**：正式面向用户后，用户的闯关/进阶进度是数月积累，擦除即损失；即便 Phase 3 是新增段位赛、看似"只加字段"，但让"版本不一致 = 清存档"这条土路留在代码里，是悬在未来 Phase 4/5 头上的地雷。升级要一次性走干净。
+
+本规格 M1 必须验收该原则的实际落地（见 Plan §M1 代码文件清单 `repository/local.ts` 条目）。
 
 ### 6.4 `RankMatchSession` 的持久化
 
@@ -446,6 +457,45 @@ onMatchFinished(rankSession)
 
 1. `heartsRemaining === 0` 判定为"该局输"，不走"重试本局"——段位赛不允许重试单局
 2. 单局结束时不直接跳 `SessionSummary`；跳 `RankMatchResult`（中间结算页）+ 自动衔接下一局
+
+### 7.4 BO 提前结束 · 强制规则
+
+当 `onGameFinished` 回写完当前局后，若**剩余局数不足以让落后方翻盘**，赛事**立即强制结束**，不得继续生成下一局。这是 BO 制核心语义，非可选优化。
+
+**数学定义**：
+
+- `remainingGames = bestOf - games.length`（已打完 N 局后还剩多少局）
+- `requiredMoreWins = winsToAdvance - totalWins`（落后方要翻盘还需赢多少局）
+
+**强制触发条件**（互斥，同一局不可能同时成立）：
+
+| 条件 | 结论 |
+|---|---|
+| `totalWins >= winsToAdvance` | `outcome = 'promoted'`，立即 `onMatchFinished` |
+| `remainingGames < requiredMoreWins`（含 `requiredMoreWins > remainingGames` 的一切情况）| `outcome = 'eliminated'`，立即 `onMatchFinished` |
+| 以上都不满足 | `startNextGame` |
+
+**示例（BO3，`winsToAdvance = 2`）**：
+
+| 打完 | totalWins | remainingGames | requiredMoreWins | 判定 |
+|---|---|---|---|---|
+| 胜 + 胜 | 2 | 1 | 0 | ✅ promoted，不打第 3 局 |
+| 负 + 负 | 0 | 1 | 2 | ✅ eliminated，不打第 3 局 |
+| 胜 + 负 | 1 | 1 | 1 | 平局，打第 3 局决胜 |
+| 负 + 胜 | 1 | 1 | 1 | 平局，打第 3 局决胜 |
+
+**严禁**：不得以"让用户多打几局练习"之类产品/运营考虑，在强制结束条件满足后仍生成下一局。此行为违反 BO 制语义，且会污染胜场游标（§5.4）与新内容点编排，是破坏性的。
+
+**UI 反馈**：提前结束的终局页与"打满 BO 后结束"走同一 `RankMatchResult` 页面，但状态 banner 显式展示"BO{n} 第 {k} 局定胜负"（如 `"BO3 第 2 局定胜负"`），让用户明确知道是"系统按 BO 规则提前结束赛事"，而不是"后面还有局没打"。
+
+**测试约束**：M2 里程碑必须覆盖以下 case：
+
+- BO3 连胜 2 局 → 不产生第 3 局 `RankMatchGame`；`games.length === 2`
+- BO3 连负 2 局 → 不产生第 3 局
+- BO5 胜胜胜 → 不产生第 4/5 局
+- BO5 连负 3 局 → 不产生第 4/5 局
+- BO7 胜胜胜胜 → 不产生第 5/6/7 局
+- BO7 连负 4 局 → 不产生第 5/6/7 局
 
 ---
 

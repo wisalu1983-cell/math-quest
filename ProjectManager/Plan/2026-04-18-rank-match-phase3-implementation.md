@@ -57,7 +57,7 @@
 | `src/constants/rank-match.ts` | 新增 | 段位入场表（引用 `TOPIC_STAR_CAP` + `2026-04-13` §3.2 数值）；每段位 `bestOf` / `winsToAdvance` / `questionsPerGame`（20/25/25/30）/ `timerMinutes`（仅专家大师 30）/ `newContentPoints` 字典 |
 | `src/engine/rank-match/entry-gate.ts` | 新增 | **入场校验独立文件**（Spec §7.1）。暴露 `isTierUnlocked(tier, advanceProgress)` 与 `getTierGaps(tier, advanceProgress)` 两个纯函数；只读入场表 + `advanceProgress`，不依赖 store / repository / RankMatchSession；供 Hub / Home / store-before-create 三处共用 |
 | `src/engine/rank-match/match-state.ts` | 新增 | BO 生命周期状态机：`createRankMatchSession`（内部 `require(isTierUnlocked)`）、`startNextGame`、`onGameFinished`、`getCurrentGameIndex` 派生函数（Spec §3.4 注释）；纯函数或小闭包，不依赖 store；答题明细不再由本文件回写，按 Spec §3.3 走 `practiceSessionId` 反查 |
-| `src/repository/local.ts` | 修改 | `CURRENT_VERSION: 2 → 3`；新增 `migrateRankProgressIfNeeded`；`getGameProgress` 调用链增加该迁移；`init()` 不再用"版本不一致就清除"策略，改用追加式迁移（保留旧 campaign/advance 数据） |
+| `src/repository/local.ts` | 修改 | `CURRENT_VERSION: 2 → 3`；新增 `migrateV2ToV3` = `migrateRankProgressIfNeeded`（Spec §6.2）；`getGameProgress` 调用链追加该迁移；**`init()` 中"版本不一致就 `clearAll()`"的分支必须彻底移除**，改为串行迁移链（old→old+1→…→CURRENT_VERSION），失败时走 `mq_backup_v{old}_{ts}` 备份 + 告警，而非静默清空——此为项目级原则（Spec §6.3 / `CLAUDE.md` 非显然约束），后续所有 Phase 升级必须沿用 |
 | `src/store/rank-match.ts` | 新增 | 一个专门的 zustand slice 或 vanilla store，暴露 `activeRankSession` / `startRankMatch(targetTier)` / `handleGameFinished(practiceSessionSnapshot)` 三个最小 API |
 
 **测试文件**：
@@ -65,7 +65,7 @@
 | 文件 | 动作 | 摘要 |
 |------|------|------|
 | `src/engine/rank-match/match-state.test.ts` | 新增 | TDD：入场校验（满足门槛 vs 缺失门槛）、`onGameFinished` 的晋级/淘汰判定（胜 2 负 0 / 胜 1 负 2 / 胜 1 负 1 未决） |
-| `src/repository/local.test.ts` | 新增或扩展 | 旧版本 v2 存档（无 `rankProgress`）加载后自动获得默认 `rankProgress`；v3 存档幂等不再迁移；`clearAll` 行为不受影响 |
+| `src/repository/local.test.ts` | 新增或扩展 | 旧版本 v2 存档（无 `rankProgress`）加载后自动获得默认 `rankProgress`；v3 存档幂等不再迁移；**`init()` 遇到未知更老版本不再 `clearAll`**，走迁移链失败路径写入 `mq_backup_v{old}_{ts}` 备份并告警；`clearAll` 仅作为显式用户操作（如"清空存档"按钮）保留 |
 | `src/store/rank-match.test.ts` | 新增 | `startRankMatch` 在未满足门槛时抛错；满足门槛时写入 `activeSessionId`；`handleGameFinished` 正确递增胜场并在达到 `winsToAdvance` 时 `outcome='promoted'` |
 
 **验收门槛（M1）**：
@@ -167,7 +167,7 @@
 
 ### 4.1 风险
 
-- **存档迁移**：`CURRENT_VERSION: 2 → 3` 的迁移是无损追加，但同时要求 `repository.init` 放弃"版本不一致就清数据"的旧逻辑。M1 必须覆盖这一改动，否则升级用户会丢全部 campaign/advance 进度。
+- **存档迁移 · 项目级原则**（Spec §6.3 / `CLAUDE.md` 非显然约束）：`CURRENT_VERSION: 2 → 3` 的迁移是无损追加，同时要求 `repository.init` 放弃"版本不一致就清数据"的旧逻辑，改为串行迁移链 + 失败备份。此为项目级约束，从 M1 开始生效，后续所有 Phase 升级必须遵守；M1 验收不通过此项就算整体不通过。
 - **抽题器 × 生成器组合异常**：某些生成器在指定难度档 × 指定子题型组合下可能抛错（罕见但存在）。M2 抽题器需要在首轮 playtest 时加日志，一旦触发就降级为"换同段位内可生成的备选题型"并记录 ISSUE；不允许静默降级。
 - **BO 状态持久化的并发**：若用户在单局中途刷新页面，应能恢复到"当前局 + 已答题数"。M2 需要验证 `mq_sessions` + `mq_rank_match_sessions` 两套数据的一致性；若不一致视为异常回到 Hub。
 - **UI 视觉 token 补齐**：M3 新增的段位徽章色如果在视觉规格 `2026-04-14-ui-redesign-spec.md` 里没有对应条目，必须先在该 Spec 追加条目、回写 `_index.md`，再写代码——避免"代码提 token 但 Spec 没有"的文档滞后。
