@@ -89,10 +89,12 @@ export interface RankMatchGame {
   finished: boolean;
   /** 单局是否胜（答完且剩 ≥1 心），finished=false 时为 undefined */
   won?: boolean;
-  /** 单局使用的题目 id 序列（从池子里固化下来，便于复盘/回放） */
-  questionIds: string[];
-  /** 该局每题的对错序列（长度与 questionIds 相同），未答完为 undefined */
-  correctness?: boolean[];
+  /**
+   * 关联的 `PracticeSession.id`。
+   * 单局的题目 id 序列、每题对错、耗时、剩余心数等全部答题明细**一律从 `PracticeSession` 反查**，
+   * 本对象不再冗余存储。理由：避免双写导致不一致，且所有现有错题本 / 回放 / 统计流程都已经构建在 `PracticeSession` 之上。
+   */
+  practiceSessionId: string;
   /** 开始 / 结束时间戳 */
   startedAt: number;
   endedAt?: number;
@@ -112,14 +114,14 @@ export interface RankMatchSession {
   winsToAdvance: number; // = (bestOf + 1) / 2
   /** BO 序列里的所有已打或已开始的局；按 gameIndex 顺序 */
   games: RankMatchGame[];
-  /** 当前活跃局序号；undefined 表示整个 BO 已结束 */
-  currentGameIndex?: number;
   /** BO 整体结束后的结论：晋级 / 未晋级 */
   outcome?: 'promoted' | 'eliminated';
   startedAt: number;
   endedAt?: number;
 }
 ```
+
+> **不设 `currentGameIndex` 字段**：当前活跃局由纯函数 `getCurrentGameIndex(session): number | undefined` 从 `games` 末尾 `finished === false` 的一项派生；`outcome` 一旦被赋值，即视为无活跃局。把它做成冗余持久化字段会在"刷新页面恢复"、"同时多端"、"BO 提前结束"等路径上反复制造不一致风险。
 
 ### 3.5 `RankProgress` — 跨 session 的段位持久化
 
@@ -188,15 +190,24 @@ export type GameSessionMode = 'campaign' | 'advance' | 'wrong-review' | 'rank-ma
 export interface PracticeSession {
   // ...既有字段
   sessionMode: GameSessionMode; // 新值 'rank-match'
-  topicId: TopicId;             // 段位赛场景下仅作"该局占主导的主考题型"标签，不代表唯一题型
+  topicId: TopicId;             // 段位赛场景下为"兼容占位"，取值 = rankMatchMeta.primaryTopics[0]；不再表达该局的唯一语义主题
   rankMatchMeta?: {
     rankSessionId: string;      // 关联 RankMatchSession.id
     gameIndex: number;          // 该局是 BO 里的第几局（1-based）
     targetTier: Exclude<RankTier, 'apprentice'>;
+    /**
+     * 本局的主考题型集合。
+     * 由抽题器按 §5.4 胜场编排规则计算（每场 ⌈新内容点 ÷ W⌉ 个），
+     * 长度 ∈ [1, 3]，按段位规格表书写顺序排列。
+     * UI 题头据此展示 "本局主考：A05 / A06" 等徽标；错题本入库亦需要把"本题属于本局主考"作为一个维度写入。
+     */
+    primaryTopics: TopicId[];
   };
   // questions: QuestionAttempt[] 继续承载该局的 20~30 道混合题
 }
 ```
+
+> **关于 `topicId` 保留的原因**：既有 `PracticeSession` 的错题本入库、会话恢复、埋点 / 看板等上游逻辑都以 `topicId` 为必填主键。贸然把它改成可选或联合类型会波及 Phase 1/2 全部代码路径。因此段位赛场景下 `topicId` 降级为"兼容占位"：取 `primaryTopics[0]`，只作为数据兼容层的冗余主键，**不再承担"该局主题"的语义**；所有段位赛相关读路径（题头、结算、复盘）一律走 `rankMatchMeta.primaryTopics`。
 
 ### 4.3 为什么采用"双结构"而非合并
 
@@ -368,34 +379,58 @@ export function migrateRankProgressIfNeeded(gp: GameProgress): GameProgress {
 
 ### 7.1 入场校验
 
-进入 `RankMatchHub` 时，对每个段位计算 `isUnlocked`：
+**必须实现为独立纯函数文件 `src/engine/rank-match/entry-gate.ts`**（不得内嵌在 `match-state.ts` 或 store 中）：
+
+```typescript
+// src/engine/rank-match/entry-gate.ts
+export function isTierUnlocked(
+  tier: RankTier,
+  advanceProgress: AdvanceProgress,
+): boolean;
+
+export interface TierGap {
+  topicId: TopicId;
+  requiredStars: number;
+  currentStars: number;
+}
+
+/** 返回当前用户距离解锁该段位还缺哪些题型星级（供 Home / Hub 缺口提示使用） */
+export function getTierGaps(
+  tier: RankTier,
+  advanceProgress: AdvanceProgress,
+): TierGap[];
+```
+
+算法：
 
 ```
-isUnlocked(tier) =
+isTierUnlocked(tier, advanceProgress) =
   ∀ topicId in 入场表(tier):
     getStars(advanceProgress[topicId]?.heartsAccumulated ?? 0, TOPIC_STAR_CAP[topicId]) >= 入场表(tier)[topicId]
 ```
 
 - 入场表来自 `2026-04-13` §3.2
 - 学徒无校验，始终 unlocked；新秀是第一个有校验的段位
+- 本文件**只读** `advanceProgress` 与常量表，**不得依赖 `store` / `repository` / `RankMatchSession`**——保证 Hub 页面、Home 入口卡片、store 在 `createRankMatchSession` 之前的校验三处均可共用同一份逻辑，并且可被单测纯粹覆盖
 
 ### 7.2 BO 赛事生命周期
 
 ```
 createRankMatchSession(targetTier)
-  ├─ 校验 isUnlocked(targetTier) === true
+  ├─ 校验 isTierUnlocked(targetTier, advanceProgress) === true（调用 §7.1 entry-gate.ts）
   ├─ 根据 targetTier 计算 bestOf / winsToAdvance
   ├─ 写入 rankProgress.activeSessionId
-  └─ 生成 gameIndex=1 的 PracticeSession（走 §5 抽题器）
+  └─ 生成 gameIndex=1 的 PracticeSession（走 §5 抽题器），新建 RankMatchGame{ practiceSessionId }
 
 startNextGame(rankSessionId)
-  └─ 生成 gameIndex=N+1 的 PracticeSession
+  ├─ 当前活跃局号 = getCurrentGameIndex(session)（从 games 派生，见 §3.4 注释）
+  └─ 生成 gameIndex=games.length+1 的 PracticeSession 并追加一条 RankMatchGame
 
 onGameFinished(practiceSession)
-  ├─ 回写 RankMatchGame.{finished,won,correctness,endedAt}
-  ├─ 统计 totalWins / remainingGames
-  ├─ if totalWins >= winsToAdvance  → outcome = 'promoted'
-  ├─ if remainingGames < (winsToAdvance - totalWins) → outcome = 'eliminated'
+  ├─ 回写 RankMatchGame.{finished,won,endedAt}（答题明细不回写：走 practiceSessionId 反查 PracticeSession）
+  ├─ 统计 totalWins / remainingGames（remainingGames = bestOf - games.length）
+  ├─ if totalWins >= winsToAdvance            → outcome = 'promoted'
+  ├─ if remainingGames < (winsToAdvance - totalWins) → outcome = 'eliminated'（见 §7.4 BO 提前结束 · 强制）
   └─ else → startNextGame
 
 onMatchFinished(rankSession)

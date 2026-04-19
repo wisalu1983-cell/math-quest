@@ -52,10 +52,11 @@
 
 | 文件 | 动作 | 摘要 |
 |------|------|------|
-| `src/types/gamification.ts` | 修改 | 按 Spec §3 添加 `RankTier` / `RankMatchBestOf` / `RankMatchGame` / `RankMatchSession` / `RankProgress`；`GameProgress` 追加 `rankProgress?: RankProgress`；`GameSessionMode` 追加 `'rank-match'`；删除 L84/L93 两处占位裸注释 |
+| `src/types/gamification.ts` | 修改 | 按 Spec §3 添加 `RankTier` / `RankMatchBestOf` / `RankMatchGame` / `RankMatchSession` / `RankProgress`；`GameProgress` 追加 `rankProgress?: RankProgress`；`GameSessionMode` 追加 `'rank-match'`；`PracticeSession.rankMatchMeta` 新增 `primaryTopics: TopicId[]`（Spec §4.2）；删除 L84/L93 两处占位裸注释。**注意**：`RankMatchGame` 不含 `questionIds` / `correctness`（走 `practiceSessionId` 反查），`RankMatchSession` 不含 `currentGameIndex`（走派生函数），见 Spec §3.3 / §3.4 决策说明，不得擅自补回 |
 | `src/types/index.ts` | 修改 | 重导出新类型（`RankTier` 等）以保持既有 `import from '@/types'` 风格一致 |
 | `src/constants/rank-match.ts` | 新增 | 段位入场表（引用 `TOPIC_STAR_CAP` + `2026-04-13` §3.2 数值）；每段位 `bestOf` / `winsToAdvance` / `questionsPerGame`（20/25/25/30）/ `timerMinutes`（仅专家大师 30）/ `newContentPoints` 字典 |
-| `src/engine/rank-match/match-state.ts` | 新增 | `createRankMatchSession`、`startNextGame`、`onGameFinished`、入场校验 `isTierUnlocked` 等状态机函数（纯函数或小闭包，不依赖 store） |
+| `src/engine/rank-match/entry-gate.ts` | 新增 | **入场校验独立文件**（Spec §7.1）。暴露 `isTierUnlocked(tier, advanceProgress)` 与 `getTierGaps(tier, advanceProgress)` 两个纯函数；只读入场表 + `advanceProgress`，不依赖 store / repository / RankMatchSession；供 Hub / Home / store-before-create 三处共用 |
+| `src/engine/rank-match/match-state.ts` | 新增 | BO 生命周期状态机：`createRankMatchSession`（内部 `require(isTierUnlocked)`）、`startNextGame`、`onGameFinished`、`getCurrentGameIndex` 派生函数（Spec §3.4 注释）；纯函数或小闭包，不依赖 store；答题明细不再由本文件回写，按 Spec §3.3 走 `practiceSessionId` 反查 |
 | `src/repository/local.ts` | 修改 | `CURRENT_VERSION: 2 → 3`；新增 `migrateRankProgressIfNeeded`；`getGameProgress` 调用链增加该迁移；`init()` 不再用"版本不一致就清除"策略，改用追加式迁移（保留旧 campaign/advance 数据） |
 | `src/store/rank-match.ts` | 新增 | 一个专门的 zustand slice 或 vanilla store，暴露 `activeRankSession` / `startRankMatch(targetTier)` / `handleGameFinished(practiceSessionSnapshot)` 三个最小 API |
 
