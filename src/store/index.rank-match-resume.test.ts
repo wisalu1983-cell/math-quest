@@ -208,6 +208,21 @@ describe('SessionStore.resumeRankMatchGame · 第 1 局途中刷新恢复（ISSU
 
     expect(useSessionStore.getState().currentQuestion?.id).toBe(beforeId7);
   });
+
+  it('恢复后会从已答记录重建 pendingWrongQuestions，避免刷新/中断后丢错题累计', () => {
+    const rank = useRankMatchStore.getState().startRankMatch('rookie');
+    useSessionStore.getState().startRankMatchGame(rank.id, 1);
+
+    simulateAnsweredN(5, 1); // 3 对 2 错
+    simulateRefresh();
+
+    useRankMatchStore.getState().loadActiveRankMatch('u1');
+    const gi = getCurrentGameIndex(useRankMatchStore.getState().activeRankSession!)!;
+    const targetGame = useRankMatchStore.getState().activeRankSession!.games.find(g => g.gameIndex === gi)!;
+    useSessionStore.getState().resumeRankMatchGame(targetGame.practiceSessionId);
+
+    expect(useSessionStore.getState().pendingWrongQuestions).toHaveLength(2);
+  });
 });
 
 describe('SessionStore.resumeRankMatchGame · 局间刷新（ISSUE-060 场景 3）', () => {

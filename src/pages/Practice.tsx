@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useSessionStore, useUIStore } from '@/store';
-import { useRankMatchStore, RankMatchRecoveryError } from '@/store/rank-match';
+import { useRankMatchStore } from '@/store/rank-match';
 import VerticalCalcBoard from '@/components/VerticalCalcBoard';
 import DecimalTrainingGrid from '@/components/DecimalTrainingGrid';
 import Hearts from '@/components/Hearts';
@@ -20,7 +20,9 @@ export default function Practice() {
     hearts, showFeedback, lastAnswerCorrect, lastTrainingFieldMistakes,
     submitAnswer, nextQuestion, endSession, abandonSession,
     session,
-    resumeRankMatchGame,
+    startRankMatchGame,
+    suspendRankMatchSession,
+    cancelRankMatchSession,
   } = useSessionStore();
   const { setPage, setLastSession } = useUIStore();
   const activeRankSession = useRankMatchStore(s => s.activeRankSession);
@@ -37,24 +39,8 @@ export default function Practice() {
   const inputRef = useRef<HTMLInputElement>(null);
   const [shakeWrong, setShakeWrong] = useState(false);
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-
-  // M3-C: 段位赛刷新恢复入口（Spec §5.8）
-  // 若 activeRankSession 存在且 session 为空（刷新后），尝试恢复当前局 PracticeSession
-  useEffect(() => {
-    if (!activeRankSession || session) return;
-    const lastUnfinishedGame = activeRankSession.games.find(g => !g.finished);
-    if (!lastUnfinishedGame) return;
-    try {
-      resumeRankMatchGame(lastUnfinishedGame.practiceSessionId);
-    } catch (e) {
-      if (e instanceof RankMatchRecoveryError) {
-        // Spec §5.8：不允许静默降级，路由回 Hub + 提示
-        console.warn('[RankMatch] 单局恢复失败，路由回 Hub', e.message);
-        setPage('rank-match-hub');
-      }
-    }
-  }, [activeRankSession, session, resumeRankMatchGame, setPage]);
 
   // Reset state when question changes
   useEffect(() => {
@@ -163,6 +149,28 @@ export default function Practice() {
   const handleVerticalComplete = (correct: boolean) => {
     if (!currentQuestion) return;
     submitAnswer(correct ? String(currentQuestion.solution.answer) : '竖式计算有误');
+  };
+
+  const handleSuspendRankMatch = () => {
+    setShowQuitConfirm(false);
+    suspendRankMatchSession();
+    setPage('rank-match-hub');
+  };
+
+  const handleRestartRankMatch = () => {
+    const targetTier = session?.rankMatchMeta?.targetTier;
+    if (!targetTier) return;
+    setShowRestartConfirm(false);
+    setShowQuitConfirm(false);
+    try {
+      cancelRankMatchSession();
+      const restarted = useRankMatchStore.getState().startRankMatch(targetTier);
+      startRankMatchGame(restarted.id, 1);
+      setPage('practice');
+    } catch (e) {
+      console.warn('[RankMatch] 放弃并重开失败，回大厅', e);
+      setPage('rank-match-hub');
+    }
   };
 
   if (!currentQuestion) return <LoadingScreen />;
@@ -559,26 +567,82 @@ return (
         onClose={() => setShowQuitConfirm(false)}
         title="确定退出吗？"
       >
+        {isRankMatch ? (
+          <>
+            <p className="text-sm text-text-2 mb-4">
+              你可以先中断并保存，稍后从段位赛大厅继续；如果选择“放弃，重新开始”，当前挑战进度会被丢弃，并从第 1 局重新开始。
+            </p>
+            <div className="flex flex-col gap-3">
+              <button
+                className="btn-secondary w-full"
+                onClick={() => setShowQuitConfirm(false)}
+              >
+                继续练习
+              </button>
+              <button
+                className="btn-flat w-full"
+                onClick={handleSuspendRankMatch}
+              >
+                中断并保存
+              </button>
+              <button
+                className="btn-secondary w-full"
+                onClick={() => {
+                  setShowQuitConfirm(false);
+                  setShowRestartConfirm(true);
+                }}
+              >
+                放弃，重新开始
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <p className="text-sm text-text-2 mb-4">
+              {isAdvance
+                ? '退出不计入进度，但已答错的题会保存到错题本'
+                : '退出后本次练习不计入记录'}
+            </p>
+            <div className="flex gap-3">
+              <button
+                className="btn-secondary flex-1"
+                onClick={() => setShowQuitConfirm(false)}
+              >
+                继续练习
+              </button>
+              <button
+                className="btn-flat flex-1"
+                onClick={() => {
+                  abandonSession();
+                  setPage('home');
+                }}
+              >
+                退出
+              </button>
+            </div>
+          </>
+        )}
+      </Dialog>
+      <Dialog
+        open={showRestartConfirm}
+        onClose={() => setShowRestartConfirm(false)}
+        title="放弃，重新开始？"
+      >
         <p className="text-sm text-text-2 mb-4">
-          {isAdvance
-            ? '退出不计入进度，但已答错的题会保存到错题本'
-            : '退出后本次练习不计入记录'}
+          这会结束当前段位赛，并从第 1 局重新开始。当前挑战进度不会保留。
         </p>
         <div className="flex gap-3">
           <button
             className="btn-secondary flex-1"
-            onClick={() => setShowQuitConfirm(false)}
+            onClick={() => setShowRestartConfirm(false)}
           >
-            继续练习
+            返回
           </button>
           <button
             className="btn-flat flex-1"
-            onClick={() => {
-              abandonSession();
-              setPage('home');
-            }}
+            onClick={handleRestartRankMatch}
           >
-            退出
+            确认重开
           </button>
         </div>
       </Dialog>

@@ -11,9 +11,10 @@
 
 | 当前开放数 | 是否阻塞当前主线 | 当前需关注项 |
 |---|---|---|
-| 1 | 否（不阻塞当前 Phase 3 主线） | `ISSUE-059` P2 实现一致性清理，主线收口后单独评估 |
+| 1 | 否（`ISSUE-064` 已关闭，Phase 3 阻塞已清） | `ISSUE-059` P2 实现一致性清理 |
 
 - `ISSUE-059`（实现一致性 / P2）: `dec-div` 高档残留隐藏 `trainingFields`；不在当前 Phase 3 主线内，等主线收口后单独评估。原始条目保留在文末 `ISSUE-059` 标题处，避免破坏既有引用链。
+- ~~`ISSUE-064`（段位赛 / P1）~~ → ✅ 已关闭（2026-04-19，同日修复并复跑通过；见文末 `ISSUE-064` 关闭记录）
 - ~~`ISSUE-060`（段位赛 / P1，2026-04-19）~~ → ✅ 已关闭（2026-04-19，见文末 `2026-04-19 Phase 3 段位赛 M2 遗留补做` 章节关闭记录）
 - ~~`ISSUE-061`（段位赛 / P2，2026-04-19）~~ → ✅ 已关闭（2026-04-19，同章节关闭记录）
 - ~~`ISSUE-062`（段位赛 / P1，2026-04-19）~~ → ✅ 已关闭（2026-04-19 M4 E2E 发现并当场修复；见文末 `2026-04-19 Phase 3 段位赛 M4 E2E 发现问题` 章节）
@@ -634,3 +635,49 @@
   - `npx vitest run`：459/459 全绿（包含新增断言）
   - E2E `m4-e2e.mjs`：22/22 PASS，D-05 / E-01 / E-02 / E-03 一条龙通过
 - **关联**: Plan §6 M4 段、`test-results/phase3-rank-match/m4-user-qa-report.md` 新发现问题表
+
+---
+
+## 2026-04-19 全量回归（开新号）新发现
+
+> 来源：`ProjectManager/QA/2026-04-19-full-regression/auto-result.md` + `batch-3-rank-match-result.md`。首轮开新号全量回归发现 `D-07` 失败；同日修复后再次复跑，Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS。
+
+### ISSUE-064 (段位赛/P1): 局内刷新后只回到 Home，未直达当前 Practice
+- **状态**: ✅ 已关闭（2026-04-19，全量回归修复后复跑通过）
+- **来源**: `ProjectManager/QA/2026-04-19-full-regression/batch-3-rank-match-result.md` / `D-07`
+- **位置**:
+  - `src/App.tsx`：启动时 `loadUser` 后只把 `currentPage` 从 `onboarding` 推到 `home`，再调用 `loadActiveRankMatch(user.id)` 恢复 BO 层
+  - `src/pages/Practice.tsx`：`resumeRankMatchGame()` 仅在当前页已经是 `practice` 且 `session` 为空时触发
+- **现象**:
+  - Rookie 对局中答完 5 题后刷新页面
+  - 浏览器重启到 `home`
+  - Home 卡片会显示“继续挑战：新秀 BO3”，说明活跃赛事数据和题序没有丢
+  - 但页面**不会直接回到第 6 题的 Practice**
+- **预期**:
+  - 按 `ProjectManager/Specs/2026-04-18-rank-match-phase3-implementation-spec.md` §5.8 与既有用例 `G-01`，刷新应回到“刚才那一刻”，即当前局 + 已答题数 + 当前题
+- **影响**:
+  - P1：用户数据未丢，但“回到刚才那一刻”的恢复体验未兑现
+  - 会打断连续作答心流；对儿童用户来说像是“被踢回首页”，容易误判为进度不稳
+  - 首轮发现时确实阻塞了 Phase 3 收口
+- **根因判断**:
+  - 恢复逻辑被拆成了“App 启动恢复 BO 层”和“Practice 页恢复单局层”两段
+  - 刷新后默认页落在 `home`，所以 `Practice.tsx` 的局内恢复 effect 根本没有机会执行
+- **建议方向**:
+  - 在启动阶段探测到“存在未完成 game 且对应 PracticeSession 可恢复”时，直接把 UI 路由到 `practice`
+  - 或在 `loadActiveRankMatch` 成功后追加一个更高层的“局中恢复分流”步骤，而不是把这件事完全留给 `Practice.tsx`
+- **关联**:
+  - `ISSUE-060`（数据层题序持久化与双层恢复入口）
+  - `ProjectManager/Plan/2026-04-18-rank-match-phase3-implementation.md` §4.1 / §6
+  - `ProjectManager/Overview.md` 当前状态与下一步
+- **关闭记录**（2026-04-19，同日修复并复跑）:
+  - **设计决策**：把“刷新保底恢复”和“主动中断/放弃重开”统一收敛到 `RankMatchSession.status` 生命周期模型，显式区分 `active / suspended / completed / cancelled`
+  - **实现落点**：
+    - `src/App.tsx`：把局内恢复分流上提到启动期；仅在用户加载/刷新启动时判定，不再在每次页面切换时重复触发
+    - `src/store/rank-match.ts`：新增 `suspendActiveMatch / reactivateSuspendedMatch / cancelActiveMatch`，并让 `loadActiveRankMatch` 识别 `suspended / cancelled`
+    - `src/store/index.ts`：新增 `suspendRankMatchSession / cancelRankMatchSession`；`resumeRankMatchGame` 可从已答记录重建 `pendingWrongQuestions`
+    - `src/pages/Practice.tsx` / `src/pages/RankMatchHub.tsx` / `src/pages/Home.tsx`：接入“中断并保存 / 放弃，重新开始”语义与 Home/Hub 提示
+  - **验证**：
+    - `npx vitest run` → **473/473 PASS**
+    - `npm run build` → ✅
+    - `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs` 二次复跑：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS
+    - `D-07` 观察值：`刷新前 index=5 qid=kinzfgUaTZ；刷新后 page=practice index=5 qid=kinzfgUaTZ`

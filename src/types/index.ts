@@ -278,6 +278,7 @@ export type {
   GameSessionMode,
   RankTier,
   RankMatchBestOf,
+  RankMatchSessionStatus,
   RankMatchGame,
   RankMatchSession,
   RankProgress,

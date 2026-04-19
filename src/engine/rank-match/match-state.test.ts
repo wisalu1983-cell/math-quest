@@ -137,6 +137,7 @@ describe('createRankMatchSession', () => {
       practiceSessionId: 'ps1',
       startedAt: 1000,
     });
+    expect((s as RankMatchSession & { status?: string }).status).toBe('active');
     expect(s.outcome).toBeUndefined();
   });
 });
@@ -155,7 +156,7 @@ describe('getCurrentGameIndex', () => {
   });
 
   it('已出 outcome → 返回 undefined', () => {
-    const s: RankMatchSession = {
+    const s = {
       id: 'rs',
       userId: 'u',
       targetTier: 'rookie',
@@ -168,12 +169,13 @@ describe('getCurrentGameIndex', () => {
       outcome: 'promoted',
       startedAt: 0,
       endedAt: 3,
-    };
+      status: 'completed',
+    } as RankMatchSession;
     expect(getCurrentGameIndex(s)).toBeUndefined();
   });
 
   it('最后一局已 finished 但未开下一局 → undefined', () => {
-    const s: RankMatchSession = {
+    const s = {
       id: 'rs',
       userId: 'u',
       targetTier: 'rookie',
@@ -183,7 +185,8 @@ describe('getCurrentGameIndex', () => {
         { gameIndex: 1, finished: true, won: false, practiceSessionId: 'p1', startedAt: 0, endedAt: 1 },
       ],
       startedAt: 0,
-    };
+      status: 'active',
+    } as RankMatchSession;
     expect(getCurrentGameIndex(s)).toBeUndefined();
   });
 });
@@ -211,6 +214,7 @@ describe('onGameFinished · BO3 新秀', () => {
     r = onGameFinished({ session: s, gameIndex: 2, won: true, now: 3000 });
     expect(r.nextAction).toEqual({ kind: 'promoted' });
     expect(r.session.outcome).toBe('promoted');
+    expect((r.session as RankMatchSession & { status?: string }).status).toBe('completed');
     expect(r.session.games).toHaveLength(2); // 第 3 局不得生成
     expect(r.session.endedAt).toBe(3000);
   });
@@ -224,6 +228,7 @@ describe('onGameFinished · BO3 新秀', () => {
     r = onGameFinished({ session: s, gameIndex: 2, won: false, now: 3000 });
     expect(r.nextAction).toEqual({ kind: 'eliminated' });
     expect(r.session.outcome).toBe('eliminated');
+    expect((r.session as RankMatchSession & { status?: string }).status).toBe('completed');
     expect(r.session.games).toHaveLength(2);
   });
 
@@ -243,14 +248,15 @@ describe('onGameFinished · 保护分支', () => {
     const s = freshRookieSession();
     const r = onGameFinished({ session: s, gameIndex: 1, won: true });
     // 构造一个人工已结束的 session
-    const ended: RankMatchSession = {
+    const ended = {
       ...r.session,
       games: [
         ...r.session.games,
         { gameIndex: 2, finished: true, won: true, practiceSessionId: 'ps2', startedAt: 0, endedAt: 1 },
       ],
       outcome: 'promoted',
-    };
+      status: 'completed',
+    } as RankMatchSession;
     expect(() => onGameFinished({ session: ended, gameIndex: 2, won: false })).toThrow();
   });
 
@@ -286,10 +292,11 @@ describe('startNextGame', () => {
   });
 
   it('session 已出 outcome → 抛错', () => {
-    const s: RankMatchSession = {
+    const s = {
       ...freshRookieSession(),
       outcome: 'promoted',
-    };
+      status: 'completed',
+    } as RankMatchSession;
     expect(() => startNextGame({ session: s, practiceSessionId: 'ps2' })).toThrow();
   });
 });

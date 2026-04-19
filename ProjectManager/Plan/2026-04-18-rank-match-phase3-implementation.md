@@ -9,7 +9,7 @@
 > - [`../Specs/2026-04-13-star-rank-numerical-design.md`](../Specs/2026-04-13-star-rank-numerical-design.md) §3 / §4（星级与数值事实源）
 > - [`../Specs/2026-04-15-gamification-phase2-advance-spec.md`](../Specs/2026-04-15-gamification-phase2-advance-spec.md)（`TOPIC_STAR_CAP`）
 > - [`../Specs/2026-04-14-ui-redesign-spec.md`](../Specs/2026-04-14-ui-redesign-spec.md)（阳光版 v5）  
-> 状态：🟢 M4 完成，等待 commit + pm-sync-check 收口  
+> 状态：🟡 待最终收口；全量 QA 阻塞已清，待统一提交与生命周期收口（详见 `ISSUE_LIST.md` 与 §6 最新回写）  
 > **M1 启动前必读**：[`../Reports/2026-04-19-m1-kickoff-brief.md`](../Reports/2026-04-19-m1-kickoff-brief.md)（一次性交接简报，M1 领取并启动后即归档；汇总 2026-04-19 session 固化的 5 项关键决策、M1 文件清单同构索引与 6 条项目级硬约束）
 
 ---
@@ -137,13 +137,13 @@
 - [x] 全量 `npx tsc --noEmit` 0 错误（M4 完工节点）
 - [x] 全量 `npx vitest run` 绿（M4 完工节点：459/459）
 - [x] `npm run build` 绿（M4 完工节点）
-- [ ] `npx tsx scripts/pm-sync-check.ts` ✅（见 §6 M4 段，收口动作）
+- [x] `npx tsx scripts/pm-sync-check.ts` ✅（见 §6 M4 段，收口动作）
 - [x] 执行 `ProjectManager/human-verification-bank.md` 里与段位赛相关的新增人工验证项（由 `test-results/phase3-rank-match/m4-user-qa-report.md` 覆盖）
 - [x] 在本文件 §6 回写 M1/M2/M3/M4 的实际证据链（commit hash 待补）
-- [ ] 如当前主线 / 当前状态 / 下一步变化，更新 `ProjectManager/Overview.md`（收口动作）
-- [ ] 如本计划生命周期状态变化，更新 `ProjectManager/Plan/README.md`（收口动作）
-- [ ] 更新父计划 `2026-04-18-subplan-4-next-stage-expansion.md` §五状态面板（P3 🟡 → ✅）（收口动作）
-- [ ] 更新祖父计划 `2026-04-16-open-backlog-consolidation.md` §三·D 段（段位赛 ✅）（收口动作）
+- [x] 如当前主线 / 当前状态 / 下一步变化，更新 `ProjectManager/Overview.md`（收口动作）
+- [x] 如本计划生命周期状态变化，更新 `ProjectManager/Plan/README.md`（收口动作）
+- [x] 更新父计划 `2026-04-18-subplan-4-next-stage-expansion.md` 状态面板（本轮同步为“阻塞已清，待统一提交与收口”）
+- [x] 更新祖父计划 `2026-04-16-open-backlog-consolidation.md` §三·D 段（同步最新测试基线与全量 QA 状态）
 - [x] 如本阶段新发现或关闭 ISSUE，更新 `ISSUE_LIST.md`；未关闭的标注"挂靠下一阶段"（ISSUE-062/063 本轮新增并已关闭；晋级动画按用户决策不入单）
 
 **验收门槛（M4）**：
@@ -518,13 +518,13 @@
 - [x] 全量 `npx vitest run` 绿（459/459，含 ISSUE-063 修复后的补测）
 - [x] `npm run build` 绿（见本段第 1 条修复后）
 - [x] E2E 主路径 + 刷新恢复 + 失败复盘全部 PASS（`m4-user-qa-report.md`）
-- [ ] `npx tsx scripts/pm-sync-check.ts` ✅（**待本段回写完成后立即跑**）
+- [x] `npx tsx scripts/pm-sync-check.ts` ✅（本轮回写完成后已复跑，全绿）
 - [x] `human-verification-bank.md` 段位赛条目：Phase 3 的核心体验条目已由 `m4-user-qa-report.md` 覆盖；人工验证入口文件本批不单独新增，避免与本报告重复
 - [x] 本文件 §6 回写完成（即当前段）
-- [ ] `Overview.md` 更新（**下一步**）
-- [ ] `Plan/README.md` 更新（**下一步**）
-- [ ] 父计划 `2026-04-18-subplan-4-next-stage-expansion.md` §五 P3 🟡 → ✅（**下一步**）
-- [ ] 祖父计划 `2026-04-16-open-backlog-consolidation.md` §三·D 段（段位赛 ✅）（**下一步**）
+- [x] `Overview.md` 更新（已同步 `ISSUE-064` 关闭与全量 QA 复跑结果）
+- [x] `Plan/README.md` 更新（已同步“待最终收口”状态）
+- [x] 父计划 `2026-04-18-subplan-4-next-stage-expansion.md` 状态面板更新（已同步“阻塞已清，待统一提交与收口”）
+- [x] 祖父计划 `2026-04-16-open-backlog-consolidation.md` §三·D 段更新（已同步 `vitest 473/473` 与全量 QA 全绿）
 - [x] `ISSUE_LIST.md`：ISSUE-062 / ISSUE-063 新增并标 ✅ 已关闭；晋级动画（M3 设计审查 m-3 漏网）按用户决策**不入 ISSUE_LIST**，只在本段记录
 
 **关于晋级动画（M3 设计审查 m-3）**：
@@ -536,5 +536,99 @@
 
 **Commit hash**：本次 M3+M4 连同 build 修复尚未 commit（工作目录状态如 `git status` 所示）；由 PM 审阅本段 + `m4-user-qa-report.md` 后统一提交，hash 待补回此段。
 
-**下一步**：跑 `pm-sync-check`、同步 Overview / Plan/README / 父祖计划状态面板、更新 ISSUE_LIST（新增 062/063 条目）、统一 commit。
+**下一步**：补跑开新号全量回归并判断是否可以真正收口；若出现阻塞项，则先回到实现层修复后再做统一 commit。
+
+### 2026-04-19：补跑开新号全量回归（QA Leader），发现 `ISSUE-064`
+
+**背景**：M4 段主要覆盖“段位赛定向 E2E + build 修复 + 四栏回写”。为回答“开新号全量跑一次这个 MathQuest 游戏”的任务，本轮又按 QA Leader 三层流程追加了从新账号起步的整链回归，覆盖新号主路径、中盘夹具、段位赛夹具与工程基线。
+
+**新增产物**：
+
+- `ProjectManager/QA/2026-04-19-full-regression/test-cases-v1.md`
+- `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs`
+- `ProjectManager/QA/2026-04-19-full-regression/auto-result.md`
+- `ProjectManager/QA/2026-04-19-full-regression/batch-1-fresh-user-result.md`
+- `ProjectManager/QA/2026-04-19-full-regression/batch-2-advance-result.md`
+- `ProjectManager/QA/2026-04-19-full-regression/batch-3-rank-match-result.md`
+- `ProjectManager/QA/2026-04-19-full-regression/artifacts/`
+
+**结果摘要**：
+
+- Fresh User：10/10 PASS
+- Advance & Persistence：6/6 PASS
+- Rank Match：8/9 PASS
+- 自动化基线：
+  - `npm run build` ✅
+  - `npx vitest run` ✅（459/459）
+  - `npm run lint` ❌（127 条现有基线 error，已记入 `auto-result.md`）
+
+**唯一真实失败**：
+
+- `D-07 / ISSUE-064`：段位赛局内刷新后，应用回到 `home`，只显示“继续挑战：新秀 BO3”卡片，**没有直接恢复到当前 `practice`**
+- 数据层面未丢局、未丢题序，说明 `loadActiveRankMatch` 能恢复 BO 层；但局内 `PracticeSession` 的恢复只挂在 `Practice.tsx` 页面 effect，刷新后默认页停在 `home`，导致这段恢复逻辑没有执行机会
+- 该问题违背实施级 Spec §5.8 “回到刚才那一刻”的恢复要求，因此本计划状态从“待收口”改为“阻塞收口”
+
+**结论**：
+
+- M1~M4 的**代码落地与定向验证**仍成立，`ISSUE-062` / `ISSUE-063` 也确已修复
+- 但以“全量 QA / 开新号全链路”口径看，Phase 3 还**不能**宣布关闭；必须先修 `ISSUE-064`，再复跑对应批次
+
+**下一步**：修复 `ISSUE-064` → 复跑 `D-07` 与 Rank Batch → 若恢复全绿，再继续父/祖计划与生命周期收口动作。
+
+### 2026-04-19：修复 `ISSUE-064` 并复跑 D-07 / Rank Batch
+
+**背景**：上一条回写确认了 Phase 3 在“定向验证”口径下成立，但开新号全量回归的 `D-07` 暴露出最后一个真实阻塞项：段位赛局内刷新后只回到 Home 活跃卡片，没有直接恢复到当前 `Practice`。同一轮设计讨论又把“主动中断 / 放弃重开”的长期语义一并钉成可持久化会话状态，以兼容后续本地存档与账号系统。
+
+**本轮设计收口**：
+
+- `RankMatchSession` 引入生命周期状态：`active / suspended / completed / cancelled`
+- “意外退出”仍由启动期自动恢复兜底
+- “主动中断”不再自动直跳 `Practice`，而是回到 `RankMatchHub` 让用户自己继续或重开
+- “放弃，重新开始”对用户视角等同删除，但底层保留 `cancelled` 会话记录，不写入可见历史，不影响段位结算
+
+**代码变更**：
+
+| 文件 | 动作 | 要点 |
+|------|------|------|
+| `src/types/gamification.ts` | 修改 | `RankMatchSession` 追加 `status / suspendedAt / cancelledAt`；新增 `RankMatchSessionStatus` |
+| `src/engine/rank-match/match-state.ts` | 修改 | `createRankMatchSession` 默认 `status='active'`；终局 `onGameFinished` 写 `status='completed'` |
+| `src/repository/local.ts` | 修改 | 对旧 `mq_rank_match_sessions` 做 **read-time 归一化**：缺 `status` 且无 `outcome` → `active`，有 `outcome` → `completed`；归一化后立即回写 |
+| `src/store/rank-match.ts` | 修改 | 新增 `suspendActiveMatch / reactivateSuspendedMatch / cancelActiveMatch`；`loadActiveRankMatch` 识别 `suspended` 并拒绝恢复 `cancelled / completed` |
+| `src/store/index.ts` | 修改 | 新增 `suspendRankMatchSession / cancelRankMatchSession`；`resumeRankMatchGame` 从已答记录重建 `pendingWrongQuestions`，避免刷新/中断后丢错题累计 |
+| `src/engine/rank-match/recovery-policy.ts` | 新增 | 把启动恢复分流提成纯函数：`auto-resume-practice / stay-home / clear-and-ignore` |
+| `src/App.tsx` | 修改 | 启动期恢复改为在 **用户加载/刷新启动** 时执行；`active + unfinished` 自动恢复到 `practice`，不再把页面切换误判成一次“启动恢复” |
+| `src/pages/Practice.tsx` | 修改 | 段位赛退出弹窗改为 `继续练习 / 中断并保存 / 放弃，重新开始`；新增二次确认 |
+| `src/pages/RankMatchHub.tsx` | 修改 | `suspended` 会话显示“中断中的挑战”，支持继续当前对局或放弃重开 |
+| `src/pages/Home.tsx` | 修改 | 活跃赛事卡片增加“中断中的挑战”提示文案 |
+
+**测试新增 / 扩展**：
+
+| 文件 | 动作 | 覆盖 |
+|------|------|------|
+| `src/engine/rank-match/match-state.test.ts` | 扩展 | 新会话默认 `status='active'`；终局写 `status='completed'` |
+| `src/repository/local.test.ts` | 扩展 | 旧 `RankMatchSession` 缺 `status` 的归一化 |
+| `src/store/rank-match.test.ts` | 扩展 | `suspend / reactivate / cancel` 三条状态流转；`loadActiveRankMatch` 对 `suspended / cancelled` 的处理 |
+| `src/store/index.rank-match-lifecycle.test.ts` | 新增 | `suspendRankMatchSession` / `cancelRankMatchSession` 行为 |
+| `src/store/index.rank-match-resume.test.ts` | 扩展 | `resumeRankMatchGame` 会重建 `pendingWrongQuestions` |
+| `src/engine/rank-match/recovery-policy.test.ts` | 新增 | 启动恢复纯函数分流 |
+
+**验收证据**：
+
+- `npx vitest run` → **18 files / 473 tests PASS**
+- `npm run build` → ✅
+- `ReadLints`（本轮变更文件）→ 无新增 lint error
+- `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs` 复跑两次：
+  - 第 1 次：`D-07` 转绿，但暴露 `D-01` 被 `App.tsx` 的 effect 依赖误触发
+  - 第 2 次（收紧 `App` 启动恢复 effect 后）：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS，`console critical total: 0`
+- 关键观察：
+  - `D-07`：`刷新前 index=5 qid=kinzfgUaTZ；刷新后 page=practice index=5 qid=kinzfgUaTZ`
+  - `D-08`：仍保持 `刷新后 page=home；可继续赛事=true`
+
+**结论**：
+
+- `ISSUE-064` 已关闭
+- Phase 3 在“开新号全量回归”口径下的最后一个阻塞项已清除
+- 当前真正开放问题只剩 `ISSUE-059`（非当前主线）
+
+**下一步**：统一提交本轮代码与文档改动，继续执行父计划 / 祖父计划的最终收口动作。
 

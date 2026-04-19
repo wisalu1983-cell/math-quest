@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-19（M4 完工：build 修复 + E2E 22/22 PASS + §6 回写完成；待 commit + pm-sync-check 收口）  
+> 最后更新：2026-04-19（`ISSUE-064` 已修复；开新号全量 QA 复跑全绿）  
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档。
 
 ---
@@ -39,13 +39,14 @@
   - `ISSUE-061`（P2）复习题错题频次加权 —— `distributeReviewTopics` 纯函数（窗口 N=50，保底 1 道/主题 + 余量原始错题次数最大余数法分配）
   - M3 UI 作用域零触碰，UI 接入入口通过 store 方法暴露
 - **M3 已完工**（2026-04-19）：UI 三页（`RankMatchHub` / `RankMatchGameResult` / `RankMatchResult`）+ `RankBadge` 组件 + 三条路由注册（`useUIStore.currentPage`，Spec §8.3）+ `globals.css` 段位徽章色 CSS 变量（`--rank-*`，Spec §8.4）+ `Home.tsx` 独立段位赛入口卡片（活跃赛事/缺口提示/入场引导三态）+ `Practice.tsx` BO 进度徽标 + `endSession` 后路由到单局结算页 + 刷新恢复双层接入（`App.tsx` `loadActiveRankMatch` / `Practice.tsx` `resumeRankMatchGame`）。`RankMatchRecoveryError` 全链路显式路由回 Hub，无静默降级（Spec §5.8）
-- **M4 已完工**（2026-04-19，同日收口）：M3 完工后首次 `npm run build` 暴露 5 个 build-only 报错（`tsc --noEmit` 不覆盖的 `erasableSyntaxOnly` 路径 + 未用 import），按用户决策归入 M4 验证项一并处理；拟真 QA 阶段以 Playwright 自写 E2E（`test-results/phase3-rank-match/m4-e2e.mjs`）走完整用户旅程，**22 条用例 / 0 FAIL / 0 RISK**，覆盖主路径（学徒→新秀 BO3 两连胜晋级）+ 失败复盘（连败走 MatchResult + 薄弱题型前 3）+ 刷新恢复（G-01 / G-03）；E2E 过程暴露并当场修复两个 P1 bug：`ISSUE-062`（Practice 早退位于 hooks 之前违反规则）、`ISSUE-063`（`startRankMatchGame` 找不到下一局 placeholder）。四栏报告：`test-results/phase3-rank-match/m4-user-qa-report.md`
-- 代码基线稳定：`tsc --noEmit` 0 错，`npm run build` 绿，`vitest` **459/459**（含 ISSUE-063 修复后对应补测），`pm-sync-check` 按节点已跑
+- **M4 代码闭环已完成**（2026-04-19，同日完成）：M3 完工后首次 `npm run build` 暴露 5 个 build-only 报错（`tsc --noEmit` 不覆盖的 `erasableSyntaxOnly` 路径 + 未用 import），按用户决策归入 M4 验证项一并处理；拟真 QA 阶段以 Playwright 自写 E2E（`test-results/phase3-rank-match/m4-e2e.mjs`）走完整用户旅程，**22 条用例 / 0 FAIL / 0 RISK**，覆盖主路径（学徒→新秀 BO3 两连胜晋级）+ 失败复盘（连败走 MatchResult + 薄弱题型前 3）+ 刷新恢复（G-01 / G-03）；E2E 过程暴露并当场修复两个 P1 bug：`ISSUE-062`（Practice 早退位于 hooks 之前违反规则）、`ISSUE-063`（`startRankMatchGame` 找不到下一局 placeholder）。四栏报告：`test-results/phase3-rank-match/m4-user-qa-report.md`
+- **2026-04-19 开新号全量回归已复跑全绿**：`ISSUE-064` 修复后再次执行 `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs`。结果：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS；`D-07` 已恢复为“刷新后直达当前 `Practice`”，`D-08` 继续保持 PASS，`console critical total: 0`
+- 工程基线当前口径：`npm run build` 绿，`vitest` **473/473**；`npm run lint` 仍有 **127 条 error**，属于现有基线债务，本轮如实记录在全量 QA 自动化报告中
 - 本阶段明确不做：A03+、A09、B/C/D
 - 当前开放问题与历史关闭项不在本页展开，统一看 `ISSUE_LIST.md`
-- 遗留开放项：晋级动画（M3 设计审查 m-3 漏网）按用户决策不入 `ISSUE_LIST`，Phase 3 上线后按真实反馈再评估
+- 遗留开放项：晋级动画（M3 设计审查 m-3 漏网）按用户决策不入 `ISSUE_LIST`，Phase 3 上线后按真实反馈再评估；当前真正开放问题只剩 `ISSUE-059`（非当前主线）
 
-**下一步**：执行 `npx tsx scripts/pm-sync-check.ts` 收口 → 统一 commit M3/M4 工作成果 → 同步 `Plan/README.md`、父计划 P3 状态（🟡→✅）、祖父计划 §三·D 段位赛行 → 关闭 Phase 3 段位赛阶段。
+**下一步**：统一提交本轮 Phase 3 代码与文档改动，并完成父计划 / 祖父计划的最终收口动作；`ISSUE-059` 留到当前主线收口后单独评估。
 
 ---
 

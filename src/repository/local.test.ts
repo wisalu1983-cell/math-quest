@@ -369,7 +369,8 @@ function makeRankSession(id: string, userId = 'u1'): RankMatchSession {
       { gameIndex: 1, finished: false, practiceSessionId: 'ps-1', startedAt: 1000 },
     ],
     startedAt: 1000,
-  };
+    status: 'active',
+  } as RankMatchSession;
 }
 
 describe('repository.saveRankMatchSession / getRankMatchSession（ISSUE-060 M2 遗留补做）', () => {
@@ -420,5 +421,47 @@ describe('repository.saveRankMatchSession / getRankMatchSession（ISSUE-060 M2 �
     repository.saveRankMatchSession(makeRankSession('rs-m'));
     expect(localStorage.getItem('mq_rank_match_sessions')).not.toBeNull();
     expect(localStorage.getItem('mq_sessions')).toBeNull();
+  });
+});
+
+describe('repository.getRankMatchSessions · 旧 rank-match 存档归一化', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+  });
+
+  it('缺 status 且无 outcome 的旧会话 → 归一化为 active', () => {
+    localStorage.setItem('mq_rank_match_sessions', JSON.stringify({
+      legacyActive: {
+        id: 'legacy-active',
+        userId: 'u1',
+        targetTier: 'rookie',
+        bestOf: 3,
+        winsToAdvance: 2,
+        games: [{ gameIndex: 1, finished: false, practiceSessionId: 'ps-1', startedAt: 1000 }],
+        startedAt: 1000,
+      },
+    }));
+
+    const all = repository.getRankMatchSessions() as Record<string, RankMatchSession & { status?: string }>;
+    expect(all.legacyActive?.status).toBe('active');
+  });
+
+  it('缺 status 但已有 outcome 的旧会话 → 归一化为 completed', () => {
+    localStorage.setItem('mq_rank_match_sessions', JSON.stringify({
+      legacyCompleted: {
+        id: 'legacy-completed',
+        userId: 'u1',
+        targetTier: 'rookie',
+        bestOf: 3,
+        winsToAdvance: 2,
+        games: [{ gameIndex: 1, finished: true, won: true, practiceSessionId: 'ps-1', startedAt: 1000, endedAt: 1200 }],
+        outcome: 'promoted',
+        startedAt: 1000,
+        endedAt: 1200,
+      },
+    }));
+
+    const all = repository.getRankMatchSessions() as Record<string, RankMatchSession & { status?: string }>;
+    expect(all.legacyCompleted?.status).toBe('completed');
   });
 });

@@ -78,6 +78,15 @@ export interface RankMatchStore {
    */
   handleGameFinished: (practiceSessionSnapshot: PracticeSession) => GameFinishedNextAction;
 
+  /** 用户主动中断当前 BO：保留 activeSessionId，但不再自动进 Practice */
+  suspendActiveMatch: () => RankMatchSession;
+
+  /** 从 Hub 明确点击“继续当前对局”时，把 suspended 重新激活 */
+  reactivateSuspendedMatch: () => RankMatchSession;
+
+  /** 用户明确放弃当前 BO：标记 cancelled，清 activeSessionId，不写 history */
+  cancelActiveMatch: () => RankMatchSession;
+
   /**
    * 启动时从 mq_rank_match_sessions 恢复活跃赛事（ISSUE-060 / Plan §4.1）。
    * - rankProgress.activeSessionId 缺失 / 存档不存在 / userId 不匹配 / outcome 已出
@@ -104,7 +113,13 @@ function writeRankProgress(patch: (prev: RankProgress) => RankProgress): void {
   useGameProgressStore.setState({ gameProgress: updated });
 }
 
-export const useRankMatchStore = create<RankMatchStore>((set, get) => ({
+export const useRankMatchStore = create<RankMatchStore>((set, get) => {
+  const clearActiveId = (): void => {
+    writeRankProgress(prev => ({ ...prev, activeSessionId: undefined }));
+    set({ activeRankSession: null });
+  };
+
+  return ({
   activeRankSession: null,
 
   startRankMatch: (targetTier, opts) => {
@@ -159,13 +174,18 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => ({
     });
 
     if (nextAction.kind === 'start-next') {
+      const activeNextSession: RankMatchSession = {
+        ...nextSession,
+        status: 'active',
+        suspendedAt: undefined,
+      };
       // ISSUE-060：每一局结束都把最新 session 落盘（BO 中间态）
       // 注：不在这里 push 下一局 placeholder；由 session 层 `startRankMatchGame`
       // 在 UI 触发"开始下一局"时按需 inflate（见 store/index.ts），
       // 这样 `getCurrentGameIndex(nextSession) === undefined` 仍成立，
       // 刷新恢复时 Hub 能正确走"局间 / GameResult"分支。
-      repository.saveRankMatchSession(nextSession);
-      set({ activeRankSession: nextSession });
+      repository.saveRankMatchSession(activeNextSession);
+      set({ activeRankSession: activeNextSession });
       return nextAction;
     }
 
@@ -198,17 +218,66 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => ({
     return nextAction;
   },
 
+  suspendActiveMatch: () => {
+    const session = get().activeRankSession;
+    if (!session) {
+      throw new Error('No active rank match session');
+    }
+    if (session.status !== 'active') {
+      throw new Error(`Cannot suspend rank match from status "${session.status}"`);
+    }
+    const nextSession: RankMatchSession = {
+      ...session,
+      status: 'suspended',
+      suspendedAt: Date.now(),
+    };
+    repository.saveRankMatchSession(nextSession);
+    set({ activeRankSession: nextSession });
+    return nextSession;
+  },
+
+  reactivateSuspendedMatch: () => {
+    const session = get().activeRankSession;
+    if (!session) {
+      throw new Error('No active rank match session');
+    }
+    if (session.status !== 'suspended') {
+      throw new Error(`Cannot reactivate rank match from status "${session.status}"`);
+    }
+    const nextSession: RankMatchSession = {
+      ...session,
+      status: 'active',
+      suspendedAt: undefined,
+    };
+    repository.saveRankMatchSession(nextSession);
+    set({ activeRankSession: nextSession });
+    return nextSession;
+  },
+
+  cancelActiveMatch: () => {
+    const session = get().activeRankSession;
+    if (!session) {
+      throw new Error('No active rank match session');
+    }
+    const now = Date.now();
+    const nextSession: RankMatchSession = {
+      ...session,
+      status: 'cancelled',
+      cancelledAt: now,
+      endedAt: session.endedAt ?? now,
+      suspendedAt: undefined,
+    };
+    repository.saveRankMatchSession(nextSession);
+    clearActiveId();
+    return nextSession;
+  },
+
   loadActiveRankMatch: (userId) => {
     const gp = useGameProgressStore.getState().gameProgress;
     const activeSessionId = gp?.rankProgress?.activeSessionId;
     if (!activeSessionId) {
       return null;
     }
-
-    const clearActiveId = (): void => {
-      writeRankProgress(prev => ({ ...prev, activeSessionId: undefined }));
-      set({ activeRankSession: null });
-    };
 
     const stored = repository.getRankMatchSession(activeSessionId);
     if (!stored) {
@@ -221,8 +290,8 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => ({
       clearActiveId();
       return null;
     }
-    if (stored.outcome) {
-      // BO 已出结果但 activeSessionId 残留（可能是 handleGameFinished 写盘后未清 id 的遗留/崩溃）
+    if (stored.status === 'completed' || stored.status === 'cancelled') {
+      // BO 已结束 / 被用户放弃，但 activeSessionId 仍残留。
       clearActiveId();
       return null;
     }
@@ -232,7 +301,8 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => ({
   },
 
   _setActiveRankSession: (s) => set({ activeRankSession: s }),
-}));
+  });
+});
 
 // E2E 测试钩子：仅在浏览器 DEV 环境暴露 store，供 Playwright / DevTools 读写活跃赛事
 if (import.meta.env.DEV && typeof window !== 'undefined') {

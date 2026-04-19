@@ -87,6 +87,7 @@ export interface TopicCampaignProgress {
 export type RankTier = 'apprentice' | 'rookie' | 'pro' | 'expert' | 'master';
 
 export type RankMatchBestOf = 3 | 5 | 7;
+export type RankMatchSessionStatus = 'active' | 'suspended' | 'completed' | 'cancelled';
 
 /**
  * 单局记录（已完成或进行中）。
@@ -120,8 +121,12 @@ export interface RankMatchSession {
   winsToAdvance: number;
   /** BO 序列里的所有已打或已开始的局；按 gameIndex 顺序 */
   games: RankMatchGame[];
+  /** 会话生命周期：进行中 / 主动中断 / 正常结束 / 放弃重开 */
+  status: RankMatchSessionStatus;
   outcome?: 'promoted' | 'eliminated';
   startedAt: number;
+  suspendedAt?: number;
+  cancelledAt?: number;
   endedAt?: number;
 }
 

@@ -1,0 +1,684 @@
+{
+  "results": [
+    {
+      "batch": "fresh",
+      "id": "B-01",
+      "title": "欢迎页首屏",
+      "expected": "看到“数学大冒险”欢迎页与“开始冒险”按钮。",
+      "steps": "清空本地存档后打开应用。",
+      "observed": "page=onboarding；欢迎文案=true；开始按钮=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-01-onboarding.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-02",
+      "title": "昵称建档",
+      "expected": "输入昵称后创建用户并进入 Home。",
+      "steps": "点击“开始冒险”→ 输入昵称 → 点击“开始学习！”。",
+      "observed": "page=home；昵称可见=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-02-home-after-onboarding.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-03",
+      "title": "Home 首屏信息层级",
+      "expected": "Home 同时呈现 Hero 卡、8 个主题卡、进阶锁态和段位赛入口。",
+      "steps": "新号首次进入 Home 后观察首屏。",
+      "observed": "主题命中=8/8；进阶入口=true；段位赛卡=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-03-home-overview.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-04",
+      "title": "主题卡进入闯关地图",
+      "expected": "点击 A01 主题卡后进入 CampaignMap，并看到可玩的第 1 关。",
+      "steps": "在 Home 点击“基础计算”。",
+      "observed": "page=campaign-map；第1关可见=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-04-campaign-map-a01.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-05",
+      "title": "Practice 基础答题页",
+      "expected": "进入第 1 关后看到退出、进度、心数和题面。",
+      "steps": "在 CampaignMap 点击第 1 关。",
+      "observed": "题型=numeric-input；进度=1/10；心数=3",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-05-practice-first-question.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-06",
+      "title": "退出确认弹窗",
+      "expected": "点退出后弹出确认对话框，并能继续练习。",
+      "steps": "在 Practice 点击左上退出按钮，再点击“继续练习”。",
+      "observed": "弹窗标题=true；说明文案=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-06-quit-dialog.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-07",
+      "title": "单局通关结算",
+      "expected": "完整通过一局闯关后进入 summary，并显示通关结算。",
+      "steps": "在 Practice 使用正确答案完成本局全部题目。",
+      "observed": "summary文案=true；统计区=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-07-summary.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-08",
+      "title": "Progress 与总体统计",
+      "expected": "进度页能展示累计答题与总体正确率。",
+      "steps": "从 summary 返回首页，再通过底部导航进入“进度”。",
+      "observed": "进度页标题=true；累计答题=true；正确率=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-08-progress.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-09",
+      "title": "History 与 SessionDetail",
+      "expected": "能进入练习历史并打开刚完成的练习详情。",
+      "steps": "在进度页点击“查看练习记录”，再打开第一条记录。",
+      "observed": "详情页标题=true；逐题区=true；首题=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-09-history.png",
+        "artifacts/shots/B-09-session-detail.png"
+      ]
+    },
+    {
+      "batch": "fresh",
+      "id": "B-10",
+      "title": "Profile 与错题本空状态",
+      "expected": "Profile 展示用户统计，错题本在全对路径下呈现空状态。",
+      "steps": "从练习详情返回首页，进入“我的”和“错题”。",
+      "observed": "Profile统计=true；错题本空态=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/B-10-profile.png",
+        "artifacts/shots/B-10-wrongbook-empty.png"
+      ]
+    },
+    {
+      "batch": "advance",
+      "id": "C-01",
+      "title": "进阶入口锁态→解锁态",
+      "expected": "Home 上的进阶训练入口会从锁态切换为可点击态。",
+      "steps": "加载已解锁 1 个题型进阶的夹具存档，观察 Home。",
+      "observed": "可点击态文案=true；锁态已在 B-03 观察到",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/C-01-home-advance-unlocked.png"
+      ]
+    },
+    {
+      "batch": "advance",
+      "id": "C-02",
+      "title": "AdvanceSelect 已解锁/未解锁分区",
+      "expected": "AdvanceSelect 能同时展示已解锁题型与未解锁题型。",
+      "steps": "从 Home 进入进阶训练页。",
+      "observed": "已解锁区=true；未解锁区=true；基础计算可开始=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/C-02-advance-select.png"
+      ]
+    },
+    {
+      "batch": "advance",
+      "id": "C-03",
+      "title": "进阶一局结算与星级进度",
+      "expected": "完成一局进阶后进入专属 summary，显示 Hearts 投入与星级进度。",
+      "steps": "在 AdvanceSelect 开始基础计算进阶，并用正确答案完成整局。",
+      "observed": "练习完成=true；星级进度=true；答题统计=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/C-03-advance-summary.png"
+      ]
+    },
+    {
+      "batch": "advance",
+      "id": "C-04",
+      "title": "错题本沉淀",
+      "expected": "进阶中答错后主动退出，错题应进入错题本。",
+      "steps": "从 summary 返回进阶训练，再开一局并故意做错 2 题后退出到首页，检查错题本。",
+      "observed": "错题页标题=true；错误答案区=true；正确答案区=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/C-04-wrongbook.png"
+      ]
+    },
+    {
+      "batch": "advance",
+      "id": "C-05",
+      "title": "Profile 快捷入口联动",
+      "expected": "个人中心存在错题时，可通过快捷入口进入错题本。",
+      "steps": "从错题本回 Home，再进入“我的”，点击错题本快捷入口。",
+      "observed": "Profile快捷入口=true；跳转后仍在错题本=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/C-05-profile-with-shortcut.png",
+        "artifacts/shots/C-05-wrongbook-shortcut.png"
+      ]
+    },
+    {
+      "batch": "advance",
+      "id": "C-06",
+      "title": "刷新后持久化",
+      "expected": "刷新后仍保留用户、进阶解锁与统计数据。",
+      "steps": "返回 Home 后刷新页面。",
+      "observed": "刷新前进阶入口=true；刷新后进阶入口=true；昵称保留=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/C-06-home-after-refresh.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-01",
+      "title": "Home 段位赛入口三态",
+      "expected": "Home 段位赛卡在门槛不足 / 可挑战 / 有活跃赛事三态下文案正确。",
+      "steps": "分别加载门槛不足、可挑战与已开赛的夹具状态，观察 Home 段位赛卡。",
+      "observed": "门槛不足=true；可挑战=true；活跃赛事=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-01-home-rank-card-states.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-02",
+      "title": "Hub 锁定与解锁展示",
+      "expected": "Hub 中未满足门槛时显示锁态与缺口，满足门槛时显示挑战按钮。",
+      "steps": "分别加载门槛不足与可挑战夹具，进入 RankMatchHub。",
+      "observed": "锁态缺口=true；解锁按钮=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-02-rank-hub.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-03",
+      "title": "Rookie Practice 题头与 BO 感知",
+      "expected": "进入 Rookie Practice 后看到“新秀 · BO3 · 第 1 局”头部。",
+      "steps": "从 Hub 发起 Rookie 挑战。",
+      "observed": "头部新秀=true；BO3=true；第1局=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-03-rank-practice-header.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-04",
+      "title": "单局结算自动推进",
+      "expected": "第 1 局结束后进入 GameResult，并在 3 秒内自动推进到下一局。",
+      "steps": "用正确答案完成第 1 局 Rookie 对局。",
+      "observed": "GameResult倒计时按钮=true；自动推进后页=practice",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-04-rank-game-result.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-05",
+      "title": "晋级结算页",
+      "expected": "两局连胜后进入赛事总结算页，显示晋级成功与提前结束标注。",
+      "steps": "继续用正确答案完成第 2 局。",
+      "observed": "晋级文案=true；提前结束标注=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-05-rank-promoted.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-06",
+      "title": "淘汰复盘页",
+      "expected": "两局连败后进入赛事总结算页，显示薄弱题型前 3。",
+      "steps": "加载新秀可挑战夹具，故意两局连败。",
+      "observed": "淘汰文案=true；薄弱题型区=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-06-rank-eliminated.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-07",
+      "title": "局内刷新恢复",
+      "expected": "段位赛答到中途刷新后，应直接恢复到当前局可继续答题的状态。",
+      "steps": "加载新秀可挑战夹具，开始 Rookie 对局，答 5 题后刷新浏览器。",
+      "observed": "刷新前 index=5 qid=kinzfgUaTZ；刷新后 page=practice index=5 qid=kinzfgUaTZ",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-07-rank-refresh-mid.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-08",
+      "title": "局间刷新恢复",
+      "expected": "第 1 局结束后的刷新不会丢失活跃赛事，用户仍能继续下一局。",
+      "steps": "加载新秀可挑战夹具，完成第 1 局后在 GameResult 阶段刷新。",
+      "observed": "刷新后 page=home；可继续赛事=true",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-08-rank-refresh-between.png"
+      ]
+    },
+    {
+      "batch": "rank",
+      "id": "D-09",
+      "title": "段位赛相关 Console 健康",
+      "expected": "跑完整个 Rookie 晋级/淘汰/刷新路径后，不出现关键运行时错误。",
+      "steps": "统计本轮段位赛用例期间新增的 console error / pageerror。",
+      "observed": "未记录到 rank-match 相关关键 console error/pageerror。",
+      "verdict": "PASS",
+      "evidence": [
+        "artifacts/shots/D-09-final-state.png"
+      ]
+    }
+  ],
+  "consoleEvents": [
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connecting...",
+      "pageTag": "general"
+    },
+    {
+      "type": "debug",
+      "text": "[vite] connected.",
+      "pageTag": "general"
+    },
+    {
+      "type": "info",
+      "text": "%cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold",
+      "pageTag": "general"
+    }
+  ]
+}

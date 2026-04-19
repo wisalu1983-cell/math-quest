@@ -80,6 +80,16 @@ function collectTrainingFieldMistakes(
   });
 }
 
+function rebuildPendingWrongQuestions(session: PracticeSession): WrongQuestion[] {
+  return session.questions
+    .filter(attempt => !attempt.correct)
+    .map(attempt => ({
+      question: attempt.question,
+      wrongAnswer: attempt.userAnswer,
+      wrongAt: attempt.attemptedAt,
+    }));
+}
+
 // ─── User Store ───
 interface UserStore {
   user: User | null;
@@ -143,6 +153,8 @@ interface SessionStore {
   nextQuestion: () => void;
   submitAnswer: (answer: string, options?: SubmitAnswerOptions) => SubmitAnswerResult;
   endSession: () => PracticeSession;
+  suspendRankMatchSession: () => void;
+  cancelRankMatchSession: () => void;
   abandonSession: () => void;
 }
 
@@ -355,6 +367,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     const nextQ = currentIndex < stored.rankQuestionQueue.length
       ? stored.rankQuestionQueue[currentIndex]
       : null;
+    const restoredPendingWrongQuestions = rebuildPendingWrongQuestions(stored);
 
     set({
       active: true,
@@ -366,7 +379,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastAnswerCorrect: false,
       lastTrainingFieldMistakes: [],
-      pendingWrongQuestions: [],
+      pendingWrongQuestions: restoredPendingWrongQuestions,
       rankQuestionQueue: stored.rankQuestionQueue,
       currentQuestion: nextQ,
       lastRankMatchAction: null,
@@ -601,6 +614,65 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     });
 
     return completedSession;
+  },
+
+  suspendRankMatchSession: () => {
+    const { session, hearts } = get();
+    if (!session || session.sessionMode !== 'rank-match') return;
+
+    repository.saveSession({
+      ...session,
+      heartsRemaining: hearts,
+    });
+    useRankMatchStore.getState().suspendActiveMatch();
+
+    set({
+      active: false,
+      session: null,
+      currentQuestion: null,
+      currentIndex: 0,
+      hearts: CAMPAIGN_MAX_HEARTS,
+      showFeedback: false,
+      lastAnswerCorrect: false,
+      lastTrainingFieldMistakes: [],
+      pendingWrongQuestions: [],
+      rankQuestionQueue: [],
+      lastRankMatchAction: null,
+    });
+  },
+
+  cancelRankMatchSession: () => {
+    const { session, hearts, pendingWrongQuestions } = get();
+    if (!session || session.sessionMode !== 'rank-match') return;
+
+    if (pendingWrongQuestions.length > 0) {
+      const gpStore = useGameProgressStore.getState();
+      for (const wq of pendingWrongQuestions) {
+        gpStore.addWrongQuestion(wq);
+      }
+    }
+
+    repository.saveSession({
+      ...session,
+      endedAt: Date.now(),
+      heartsRemaining: hearts,
+      completed: false,
+    });
+    useRankMatchStore.getState().cancelActiveMatch();
+
+    set({
+      active: false,
+      session: null,
+      currentQuestion: null,
+      currentIndex: 0,
+      hearts: CAMPAIGN_MAX_HEARTS,
+      showFeedback: false,
+      lastAnswerCorrect: false,
+      lastTrainingFieldMistakes: [],
+      pendingWrongQuestions: [],
+      rankQuestionQueue: [],
+      lastRankMatchAction: null,
+    });
   },
 
   abandonSession: () => {

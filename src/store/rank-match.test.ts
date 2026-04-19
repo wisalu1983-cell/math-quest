@@ -123,6 +123,7 @@ describe('useRankMatchStore · startRankMatch', () => {
     expect(session.bestOf).toBe(3);
     expect(session.winsToAdvance).toBe(2);
     expect(session.games).toHaveLength(1);
+    expect((session as PracticeSession & { status?: string }).status).toBe('active');
 
     expect(useRankMatchStore.getState().activeRankSession?.id).toBe(session.id);
     const gp = useGameProgressStore.getState().gameProgress;
@@ -133,6 +134,42 @@ describe('useRankMatchStore · startRankMatch', () => {
     resetStores(makeGameProgress(rookieAdvance()));
     useRankMatchStore.getState().startRankMatch('rookie');
     expect(() => useRankMatchStore.getState().startRankMatch('rookie')).toThrow();
+  });
+
+  it('active session 可被显式 suspend，且 activeSessionId 保留', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+
+    const suspended = (useRankMatchStore.getState() as any).suspendActiveMatch();
+
+    expect(suspended.status).toBe('suspended');
+    expect(useRankMatchStore.getState().activeRankSession?.status).toBe('suspended');
+    expect(useGameProgressStore.getState().gameProgress?.rankProgress?.activeSessionId).toBe(session.id);
+  });
+
+  it('suspended session 可被重新激活为 active', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    useRankMatchStore.getState().startRankMatch('rookie');
+    (useRankMatchStore.getState() as any).suspendActiveMatch();
+
+    const reactivated = (useRankMatchStore.getState() as any).reactivateSuspendedMatch();
+
+    expect(reactivated.status).toBe('active');
+    expect(useRankMatchStore.getState().activeRankSession?.status).toBe('active');
+  });
+
+  it('active session 可被 cancel；会话标记为 cancelled，activeSessionId 清空且 history 不追加', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+
+    const cancelled = (useRankMatchStore.getState() as any).cancelActiveMatch();
+
+    expect(cancelled.status).toBe('cancelled');
+    expect(repository.getRankMatchSession(session.id)?.status).toBe('cancelled');
+    expect(useRankMatchStore.getState().activeRankSession).toBeNull();
+    const gp = useGameProgressStore.getState().gameProgress;
+    expect(gp?.rankProgress?.activeSessionId).toBeUndefined();
+    expect(gp?.rankProgress?.history).toHaveLength(0);
   });
 });
 
@@ -292,6 +329,20 @@ describe('useRankMatchStore · loadActiveRankMatch（ISSUE-060 启动恢复）',
     expect(useRankMatchStore.getState().activeRankSession?.id).toBe(session.id);
   });
 
+  it('suspended session 仍可被 loadActiveRankMatch 恢复到 activeRankSession（但不应视为 completed）', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+    const suspended = { ...session, status: 'suspended' as const, suspendedAt: 1500 };
+    repository.saveRankMatchSession(suspended);
+    useRankMatchStore.setState({ activeRankSession: null });
+
+    const recovered = useRankMatchStore.getState().loadActiveRankMatch('u1');
+
+    expect(recovered?.id).toBe(session.id);
+    expect(recovered?.status).toBe('suspended');
+    expect(useRankMatchStore.getState().activeRankSession?.status).toBe('suspended');
+  });
+
   it('activeSessionId 指向的存档不存在（一致性异常）→ 清 activeSessionId 返回 null', () => {
     const gp = makeGameProgress(rookieAdvance());
     gp.rankProgress!.activeSessionId = 'missing-id';
@@ -322,11 +373,29 @@ describe('useRankMatchStore · loadActiveRankMatch（ISSUE-060 启动恢复）',
   it('已出 outcome（BO 已结束）的 session → 视为无需恢复，清 activeSessionId 返回 null', () => {
     resetStores(makeGameProgress(rookieAdvance()));
     const session = useRankMatchStore.getState().startRankMatch('rookie');
-    const finishedSession: typeof session = { ...session, outcome: 'promoted', endedAt: 2000 };
+    const finishedSession: typeof session = { ...session, status: 'completed', outcome: 'promoted', endedAt: 2000 };
     repository.saveRankMatchSession(finishedSession);
     useRankMatchStore.setState({ activeRankSession: null });
 
     const result = useRankMatchStore.getState().loadActiveRankMatch('u1');
+    expect(result).toBeNull();
+    expect(useGameProgressStore.getState().gameProgress?.rankProgress?.activeSessionId).toBeUndefined();
+  });
+
+  it('cancelled session → 视为无需恢复，清 activeSessionId 返回 null', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+    const cancelledSession: typeof session = {
+      ...session,
+      status: 'cancelled',
+      cancelledAt: 1800,
+      endedAt: 1800,
+    };
+    repository.saveRankMatchSession(cancelledSession);
+    useRankMatchStore.setState({ activeRankSession: null });
+
+    const result = useRankMatchStore.getState().loadActiveRankMatch('u1');
+
     expect(result).toBeNull();
     expect(useGameProgressStore.getState().gameProgress?.rankProgress?.activeSessionId).toBeUndefined();
   });

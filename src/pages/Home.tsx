@@ -75,9 +75,13 @@ export default function Home() {
   let rankCardSub = '';
   if (activeSession) {
     rankCardTitle = `继续挑战：${TIER_LABEL[activeSession.targetTier]} BO${activeSession.bestOf}`;
-    const w = activeSession.games.filter(g => g.finished && g.won).length;
-    const l = activeSession.games.filter(g => g.finished && !g.won).length;
-    rankCardSub = `当前 ${w}胜${l}负，需${activeSession.winsToAdvance}胜晋级`;
+    if (activeSession.status === 'suspended') {
+      rankCardSub = '你有一场中断中的挑战，进入大厅后可继续或重新开始';
+    } else {
+      const w = activeSession.games.filter(g => g.finished && g.won).length;
+      const l = activeSession.games.filter(g => g.finished && !g.won).length;
+      rankCardSub = `当前 ${w}胜${l}负，需${activeSession.winsToAdvance}胜晋级`;
+    }
   } else if (nextChallengeableTier && canChallenge) {
     rankCardTitle = `挑战 ${TIER_LABEL[nextChallengeableTier]}`;
     rankCardSub = `BO${RANK_BEST_OF[nextChallengeableTier]} 对决`;

@@ -72,6 +72,7 @@ export function createRankMatchSession(params: CreateRankMatchSessionParams): Ra
     bestOf: RANK_BEST_OF[targetTier],
     winsToAdvance: RANK_WINS_TO_ADVANCE[targetTier],
     games: [firstGame],
+    status: 'active',
     startedAt: now,
   };
 }
@@ -170,13 +171,13 @@ export function onGameFinished(params: OnGameFinishedParams): GameFinishedResult
 
   if (totalWins >= session.winsToAdvance) {
     return {
-      session: { ...session, games, outcome: 'promoted', endedAt: now },
+      session: { ...session, games, status: 'completed', outcome: 'promoted', endedAt: now },
       nextAction: { kind: 'promoted' },
     };
   }
   if (remainingGames < requiredMoreWins) {
     return {
-      session: { ...session, games, outcome: 'eliminated', endedAt: now },
+      session: { ...session, games, status: 'completed', outcome: 'eliminated', endedAt: now },
       nextAction: { kind: 'eliminated' },
     };
   }

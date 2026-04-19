@@ -1,6 +1,11 @@
 // src/repository/local.ts
 import type { User, PracticeSession, TopicId } from '@/types';
-import type { GameProgress, RankMatchSession, TopicCampaignProgress } from '@/types/gamification';
+import type {
+  GameProgress,
+  RankMatchSession,
+  RankMatchSessionStatus,
+  TopicCampaignProgress,
+} from '@/types/gamification';
 import { CAMPAIGN_MAPS, getAllLevelIds, isCampaignFullyCompleted } from '@/constants/campaign';
 
 const KEYS = {
@@ -149,6 +154,18 @@ function write<T>(key: string, data: T): void {
   }
 }
 
+type StoredRankMatchSession = RankMatchSession & {
+  status?: RankMatchSessionStatus;
+};
+
+function normalizeRankMatchSession(raw: StoredRankMatchSession): RankMatchSession {
+  if (raw.status) return raw as RankMatchSession;
+  return {
+    ...raw,
+    status: raw.outcome ? 'completed' : 'active',
+  } as RankMatchSession;
+}
+
 export const repository = {
   /**
    * 启动时的版本探测 + 迁移。
@@ -262,7 +279,20 @@ export const repository = {
   // 联合恢复；本层只负责 I/O，一致性校验由 store 层承担。
 
   getRankMatchSessions(): Record<string, RankMatchSession> {
-    return read<Record<string, RankMatchSession>>(KEYS.rankMatchSessions) ?? {};
+    const raw = read<Record<string, StoredRankMatchSession>>(KEYS.rankMatchSessions) ?? {};
+    let changed = false;
+    const normalized: Record<string, RankMatchSession> = {};
+    for (const [id, session] of Object.entries(raw)) {
+      const next = normalizeRankMatchSession(session);
+      normalized[id] = next;
+      if (next !== session) {
+        changed = true;
+      }
+    }
+    if (changed) {
+      write(KEYS.rankMatchSessions, normalized);
+    }
+    return normalized;
   },
 
   saveRankMatchSession(session: RankMatchSession): void {

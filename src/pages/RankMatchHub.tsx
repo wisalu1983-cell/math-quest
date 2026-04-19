@@ -4,13 +4,14 @@
 
 import { useState } from 'react';
 import { useUIStore, useSessionStore, useGameProgressStore } from '@/store';
-import { useRankMatchStore } from '@/store/rank-match';
+import { useRankMatchStore, RankMatchRecoveryError } from '@/store/rank-match';
 import { isTierUnlocked, getTierGaps } from '@/engine/rank-match/entry-gate';
 import { getCurrentGameIndex } from '@/engine/rank-match/match-state';
 import { RANK_BEST_OF, RANK_WINS_TO_ADVANCE, TIER_LABEL, TIER_ORDER, type ChallengeableTier } from '@/constants/rank-match';
 import { TOPICS } from '@/constants';
 import RankBadge from '@/components/RankBadge';
 import BottomNav from '@/components/BottomNav';
+import Dialog from '@/components/Dialog';
 import type { RankTier } from '@/types/gamification';
 
 const TIER_DESC: Record<RankTier, string> = {
@@ -23,10 +24,11 @@ const TIER_DESC: Record<RankTier, string> = {
 
 export default function RankMatchHub() {
   const { setPage } = useUIStore();
-  const { startRankMatchGame } = useSessionStore();
-  const { activeRankSession, startRankMatch } = useRankMatchStore();
+  const { startRankMatchGame, resumeRankMatchGame } = useSessionStore();
+  const { activeRankSession, startRankMatch, reactivateSuspendedMatch, cancelActiveMatch } = useRankMatchStore();
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [showRestartConfirm, setShowRestartConfirm] = useState(false);
 
   const rankProgress = gameProgress?.rankProgress;
   const advanceProgress = gameProgress?.advanceProgress ?? {};
@@ -46,15 +48,53 @@ export default function RankMatchHub() {
   function handleResumeMatch() {
     setErrorMsg(null);
     if (!activeRankSession) return;
-    const currentIdx = getCurrentGameIndex(activeRankSession);
-    if (currentIdx !== undefined) {
-      // 有正在进行的局：进入 Practice，让 Practice 自动调 resumeRankMatchGame
+    try {
+      if (activeRankSession.status === 'suspended') {
+        const reactivated = reactivateSuspendedMatch();
+        const unfinished = reactivated.games.find(g => !g.finished);
+        if (!unfinished) {
+          throw new Error('找不到可继续的未完成对局');
+        }
+        resumeRankMatchGame(unfinished.practiceSessionId);
+        setPage('practice');
+        return;
+      }
+
+      const currentIdx = getCurrentGameIndex(activeRankSession);
+      if (currentIdx !== undefined) {
+        const targetGame = activeRankSession.games.find(g => g.gameIndex === currentIdx);
+        if (!targetGame) {
+          throw new Error(`找不到第 ${currentIdx} 局的 PracticeSession`);
+        }
+        resumeRankMatchGame(targetGame.practiceSessionId);
+        setPage('practice');
+      } else {
+        // 局间：开始下一局
+        const nextIdx = activeRankSession.games.length + 1;
+        startRankMatchGame(activeRankSession.id, nextIdx);
+        setPage('practice');
+      }
+    } catch (e) {
+      if (e instanceof RankMatchRecoveryError) {
+        setPage('rank-match-hub');
+      }
+      setErrorMsg(e instanceof Error ? e.message : '继续挑战失败，请稍后重试');
+    }
+  }
+
+  function handleRestartMatch() {
+    setErrorMsg(null);
+    if (!activeRankSession) return;
+    const targetTier = activeRankSession.targetTier;
+    try {
+      cancelActiveMatch();
+      const restarted = startRankMatch(targetTier);
+      startRankMatchGame(restarted.id, 1);
+      setShowRestartConfirm(false);
       setPage('practice');
-    } else {
-      // 局间：开始下一局
-      const nextIdx = activeRankSession.games.length + 1;
-      startRankMatchGame(activeRankSession.id, nextIdx);
-      setPage('practice');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : '重新开始失败，请稍后重试');
+      setShowRestartConfirm(false);
     }
   }
 
@@ -77,12 +117,16 @@ export default function RankMatchHub() {
             <div className="flex items-center gap-3 mb-4">
               <RankBadge tier={activeRankSession.targetTier} size="lg" showLabel />
               <div className="flex-1">
-                <div className="text-[13px] font-bold text-text-2 mb-0.5">正在挑战</div>
+                <div className="text-[13px] font-bold text-text-2 mb-0.5">
+                  {activeRankSession.status === 'suspended' ? '中断中的挑战' : '正在挑战'}
+                </div>
                 <div className="text-[17px] font-black text-text">
                   {TIER_LABEL[activeRankSession.targetTier]} BO{activeRankSession.bestOf}
                 </div>
                 <div className="text-[12px] text-text-2 mt-0.5">
-                  {wins}胜 {losses}负 · 需{activeRankSession.winsToAdvance}胜晋级
+                  {activeRankSession.status === 'suspended'
+                    ? '已保留当前挑战进度，可继续或放弃重开'
+                    : `${wins}胜 ${losses}负 · 需${activeRankSession.winsToAdvance}胜晋级`}
                 </div>
               </div>
             </div>
@@ -106,12 +150,29 @@ export default function RankMatchHub() {
               ))}
             </div>
 
-            <button
-              onClick={handleResumeMatch}
-              className="w-full btn-flat rounded-2xl text-center"
-            >
-              {currentIdx !== undefined ? `继续第 ${currentIdx} 局` : '开始下一局'}
-            </button>
+            {activeRankSession.status === 'suspended' ? (
+              <div className="flex flex-col gap-3">
+                <button
+                  onClick={handleResumeMatch}
+                  className="w-full btn-flat rounded-2xl text-center"
+                >
+                  {currentIdx !== undefined ? `继续第 ${currentIdx} 局` : '继续当前对局'}
+                </button>
+                <button
+                  onClick={() => setShowRestartConfirm(true)}
+                  className="w-full btn-secondary rounded-2xl text-center"
+                >
+                  放弃，重新开始
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={handleResumeMatch}
+                className="w-full btn-flat rounded-2xl text-center"
+              >
+                {currentIdx !== undefined ? `继续第 ${currentIdx} 局` : '开始下一局'}
+              </button>
+            )}
           </div>
 
           {errorMsg && (
@@ -120,6 +181,29 @@ export default function RankMatchHub() {
             </div>
           )}
         </div>
+        <Dialog
+          open={showRestartConfirm}
+          onClose={() => setShowRestartConfirm(false)}
+          title="放弃，重新开始？"
+        >
+          <p className="text-sm text-text-2 mb-4">
+            这会丢弃当前这场段位赛的进度，并从第 1 局重新开始。
+          </p>
+          <div className="flex gap-3">
+            <button
+              className="btn-secondary flex-1"
+              onClick={() => setShowRestartConfirm(false)}
+            >
+              返回
+            </button>
+            <button
+              className="btn-flat flex-1"
+              onClick={handleRestartMatch}
+            >
+              确认重开
+            </button>
+          </div>
+        </Dialog>
         <BottomNav activeTab="home" />
       </div>
     );
