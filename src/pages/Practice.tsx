@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useSessionStore, useUIStore } from '@/store';
+import { useRankMatchStore, RankMatchRecoveryError } from '@/store/rank-match';
 import VerticalCalcBoard from '@/components/VerticalCalcBoard';
 import DecimalTrainingGrid from '@/components/DecimalTrainingGrid';
 import Hearts from '@/components/Hearts';
@@ -19,9 +20,12 @@ export default function Practice() {
     hearts, showFeedback, lastAnswerCorrect, lastTrainingFieldMistakes,
     submitAnswer, nextQuestion, endSession, abandonSession,
     session,
+    resumeRankMatchGame,
   } = useSessionStore();
   const { setPage, setLastSession } = useUIStore();
+  const activeRankSession = useRankMatchStore(s => s.activeRankSession);
   const isAdvance = session?.sessionMode === 'advance';
+  const isRankMatch = session?.sessionMode === 'rank-match';
 
   const [answer, setAnswer] = useState('');
   const [remainderInput, setRemainderInput] = useState('');
@@ -34,6 +38,23 @@ export default function Practice() {
   const [shakeWrong, setShakeWrong] = useState(false);
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+
+  // M3-C: 段位赛刷新恢复入口（Spec §5.8）
+  // 若 activeRankSession 存在且 session 为空（刷新后），尝试恢复当前局 PracticeSession
+  useEffect(() => {
+    if (!activeRankSession || session) return;
+    const lastUnfinishedGame = activeRankSession.games.find(g => !g.finished);
+    if (!lastUnfinishedGame) return;
+    try {
+      resumeRankMatchGame(lastUnfinishedGame.practiceSessionId);
+    } catch (e) {
+      if (e instanceof RankMatchRecoveryError) {
+        // Spec §5.8：不允许静默降级，路由回 Hub + 提示
+        console.warn('[RankMatch] 单局恢复失败，路由回 Hub', e.message);
+        setPage('rank-match-hub');
+      }
+    }
+  }, [activeRankSession, session, resumeRankMatchGame, setPage]);
 
   // Reset state when question changes
   useEffect(() => {
@@ -51,34 +72,33 @@ export default function Practice() {
     if (inputRef.current) inputRef.current.focus();
   }, [currentQuestion?.id, currentQuestion?.type, currentQuestion?.solution.blanks]);
 
-  if (!currentQuestion) return <LoadingScreen />;
-
-  const isVerticalCalc = currentQuestion.type === 'vertical-fill';
-  const isMultipleChoice = currentQuestion.type === 'multiple-choice';
-  const isMultiSelect = currentQuestion.type === 'multi-select';
-  const isMultiBlank = currentQuestion.type === 'multi-blank';
-  const isExpressionInput = currentQuestion.type === 'expression-input';
-  const isEquationInput = currentQuestion.type === 'equation-input';
+  // 注意：不要在此处 early return。下方还有 useCallback / useEffect 等 hooks，
+  // 若 currentQuestion 从 truthy 变 null（例如 endSession 后），early return 会使
+  // 后续 hooks 数量减少，触发 React "Rendered fewer hooks than expected" 崩溃。
+  // 所有 hooks 调用完成后再做 loading fallback（见本函数 JSX 返回前的 early return）。
+  const isVerticalCalc = currentQuestion?.type === 'vertical-fill';
+  const isMultipleChoice = currentQuestion?.type === 'multiple-choice';
+  const isMultiSelect = currentQuestion?.type === 'multi-select';
+  const isMultiBlank = currentQuestion?.type === 'multi-blank';
+  const isExpressionInput = currentQuestion?.type === 'expression-input';
+  const isEquationInput = currentQuestion?.type === 'equation-input';
   const isFreeTextInput = isExpressionInput || isEquationInput;
-  // Division in mental arithmetic uses two-field input (quotient + remainder)
-  // only when the expected answer carries a remainder (string "q...r" format).
-  // v2.1: 所有心算除法都是整除，因此此分支仅在答案含 "..." 时启用（向后兼容）。
   const isDivisionMental =
-    currentQuestion.topicId === 'mental-arithmetic' &&
-    currentQuestion.type === 'numeric-input' &&
-    (currentQuestion.data as { operator?: string })?.operator === '÷' &&
-    typeof currentQuestion.solution.answer === 'string' &&
-    String(currentQuestion.solution.answer).includes('...');
-  // Decimal training grid: numeric-input questions with trainingFields, not demon difficulty
+    currentQuestion?.topicId === 'mental-arithmetic' &&
+    currentQuestion?.type === 'numeric-input' &&
+    (currentQuestion?.data as { operator?: string } | undefined)?.operator === '÷' &&
+    typeof currentQuestion?.solution.answer === 'string' &&
+    String(currentQuestion?.solution.answer).includes('...');
   const dataTrainingFields =
-    currentQuestion.type === 'numeric-input' &&
-    currentQuestion.data != null &&
+    currentQuestion?.type === 'numeric-input' &&
+    currentQuestion?.data != null &&
     'trainingFields' in currentQuestion.data
       ? (currentQuestion.data as { trainingFields?: TrainingField[] }).trainingFields
       : undefined;
   const hasTrainingFields =
     dataTrainingFields != null &&
     dataTrainingFields.length > 0 &&
+    !!currentQuestion &&
     currentQuestion.difficulty < 8;
 
   const handleSubmit = useCallback(() => {
@@ -113,9 +133,13 @@ export default function Practice() {
 
   const handleNext = useCallback(() => {
     if (hearts <= 0 || currentIndex >= totalQuestions) {
-      const session = endSession();
-      setLastSession(session);
-      setPage('summary');
+      const completedSession = endSession();
+      setLastSession(completedSession);
+      if (completedSession.sessionMode === 'rank-match') {
+        setPage('rank-match-game-result');
+      } else {
+        setPage('summary');
+      }
     } else {
       nextQuestion();
     }
@@ -137,8 +161,11 @@ export default function Practice() {
   }, [showFeedback, handleNext, handleSubmit, isVerticalCalc]);
 
   const handleVerticalComplete = (correct: boolean) => {
+    if (!currentQuestion) return;
     submitAnswer(correct ? String(currentQuestion.solution.answer) : '竖式计算有误');
   };
+
+  if (!currentQuestion) return <LoadingScreen />;
 
 return (
     <div className="min-h-dvh bg-bg flex flex-col safe-top">
@@ -151,6 +178,19 @@ return (
       {/* Top bar */}
       <div className="px-4 py-3 bg-card border-b-2 border-border-2">
         <div className="max-w-lg mx-auto">
+          {/* 段位赛 BO 进度徽标（rank-match 专属）*/}
+          {isRankMatch && session?.rankMatchMeta && (
+            <div className="flex items-center justify-center gap-1.5 mb-1.5 text-[12px] font-bold"
+                 style={{ color: `var(--rank-${session.rankMatchMeta.targetTier})` }}>
+              <span>{
+                { rookie: '新秀', pro: '高手', expert: '专家', master: '大师' }[session.rankMatchMeta.targetTier] ?? ''
+              }</span>
+              <span className="text-text-3">·</span>
+              <span>BO{activeRankSession?.bestOf ?? '?'}</span>
+              <span className="text-text-3">·</span>
+              <span>第 {session.rankMatchMeta.gameIndex} 局</span>
+            </div>
+          )}
           {/* 退出 + 圆点进度 + 心数 */}
           <div className="flex items-center gap-3">
             <button

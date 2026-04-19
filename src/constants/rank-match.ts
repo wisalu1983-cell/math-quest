@@ -218,3 +218,13 @@ export const RANK_DIFFICULTY_RANGE: Record<
     review:     { min: 6, max: 7 },
   },
 };
+
+export const TIER_LABEL: Record<RankTier, string> = {
+  apprentice: '学徒',
+  rookie:     '新秀',
+  pro:        '高手',
+  expert:     '专家',
+  master:     '大师',
+};
+
+export const TIER_ORDER: RankTier[] = ['apprentice', 'rookie', 'pro', 'expert', 'master'];

@@ -1,13 +1,18 @@
 // src/pages/Home.tsx
 import { useUserStore, useUIStore, useGameProgressStore } from '@/store';
+import { useRankMatchStore } from '@/store/rank-match';
 import { TOPICS } from '@/constants';
 import { CAMPAIGN_MAPS } from '@/constants/campaign';
 import { getStars } from '@/engine/advance';
 import { TOPIC_STAR_CAP } from '@/constants/advance';
+import { isTierUnlocked, getTierGaps } from '@/engine/rank-match/entry-gate';
+import { RANK_BEST_OF } from '@/constants/rank-match';
 import type { TopicId } from '@/types';
+import type { RankTier } from '@/types/gamification';
 import BottomNav from '@/components/BottomNav';
 import LoadingScreen from '@/components/LoadingScreen';
 import ProgressBar from '@/components/ProgressBar';
+import RankBadge from '@/components/RankBadge';
 import { TopicIcon } from '@/components/TopicIcon';
 
 function getGreeting(name: string): string {
@@ -32,12 +37,58 @@ function computeTopicStats(topicId: TopicId, gameProgress: ReturnType<typeof use
   return { totalLevels, completedLevels, allDone };
 }
 
+const TIER_LABEL: Record<RankTier, string> = {
+  apprentice: '学徒',
+  rookie: '新秀',
+  pro: '高手',
+  expert: '专家',
+  master: '大师',
+};
+
 export default function Home() {
   const user = useUserStore(s => s.user);
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const { setPage, setSelectedTopicId } = useUIStore();
+  const activeRankSession = useRankMatchStore(s => s.activeRankSession);
 
   if (!user || !gameProgress) return <LoadingScreen />;
+
+  const rankProgress = gameProgress.rankProgress;
+  const currentTier = rankProgress?.currentTier ?? 'apprentice';
+  const advanceProgress = gameProgress.advanceProgress;
+
+  // 下一个可挑战段位（当前段位的下一级）
+  const TIER_ORDER: RankTier[] = ['apprentice', 'rookie', 'pro', 'expert', 'master'];
+  const currentIdx = TIER_ORDER.indexOf(currentTier);
+  const nextTier = TIER_ORDER[currentIdx + 1] as RankTier | undefined;
+  const nextChallengeableTier = nextTier && nextTier !== 'apprentice' ? nextTier : undefined;
+
+  // 是否能入场挑战下一级
+  const canChallenge = nextChallengeableTier ? isTierUnlocked(nextChallengeableTier, advanceProgress) : false;
+  const challengeGaps = nextChallengeableTier && !canChallenge
+    ? getTierGaps(nextChallengeableTier, advanceProgress).slice(0, 3)
+    : [];
+
+  // 活跃赛事的继续挑战文案
+  const activeSession = activeRankSession && !activeRankSession.outcome ? activeRankSession : null;
+  let rankCardTitle = '段位赛';
+  let rankCardSub = '';
+  if (activeSession) {
+    rankCardTitle = `继续挑战：${TIER_LABEL[activeSession.targetTier]} BO${activeSession.bestOf}`;
+    const w = activeSession.games.filter(g => g.finished && g.won).length;
+    const l = activeSession.games.filter(g => g.finished && !g.won).length;
+    rankCardSub = `当前 ${w}胜${l}负，需${activeSession.winsToAdvance}胜晋级`;
+  } else if (nextChallengeableTier && canChallenge) {
+    rankCardTitle = `挑战 ${TIER_LABEL[nextChallengeableTier]}`;
+    rankCardSub = `BO${RANK_BEST_OF[nextChallengeableTier]} 对决`;
+  } else if (nextChallengeableTier && !canChallenge) {
+    rankCardTitle = `冲击 ${TIER_LABEL[nextChallengeableTier]}`;
+    rankCardSub = challengeGaps.length > 0
+      ? `差 ${challengeGaps.map(g => `${TOPICS.find(t => t.id === g.topicId)?.name ?? g.topicId} ${g.currentStars}★/${g.requiredStars}★`).slice(0, 2).join('，')}`
+      : '继续进阶训练积累星级';
+  } else {
+    rankCardSub = `当前段位：${TIER_LABEL[currentTier]}`;
+  }
 
   const handleTopicClick = (topicId: TopicId) => {
     setSelectedTopicId(topicId);
@@ -206,7 +257,7 @@ export default function Home() {
         </div>
 
         {/* ── 进阶训练入口（始终显示，未解锁时呈锁定态）── */}
-        <div className="pb-4 stagger-4">
+        <div className="pb-3 stagger-4">
           {TOPICS.some(t => !!gameProgress.advanceProgress[t.id as TopicId]) ? (
             <button
               onClick={() => setPage('advance-select')}
@@ -219,7 +270,7 @@ export default function Home() {
               </div>
               <div className="flex-1">
                 <p className="font-black text-text text-[15px]">进阶训练</p>
-                <p className="text-[12px] text-text-2 mt-0.5">刷星升级，向段位赛进发</p>
+                <p className="text-[12px] text-text-2 mt-0.5">刷星升级，积累段位赛入场资格</p>
               </div>
               <span className="text-text-2 text-lg">›</span>
             </button>
@@ -238,6 +289,26 @@ export default function Home() {
               </div>
             </div>
           )}
+        </div>
+
+        {/* ── 段位赛入口（独立卡片，Phase 3 M3）── */}
+        <div className="pb-4 stagger-4">
+          <button
+            onClick={() => setPage('rank-match-hub')}
+            className="w-full bg-card rounded-[18px] border-2 p-4 text-left
+                       transition-all active:scale-[.99] flex items-center gap-4"
+            style={{
+              borderColor: `var(--rank-${currentTier})`,
+              boxShadow: '0 1px 5px rgba(0,0,0,.07)',
+            }}
+          >
+            <RankBadge tier={currentTier} size="md" />
+            <div className="flex-1">
+              <p className="font-black text-text text-[15px]">{rankCardTitle}</p>
+              <p className="text-[12px] text-text-2 mt-0.5">{rankCardSub}</p>
+            </div>
+            <span className="text-text-2 text-lg">›</span>
+          </button>
         </div>
       </div>
 

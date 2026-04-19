@@ -240,6 +240,14 @@ export interface PracticeSession {
      */
     primaryTopics: TopicId[];
   };
+  /**
+   * 段位赛专用：本局预生成的完整题序（长度 = RANK_QUESTIONS_PER_GAME[tier]）。
+   * 由 `startRankMatchGame` 写入并随 session 持久化，支持"单局中途刷新恢复"（ISSUE-060，Plan §4.1）。
+   * - 非 rank-match session 不写入该字段
+   * - `submitAnswer` 不改写本字段（queue 生成后固定，答题进度由 `questions.length` 派生）
+   * - 恢复路径：`resumeRankMatchGame` 从存档读回，`currentIndex = questions.length`
+   */
+  rankQuestionQueue?: Question[];
 }
 
 export interface WrongQuestion {

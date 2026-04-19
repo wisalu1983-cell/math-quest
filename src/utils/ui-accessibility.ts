@@ -9,7 +9,10 @@ export type AppPage =
   | 'profile'
   | 'wrong-book'
   | 'history'
-  | 'session-detail';
+  | 'session-detail'
+  | 'rank-match-hub'
+  | 'rank-match-game-result'
+  | 'rank-match-result';
 
 const PAGE_TITLES: Record<AppPage, string> = {
   onboarding: '数学大冒险',
@@ -23,6 +26,9 @@ const PAGE_TITLES: Record<AppPage, string> = {
   'wrong-book': '数学大冒险 · 错题本',
   history: '数学大冒险 · 练习记录',
   'session-detail': '数学大冒险 · 练习详情',
+  'rank-match-hub': '数学大冒险 · 段位赛',
+  'rank-match-game-result': '数学大冒险 · 单局结算',
+  'rank-match-result': '数学大冒险 · 赛事结算',
 };
 
 export function getDocumentTitle(page: AppPage): string {
