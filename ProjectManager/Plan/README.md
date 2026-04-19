@@ -5,62 +5,50 @@
 > - `Specs/` — 设计规格（计划的前置设计文档）
 > - `Reports/` — 调研/审视报告
 > - `ISSUE_LIST.md` — 待解决问题清单
-> - `Overview.md` — 项目概览（四要素）
+> - `Overview.md` — 活跃控制面（项目背景 / 当前阶段 / 当前状态 / 下一步 / 权威入口）
 
 ---
 
 ## 计划维护规则
 
-为避免“代码/验收已变化，但计划文档仍停留在旧口径”的情况，后续统一遵守：
+本文件是**索引与模板入口**，不是项目当前状态总览。想看“现在在干什么”，请先读 [`../Overview.md`](../Overview.md)。
 
-1. **行为改了，就回写计划**  
-   如果后续 hotfix / 优化改变了某个仍在活跃计划中的行为、入口、状态机或验收口径，必须同步更新对应计划文件，不能只改 `Overview.md` 或 `ISSUE_LIST.md`。
+后续统一遵守以下最小规则：
 
-2. **实现状态和验收状态分开写**  
-   计划文件中要显式区分“实现任务已完成”和“真实浏览器 / QA 验收待执行”，避免全部任务都打勾后，看不出其实还没验收。
+1. **先改权威源，再改主管**  
+   信息变化时，先改对应的 Plan / Spec / Issue / Report；只有当变化影响活跃视图时，才回写 `Overview.md`。
 
-3. **同一轮收口至少同步 4 处**  
-   对用户可见行为有影响的修复或优化，在收口时至少检查并按需同步：
-   - 对应 `Plan/*.md`
-   - `ISSUE_LIST.md`
-   - `Overview.md`
-   - `Plan/README.md`
+2. **Plan 持有执行事实，不持有项目总览**  
+   活跃计划只写范围、里程碑、阻塞、证据和当前决策结果；项目背景、当前阶段状态、下一步统一由 `Overview.md` 汇总。
 
-4. **对齐更新要写来源**  
-   如果计划口径因后续优化而变化，在原计划中新增“对齐更新”段，注明来源 issue / 计划 / 日期，避免后来阅读的人不知道为什么计划描述变了。
+3. **索引只在生命周期变化时更新**  
+   `Plan/README.md` 和 `Specs/_index.md` 只在新建、归档、生效状态变化、文件改名、入口关系变化时更新；日常里程碑推进不要求同步本索引。
 
-5. **（2026-04-17 新增）开工前必扫 `Specs/_index.md`**  
-   任何新 Plan 启动前，必须先读 [`Specs/_index.md`](../Specs/_index.md) 规格矩阵，按"我要做的事属于哪个维度"找到所有**生效**的兄弟规格，把它们的**关键硬约束**（特别是跨系统约束，如 `TOPIC_STAR_CAP`、难度锚点、UI 卡片尺寸等）抄进 Plan 的"前置相关规格"栏。  
-   教训：2026-04-17 的 v2.1 生成器改造因漏检 `2026-04-15 进阶规格` 的 `TOPIC_STAR_CAP`，导致 A01/A04/A08 三个题型反复在"三档梯度拉不开"上踩坑。
+4. **关闭事项退出活跃视图**  
+   issue / plan / 路线一旦关闭或废弃，应从活跃视图移出；`Overview.md` 只保留结果性结论，详细过程留在对应 Plan 或 Report。
 
-6. **（2026-04-17 新增）session 续航交接清单**  
-   session 结束 / 交接 / 中断前，除了把结果、阻塞、下一步写回项目内长期记录，还必须完成这一条**跨规格扫描**：  
-   - 列出本 session 改动了哪些**跨系统维度**（难度 / 档位 / 星级 / 关卡结构 / UI 尺寸 / 答题形式 等）  
-   - 对每个命中的维度，检查 `Specs/_index.md` 里同维度**其他生效规格**是否仍保持一致；若不一致，说明是"我改了但对方没改"，必须当场挂 issue 或同步改，不能默认视为已收口。  
+5. **新 Plan 开工前先扫 `Specs/_index.md`**  
+   新计划启动前，先按维度扫描 [`../Specs/_index.md`](../Specs/_index.md) 中的生效规格，再把真正相关的硬约束写进 Plan 头部。
 
-7. **（2026-04-17 新增）开工前必跑 `pm-sync-check`（L2 钩子 A — pre-flight）**  
-   任何新 session / 新 Plan 开工前，执行：
-   ```bash
-   npx tsx scripts/pm-sync-check.ts
-   ```
-   这是规则 5、6 的**脚本兜底版**——把"靠自觉扫描兄弟规格"升级为"脚本硬性清单"。Agent 在开工第一批工具调用里必须包含这一步，且：
-   - 若输出 `✅ 全绿`：可以直接开工；
-   - 若有**错误（❌）**：必须先处理或显式降级——"我知道这里不一致，本次不动，因为 XXX"（写进本次 Plan 的"前置相关规格"栏）；
-   - 若有**警告（⚠️）**：由 agent 判断是否相关；相关就处理，不相关就在 Plan 里显式标注跳过原因。
+6. **`pm-sync-check` 只在关键节点运行**  
+   仅在以下场景运行 `npx tsx scripts/pm-sync-check.ts`：
+   - 同一轮改了 2 个及以上权威源 / 索引源
+   - 准备关闭一个里程碑或声明某块完成
+   - 新建 / 归档 / 废弃 Plan、Spec、Issue 的入口关系
    
-   脚本覆盖的 6 项检查（详见 `Plan/2026-04-17-pm-document-sync-mechanism.md` §4.1）：`_index.md` 完整性 / Specs 版本号一致 / ISSUE 状态一致（启发式）/ Plan→Spec 引用存在 / `TOPIC_STAR_CAP` 一致 / human-bank 档位一致。
+   纯诊断、只读分析、纯 `Overview.md` 精简、纯历史阅读，不默认 pre-flight。
 
-   **自动化兜底**：本规则由 `.cursor/rules/pm-sync-check.mdc`（`alwaysApply:true`）在每个 session 的系统提示里注入，降低 agent "忘记读规则"的概率。但注入 ≠ 强制，agent 仍可能判断任务无关而跳过；如观察到跳过率高，再升级为 Cursor Hooks 硬阻塞（B 档，当前未启用）。
+### 变更路由短表
 
-8. **（2026-04-17 新增）session 收尾必跑 `pm-sync-check`（L2 钩子 B — post-flight）**  
-   session 结束 / 交接 / 要求总结时，除了按规则 6 做跨规格扫描，还必须再跑一次：
-   ```bash
-   npx tsx scripts/pm-sync-check.ts
-   ```
-   并保证：
-   - **本 session 改动引入的新增不一致必须当场修掉**（或降级为已挂的 ISSUE）；
-   - 若收尾时存在开工前就有的存量不一致，本 Plan 没动它们，至少要在回写段里显式说明"本 session 未处理的存量不一致：XXX，原因：YYY"；
-   - 如果 L1 脚本本身漏检了某个"本 session 实际改动但未同步"的地方，应在 `Plan/2026-04-17-pm-document-sync-mechanism.md` 或其子 issue 里补录检查规则。
+| 发生什么 | 先更新哪里 | 什么时候再回写 `Overview.md` |
+|------|------|------|
+| 活跃计划里程碑推进 / 范围调整 | 对应 `Plan/*.md` | 当前主线 / 当前状态 / 下一步变化时 |
+| 新发现问题 / 关闭问题 | `ISSUE_LIST.md` | 影响活跃视图时 |
+| 新建设计规格 / 规格状态变化 | 对应 `Specs/*.md` + `Specs/_index.md` | 当前阶段入口或生效约束变化时 |
+| 新建 / 归档计划、报告 | `Plan/README.md` | 当前权威入口变化时 |
+| 历史复盘 / 机制说明 / 重排归档 | `Reports/` | 默认不回写；除非活跃结论也变了 |
+
+一句话：**先改左列的权威源，再判断主管是否需要同步结果。**
 
 ---
 
@@ -143,6 +131,7 @@
 |------|------|
 | [2026-04-09-A03-vertical-calc-review.md](../Reports/2026-04-09-A03-vertical-calc-review.md) | A03 竖式笔算审视报告 |
 | [2026-04-17-pm-sync-check-retrospective.md](../Reports/2026-04-17-pm-sync-check-retrospective.md) | pm-sync-check 首轮回溯验证报告（v2.1→v2.2 实战用例；召回 2/2；L1+L2 收口） |
+| [2026-04-18-phase3-umbrella-replan-history.md](../Reports/2026-04-18-phase3-umbrella-replan-history.md) | Phase 3 Umbrella 同日重排归档报告：把“为何最后只剩 Phase 3”的完整轨迹下沉出活跃计划 |
 
 ## 游戏化重设计（Specs/2026-04-10-gamification-redesign.md）
 
@@ -161,13 +150,14 @@
 | [2026-04-14-phase1-hotfix-and-iteration.md](2026-04-14-phase1-hotfix-and-iteration.md) | Phase 1 热修复 + 优化迭代（去年级区分、History入口、路线匹配修复、出题质量、难度标准） | ✅ 完成 |
 | [2026-04-16-p1p2-fixes.md](2026-04-16-p1p2-fixes.md) | P1+P2 修复（试玩反馈 11 项：心数 bug / Boss 视觉与内容差异化 / 进阶引导 / 难度梯度 / 除法整除比例 / Practice UI / VerticalCalcBoard 焦点与退位提示） | ✅ 完成 |
 | [2026-04-16-generator-difficulty-recalibration.md](2026-04-16-generator-difficulty-recalibration.md) | 生成器难度分档重审（基于题库边界 + 用户感知；为三档主规格重写提供证据与结论） | ✅ 完成 |
-| [2026-04-16-open-backlog-consolidation.md](2026-04-16-open-backlog-consolidation.md) | **当前阶段主计划**——开放 backlog 统一整理；A/B/C 段完成，子计划 1/2/2.5/3 全部关闭，子计划 4（下阶段扩展）待启动 | 🟡 进行中 |
+| [2026-04-16-open-backlog-consolidation.md](2026-04-16-open-backlog-consolidation.md) | **当前阶段主计划**——开放 backlog 统一整理；当前承接 Phase 3 主线与子计划 4 引用链 | 🟡 进行中 |
 | [2026-04-17-generator-redesign-v2-implementation.md](2026-04-17-generator-redesign-v2-implementation.md) | 生成器题型设计 v2.2 实施计划（对应 Specs/2026-04-17-generator-redesign-v2.md；5 阶段 + 阶段 6 二轮修订已全部完成）| ✅ 完成 |
 | [2026-04-17-campaign-advance-stabilization.md](2026-04-17-campaign-advance-stabilization.md) | **子计划 2.5（父=主计划 §四/§七）**——闯关+进阶模式稳定化：S1 阻塞级 / S2 重要 bug / S3 v2.2 深度体验 QA / S4 进阶专项验收 | ✅ 完成（2026-04-18）|
 | [2026-04-18-ui-consistency-cleanup.md](2026-04-18-ui-consistency-cleanup.md) | **子计划 3（父=主计划 §四）**——UI 一致性与代码整洁清理：B1 硬编码色+类型整洁 / B2 a11y 教学细化 / B3 a11y 评估项；12 项 ISSUE 全部关闭或降级关闭 | ✅ 完成（2026-04-18）|
-| [2026-04-18-subplan-4-next-stage-expansion.md](2026-04-18-subplan-4-next-stage-expansion.md) | **子计划 4 Umbrella（父=主计划 §四）**——下阶段扩展总纲。2026-04-18 **二次重排**后收敛为单块：仅 **Phase 3 段位赛**。A03+ 本阶段废弃（设计规格保留作历史参考）；A09 / B/C/D 本阶段不做 | 🟡 Umbrella 已收敛为单块；实施级规格 + 实施子子计划骨架均已落盘（2026-04-18），等待 M1 领取 |
-| [2026-04-18-rank-match-phase3-implementation.md](2026-04-18-rank-match-phase3-implementation.md) | **Phase 3 段位赛实施子子计划（父=子计划 4 Umbrella）**——按实施级规格落代码：M1 地基（类型 + 常量 + 持久化迁移 + store 最小骨架）→ M2 抽题器 + 答题流驳接 → M3 UI（Hub / GameResult / MatchResult + Home 入口改造）→ M4 验证 + 回写；每 M 完成当场四处同步 + `pm-sync-check` ✅ | 🟡 骨架已落盘，等待 M1 领取（2026-04-18）|
-| [2026-04-17-pm-document-sync-mechanism.md](2026-04-17-pm-document-sync-mechanism.md) | 全局文档同步机制设计（方案 6；pm-sync-check 静态校验 L1 + Plan/README 规则 7/8 钩子 L2；v2.1→v2.2 回溯验证召回 2/2）| ✅ L1+L2 落地，L3 暂不启动 |
+| [2026-04-18-subplan-4-next-stage-expansion.md](2026-04-18-subplan-4-next-stage-expansion.md) | **子计划 4 Umbrella（父=主计划 §四）**——下阶段扩展总纲；当前已收敛为单块 = Phase 3 段位赛 | 🟡 进行中 |
+| [2026-04-18-rank-match-phase3-implementation.md](2026-04-18-rank-match-phase3-implementation.md) | **Phase 3 段位赛实施子子计划（父=子计划 4 Umbrella）**——按实施级规格落代码：M1 地基 → M2 抽题器 + 答题流驳接 → M3 UI → M4 验证 + 回写 | 🟡 等待 M1 领取 |
+| [2026-04-17-pm-document-sync-mechanism.md](2026-04-17-pm-document-sync-mechanism.md) | 历史机制方案：记录文档同步机制首次设计、L1+L2 落地与回溯验证背景 | ✅ 历史记录 |
+| [2026-04-19-pm-token-efficiency-optimization.md](2026-04-19-pm-token-efficiency-optimization.md) | 项目管理文档体系轻量化优化方案：以不牺牲可靠性为前提，重排 Overview / Plan / Spec / Issue 的角色分工，并收缩 `pm-sync-check` 触发范围 | ✅ 完成 |
 
 ## 设计规格新增
 
@@ -202,20 +192,7 @@
 |------|------|------|
 | [2026-04-15-visual-qa-fixes.md](2026-04-15-visual-qa-fixes.md) | 视觉 QA 修复（F2/VR-01/VR-02/VR-04/VR-05/F1，共 5 个文件改动）| ✅ 完成（2026-04-15）|
 
-## 待排期
+## 说明
 
-> **当前阶段方针**（2026-04-18 刷新 + 同日**二次重排**）：主计划 = `2026-04-16-open-backlog-consolidation.md`；A/B/C 段全部完成，**子计划 4 Umbrella 已二次收敛为单块 = Phase 3 段位赛**（[`2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md)）。**A03+ 本阶段废弃**（设计规格保留作历史参考，不进入代码实施）；**A09 / B/C/D 本阶段不做**。Phase 3 启动不再依赖 A03+/A09 闭环，直接进"规格事实源对齐 → 实施级 Specs → 实施子子计划 → 代码"链路。**真题参考库补充本阶段不做**（合流规则保留作未来子计划的纪律参考）。
-
-| 内容 | 优先级 | 阶段 | 挂靠 |
-|------|--------|------|------|
-| ~~Phase 2 浏览器验收（A1-A6）~~ | ~~高~~ | ✅ 完成（2026-04-16） | 子计划 1 |
-| ~~高优先级 UI/a11y 修复（ISSUE-022~024、028、032、034、035）~~ | ~~高~~ | ✅ 完成（2026-04-16） | 子计划 1 |
-| ~~生成器质量补强（ISSUE-008~010）~~ | ~~高~~ | ✅ 完成（2026-04-16） | 子计划 2 |
-| ~~生成器 v2.2 系统性重写~~ | ~~高~~ | ✅ 完成（2026-04-17） | 子计划 2 扩展 |
-| ~~闯关+进阶稳定化~~ | ~~高~~ | ✅ 完成（2026-04-18） | [子计划 2.5](2026-04-17-campaign-advance-stabilization.md) |
-| ~~UI 一致性 / 代码整洁（ISSUE-020、025、026、029~031、037、038、041~045）~~ | ~~中~~ | ✅ 完成（2026-04-18） | [子计划 3](2026-04-18-ui-consistency-cleanup.md) |
-| **Phase 3 段位赛（BO3/BO5/BO7）** | **高** | **本阶段唯一主线；实施级规格 + 实施子子计划正在落盘** | [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md)；前置规格 = `Specs/2026-04-10-gamification-redesign.md` §5 + `Specs/2026-04-13-star-rank-numerical-design.md` §3 |
-| ~~A03 块B Plus~~ | —— | **本阶段废弃**（设计规格保留作历史参考）| Phase 3 落地后再评估是否重启 |
-| ~~A09 分数运算生成器~~ | —— | 本阶段不做 | 若未来启动再单独立子计划 |
-| ~~B/C/D 领域开发~~ | —— | 本阶段不做 | 不再以"子计划 5 roadmap"预立名 |
-| ~~真题参考库补充~~ | —— | 本阶段不做 | 合流规则保留作未来子计划纪律参考 |
+- 当前阶段目标、当前主线、当前状态、下一步，统一看 [`../Overview.md`](../Overview.md)。
+- 本文件只保留计划索引、模板入口和归档入口；不再复写项目活跃状态。

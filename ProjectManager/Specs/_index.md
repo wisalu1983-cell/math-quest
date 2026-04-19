@@ -1,6 +1,6 @@
 # Specs 规格矩阵（_index）
 
-> 版本：v1.2 | 创建：2026-04-17 | 上次修订：2026-04-18（子计划 4 二次重排：A03+ 设计规格状态改为"历史参考（本阶段废弃）"）  
+> 版本：v1.5 | 创建：2026-04-17 | 上次修订：2026-04-19（删除维度 D；QA 方法论设计文档已迁移至 `E:/Projects/QALeader`）  
 > 用途：**新计划启动前的必查清单**——按讨论维度定位已有规格，避免漏检历史约束。
 
 ## 为什么要这个文件
@@ -78,6 +78,7 @@
 | 调整现有题型的过程格/反馈判定 | A 的 `2026-04-18-a03-block-b-plus-design.md` + B 的进阶/通过语义约束 + C 的反馈面板表现规范 |
 | 真题库扩充 | A 的 `generator-improvements` + `reference-bank-extraction-design` |
 | 跨题型难度系统改动 | A + B 全部（高风险区） |
+| QA 流程 / 报告 / Issue 分流改动 | 执行约束见 `qa-methodology` skill（`E:/Projects/QALeader`） |
 | 段位赛 / Phase 3 相关改动 | B 的 `2026-04-10 §5 / §8 Q9` + `2026-04-13 §3 / §4` + `2026-04-18-rank-match-phase3-implementation-spec.md` + C 的 UI 视觉语言 |
 
 ---

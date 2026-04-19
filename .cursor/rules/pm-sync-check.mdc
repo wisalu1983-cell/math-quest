@@ -1,28 +1,40 @@
 ---
-description: 开工前 / 收尾前必跑 pm-sync-check（文档同步机制 L2 钩子）
+description: 仅在关键节点运行 pm-sync-check（文档一致性抽查）
 alwaysApply: true
 ---
 
 # pm-sync-check 执行约束（L2 钩子）
 
-本项目用 `scripts/pm-sync-check.ts` 做项目管理文档的静态一致性校验（L1）。Agent 必须在下面两个节点**主动在同一批工具调用里**执行它，不能等用户追问。
+本项目用 `scripts/pm-sync-check.ts` 做项目管理文档的静态一致性校验（L1）。它的角色是**关键节点抽查一致性**，不是所有文档任务的默认开工仪式。
 
-## 必须执行的节点
+## 应执行的节点
 
-### 开工前（pre-flight）
+### 1. 跨源写入后
 
-在每个新 session 的**第一次响应里**，只要任务涉及下面任何一项，就跑：
+同一轮改了 2 个及以上权威源 / 索引源时执行，例如：
 
-- 改动 `ProjectManager/` 下的任何 `.md`（Plan / Specs / ISSUE_LIST / Reports / Overview）
-- 改动 `src/constants/advance.ts`、`scripts/generate-human-bank.ts`、任何生成器源码
-- 新开一份 Plan / Spec / ISSUE
-- 涉及"规格、档位、star cap、难度、关卡"等跨系统维度
+- `Plan/*.md` + `Overview.md`
+- `Specs/*.md` + `Specs/_index.md`
+- `ISSUE_LIST.md` + `Overview.md`
+- 生命周期变化带来的入口改动（如 `Plan/README.md` / `_index.md`）
 
-纯闲聊、纯查阅代码、纯前端样式微调可以豁免。
+### 2. 里程碑收尾前
 
-### 收尾前（post-flight）
+准备声明“这一块完成”“一个里程碑关闭”“本 session 收口”之前执行一次。
 
-在声明"本 session 任务完成"、做 session 交接、或输出收尾总结**之前**，必须再跑一次。
+### 3. 生命周期变化时
+
+新建 / 归档 / 废弃 Plan、Spec、Issue 的入口关系时执行一次。
+
+## 默认豁免
+
+以下场景**不默认运行**：
+
+- 纯诊断 / 只读分析
+- 纯历史梳理 / 复盘阅读
+- 纯 `Overview.md` 精简
+- 只改单一权威源且未到里程碑收尾
+- 纯前端样式微调、纯闲聊、纯查阅代码
 
 ## 执行方式
 
@@ -38,6 +50,6 @@ npx tsx scripts/pm-sync-check.ts
 
 ## 完整规则与设计背景
 
-见 `ProjectManager/Plan/README.md` §7、§8 和 `ProjectManager/Plan/2026-04-17-pm-document-sync-mechanism.md`。
+见 `ProjectManager/Plan/README.md` 的计划维护规则、`ProjectManager/Plan/2026-04-17-pm-document-sync-mechanism.md`（历史机制方案）与 `ProjectManager/Plan/2026-04-19-pm-token-efficiency-optimization.md`。
 
 脚本本身覆盖 6 项检查：`_index.md` 完整性 / Specs 版本号一致 / ISSUE 状态一致（启发式）/ Plan→Spec 引用存在 / TOPIC_STAR_CAP ↔ human-bank 档数一致。
