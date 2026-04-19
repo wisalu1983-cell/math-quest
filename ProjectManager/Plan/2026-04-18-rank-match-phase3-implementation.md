@@ -19,7 +19,7 @@
 
 把 [`../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../Specs/2026-04-18-rank-match-phase3-implementation-spec.md) 的实施级规格在代码层落地，实现 Phase 3 段位赛最小闭环：
 
-> 用户在 Home 能看到独立的段位赛入口 → 进入 Hub 看到五段位状态 → 满足星级门槛后进入白银 BO3 → 完成 3 局 → 看到晋级 / 未晋级结算 → 段位持久化。
+> 用户在 Home 能看到独立的段位赛入口 → 进入 Hub 看到五段位状态 → 满足星级门槛后进入新秀 BO3 → 完成 3 局 → 看到晋级 / 未晋级结算 → 段位持久化。
 
 ### 1.2 不做什么
 
@@ -54,7 +54,7 @@
 |------|------|------|
 | `src/types/gamification.ts` | 修改 | 按 Spec §3 添加 `RankTier` / `RankMatchBestOf` / `RankMatchGame` / `RankMatchSession` / `RankProgress`；`GameProgress` 追加 `rankProgress?: RankProgress`；`GameSessionMode` 追加 `'rank-match'`；删除 L84/L93 两处占位裸注释 |
 | `src/types/index.ts` | 修改 | 重导出新类型（`RankTier` 等）以保持既有 `import from '@/types'` 风格一致 |
-| `src/constants/rank-match.ts` | 新增 | 段位入场表（引用 `TOPIC_STAR_CAP` + `2026-04-13` §3.2 数值）；每段位 `bestOf` / `winsToAdvance` / `questionsPerGame`（20/25/25/30）/ `timerMinutes`（仅铂金王者 30）/ `newContentPoints` 字典 |
+| `src/constants/rank-match.ts` | 新增 | 段位入场表（引用 `TOPIC_STAR_CAP` + `2026-04-13` §3.2 数值）；每段位 `bestOf` / `winsToAdvance` / `questionsPerGame`（20/25/25/30）/ `timerMinutes`（仅专家大师 30）/ `newContentPoints` 字典 |
 | `src/engine/rank-match/match-state.ts` | 新增 | `createRankMatchSession`、`startNextGame`、`onGameFinished`、入场校验 `isTierUnlocked` 等状态机函数（纯函数或小闭包，不依赖 store） |
 | `src/repository/local.ts` | 修改 | `CURRENT_VERSION: 2 → 3`；新增 `migrateRankProgressIfNeeded`；`getGameProgress` 调用链增加该迁移；`init()` 不再用"版本不一致就清除"策略，改用追加式迁移（保留旧 campaign/advance 数据） |
 | `src/store/rank-match.ts` | 新增 | 一个专门的 zustand slice 或 vanilla store，暴露 `activeRankSession` / `startRankMatch(targetTier)` / `handleGameFinished(practiceSessionSnapshot)` 三个最小 API |
@@ -73,8 +73,8 @@
 - [ ] `npx vitest run src/engine/rank-match src/repository src/store/rank-match.test.ts` 全绿
 - [ ] `npx vitest run` 整体 ≥ 既有 328/328 通过数
 - [ ] 在浏览器开发模式打开现有页面（未动 UI），段位赛相关代码不报错；`localStorage` 里的老存档自动获得 `rankProgress: { currentTier: 'bronze', history: [] }`（手动在 DevTools 验证）
-- [ ] 四处同步：本文件 / `ProjectManager/Overview.md` / `ProjectManager/Plan/README.md` / `ProjectManager/ISSUE_LIST.md`（如有新 ISSUE）
-- [ ] `pm-sync-check` ✅
+- [ ] 按角色最小同步：本文件总是回写；`ProjectManager/Overview.md` / `ProjectManager/Plan/README.md` / `ProjectManager/ISSUE_LIST.md` 仅在对应权威信息变化时更新
+- [ ] 如本轮涉及跨源写入或里程碑收尾，`pm-sync-check` ✅
 
 > **不允许跳 M1 直接动 M2+**。M1 是所有后续里程碑的地基；如果类型或迁移层有坑，会一路传染。
 
@@ -95,7 +95,7 @@
 
 - [ ] `npx tsc --noEmit` 0 错误
 - [ ] `npx vitest run` 整体通过数 ≥ M1 基线 + 新增用例数
-- [ ] 手动在 `window.__MQ_SESSION__` 或 DevTools 启一场白银 BO3，打 3 局能正确出 BO 结论
+- [ ] 手动在 `window.__MQ_SESSION__` 或 DevTools 启一场新秀 BO3，打 3 局能正确出 BO 结论
 - [ ] 抽题器在任一段位均可连续生成 3 场不抛错（编写一个临时 dev-only 脚本或测试用例）
 - [ ] `pm-sync-check` ✅
 
@@ -110,9 +110,9 @@
 | `src/pages/RankMatchHub.tsx` | 新增 | 展示五段位卡片；未解锁段位灰态 + 星级缺口；当前已达段位徽章；若 `activeSessionId` 存在显示"继续挑战"按钮 |
 | `src/pages/RankMatchGameResult.tsx` | 新增 | 单局结束中间结算页；展示本局胜负、BO 胜场累计、自动 3 秒后启动下一局 |
 | `src/pages/RankMatchResult.tsx` | 新增 | BO 整体结束的终局页：五段位晋级动画 / 未晋级复盘（薄弱题型前 3）/ 返回 Hub |
-| `src/components/RankBadge.tsx` | 新增 | 段位徽章（青铜~王者）小组件；通过 `globals.css` token 取色 |
+| `src/components/RankBadge.tsx` | 新增 | 段位徽章（学徒~大师）小组件；通过 `globals.css` token 取色 |
 | `src/pages/Home.tsx` | 修改 | 把现有"进阶训练 / 刷星升级，向段位赛进发"拆成独立进阶入口 + 独立段位赛入口；段位赛入口通过 `rankProgress` 显示徽章与缺口提示 |
-| `src/pages/Practice.tsx` | 修改 | `sessionMode === 'rank-match'` 时在题头加"白银 BO3 第 1 局 / 共 3 局"小徽章；题面与答题主循环无任何改动 |
+| `src/pages/Practice.tsx` | 修改 | `sessionMode === 'rank-match'` 时在题头加"新秀 BO3 第 1 局 / 共 3 局"小徽章；题面与答题主循环无任何改动 |
 | `src/App.tsx` | 修改 | 新增路由 `/rank-match` / `/rank-match/session` / `/rank-match/game-result` / `/rank-match/match-result`；复用 `Practice` 组件承接 `session` |
 | `src/styles/globals.css` | 修改 | 新增段位徽章色 token：`--rank-bronze` / `--rank-silver` / `--rank-gold` / `--rank-platinum` / `--rank-king`；不在组件里写死十六进制 |
 
@@ -120,14 +120,14 @@
 
 - [ ] `npx tsc --noEmit` 0 错误
 - [ ] `npx vitest run` 整体绿
-- [ ] 浏览器手工走通：青铜态 → 刷进阶达白银门槛（可用 DevTools 注入 `advanceProgress`）→ Home 段位赛卡片解锁 → 进入 Hub → 白银可点 → BO3 三局完整跑通 → `rankProgress.currentTier` 变 `silver` 并持久化（刷新后保留）
+- [ ] 浏览器手工走通：学徒态 → 刷进阶达新秀门槛（可用 DevTools 注入 `advanceProgress`）→ Home 段位赛卡片解锁 → 进入 Hub → 新秀可点 → BO3 三局完整跑通 → `rankProgress.currentTier` 变 `rookie` 并持久化（刷新后保留）
 - [ ] 所有段位徽标色通过 CSS 变量，无十六进制硬编码
 - [ ] Home / Hub / Practice / Result 四个页面在小屏（375px）与中屏（768px）均无破版
 - [ ] `pm-sync-check` ✅
 
 ### M4 — 验证 + 回写 + 整体 pm-sync-check
 
-**目标**：闭环质量校验 + 四处同步 + 里程碑总回写。
+**目标**：闭环质量校验 + 权威源回写 + 里程碑总收口。
 
 **动作清单**：
 
@@ -137,11 +137,11 @@
 - [ ] `npx tsx scripts/pm-sync-check.ts` ✅
 - [ ] 执行 `ProjectManager/human-verification-bank.md` 里与段位赛相关的新增人工验证项（若无则由 M4 负责补写首版）
 - [ ] 在本文件 §6 回写 M1/M2/M3/M4 的实际证据链（commit hash、测试输出摘要、截图/录屏）
-- [ ] 更新 `ProjectManager/Overview.md` 顶部状态行（Phase 3 闭环）
-- [ ] 更新 `ProjectManager/Plan/README.md` 本文件状态为 ✅ 完成
+- [ ] 如当前主线 / 当前状态 / 下一步变化，更新 `ProjectManager/Overview.md`
+- [ ] 如本计划生命周期状态变化，更新 `ProjectManager/Plan/README.md`
 - [ ] 更新父计划 `2026-04-18-subplan-4-next-stage-expansion.md` §五状态面板（P3 🟡 → ✅）
 - [ ] 更新祖父计划 `2026-04-16-open-backlog-consolidation.md` §三·D 段（段位赛 ✅）
-- [ ] `ISSUE_LIST.md` 补充在本阶段新发现但已关闭的 ISSUE；未关闭的标注"挂靠下一阶段"
+- [ ] 如本阶段新发现或关闭 ISSUE，更新 `ISSUE_LIST.md`；未关闭的标注"挂靠下一阶段"
 
 **验收门槛（M4）**：
 
@@ -155,7 +155,7 @@
 本子子计划严格继承父计划 §六"文档先行纪律"：
 
 1. **三层落盘已到位**：Umbrella ✅ + 实施级 Specs ✅ + 本子子计划 ✅；代码启动前置已清
-2. **每个 M 完成当场同步四处**：本文件 / `ISSUE_LIST.md` / `Overview.md` / `Plan/README.md`；禁止以"session 末尾统一回写"为由拖延
+2. **每个 M 完成后按角色最小同步**：本文件必须当场回写；`ISSUE_LIST.md` / `Overview.md` / `Plan/README.md` 只有在对应事实源发生变化时才更新，禁止为了形式机械性全量同步
 3. **禁止跳里程碑**：M1 未全绿 M2 不开工；M1 里程碑验收不通过直接退回到对应代码层修正，不允许用后续 M 掩盖
 4. **视觉 token 不写死**：M3 里任何新增颜色、间距必须走 CSS 变量 / Tailwind token；违反即视为 M3 未通过
 
@@ -172,7 +172,7 @@
 
 ### 4.2 开放项（由对应 M 里程碑内决定）
 
-- [ ] M2：王者段位 5 新内容点 × 4 胜场（2+2+1）的具体分配算法
+- [ ] M2：大师段位 5 新内容点 × 4 胜场（2+2+1）的具体分配算法
 - [ ] M3：Hub 页面的段位卡片交互（横向滑动 vs 纵向列表）
 - [ ] M3：GameResult 自动跳转时长是否可配置（当前 Spec 暂定 3 秒）
 - [ ] M4：是否把"薄弱题型前 3"写入 `ISSUE_LIST.md` 作为生成器后续调优输入

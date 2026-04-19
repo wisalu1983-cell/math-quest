@@ -46,7 +46,7 @@
 
 | 维度 | 事实源 | 本规格处置 |
 |------|--------|------------|
-| 段位赛出题范围（白银 A01~A04 等）| `2026-04-10` §5.2 | 算法按其读取；不自行重述 |
+| 段位赛出题范围（新秀 A01~A04 等）| `2026-04-10` §5.2 | 算法按其读取；不自行重述 |
 | BO 赛制 / 晋级胜场数 W（BO3=2、BO5=3、BO7=4）| `2026-04-10` §5.3 | 状态机直接使用 W 值；不自行重述 |
 | 单关规则（题量 20~30、心×3、计时）| `2026-04-10` §5.3 | 算法按其实现；本规格给出每场题量的**首版取值**（见 §5.3）|
 | 胜场编排（新内容点 / 主考项 ≥40% / 复习题 ≤25%）| `2026-04-10` §8 Q9 | 抽题器直接实现；本规格给出执行细则（见 §5）|
@@ -62,10 +62,14 @@
 
 ```typescript
 // src/types/gamification.ts
-export type RankTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'king';
+export type RankTier = 'apprentice' | 'rookie' | 'pro' | 'expert' | 'master';
 ```
 
-> 青铜（bronze）= 初始标签，无段位赛逻辑；`currentTier = 'bronze'` 表示"尚未通过任何段位赛"。
+> 中英映射：学徒 = `apprentice`、新秀 = `rookie`、高手 = `pro`、专家 = `expert`、大师 = `master`。
+>
+> 学徒（apprentice）= 初始标签，无段位赛逻辑；`currentTier = 'apprentice'` 表示"尚未通过任何段位赛"。
+>
+> 原金属+紫色命名方案（青铜/白银/黄金/铂金/王者 + `bronze~king`）已全面废弃；**不得在代码或文档里再引入**。
 
 ### 3.2 新增 `RankMatchBestOf`
 
@@ -73,7 +77,7 @@ export type RankTier = 'bronze' | 'silver' | 'gold' | 'platinum' | 'king';
 export type RankMatchBestOf = 3 | 5 | 7;
 ```
 
-> 与 §5.3 表格一一对应：白银 BO3、黄金 BO5、铂金 BO5、王者 BO7。
+> 与 §5.3 表格一一对应：新秀 BO3、高手 BO5、专家 BO5、大师 BO7。
 
 ### 3.3 `RankMatchGame` — 单关记录（已完成或进行中）
 
@@ -102,7 +106,7 @@ export interface RankMatchSession {
   id: string;
   userId: string;
   /** 挑战的目标段位（不等于当前段位，是"打赢就晋级到"的那个段位） */
-  targetTier: Exclude<RankTier, 'bronze'>;
+  targetTier: Exclude<RankTier, 'apprentice'>;
   bestOf: RankMatchBestOf;
   /** 达到该胜场数即晋级 */
   winsToAdvance: number; // = (bestOf + 1) / 2
@@ -125,7 +129,7 @@ export interface RankProgress {
   currentTier: RankTier;
   /** 每段位的尝试历史（时间顺序），用于复盘、失败统计、UI 展示 */
   history: Array<{
-    targetTier: Exclude<RankTier, 'bronze'>;
+    targetTier: Exclude<RankTier, 'apprentice'>;
     outcome: 'promoted' | 'eliminated';
     startedAt: number;
     endedAt: number;
@@ -149,7 +153,7 @@ export interface GameProgress {
 }
 ```
 
-> `rankProgress` 设为可选字段：旧存档读进来时为 `undefined`，由 `repository.getGameProgress` 用默认值 `{ currentTier: 'bronze', history: [] }` 回填（见 §6）。
+> `rankProgress` 设为可选字段：旧存档读进来时为 `undefined`，由 `repository.getGameProgress` 用默认值 `{ currentTier: 'apprentice', history: [] }` 回填（见 §6）。
 
 ### 3.7 `GameSessionMode` 扩展
 
@@ -188,7 +192,7 @@ export interface PracticeSession {
   rankMatchMeta?: {
     rankSessionId: string;      // 关联 RankMatchSession.id
     gameIndex: number;          // 该局是 BO 里的第几局（1-based）
-    targetTier: Exclude<RankTier, 'bronze'>;
+    targetTier: Exclude<RankTier, 'apprentice'>;
   };
   // questions: QuestionAttempt[] 继续承载该局的 20~30 道混合题
 }
@@ -236,10 +240,10 @@ export interface PracticeSession {
 
 | 段位 | 每场题量 | 计时 |
 |------|---------|------|
-| 白银（BO3）| **20 题** | 无 |
-| 黄金（BO5）| **25 题** | 无 |
-| 铂金（BO5）| **25 题** | 30 分钟 |
-| 王者（BO7）| **30 题** | 30 分钟 |
+| 新秀（BO3）| **20 题** | 无 |
+| 高手（BO5）| **25 题** | 无 |
+| 专家（BO5）| **25 题** | 30 分钟 |
+| 大师（BO7）| **30 题** | 30 分钟 |
 
 > 这组数值在实施子子计划 M2 验收时按 playtest 复核；如需调整，走"改这个实施规格 + 回写四处"的流程，不得在代码里改硬编码后绕过规格。
 
@@ -255,10 +259,10 @@ export interface PracticeSession {
 
 每题的 `difficulty` 由"段位出题难度倾向"（`2026-04-10` §5.2）叠加"用户对应题型的当前星级"（`advanceProgress` + `getStars`）共同决定：
 
-- 白银：全部 `normal`（2-5）
-- 黄金：主考项按用户星级匹配（`normal`/`hard` 混合），非主考偏 `normal`
-- 铂金：主考项 `hard` 为主，偶尔 `demon`（≤20%），非主考 `hard`
-- 王者：主考项 `hard`/`demon` 五五开，非主考 `hard`
+- 新秀：全部 `normal`（2-5）
+- 高手：主考项按用户星级匹配（`normal`/`hard` 混合），非主考偏 `normal`
+- 专家：主考项 `hard` 为主，偶尔 `demon`（≤20%），非主考 `hard`
+- 大师：主考项 `hard`/`demon` 五五开，非主考 `hard`
 
 ### 5.6 复习题约束
 
@@ -288,7 +292,7 @@ export function migrateRankProgressIfNeeded(gp: GameProgress): GameProgress {
   return {
     ...gp,
     rankProgress: {
-      currentTier: 'bronze',
+      currentTier: 'apprentice',
       history: [],
     },
   };
@@ -324,7 +328,7 @@ isUnlocked(tier) =
 ```
 
 - 入场表来自 `2026-04-13` §3.2
-- 青铜无校验，始终 unlocked；白银是第一个有校验的段位
+- 学徒无校验，始终 unlocked；新秀是第一个有校验的段位
 
 ### 7.2 BO 赛事生命周期
 
@@ -368,7 +372,7 @@ onMatchFinished(rankSession)
 | 路由 | 页面 | 数据源 | 关键交互 |
 |------|------|--------|---------|
 | `/rank-match` | `RankMatchHub` | `rankProgress` + 入场校验 | 展示五段位卡片（已解锁 / 未解锁 / 已通过）；点击可解锁段位卡片进入 BO 赛事 |
-| `/rank-match/session` | 复用现有 `Practice` 页面 | 当前活跃 `PracticeSession`（带 `rankMatchMeta`）| 题头显示"白银 BO3 第 1 局 / 共 3 局"徽标 |
+| `/rank-match/session` | 复用现有 `Practice` 页面 | 当前活跃 `PracticeSession`（带 `rankMatchMeta`）| 题头显示"新秀 BO3 第 1 局 / 共 3 局"徽标 |
 | `/rank-match/game-result` | `RankMatchGameResult` | 刚结束的 `RankMatchGame` | 展示本局胜负、BO 整体进度、"开始下一局"按钮；自动 3 秒后跳转 |
 | `/rank-match/match-result` | `RankMatchResult` | 完整 `RankMatchSession` | BO 最终结论、每局胜负矩阵、薄弱题型复盘、返回 Hub |
 
@@ -377,9 +381,9 @@ onMatchFinished(rankSession)
 当前 `src/pages/Home.tsx` L222 只有文案"刷星升级，向段位赛进发"，且嵌在进阶入口内。改造为：
 
 - 独立段位赛卡片
-- 显示当前段位徽标（青铜 / 白银 / 黄金 / 铂金 / 王者）
+- 显示当前段位徽标（学徒 / 新秀 / 高手 / 专家 / 大师）
 - 若存在 `rankProgress.activeSessionId`，卡片标题变为"继续挑战：{targetTier} BO{bestOf}"
-- 若当前段位 < 白银但未满足白银入场：显示"差：A01 × 1★"等缺口提示（前 3 项）
+- 若当前段位 < 新秀但未满足新秀入场：显示"差：A01 × 1★"等缺口提示（前 3 项）
 
 ### 8.3 路由注册
 
@@ -390,7 +394,10 @@ onMatchFinished(rankSession)
 所有页面遵守 `2026-04-14-ui-redesign-spec.md` 阳光版 v5：
 - 字号下限 11px
 - 色彩从 token 取
-- 段位徽标色建议：青铜 `#C48B5C` / 白银 `#9AA6B2` / 黄金 `#E8B949` / 铂金 `#6FBEDB` / 王者 `#B77BE8`（具体 token 在实施时进入 `globals.css`；不允许在组件里写死）
+- **段位徽标色与 emoji 映射**：原"金属 + 紫色"方案（青铜/白银/黄金/铂金/王者对应 `#C48B5C` / `#9AA6B2` / `#E8B949` / `#6FBEDB` / `#B77BE8`）**已随命名升级整体作废**。新命名（学徒/新秀/高手/专家/大师）需按"智力递进而非金属对比"的语义重新选色与 emoji；具体方案由 UI 实施阶段（另一 agent 在 UI 子任务中）决定，Spec 不再预设 hex 值与 emoji，但保持硬约束：
+  - 必须经 `globals.css` CSS 变量暴露（`--rank-apprentice` / `--rank-rookie` / `--rank-pro` / `--rank-expert` / `--rank-master`），禁止组件内写死十六进制
+  - 每两相邻段位的徽章色与图标至少在亮度、色相、图形三要素中拉开两项差异，保证小屏下可辨识
+  - 学徒（初始标签）色调应体现"入门/未挑战"的中性感，不得与任何"已晋级"段位色调冲突
 
 ---
 
@@ -410,8 +417,8 @@ onMatchFinished(rankSession)
 ### 10.1 开放项
 
 - [ ] 失败局数如何计入"薄弱题型"——本规格先用"最近 2 局错题最多的题型"兜底，playtest 后复盘
-- [ ] 王者段位王者 5 个新内容点 → 4 胜场（2+2+1），本规格未在算法里硬编码"前两场 2 项、后两场 1 项"的具体分配；实施子子计划 M2 按 `2026-04-10` §8 Q9 表的脚注实现
-- [ ] "青铜"段位徽章是否可点击挑战白银：本规格默认"不可点击未满足星级门槛的段位"，由 Hub 视觉灰态 + 提示缺口
+- [ ] 大师段位 5 个新内容点 → 4 胜场（2+2+1），本规格未在算法里硬编码"前两场 2 项、后两场 1 项"的具体分配；实施子子计划 M2 按 `2026-04-10` §8 Q9 表的脚注实现
+- [ ] "学徒"段位徽章是否可点击挑战新秀：本规格默认"不可点击未满足星级门槛的段位"，由 Hub 视觉灰态 + 提示缺口
 
 ### 10.2 风险
 
