@@ -3,7 +3,7 @@
 > 所属版本：v0.2  
 > 创建：2026-04-20
 > 父计划：无（本主线候选替代 `2026-04-16-open-backlog-consolidation` 成为下一轮主线）
-> 状态：⬜ 规划中（等待整体方向确认 + Phase α 启动授权）
+> 状态：⬜ 规划中（等待整体方向确认 + Phase 1 启动授权）
 
 ---
 
@@ -22,9 +22,11 @@
 | 每个子项通用的 4 步工作流 | [`04-execution-discipline.md`](./04-execution-discipline.md) |
 | 各 Phase 范围 / 进入条件 / 收尾条件 | [`phases/`](./phases/) |
 
-## 不在本目录里的东西
+## 本规划包不预先展开的东西
 
-- **具体子计划（实施级）**：等到对应 Phase 启动时另建独立 `Plan/YYYY-MM-DD-*.md`，头部按 `Plan/README.md` §Plan 文件模板要求；本规划包**不提前展开**
+本目录的 5 份综述文件（00~04 + `phases/`）采用**渐进式披露**。下列内容等到对应时点才在独立文件中展开：
+
+- **具体子计划（实施级）**：对应 Phase 启动时在 [`subplans/`](./subplans/) 下建独立 `YYYY-MM-DD-<feature-slug>.md`，头部按 [`../README.md`](../README.md) §Plan 文件模板 + §子计划 Plan 文件位置规则 要求
 - **生成器 / UI / 数值等已有规格**：仍在 `ProjectManager/Specs/`，按需引用
 - **Issue 追踪**：仍在 `ProjectManager/ISSUE_LIST.md`
 - **当前项目主线状态**：仍以 `ProjectManager/Overview.md` 为准（本主线启动时才切换）

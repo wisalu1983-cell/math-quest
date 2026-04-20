@@ -24,6 +24,7 @@ const PM_DIR = path.join(REPO_ROOT, 'ProjectManager');
 const SPECS_DIR = path.join(PM_DIR, 'Specs');
 const PLAN_DIR = path.join(PM_DIR, 'Plan');
 const ISSUE_LIST = path.join(PM_DIR, 'ISSUE_LIST.md');
+const BACKLOG_FILE = path.join(PM_DIR, 'Backlog.md');
 const PLAN_README = path.join(PLAN_DIR, 'README.md');
 const INDEX_FILE = path.join(SPECS_DIR, '_index.md');
 
@@ -60,6 +61,23 @@ function listMd(dir: string): string[] {
     .readdirSync(dir)
     .filter(f => f.endsWith('.md'))
     .map(f => path.join(dir, f));
+}
+
+// 递归列出某目录下所有 *.md（含子目录）
+// 用途：版本归档规则生效后，Plan/vX.Y/ 子目录下的所有 Plan 也应进入扫描
+function listMdRecursive(dir: string): string[] {
+  if (!fs.existsSync(dir)) return [];
+  const results: string[] = [];
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const entry of entries) {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...listMdRecursive(full));
+    } else if (entry.isFile() && entry.name.endsWith('.md')) {
+      results.push(full);
+    }
+  }
+  return results;
 }
 
 function relRepo(p: string): string {
@@ -156,7 +174,11 @@ function checkSpecVersionConsistency() {
     .map(extractSpecVersion)
     .filter(s => s.version !== null);
 
-  const planFiles = listMd(PLAN_DIR);
+  // 递归覆盖 Plan/vX.Y/ 下所有 Plan（2026-04-20 版本归档规则）
+  // issues-closed.md 是历史快照，不视为 consumer（避免归档视图里历史表述误报）
+  const planFiles = listMdRecursive(PLAN_DIR).filter(
+    f => path.basename(f) !== 'issues-closed.md'
+  );
   const allConsumers: { file: string; content: string }[] = [];
   for (const p of planFiles) {
     const c = readFileSafe(p);
@@ -222,30 +244,83 @@ interface IssueRecord {
   declLine: number;
 }
 
+// 解析 ISSUE 权威状态的多源聚合：
+//   优先级 1：ISSUE_LIST.md（当前版本开放）
+//   优先级 2：Backlog.md 里以 `### ISSUE-xxx` 开头的小节（延期候选 → status=pending）
+//   优先级 3：各版本 Plan/vX.Y/issues-closed.md 归档（历史关闭 → status=done）
+// 同一 ID 只采纳最高优先级的记录，避免历史归档覆盖当前开放状态。
 function parseIssueList(): IssueRecord[] {
-  const content = readFileSafe(ISSUE_LIST);
-  if (!content) return [];
-  const lines = content.split('\n');
   const records: IssueRecord[] = [];
-  let currentId: string | null = null;
-  let currentDeclLine = 0;
-  for (let i = 0; i < lines.length; i++) {
-    const m = lines[i].match(/^###\s+(ISSUE-\d+)/);
-    if (m) {
-      currentId = m[1];
-      currentDeclLine = i + 1;
-      continue;
-    }
-    if (currentId && /^-\s*\*\*状态\*\*/.test(lines[i])) {
-      records.push({
-        id: currentId,
-        status: parseIssueStatus(lines[i]),
-        rawStatusLine: lines[i].trim(),
-        declLine: currentDeclLine,
-      });
-      currentId = null;
+  const seen = new Set<string>();
+
+  // 优先级 1：当前版本开放 issue
+  const currentContent = readFileSafe(ISSUE_LIST);
+  if (currentContent) {
+    const lines = currentContent.split('\n');
+    let currentId: string | null = null;
+    let currentDeclLine = 0;
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(/^###\s+(ISSUE-\d+)/);
+      if (m) {
+        currentId = m[1];
+        currentDeclLine = i + 1;
+        continue;
+      }
+      if (currentId && /^-\s*\*\*状态\*\*/.test(lines[i])) {
+        if (!seen.has(currentId)) {
+          records.push({
+            id: currentId,
+            status: parseIssueStatus(lines[i]),
+            rawStatusLine: lines[i].trim(),
+            declLine: currentDeclLine,
+          });
+          seen.add(currentId);
+        }
+        currentId = null;
+      }
     }
   }
+
+  // 优先级 2：Backlog.md 延期候选（保留原 ID）
+  const backlogContent = readFileSafe(BACKLOG_FILE);
+  if (backlogContent) {
+    const lines = backlogContent.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(/^###\s+(ISSUE-\d+)/);
+      if (m && !seen.has(m[1])) {
+        records.push({
+          id: m[1],
+          status: 'pending',
+          rawStatusLine: `Backlog: ${lines[i].trim()}`,
+          declLine: i + 1,
+        });
+        seen.add(m[1]);
+      }
+    }
+  }
+
+  // 优先级 3：历史版本归档的 issues-closed.md（视为 done）
+  const closedArchives = listMdRecursive(PLAN_DIR).filter(
+    f => path.basename(f) === 'issues-closed.md'
+  );
+  for (const cf of closedArchives) {
+    const content = readFileSafe(cf);
+    if (!content) continue;
+    const lines = content.split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      const m = lines[i].match(/^###\s+(ISSUE-\d+)/);
+      if (m && !seen.has(m[1])) {
+        records.push({
+          id: m[1],
+          status: 'done',
+          rawStatusLine: `archived: ${relRepo(cf)}:${i + 1}`,
+          declLine: i + 1,
+        });
+        seen.add(m[1]);
+      }
+    }
+  }
+
   return records;
 }
 
@@ -255,7 +330,11 @@ function checkIssueStatusConsistency() {
   const authoritativeById = new Map<string, IssueRecord>();
   for (const r of records) authoritativeById.set(r.id, r);
 
-  const planFiles = listMd(PLAN_DIR);
+  // 递归覆盖 Plan/vX.Y/；归档快照（issues-closed.md）不作为 consumer 扫描，
+  // 否则首次跑会把 v0.1 收口瞬间的历史开放表述和当前权威源反复对比，噪声极大。
+  const planFiles = listMdRecursive(PLAN_DIR).filter(
+    f => path.basename(f) !== 'issues-closed.md'
+  );
   for (const pf of planFiles) {
     const content = readFileSafe(pf);
     if (!content) continue;
@@ -277,13 +356,19 @@ function checkIssueStatusConsistency() {
         if (planStatus === auth.status) continue;
         // 允许 ISSUE_LIST 内部引用自身（避免当前 issue 的"关联"段误报）
         if (pf === ISSUE_LIST) continue;
+        // 从 rawStatusLine 前缀推断权威源（Backlog:/archived: 是 parseIssueList 写入的标签）
+        const authSource = auth.rawStatusLine.startsWith('Backlog:')
+          ? 'Backlog.md'
+          : auth.rawStatusLine.startsWith('archived:')
+          ? '归档（Plan/vX.Y/issues-closed.md）'
+          : 'ISSUE_LIST.md';
         report({
           check: 'issue-status',
           severity: 'warn',
-          message: `${path.basename(pf)} 提到 ${id} 的上下文暗示状态=${planStatus}，但 ISSUE_LIST.md 权威状态=${auth.status}`,
+          message: `${path.basename(pf)} 提到 ${id} 的上下文暗示状态=${planStatus}，但权威状态=${auth.status}（来源：${authSource}）`,
           file: relRepo(pf),
           line: i + 1,
-          hint: `确认该行描述是否仍反映最新 ISSUE_LIST.md 状态；若已过期，更新此处描述或状态字段`,
+          hint: `确认该行描述是否仍反映最新的权威状态；若已过期，更新此处描述，或在 ${authSource} 中调整 ${id} 的状态字段`,
         });
       }
     }
@@ -294,7 +379,17 @@ function checkIssueStatusConsistency() {
 // 规则：扫 Plan/*.md 头部 "> 设计规格：..." 行，提取引用的 Specs/*.md，验证存在
 
 function checkPlanSpecRefs() {
-  const planFiles = listMd(PLAN_DIR).filter(f => path.basename(f) !== 'README.md');
+  // 递归覆盖 Plan/vX.Y/；issues-closed.md 头部没有规格 / 父计划字段，统一排除
+  const planFiles = listMdRecursive(PLAN_DIR).filter(
+    f => path.basename(f) !== 'README.md' && path.basename(f) !== 'issues-closed.md'
+  );
+  // 裸文件名兜底查找用的索引（含 v0.x 子目录）
+  const allPlanBasenames = new Map<string, string>();
+  for (const f of listMdRecursive(PLAN_DIR)) {
+    const base = path.basename(f);
+    if (!allPlanBasenames.has(base)) allPlanBasenames.set(base, f);
+  }
+
   for (const pf of planFiles) {
     const content = readFileSafe(pf);
     if (!content) continue;
@@ -311,11 +406,19 @@ function checkPlanSpecRefs() {
         else if (name.startsWith('Plan/')) resolved = path.join(PM_DIR, name);
         else if (name.startsWith('ProjectManager/')) resolved = path.join(REPO_ROOT, name);
         else if (/^20\d{2}-\d{2}-\d{2}/.test(name)) {
-          // 裸文件名，猜 Specs/ 或 Plan/
+          // 裸文件名解析优先级：
+          //   1. 同目录（同版本内互引最常见，如 Plan/v0.1/phase3.md 引用兄弟 Plan）
+          //   2. Specs/ 根
+          //   3. Plan/ 根
+          //   4. Plan/ 下递归兜底（跨版本或 phases/ 子目录）
+          const sameDir = path.join(path.dirname(pf), name);
           const asSpec = path.join(SPECS_DIR, name);
           const asPlan = path.join(PLAN_DIR, name);
-          if (fs.existsSync(asSpec)) resolved = asSpec;
+          const recursiveHit = allPlanBasenames.get(name);
+          if (fs.existsSync(sameDir)) resolved = sameDir;
+          else if (fs.existsSync(asSpec)) resolved = asSpec;
           else if (fs.existsSync(asPlan)) resolved = asPlan;
+          else if (recursiveHit) resolved = recursiveHit;
           else resolved = asSpec; // 用于报错显示
         } else {
           continue;

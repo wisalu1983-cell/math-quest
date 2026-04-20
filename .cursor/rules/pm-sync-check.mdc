@@ -24,7 +24,11 @@ alwaysApply: true
 
 ### 3. 生命周期变化时
 
-新建 / 归档 / 废弃 Plan、Spec、Issue 的入口关系时执行一次。
+新建 / 归档 / 废弃 Plan、Spec、Issue 的入口关系时执行一次。具体子项：
+
+- **版本收口**：抽取 `Overview.md` 快照到 `Plan/vX.Y/00-overview.md`；整体搬 `ISSUE_LIST.md` 本版本条目到 `Plan/vX.Y/issues-closed.md`；切换 `Overview.md` 顶部版本轴；更新 `Plan/README.md` 版本索引
+- **ISSUE 跨态迁移**：`ISSUE_LIST.md` ↔ `Backlog.md` 之间的延期（迁入 Backlog，状态标"候选/延期自 ISSUE-xxx"，ID 保留）或反向激活（从 Backlog 搬回 ISSUE_LIST，仍用原 ID）
+- **版本工作目录初始化**：新建 `Plan/vX.Y/` 目录 + 对应 `README.md` / `00-overview.md` / phases 骨架
 
 ## 默认豁免
 
@@ -53,3 +57,10 @@ npx tsx scripts/pm-sync-check.ts
 见 `ProjectManager/Plan/README.md` 的计划维护规则、`ProjectManager/Plan/2026-04-17-pm-document-sync-mechanism.md`（历史机制方案）与 `ProjectManager/Plan/2026-04-19-pm-token-efficiency-optimization.md`。
 
 脚本本身覆盖 6 项检查：`_index.md` 完整性 / Specs 版本号一致 / ISSUE 状态一致（启发式）/ Plan→Spec 引用存在 / TOPIC_STAR_CAP ↔ human-bank 档数一致。
+
+**2026-04-20 版本归档规则适配后的覆盖范围**：
+
+- Plan 扫描已递归覆盖 `Plan/vX.Y/`（含 `phases/` 等更深层目录），不再只看 `Plan/` 根目录
+- ISSUE 权威源多源聚合：`ISSUE_LIST.md`（开放）→ `Backlog.md` 的 `### ISSUE-xxx` 条目（视为 pending 延期候选）→ 各版本 `Plan/vX.Y/issues-closed.md`（视为 done 历史归档），同 ID 只采纳最高优先级
+- 归档快照 `issues-closed.md` 只作为 authority，不作为 consumer（避免历史开放表述被反复对比）
+- 裸文件名引用解析优先"同目录" → Specs/ → Plan/ → Plan 递归兜底，支持跨版本互引

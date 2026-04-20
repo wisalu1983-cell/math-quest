@@ -5,7 +5,7 @@
 > **编写依据**：`ISSUE_LIST.md`、`Overview.md`、`Plan/README.md`、`test-results/phase2-p1p2-fixes/qa-result.md`  
 > **关联计划**：`2026-04-16-p1p2-fixes.md`、`2026-04-17-generator-redesign-v2-implementation.md`、`2026-04-17-campaign-advance-stabilization.md`、[`2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md)  
 > **定位**：当前阶段**主计划**——"闯关 + 进阶体验稳定化 → 下阶段扩展（本阶段 = Phase 3 段位赛）"  
-> **状态**：🟡 进行中（A/B/C 段全部完成；子计划 1 / 2 / 2.5 / 3 全部关闭；当前只保留子计划 4 Phase 3 主线承接）
+> **状态**：✅ 已完成（v0.1 收口 2026-04-19；子计划 1 / 2 / 2.5 / 3 / 4 全部关闭，Phase 3 段位赛 M1-M4 代码与全量回归并入 `master@977933e`）
 
 ---
 
