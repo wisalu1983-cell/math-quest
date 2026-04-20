@@ -1,7 +1,7 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-19（Phase 3 主线已完成并入仓；开新号全量 QA 复跑全绿）  
-> 角色：**活跃控制面 / 总管**。本文件只保留项目背景、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档。
+> 最后更新：2026-04-20（项目管理体系版本化迁移完成；v0.1 归档，v0.2 用户反馈主线规划包已落盘，等待启动）
+> 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
 
@@ -18,57 +18,63 @@
 
 1. 用真题参考库校准生成器质量
 2. 完成三层游戏化闭环：闯关 → 进阶 → 段位赛
+3. 基于真实用户反馈持续打磨体验与能力训练设计
 
 **当前范围**：聚焦 A 领域（A01-A08 数与运算）；A09、B、C、D 暂不在本阶段范围内。
 
 ---
 
-## 当前阶段
+## 版本轴
 
-**阶段目标**：在 A01-A08 生成器与闯关/进阶已稳定的基础上，完成 Phase 3 段位赛最小闭环，让三层游戏化结构真正跑通。
+| 阶段 | 版本 | 状态 | 入口 |
+|---|---|---|---|
+| **当前版本** | **v0.2** | 📋 规划包已落盘，等待启动 Phase α | [Plan/v0.2/](Plan/v0.2/) |
+| 上一版本 | v0.1 | ✅ 已发布（2026-04-19 收口，三层游戏化闭环完成） | [Plan/v0.1/](Plan/v0.1/) |
 
-**当前主线**：Phase 3 段位赛（已完成；当前处于“等待下一轮主线领取”状态）。
+> 版本命名与归档规则见 [Plan/README.md](Plan/README.md) §版本归档规则。本文件只呈现当前版本活跃信息；历史版本请进入对应 `Plan/vX.Y/` 目录。
+
+---
+
+## 当前阶段（v0.2）
+
+**阶段目标**：把 2026-04-20 收到的一批深度体验反馈（13 条）整体作为主线，从"清现网可感知体验问题"、"回到题型教育设计层面重梳理"、"补齐游戏化反馈与长期回顾能力"三个方向推进，并顺带建一套可用的开发者工具栏降低人工验证成本。
+
+**当前主线**：用户反馈驱动主线（5 个 Phase：α 效率基建+低成本修复 → β 三项合并短诊断 → γ 诊断结论执行 → δ 题型教育设计重梳理 → ε 历史答题记录）。
 
 **当前状态**：
 
-- Phase 3 三层落盘已完成：Umbrella、实施级 Spec、实施子子计划均已落盘
-- **M1 已完工**（2026-04-19）：类型层 + 常量层 + `entry-gate.ts` 纯函数入场校验 + `match-state.ts` BO 状态机（含 §7.4 提前结束强制）+ `repository/local.ts` 迁移链（v2→v3，项目级原则落地）+ 段位赛最小 store。6 条项目级硬约束全部核验通过
-- **M2 已完工**（2026-04-19，同日收口）：抽题器（`question-picker.ts` 胜场游标 + 三桶分配 + 难度配额 + 交错混合）+ 自检钩子（`picker-validators.ts` 覆盖 Spec §5.7 五类硬约束）+ 段位赛答题流驳接（`store/index.ts::startRankMatchGame` 预生成题序；`endSession` 的 rank-match 分支调用 `handleGameFinished` 并通过新字段 `lastRankMatchAction` 供 UI 路由）。Spec §5.8 校验失败走 `PickerValidationError`，不允许静默降级
-- **M2 遗留补做已完工**（2026-04-19 同日独立 session）：
-  - `ISSUE-060`（P1）段位赛单局中途刷新恢复 —— 方案 A 变体 A2：`PracticeSession.rankQuestionQueue` + `mq_rank_match_sessions` 独立 key，分层恢复入口 `loadActiveRankMatch` + `resumeRankMatchGame`，一致性异常一律抛 `RankMatchRecoveryError` + 清 `activeSessionId`（Spec §5.8）
-  - `ISSUE-061`（P2）复习题错题频次加权 —— `distributeReviewTopics` 纯函数（窗口 N=50，保底 1 道/主题 + 余量原始错题次数最大余数法分配）
-  - M3 UI 作用域零触碰，UI 接入入口通过 store 方法暴露
-- **M3 已完工**（2026-04-19）：UI 三页（`RankMatchHub` / `RankMatchGameResult` / `RankMatchResult`）+ `RankBadge` 组件 + 三条路由注册（`useUIStore.currentPage`，Spec §8.3）+ `globals.css` 段位徽章色 CSS 变量（`--rank-*`，Spec §8.4）+ `Home.tsx` 独立段位赛入口卡片（活跃赛事/缺口提示/入场引导三态）+ `Practice.tsx` BO 进度徽标 + `endSession` 后路由到单局结算页 + 刷新恢复双层接入（`App.tsx` `loadActiveRankMatch` / `Practice.tsx` `resumeRankMatchGame`）。`RankMatchRecoveryError` 全链路显式路由回 Hub，无静默降级（Spec §5.8）
-- **M4 代码闭环已完成**（2026-04-19，同日完成）：M3 完工后首次 `npm run build` 暴露 5 个 build-only 报错（`tsc --noEmit` 不覆盖的 `erasableSyntaxOnly` 路径 + 未用 import），按用户决策归入 M4 验证项一并处理；拟真 QA 阶段以 Playwright 自写 E2E（`test-results/phase3-rank-match/m4-e2e.mjs`）走完整用户旅程，**22 条用例 / 0 FAIL / 0 RISK**，覆盖主路径（学徒→新秀 BO3 两连胜晋级）+ 失败复盘（连败走 MatchResult + 薄弱题型前 3）+ 刷新恢复（G-01 / G-03）；E2E 过程暴露并当场修复两个 P1 bug：`ISSUE-062`（Practice 早退位于 hooks 之前违反规则）、`ISSUE-063`（`startRankMatchGame` 找不到下一局 placeholder）。四栏报告：`test-results/phase3-rank-match/m4-user-qa-report.md`
-- **2026-04-19 开新号全量回归已复跑全绿**：`ISSUE-064` 修复后再次执行 `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs`。结果：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS；`D-07` 已恢复为“刷新后直达当前 `Practice`”，`D-08` 继续保持 PASS，`console critical total: 0`
-- **当前精确检查点**：`master@977933e`（`更新全量回归测试结果与问题修复记录`）；当前本地与 `origin/master` 对齐，可在另一台机器 `git pull` 后从同一状态继续
-- 工程基线当前口径：`npm run build` 绿，`vitest` **473/473**；`npm run lint` 仍有 **127 条 error**，属于现有基线债务，本轮如实记录在全量 QA 自动化报告中
-- 本阶段明确不做：A03+、A09、B/C/D
-- 当前开放问题与历史关闭项不在本页展开，统一看 `ISSUE_LIST.md`
-- 遗留开放项：晋级动画（M3 设计审查 m-3 漏网）按用户决策不入 `ISSUE_LIST`，Phase 3 上线后按真实反馈再评估；当前真正开放问题只剩 `ISSUE-059`（非当前主线）
+- 规划包已落盘：`Plan/v0.2/` 下 `00-overview.md` / `01-feedback-catalog.md` / `02-classification.md` / `03-phase-plan.md` / `04-execution-discipline.md` + `phases/phase-alpha.md`
+- 等待整体方向确认 → 进入 Phase α 第一个子计划（F3 工具栏）的 4 步工作流
+- Phase γ 内容待 Phase β 诊断报告产出后再充实
+- 工程基线（延续 v0.1 收口）：`npm run build` 绿，`vitest` 473/473 PASS；`npm run lint` 127 条 error 属基线债务
+- 精确检查点：`master@977933e`
 
-**下一步**：明天继续时，不需要再补提交或补 Phase 3 收口文档；先按 `Overview.md` → `ISSUE_LIST.md` → `Plan/README.md` 复核当前状态，然后按已确认方向决定是否把“本地用户数据存档 / 账号系统前置数据模型”立为下一轮主线。`ISSUE-059` 仍保持开放，但维持低优先级，不抢下一轮主线。
+**下一步**：按 `Plan/v0.2/` 规划包确认后，启动 Phase α 的 F3 工具栏子计划（新 Plan 按 Plan/README.md 模板创建于 `Plan/` 根下，头部标注"所属版本：v0.2"，并在本文件与 `Plan/v0.2/README.md` 建立双向索引）。
 
 ---
 
 ## 权威入口
 
-### 执行入口
+### 版本活跃入口
 
-- 当前阶段主计划：[2026-04-16-open-backlog-consolidation.md](Plan/2026-04-16-open-backlog-consolidation.md)
-- 当前 Umbrella：[2026-04-18-subplan-4-next-stage-expansion.md](Plan/2026-04-18-subplan-4-next-stage-expansion.md)
-- 当前实施子子计划：[2026-04-18-rank-match-phase3-implementation.md](Plan/2026-04-18-rank-match-phase3-implementation.md)
+- 当前版本根目录：[Plan/v0.2/](Plan/v0.2/)
+- 当前主线概览：[Plan/v0.2/00-overview.md](Plan/v0.2/00-overview.md)
+- 当前反馈目录：[Plan/v0.2/01-feedback-catalog.md](Plan/v0.2/01-feedback-catalog.md)
+- 当前 Phase 计划：[Plan/v0.2/03-phase-plan.md](Plan/v0.2/03-phase-plan.md)
+- 当前执行纪律：[Plan/v0.2/04-execution-discipline.md](Plan/v0.2/04-execution-discipline.md)
+- 当前 Phase α 详表：[Plan/v0.2/phases/phase-alpha.md](Plan/v0.2/phases/phase-alpha.md)
 
-### 规格入口
-
-- 当前实施级唯一入口：[2026-04-18-rank-match-phase3-implementation-spec.md](Specs/2026-04-18-rank-match-phase3-implementation-spec.md)
-- 规格导航总索引：[Specs/_index.md](Specs/_index.md)
-
-### 问题与历史
+### 全局管理入口
 
 - 开放问题权威源：[ISSUE_LIST.md](ISSUE_LIST.md)
-- 计划索引 / 模板 / 归档入口：[Plan/README.md](Plan/README.md)
+- 未激活候选 / 延期条目：[Backlog.md](Backlog.md)
+- 计划索引 / 模板 / 版本归档规则：[Plan/README.md](Plan/README.md)
+- 规格导航总索引：[Specs/_index.md](Specs/_index.md)
 - 复盘 / 历史机制记录：[Reports/](Reports/)
+
+### 历史版本
+
+- v0.1 版本归档：[Plan/v0.1/](Plan/v0.1/)（[README](Plan/v0.1/README.md) · [收口快照](Plan/v0.1/00-overview.md) · [已关闭 issue](Plan/v0.1/issues-closed.md)）
 
 ### 低频扩展
 

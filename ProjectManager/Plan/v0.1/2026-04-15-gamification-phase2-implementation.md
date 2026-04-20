@@ -1,8 +1,8 @@
 # 游戏化 Phase 2 实施计划：进阶系统
 
 > 创建：2026-04-15  
-> 前置规格：[Specs/2026-04-15-gamification-phase2-advance-spec.md](../Specs/2026-04-15-gamification-phase2-advance-spec.md)  
-> 状态：✅ 开发完成 + 浏览器验收通过（2026-04-16 QA Leader 全量流程，[验收报告](../../test-results/phase2-advance-acceptance/qa-result.md)）
+> 前置规格：[Specs/2026-04-15-gamification-phase2-advance-spec.md](../../Specs/2026-04-15-gamification-phase2-advance-spec.md)  
+> 状态：✅ 开发完成 + 浏览器验收通过（2026-04-16 QA Leader 全量流程，[验收报告](../../../test-results/phase2-advance-acceptance/qa-result.md)）
 
 ---
 

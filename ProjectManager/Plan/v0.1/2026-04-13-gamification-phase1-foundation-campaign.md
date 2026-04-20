@@ -9,8 +9,8 @@
 **Tech Stack:** React 19, TypeScript 5.9, Zustand 5, Vitest, TailwindCSS v4
 
 **前置文档：**
-- [游戏化重设计规格](../Specs/2026-04-10-gamification-redesign.md)
-- [统一星级与段位数值设计](../Specs/2026-04-13-star-rank-numerical-design.md)
+- [游戏化重设计规格](../../Specs/2026-04-10-gamification-redesign.md)
+- [统一星级与段位数值设计](../../Specs/2026-04-13-star-rank-numerical-design.md)
 
 **后续计划：**
 - Phase 2：进阶系统（心→星，难度自动调配）

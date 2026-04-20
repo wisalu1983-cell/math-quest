@@ -164,7 +164,7 @@ A05 由"小数四则运算"改为"小数性质与规律"，必须等 A02 和 A03
 
 1. `Plan/README.md` — 新增本计划条目
 2. `ISSUE_LIST.md` — 新开 ISSUE 跟踪生成器重做（如 ISSUE-056）
-3. `Plan/2026-04-16-open-backlog-consolidation.md` — 在子计划 2 下标注本计划挂接
+3. `Plan/v0.1/2026-04-16-open-backlog-consolidation.md` — 在子计划 2 下标注本计划挂接
 4. `Specs/2026-04-17-generator-redesign-v2.md` — 阶段收口后按需补回写段
 
 ---

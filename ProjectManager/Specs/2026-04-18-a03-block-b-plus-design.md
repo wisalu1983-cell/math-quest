@@ -2,7 +2,7 @@
 
 > 创建日期：2026-04-18  
 > 状态：草稿（用户 2026-04-18 已确认本轮方向）  
-> 父计划：[`../Plan/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/2026-04-18-subplan-4-next-stage-expansion.md) §2.1 A03 块B Plus  
+> 父计划：[`../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md) §2.1 A03 块B Plus  
 > 前置文档：  
 > - [A03 竖式笔算 — 块 B：VerticalCalcBoard 组件重构设计](2026-04-09-a03-block-b-design.md)  
 > - [生成器三档难度定义规范](2026-04-16-generator-difficulty-tiering-spec.md)  

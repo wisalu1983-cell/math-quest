@@ -4,7 +4,7 @@
 
 ### 决策
 
-"真题参考库补充（312/525，差 213）"**不再作为独立并行任务**，合流到 `ProjectManager/Plan/2026-04-16-open-backlog-consolidation.md` 子计划 4（下阶段扩展）。
+"真题参考库补充（312/525，差 213）"**不再作为独立并行任务**，合流到 `ProjectManager/Plan/v0.1/2026-04-16-open-backlog-consolidation.md` 子计划 4（下阶段扩展）。
 
 ### 依据
 

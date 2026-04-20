@@ -20,35 +20,35 @@
 2. **A03+ 废弃；A09 / B/C/D 本阶段不做**
 3. **Phase 3 启动不再依赖 A03+ / A09 闭环**，直接进入“实施级规格 → 实施子子计划 → 代码”
 
-同日多次重排的完整轨迹与动机已下沉到 [`../Reports/2026-04-18-phase3-umbrella-replan-history.md`](../Reports/2026-04-18-phase3-umbrella-replan-history.md)；本节不再重复展开。
+同日多次重排的完整轨迹与动机已下沉到 [`../../Reports/2026-04-18-phase3-umbrella-replan-history.md`](../../Reports/2026-04-18-phase3-umbrella-replan-history.md)；本节不再重复展开。
 
 本 Umbrella Plan 当前的任务**只有一个**：把 Phase 3 段位赛的范围、跨系统硬约束与文档先行纪律在正式动代码前钉牢，并作为实施子子计划的父级依据。
 
 ### 1.2 本 Umbrella Plan 不做什么
 
 - **不直接写业务代码**——业务代码归 Phase 3 实施子子计划
-- **不承载 Phase 3 实施级规格本体**——具体实现约束以 [`../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../Specs/2026-04-18-rank-match-phase3-implementation-spec.md) 为权威（见 §六 文档先行纪律）
+- **不承载 Phase 3 实施级规格本体**——具体实现约束以 [`../../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../../Specs/2026-04-18-rank-match-phase3-implementation-spec.md) 为权威（见 §六 文档先行纪律）
 - **不承诺 Phase 3 完成时间线**——本子计划只锁范围与硬约束，进度节奏交给实施子子计划
 - **不承接 A03+ / A09 / B/C/D**——A03+ 废弃；A09 与 B/C/D 本阶段不做，视 Phase 3 落地后情况再评估是否启用独立子计划承载
 
 ### 1.3 前置相关规格（开工前必读）
 
-> 📑 规格索引：[`../Specs/_index.md`](../Specs/_index.md)
+> 📑 规格索引：[`../../Specs/_index.md`](../../Specs/_index.md)
 
 按"维度矩阵"扫描后命中的生效规格（本阶段只做 Phase 3，清单按此收敛）：
 
 | 规格 | 本计划从中继承的硬约束 |
 |---|---|
-| [`Specs/2026-04-10-gamification-redesign.md`](../Specs/2026-04-10-gamification-redesign.md) | 三层游戏化体系（闯关 / 进阶 / 段位赛）；段位赛 §5 五段位、BO 制、新内容点分配、单关规则；"心"作为跨层统一语义 |
-| [`Specs/2026-04-13-star-rank-numerical-design.md`](../Specs/2026-04-13-star-rank-numerical-design.md) | 统一星级（3★/5★）与各段位入场门槛数值；时间节奏测算；心→星→段位换算链 |
-| [`Specs/2026-04-15-gamification-phase2-advance-spec.md`](../Specs/2026-04-15-gamification-phase2-advance-spec.md) | **`TOPIC_STAR_CAP`** 硬约束：A01/A04/A08 为 3★（2 梯度），A02/A03/A05~A07 为 5★（3 梯度）——Phase 3 段位入场资格直接依赖该上限 |
-| [`Specs/2026-04-14-difficulty-standard.md`](../Specs/2026-04-14-difficulty-standard.md) | `difficulty=5` = 上海五年级小升初正常考试水平；段位赛混合题抽题的难度锚点 |
-| [`Specs/2026-04-14-ui-redesign-spec.md`](../Specs/2026-04-14-ui-redesign-spec.md) | 阳光版 v5 视觉语言；段位赛新页面（Hub / Session / Result）必须遵守 |
-| [`Specs/2026-04-17-generator-redesign-v2.md`](../Specs/2026-04-17-generator-redesign-v2.md) | v2.2 题型规格（A01~A08）；段位赛跨题型抽题直接从这 8 个生成器取题 |
+| [`Specs/2026-04-10-gamification-redesign.md`](../../Specs/2026-04-10-gamification-redesign.md) | 三层游戏化体系（闯关 / 进阶 / 段位赛）；段位赛 §5 五段位、BO 制、新内容点分配、单关规则；"心"作为跨层统一语义 |
+| [`Specs/2026-04-13-star-rank-numerical-design.md`](../../Specs/2026-04-13-star-rank-numerical-design.md) | 统一星级（3★/5★）与各段位入场门槛数值；时间节奏测算；心→星→段位换算链 |
+| [`Specs/2026-04-15-gamification-phase2-advance-spec.md`](../../Specs/2026-04-15-gamification-phase2-advance-spec.md) | **`TOPIC_STAR_CAP`** 硬约束：A01/A04/A08 为 3★（2 梯度），A02/A03/A05~A07 为 5★（3 梯度）——Phase 3 段位入场资格直接依赖该上限 |
+| [`Specs/2026-04-14-difficulty-standard.md`](../../Specs/2026-04-14-difficulty-standard.md) | `difficulty=5` = 上海五年级小升初正常考试水平；段位赛混合题抽题的难度锚点 |
+| [`Specs/2026-04-14-ui-redesign-spec.md`](../../Specs/2026-04-14-ui-redesign-spec.md) | 阳光版 v5 视觉语言；段位赛新页面（Hub / Session / Result）必须遵守 |
+| [`Specs/2026-04-17-generator-redesign-v2.md`](../../Specs/2026-04-17-generator-redesign-v2.md) | v2.2 题型规格（A01~A08）；段位赛跨题型抽题直接从这 8 个生成器取题 |
 
 > **历史参考**（本阶段不进入 Phase 3 实施链路，但不从文件系统删除）：
-> - [`Specs/2026-04-09-a03-block-b-design.md`](../Specs/2026-04-09-a03-block-b-design.md) — A03 块B 原始设计，已落地
-> - [`Specs/2026-04-18-a03-block-b-plus-design.md`](../Specs/2026-04-18-a03-block-b-plus-design.md) — A03+ 轻量路线设计，本阶段废弃不实施
+> - [`Specs/2026-04-09-a03-block-b-design.md`](../../Specs/2026-04-09-a03-block-b-design.md) — A03 块B 原始设计，已落地
+> - [`Specs/2026-04-18-a03-block-b-plus-design.md`](../../Specs/2026-04-18-a03-block-b-plus-design.md) — A03+ 轻量路线设计，本阶段废弃不实施
 
 ### 1.4 跨系统维度清单
 
@@ -91,10 +91,10 @@
 - UI 层：Home 段位赛入口（已占位"刷星升级，向段位赛进发"）、`RankMatchHub` / `RankMatchSession` / `RankMatchResult` 新页面
 - 结算层：单局结算、BO 整体结算、晋级动画、失败复盘（展示薄弱题型）
 
-**挂靠子子计划**：[`Plan/2026-04-18-rank-match-phase3-implementation.md`](2026-04-18-rank-match-phase3-implementation.md)
+**挂靠子子计划**：[`Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md`](2026-04-18-rank-match-phase3-implementation.md)
 
 **实施级规格**：
-- [`../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../Specs/2026-04-18-rank-match-phase3-implementation-spec.md) — Phase 3 实施级规格：数据模型 + Session 状态机 + 抽题器算法 + `local.ts` 迁移 + UI 页面信息架构
+- [`../../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../../Specs/2026-04-18-rank-match-phase3-implementation-spec.md) — Phase 3 实施级规格：数据模型 + Session 状态机 + 抽题器算法 + `local.ts` 迁移 + UI 页面信息架构
 
 **启动前置条件**：无额外代码前置。Phase 3 产品层规格已基本齐备，直接进入"两份 Specs 事实源对齐 → 实施级规格落盘 → 实施子子计划落盘 → 代码"的链路。
 
@@ -112,7 +112,7 @@
 |---|---|---|---|---|
 | **1（本阶段唯一）** | **P3 段位赛** | 补齐三层游戏化闭环；产品层规格最齐（仅缺实施级）；用户明确本阶段只做 Phase 3 | 高 | 大 |
 
-**当前执行口径**：本阶段只保留 P3 段位赛一块。历史重排轨迹与动机统一看归档报告 [`../Reports/2026-04-18-phase3-umbrella-replan-history.md`](../Reports/2026-04-18-phase3-umbrella-replan-history.md)。
+**当前执行口径**：本阶段只保留 P3 段位赛一块。历史重排轨迹与动机统一看归档报告 [`../../Reports/2026-04-18-phase3-umbrella-replan-history.md`](../../Reports/2026-04-18-phase3-umbrella-replan-history.md)。
 
 ---
 
@@ -151,7 +151,7 @@
 
 | 块 | 规格齐备 | 实施子子计划 | 代码起点 | 状态 |
 |---|---|---|---|---|
-| **P3 段位赛（本阶段唯一主线）** | ✅ 产品层两份生效规格 + ✅ 实施级规格 `Specs/2026-04-18-rank-match-phase3-implementation-spec.md`（2026-04-18 落盘）| ✅ `Plan/2026-04-18-rank-match-phase3-implementation.md` M1-M4 已落地；补跑开新号全量 QA 后新增阻塞项 | 类型/常量/抽题器/Store/UI 三页/路由/Home 入口/薄弱题型聚合已落代码；`npm run build` 绿；`npx vitest run` 459/459；定向 E2E 22/22 PASS；全量回归 Fresh 10/10、Advance 6/6、Rank 8/9，`D-07` 暴露 `ISSUE-064`（段位赛局内刷新后未直达当前 Practice） | 🟡 阻塞中，先修 `ISSUE-064` 再收口 |
+| **P3 段位赛（本阶段唯一主线）** | ✅ 产品层两份生效规格 + ✅ 实施级规格 `Specs/2026-04-18-rank-match-phase3-implementation-spec.md`（2026-04-18 落盘）| ✅ `Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md` M1-M4 已落地；补跑开新号全量 QA 后新增阻塞项 | 类型/常量/抽题器/Store/UI 三页/路由/Home 入口/薄弱题型聚合已落代码；`npm run build` 绿；`npx vitest run` 459/459；定向 E2E 22/22 PASS；全量回归 Fresh 10/10、Advance 6/6、Rank 8/9，`D-07` 暴露 `ISSUE-064`（段位赛局内刷新后未直达当前 Practice） | 🟡 阻塞中，先修 `ISSUE-064` 再收口 |
 
 > A03+（已废弃）、A09（本阶段不做）、B/C/D（本阶段不做）均不计入本面板。
 
@@ -211,7 +211,7 @@ Phase 3 的启动顺序**必须**严格为：
 
 ## 八、回写段
 
-> 详细历史已下沉到归档报告：[2026-04-18-phase3-umbrella-replan-history.md](../Reports/2026-04-18-phase3-umbrella-replan-history.md)。本节保留短摘要和既有锚点，避免打断外部引用链。
+> 详细历史已下沉到归档报告：[2026-04-18-phase3-umbrella-replan-history.md](../../Reports/2026-04-18-phase3-umbrella-replan-history.md)。本节保留短摘要和既有锚点，避免打断外部引用链。
 
 ### 2026-04-18：Umbrella Plan 落盘
 
@@ -243,7 +243,7 @@ Phase 3 的启动顺序**必须**严格为：
 ### 2026-04-18（同日）：Phase 3 实施级规格与实施子子计划同步落盘
 
 - 新增规格：`Specs/2026-04-18-rank-match-phase3-implementation-spec.md`（维度 B / 维度 C 双登记；事实源分工已显式指向 `2026-04-10` 与 `2026-04-13`）
-- 新增计划：`Plan/2026-04-18-rank-match-phase3-implementation.md`（M1~M4 里程碑，M1 涵盖类型 + 常量 + 持久化迁移 + store 最小骨架）
+- 新增计划：`Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md`（M1~M4 里程碑，M1 涵盖类型 + 常量 + 持久化迁移 + store 最小骨架）
 - 两份文件已双向引用；`Plan/README.md` 已登记；`_index.md` 维度 B/C 已登记
 - `pm-sync-check` ✅ 全绿
 - **三层落盘已到位**（Umbrella + 实施级 Specs + 实施子子计划），代码启动前置已清

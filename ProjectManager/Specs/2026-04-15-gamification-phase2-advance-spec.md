@@ -5,7 +5,7 @@
 > 前置文档：  
 > - [游戏化重新设计规格](2026-04-10-gamification-redesign.md)  
 > - [统一星级与段位数值设计](2026-04-13-star-rank-numerical-design.md)  
-> - Phase 1 实施计划：[2026-04-13-gamification-phase1-foundation-campaign.md](../Plan/2026-04-13-gamification-phase1-foundation-campaign.md)
+> - Phase 1 实施计划：[2026-04-13-gamification-phase1-foundation-campaign.md](../Plan/v0.1/2026-04-13-gamification-phase1-foundation-campaign.md)
 
 ---
 

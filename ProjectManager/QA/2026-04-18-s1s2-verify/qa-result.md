@@ -1,7 +1,7 @@
 # 闯关+进阶稳定化 S1 尾+S2 全组 回归执行报告
 
 **执行日期**：2026-04-18
-**关联子计划**：[`Plan/2026-04-17-campaign-advance-stabilization.md`](../../Plan/2026-04-17-campaign-advance-stabilization.md) §S1 + §S2
+**关联子计划**：[`Plan/v0.1/2026-04-17-campaign-advance-stabilization.md`](../../Plan/v0.1/2026-04-17-campaign-advance-stabilization.md) §S1 + §S2
 **用例范围**：S1-T2 截图回归（A05 分数题 / A08 方程题）+ S2-T1/T2/T3/T4 代码修复的浏览器+单测混合验证
 **目标用户画像**：上海五年级小学生（10-11 岁），数学能力中等，第一次进入关卡
 **总计**：6 条

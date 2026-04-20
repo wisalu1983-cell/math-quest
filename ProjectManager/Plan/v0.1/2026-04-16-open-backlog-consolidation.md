@@ -19,7 +19,7 @@
 - 保留 `§三·D` 的未来合流规则与范围结论
 - 维持各子计划的历史引用链
 
-活跃当前状态 / 下一步已统一收敛到 [`../Overview.md`](../Overview.md)；Phase 3 的执行事实由 [`2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md) 承接。
+活跃当前状态 / 下一步已统一收敛到 [`../../Overview.md`](../../Overview.md)；Phase 3 的执行事实由 [`2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md) 承接。
 
 ---
 
@@ -27,7 +27,7 @@
 
 ### 1. 开放 issue
 
-开放 issue 以 [`../ISSUE_LIST.md`](../ISSUE_LIST.md) 顶部“当前开放问题”视图为唯一事实源。本文件不再重复镜像 issue 总数、批次统计与关闭历史。
+开放 issue 以 [`../../ISSUE_LIST.md`](../../ISSUE_LIST.md) 顶部“当前开放问题”视图为唯一事实源。本文件不再重复镜像 issue 总数、批次统计与关闭历史。
 
 ### 2. 非 issue 的后续事项
 
@@ -51,7 +51,7 @@
 
 | 优先级 | 项目 | 类型 | 说明 | 状态 |
 |--------|------|------|------|------|
-| P1 | Phase 2 浏览器验收 | 验收 | 进阶系统 A1-A6 全量验收：Vitest 167/167 + Playwright 30/31 + 拟真 QA 9/10，0 新缺陷 | ✅ [报告](../../test-results/phase2-advance-acceptance/qa-result.md) |
+| P1 | Phase 2 浏览器验收 | 验收 | 进阶系统 A1-A6 全量验收：Vitest 167/167 + Playwright 30/31 + 拟真 QA 9/10，0 新缺陷 | ✅ [报告](../../../test-results/phase2-advance-acceptance/qa-result.md) |
 | P1 | ISSUE-032 | a11y | 主按钮对比度不足 | ✅ 已关闭 |
 | P1 | ISSUE-034 | a11y | 退出弹窗 dialog 语义 | ✅ 已关闭 |
 | P1 | ISSUE-035 | a11y | 进度条 ARIA | ✅ 已关闭 |
@@ -122,14 +122,14 @@
 已纳入：Phase 2 浏览器验收（A1-A6）+ ISSUE-032、034、035、028、023、024、022。
 
 回写：
-- Phase 2 验收通过（[报告](../../test-results/phase2-advance-acceptance/qa-result.md)）
-- 7 项 UI/a11y 批量关闭（[报告](../../test-results/p1-ui-a11y-batch/qa-result.md)）
+- Phase 2 验收通过（[报告](../../../test-results/phase2-advance-acceptance/qa-result.md)）
+- 7 项 UI/a11y 批量关闭（[报告](../../../test-results/p1-ui-a11y-batch/qa-result.md)）
 
 ### 子计划 2：生成器质量补强 ✅ 完成（2026-04-17）
 
 已纳入：
 - ISSUE-008、009、010（2026-04-16 关闭）
-- **扩展**：[`Plan/2026-04-17-generator-redesign-v2-implementation.md`](2026-04-17-generator-redesign-v2-implementation.md)——v2.2 规格落地，A01-A08 生成器重写 + 前端新组件（表达式输入、多选 MC、书面分数、多步填空）+ 压档（A01/A04/A08 对齐进阶规格 2 档）+ 关卡分段重构（ISSUE-057）。阶段 1-6 全部收口。
+- **扩展**：[`Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md`](2026-04-17-generator-redesign-v2-implementation.md)——v2.2 规格落地，A01-A08 生成器重写 + 前端新组件（表达式输入、多选 MC、书面分数、多步填空）+ 压档（A01/A04/A08 对齐进阶规格 2 档）+ 关卡分段重构（ISSUE-057）。阶段 1-6 全部收口。
 
 ⚠️ **该子计划收尾时遗留若干冒烟 / 浏览器端发现的问题**（`ISSUE-058`、`BUG-v2-SMOKE-01/02/03`、`Q-057-F01/F02`、深度体验 QA），已单独拆出到 **子计划 2.5**（见 §七）。
 
@@ -137,13 +137,13 @@
 
 **定位**：子计划 2 的收尾 + 子计划 1 的延伸，把刚做完的 v2.2 闯关+进阶体验真正打稳。
 
-**文件**：[`Plan/2026-04-17-campaign-advance-stabilization.md`](2026-04-17-campaign-advance-stabilization.md)
+**文件**：[`Plan/v0.1/2026-04-17-campaign-advance-stabilization.md`](2026-04-17-campaign-advance-stabilization.md)
 
 **回写**：S1/S2/S3/S4 四组全部关闭。S3-T1 梯度打分用户于 2026-04-18 确认通过，期间迭代了 A01/A02/A04/A05/A06 五个生成器的难度分档策略。tsc 0 / vitest 328/328。详见子计划文件 §八。
 
 ### 子计划 3：UI 一致性与代码整洁清理 ✅ 完成（2026-04-18）
 
-**文件**：[`Plan/2026-04-18-ui-consistency-cleanup.md`](2026-04-18-ui-consistency-cleanup.md)
+**文件**：[`Plan/v0.1/2026-04-18-ui-consistency-cleanup.md`](2026-04-18-ui-consistency-cleanup.md)
 
 原范围：ISSUE-020、025、026、029、030、031、037、038、041、042、043、045 共 12 项。
 
@@ -157,7 +157,7 @@
 
 ### 子计划 4：模式补齐（Umbrella 收敛为单块 Phase 3，2026-04-18）
 
-**文件**：[`Plan/2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md) — Umbrella Plan（本阶段收敛后仅 Phase 3）
+**文件**：[`Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md) — Umbrella Plan（本阶段收敛后仅 Phase 3）
 
 **纳入范围**（单块）：
 - **Phase 3 段位赛**（本阶段唯一主线，全新模式，补齐三层游戏化闭环）
@@ -198,7 +198,7 @@
 
 ## 六、当前建议（2026-04-19 收敛为交接摘要）
 
-本节不再镜像完整活跃状态；默认活跃视图统一看 [`../Overview.md`](../Overview.md)，执行细节看 [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md)。
+本节不再镜像完整活跃状态；默认活跃视图统一看 [`../../Overview.md`](../../Overview.md)，执行细节看 [子计划 4 Umbrella](2026-04-18-subplan-4-next-stage-expansion.md)。
 
 - **当前主线**：子计划 4 仅承接 Phase 3 段位赛。
 - **当前状态**：产品层规格、实施级规格与实施子子计划均已落盘；代码起点待按实施子计划 M1 领取。
@@ -209,7 +209,7 @@
 
 ## 七、子计划 2.5：闯关 + 进阶模式稳定化 ✅ 完成（2026-04-18）
 
-**独立执行文件**：[`Plan/2026-04-17-campaign-advance-stabilization.md`](2026-04-17-campaign-advance-stabilization.md)
+**独立执行文件**：[`Plan/v0.1/2026-04-17-campaign-advance-stabilization.md`](2026-04-17-campaign-advance-stabilization.md)
 
 ### 完成摘要
 

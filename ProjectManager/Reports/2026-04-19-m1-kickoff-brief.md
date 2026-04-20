@@ -5,7 +5,7 @@
 > 生命周期：M1 领取并启动后本文件即归档，**不登记到 `Plan/README.md`**。  
 > 权威源不是本文件；所有规则以对应 Spec/Plan/CLAUDE.md 为准，本文件只做索引与提醒。
 >
-> **状态：✅ 已归档**（2026-04-19，M1 同日完工）。正式完工记录见 [`../Plan/2026-04-18-rank-match-phase3-implementation.md`](../Plan/2026-04-18-rank-match-phase3-implementation.md) §6 "2026-04-19：M1 开工 + 完工"。本文件保留作为 M1 接手时的决策快照，不再更新。
+> **状态：✅ 已归档**（2026-04-19，M1 同日完工）。正式完工记录见 [`../Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md`](../Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md) §6 "2026-04-19：M1 开工 + 完工"。本文件保留作为 M1 接手时的决策快照，不再更新。
 
 ---
 
@@ -21,7 +21,7 @@
 
 1. [`CLAUDE.md`](../../CLAUDE.md)（全文，**特别留意**非显然约束新增的"存档版本升级 · 项目级原则"）
 2. [`ProjectManager/Overview.md`](../Overview.md)（活跃控制面，3 分钟过一遍当前主线与状态）
-3. [`ProjectManager/Plan/2026-04-18-rank-match-phase3-implementation.md`](../Plan/2026-04-18-rank-match-phase3-implementation.md)（你的子子计划；**重点读 §M1**）
+3. [`ProjectManager/Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md`](../Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md)（你的子子计划；**重点读 §M1**）
 4. [`ProjectManager/Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../Specs/2026-04-18-rank-match-phase3-implementation-spec.md)（实施级规格；**§3/§4/§6/§7 是 2026-04-19 新做了大量决策的地方，必须全读**）
 
 其他文档按需查，不默认通读。

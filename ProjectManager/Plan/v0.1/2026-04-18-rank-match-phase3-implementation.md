@@ -4,13 +4,13 @@
 > 父计划：[`2026-04-18-subplan-4-next-stage-expansion.md`](2026-04-18-subplan-4-next-stage-expansion.md)（子计划 4 Umbrella，本阶段唯一主线）  
 > 祖父计划：[`2026-04-16-open-backlog-consolidation.md`](2026-04-16-open-backlog-consolidation.md) §四 子计划 4  
 > 前置规格：
-> - [`../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../Specs/2026-04-18-rank-match-phase3-implementation-spec.md)（实施级唯一入口，本计划直接按其 §3~§8 落地）
-> - [`../Specs/2026-04-10-gamification-redesign.md`](../Specs/2026-04-10-gamification-redesign.md) §5 / §8 Q9（段位赛产品规则事实源）
-> - [`../Specs/2026-04-13-star-rank-numerical-design.md`](../Specs/2026-04-13-star-rank-numerical-design.md) §3 / §4（星级与数值事实源）
-> - [`../Specs/2026-04-15-gamification-phase2-advance-spec.md`](../Specs/2026-04-15-gamification-phase2-advance-spec.md)（`TOPIC_STAR_CAP`）
-> - [`../Specs/2026-04-14-ui-redesign-spec.md`](../Specs/2026-04-14-ui-redesign-spec.md)（阳光版 v5）  
+> - [`../../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../../Specs/2026-04-18-rank-match-phase3-implementation-spec.md)（实施级唯一入口，本计划直接按其 §3~§8 落地）
+> - [`../../Specs/2026-04-10-gamification-redesign.md`](../../Specs/2026-04-10-gamification-redesign.md) §5 / §8 Q9（段位赛产品规则事实源）
+> - [`../../Specs/2026-04-13-star-rank-numerical-design.md`](../../Specs/2026-04-13-star-rank-numerical-design.md) §3 / §4（星级与数值事实源）
+> - [`../../Specs/2026-04-15-gamification-phase2-advance-spec.md`](../../Specs/2026-04-15-gamification-phase2-advance-spec.md)（`TOPIC_STAR_CAP`）
+> - [`../../Specs/2026-04-14-ui-redesign-spec.md`](../../Specs/2026-04-14-ui-redesign-spec.md)（阳光版 v5）  
 > 状态：✅ 已完成（代码、验证、项目回写均已入仓；当前检查点 = `master@977933e`）  
-> **M1 启动前必读**：[`../Reports/2026-04-19-m1-kickoff-brief.md`](../Reports/2026-04-19-m1-kickoff-brief.md)（一次性交接简报，M1 领取并启动后即归档；汇总 2026-04-19 session 固化的 5 项关键决策、M1 文件清单同构索引与 6 条项目级硬约束）
+> **M1 启动前必读**：[`../../Reports/2026-04-19-m1-kickoff-brief.md`](../../Reports/2026-04-19-m1-kickoff-brief.md)（一次性交接简报，M1 领取并启动后即归档；汇总 2026-04-19 session 固化的 5 项关键决策、M1 文件清单同构索引与 6 条项目级硬约束）
 
 ---
 
@@ -18,7 +18,7 @@
 
 ### 1.1 目标
 
-把 [`../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../Specs/2026-04-18-rank-match-phase3-implementation-spec.md) 的实施级规格在代码层落地，实现 Phase 3 段位赛最小闭环：
+把 [`../../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../../Specs/2026-04-18-rank-match-phase3-implementation-spec.md) 的实施级规格在代码层落地，实现 Phase 3 段位赛最小闭环：
 
 > 用户在 Home 能看到独立的段位赛入口 → 进入 Hub 看到五段位状态 → 满足星级门槛后进入新秀 BO3 → 完成 3 局 → 看到晋级 / 未晋级结算 → 段位持久化。
 

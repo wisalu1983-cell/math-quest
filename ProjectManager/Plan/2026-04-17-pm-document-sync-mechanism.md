@@ -31,7 +31,7 @@
 - 涉及的跨系统文档：
   - `Specs/2026-04-17-generator-redesign-v2.md` v2.1 → v2.2
   - `Specs/_index.md`（新建，要把改动反映到规格矩阵里）
-  - `Plan/2026-04-17-generator-redesign-v2-implementation.md`（加阶段 6）
+  - `Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md`（加阶段 6）
   - `Plan/README.md`（模板 + 规则更新）
   - `ISSUE_LIST.md`（ISSUE-056 状态变更 + 新建 ISSUE-057）
   - `human-verification-bank.md`（重新生成）
@@ -240,8 +240,8 @@ npx tsx scripts/pm-sync-check.ts
 
 **捕获的 2 条真实漏同步**（已在本 session 顺手修复）：
 
-1. `Plan/2026-04-17-generator-redesign-v2-implementation.md` 头部"设计规格"字段 v2.1 → v2.2；标题 + 状态一并收口
-2. `Plan/2026-04-16-open-backlog-consolidation.md:121` 子计划 2 扩展描述引用版本 v2.1 → v2.2
+1. `Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md` 头部"设计规格"字段 v2.1 → v2.2；标题 + 状态一并收口
+2. `Plan/v0.1/2026-04-16-open-backlog-consolidation.md:121` 子计划 2 扩展描述引用版本 v2.1 → v2.2
 
 **两条启发式修正**（已写进 `scripts/pm-sync-check.ts` 注释）：
 

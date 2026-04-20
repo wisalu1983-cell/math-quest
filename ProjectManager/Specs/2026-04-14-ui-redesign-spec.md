@@ -345,7 +345,7 @@ const PAGE_TITLES = {
 
 ## 六、立即修复 vs 并入改版
 
-### 6.1 已落地 hotfix（§6.1，见 Plan/2026-04-14-ui-hotfix-6-1.md）
+### 6.1 已落地 hotfix（§6.1，见 Plan/v0.1/2026-04-14-ui-hotfix-6-1.md）
 
 | Issue | 描述 | 状态 |
 |-------|------|------|

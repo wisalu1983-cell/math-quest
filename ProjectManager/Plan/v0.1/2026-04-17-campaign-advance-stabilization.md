@@ -1,7 +1,7 @@
 # 闯关 + 进阶模式稳定化（子计划 2.5）
 
 > 创建：2026-04-17  
-> 父计划：[`Plan/2026-04-16-open-backlog-consolidation.md`](2026-04-16-open-backlog-consolidation.md)（当前阶段主计划）  
+> 父计划：[`Plan/v0.1/2026-04-16-open-backlog-consolidation.md`](2026-04-16-open-backlog-consolidation.md)（当前阶段主计划）  
 > 父任务：原 §四 子计划 2 收尾 + 原 §四 子计划 1 在 v2.2 后的延伸验收  
 > 设计规格：多份，详见下方"前置相关规格"  
 > 状态：✅ 全部关闭（2026-04-18）— S1/S2/S3/S4 四组全绿，S3-T1 梯度打分用户已确认
@@ -12,15 +12,15 @@
 
 ### 前置相关规格（开工前必读）
 
-> 📑 规格索引：[`ProjectManager/Specs/_index.md`](../Specs/_index.md)
+> 📑 规格索引：[`ProjectManager/Specs/_index.md`](../../Specs/_index.md)
 
 | 规格 | 本计划从中继承的硬约束 |
 |------|--------------------|
-| [`Specs/2026-04-17-generator-redesign-v2.md`](../Specs/2026-04-17-generator-redesign-v2.md) v2.2 | 8 题型档位分布、答题形式、陷阱策略；A01/A04/A08 压 2 档 |
-| [`Specs/2026-04-15-gamification-phase2-advance-spec.md`](../Specs/2026-04-15-gamification-phase2-advance-spec.md) | `TOPIC_STAR_CAP`——A01/A04/A08 仅 2 梯度（3★），其余 3 梯度（5★）；进阶 20 题 SWOR 选子题型 |
-| [`Specs/2026-04-13-star-rank-numerical-design.md`](../Specs/2026-04-13-star-rank-numerical-design.md) | 星级体系、心数门槛 |
-| [`Specs/2026-04-16-generator-difficulty-tiering-spec.md`](../Specs/2026-04-16-generator-difficulty-tiering-spec.md) | 三档难度认知定义（基础/提高/挑战）|
-| [`Specs/2026-04-14-ui-redesign-spec.md`](../Specs/2026-04-14-ui-redesign-spec.md) | Practice 页卡片渲染的尺寸/字号约束 |
+| [`Specs/2026-04-17-generator-redesign-v2.md`](../../Specs/2026-04-17-generator-redesign-v2.md) v2.2 | 8 题型档位分布、答题形式、陷阱策略；A01/A04/A08 压 2 档 |
+| [`Specs/2026-04-15-gamification-phase2-advance-spec.md`](../../Specs/2026-04-15-gamification-phase2-advance-spec.md) | `TOPIC_STAR_CAP`——A01/A04/A08 仅 2 梯度（3★），其余 3 梯度（5★）；进阶 20 题 SWOR 选子题型 |
+| [`Specs/2026-04-13-star-rank-numerical-design.md`](../../Specs/2026-04-13-star-rank-numerical-design.md) | 星级体系、心数门槛 |
+| [`Specs/2026-04-16-generator-difficulty-tiering-spec.md`](../../Specs/2026-04-16-generator-difficulty-tiering-spec.md) | 三档难度认知定义（基础/提高/挑战）|
+| [`Specs/2026-04-14-ui-redesign-spec.md`](../../Specs/2026-04-14-ui-redesign-spec.md) | Practice 页卡片渲染的尺寸/字号约束 |
 
 ### 跨系统维度清单
 
@@ -36,10 +36,10 @@
 
 ### 工作脉络
 
-v2.2 生成器系统性重写（[`Plan/2026-04-17-generator-redesign-v2-implementation.md`](2026-04-17-generator-redesign-v2-implementation.md)）在 2026-04-17 收口，阶段 1-6 全部完成。收口时通过两轮 QA 暴露出若干遗留：
+v2.2 生成器系统性重写（[`Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md`](2026-04-17-generator-redesign-v2-implementation.md)）在 2026-04-17 收口，阶段 1-6 全部完成。收口时通过两轮 QA 暴露出若干遗留：
 
 1. **`ISSUE-058`**：v2.2 生成器新增的 subtype 字面量 / data 字段没同步进 `src/types/`，`tsc -b` 报 24 个类型错误，`npm run build` 生产构建无法产出部署包。
-2. **冒烟 smoke-report 遗留**（`Plan/2026-04-17-generator-redesign-v2-implementation.md` §阶段 5）：
+2. **冒烟 smoke-report 遗留**（`Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md` §阶段 5）：
    - `BUG-v2-SMOKE-02`（P0）A05 分数题 `promptLatex` 覆盖了 prompt，指令文字完全丢失
    - `BUG-v2-SMOKE-01`（P1）A04/A06 长题面被 `whitespace-nowrap overflow-x-auto` 截断
    - `BUG-v2-SMOKE-03`（P2）A08 equation-input placeholder 写死 `例：4x = 20`
@@ -72,7 +72,7 @@ v2.2 生成器系统性重写（[`Plan/2026-04-17-generator-redesign-v2-implemen
 | ID | 事项 | 来源 | 涉及文件 | 完成标准 |
 |----|------|------|---------|---------|
 | S1-T1 | 修 `ISSUE-058`：v2.2 遗留 24 个 tsc 类型错误 | `ISSUE_LIST.md` §ISSUE-058 | `src/types/*.ts`（对应 data 类型 + subtype 联合类型）；`src/engine/generators/bracket-ops.ts`（position 字段）、`equation-transpose.ts`、`multi-step.ts`、`decimal-ops.ts`、`mental-arithmetic.ts`（删除或重命名 `pickTwoDigitDivisor`）| `npm run build` 跑完 tsc 进入 vite 打包并成功 |
-| S1-T2 | 修 `BUG-v2-SMOKE-02`：A05 分数题指令丢失 | `Plan/2026-04-17-generator-redesign-v2-implementation.md` §阶段 5 | `src/pages/Practice.tsx:229-235`（有 promptLatex 时仍需渲染 prompt 文本）| 进入 A05 低档"分数↔小数互换"题，能看到完整指令 + 分数渲染；回归 v2.2 smoke artifacts 截图对比 |
+| S1-T2 | 修 `BUG-v2-SMOKE-02`：A05 分数题指令丢失 | `Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md` §阶段 5 | `src/pages/Practice.tsx:229-235`（有 promptLatex 时仍需渲染 prompt 文本）| 进入 A05 低档"分数↔小数互换"题，能看到完整指令 + 分数渲染；回归 v2.2 smoke artifacts 截图对比 |
 
 ### 分组 S2：重要非阻塞修复 🟡
 
@@ -158,7 +158,7 @@ S3-T1 (梯度打分) 用户自己完成，不阻塞 agent
 
 1. [x] `Plan/README.md` — 已在本次挂新条目
 2. [x] 本文件 — 创建 + 2026-04-18 S1/S2/S3/S4 执行结果全部回写
-3. [x] 父主计划 `Plan/2026-04-16-open-backlog-consolidation.md` §七 — 已加子计划入口
+3. [x] 父主计划 `Plan/v0.1/2026-04-16-open-backlog-consolidation.md` §七 — 已加子计划入口
 4. [x] `ISSUE_LIST.md` — ISSUE-058 已 2026-04-17 标 ✅；本轮 SMOKE-01/03 + Q-057-F01/F02 属子计划内部事项无独立 issue 号，不新开 ISSUE-059+
 5. [x] `Overview.md`（2026-04-18）— S1/S2 全组关闭；S3(agent 部分)/S4 全组关闭；S3-T1 待用户
 6. [x] QA 报告 — `ProjectManager/QA/2026-04-18-s3s4-verify/qa-result.md` 新建

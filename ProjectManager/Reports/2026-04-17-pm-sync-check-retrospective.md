@@ -16,8 +16,8 @@ npx tsx scripts/pm-sync-check.ts
 
 | # | 检查项 | 位置 | 事实 |
 |---|-------|------|------|
-| 1 | spec-version | `Plan/2026-04-16-open-backlog-consolidation.md:121` | 行内引用 `Specs/2026-04-17-generator-redesign-v2.md v2.1`，但该 Spec 头部已升到 **v2.2** |
-| 2 | spec-version | `Plan/2026-04-17-generator-redesign-v2-implementation.md:5` | Plan 头部"设计规格"字段写 `（v2.1）`，Plan 标题也写"v2.1 实施计划"；Spec 已升到 **v2.2** |
+| 1 | spec-version | `Plan/v0.1/2026-04-16-open-backlog-consolidation.md:121` | 行内引用 `Specs/2026-04-17-generator-redesign-v2.md v2.1`，但该 Spec 头部已升到 **v2.2** |
+| 2 | spec-version | `Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md:5` | Plan 头部"设计规格"字段写 `（v2.1）`，Plan 标题也写"v2.1 实施计划"；Spec 已升到 **v2.2** |
 
 **两条均为真实历史漏同步**，正是 v2.1 → v2.2 二轮修订时人工同步 `Specs/_index.md` + Spec 头部 + ISSUE_LIST 时**遗漏的两处**。
 
@@ -28,7 +28,7 @@ npx tsx scripts/pm-sync-check.ts
 | 误报 | 原因 | 修正 |
 |------|------|------|
 | `Plan/2026-04-17-pm-document-sync-mechanism.md:32` 被当成 v2.1 引用 | 该行内容是 `v2.1 → v2.2` 过渡描述，不是版本标签 | **规则**：同一行出现 2 个及以上不同 `vX.Y`，视为对比/过渡语境，跳过 |
-| `Plan/2026-04-16-open-backlog-consolidation.md:30` `ISSUE-020` 被判状态 done | 该行是 "ISSUE-020、022~031（不含已关闭 021、027）"，括号内的"已关闭"指的是 021/027，不指 020 | **规则**：剥掉行内所有圆括号（含中文括号）里的排除语境，再判状态 |
+| `Plan/v0.1/2026-04-16-open-backlog-consolidation.md:30` `ISSUE-020` 被判状态 done | 该行是 "ISSUE-020、022~031（不含已关闭 021、027）"，括号内的"已关闭"指的是 021/027，不指 020 | **规则**：剥掉行内所有圆括号（含中文括号）里的排除语境，再判状态 |
 
 修正后：2 错 0 警 0 误报，**召回 2/2，精确率 100%**。
 
@@ -36,8 +36,8 @@ npx tsx scripts/pm-sync-check.ts
 
 | 文件 | 改动 |
 |------|------|
-| `Plan/2026-04-17-generator-redesign-v2-implementation.md` | 标题 + 头部"设计规格"版本号 v2.1 → v2.2；验证题库引用 v2 → 当前版；状态 ⬜ → ✅ 完成 |
-| `Plan/2026-04-16-open-backlog-consolidation.md` | 子计划 2 扩展描述里的 Spec 版本 v2.1 → v2.2 |
+| `Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md` | 标题 + 头部"设计规格"版本号 v2.1 → v2.2；验证题库引用 v2 → 当前版；状态 ⬜ → ✅ 完成 |
+| `Plan/v0.1/2026-04-16-open-backlog-consolidation.md` | 子计划 2 扩展描述里的 Spec 版本 v2.1 → v2.2 |
 
 修复后再跑：**✅ 全绿**。
 

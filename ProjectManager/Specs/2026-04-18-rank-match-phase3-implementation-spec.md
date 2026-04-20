@@ -3,7 +3,7 @@
 > 创建：2026-04-18  
 > 状态：🟡 草案（待用户确认）  
 > 前置产品规格：[`2026-04-10-gamification-redesign.md`](2026-04-10-gamification-redesign.md) §5 / §8 Q9、[`2026-04-13-star-rank-numerical-design.md`](2026-04-13-star-rank-numerical-design.md) §3 / §4、[`2026-04-15-gamification-phase2-advance-spec.md`](2026-04-15-gamification-phase2-advance-spec.md)  
-> 承接子计划：[`../Plan/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/2026-04-18-subplan-4-next-stage-expansion.md)（子计划 4 Umbrella，本阶段唯一主线）  
+> 承接子计划：[`../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md)（子计划 4 Umbrella，本阶段唯一主线）  
 > 对应实施子子计划：`Plan/2026-04-XX-rank-match-phase3-implementation.md`（待立）
 
 ---

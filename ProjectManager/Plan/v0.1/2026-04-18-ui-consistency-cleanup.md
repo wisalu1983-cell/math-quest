@@ -2,7 +2,7 @@
 
 > 创建：2026-04-18  
 > **最后核实：2026-04-18（交叉验证代码库后修订，见 §零）**  
-> 父计划：[`Plan/2026-04-16-open-backlog-consolidation.md`](2026-04-16-open-backlog-consolidation.md)（当前阶段主计划）  
+> 父计划：[`Plan/v0.1/2026-04-16-open-backlog-consolidation.md`](2026-04-16-open-backlog-consolidation.md)（当前阶段主计划）  
 > 父任务：§四 子计划 3 — UI 一致性与代码整洁清理  
 > 状态：✅ 完成（2026-04-18）
 
@@ -147,7 +147,7 @@ B1 和 B2 可并行，但推荐串行以减少合并冲突。
 
 1. [x] `Plan/README.md` — 子计划 3 条目更新为完成
 2. [x] 本文件 — 各批次执行结果回写到 §八
-3. [x] 父主计划 `Plan/2026-04-16-open-backlog-consolidation.md` §四 子计划 3 — 状态更新
+3. [x] 父主计划 `Plan/v0.1/2026-04-16-open-backlog-consolidation.md` §四 子计划 3 — 状态更新
 4. [x] `ISSUE_LIST.md` — 12 个 ISSUE 对应标记（含已附带关闭的）
 5. [x] `Overview.md` — 更新"待解决问题"区块
 

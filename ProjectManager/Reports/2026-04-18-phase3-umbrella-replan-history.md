@@ -1,8 +1,8 @@
 # Phase 3 Umbrella 同日重排归档报告
 
 > 创建：2026-04-19  
-> 来源：从 [`../Plan/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/2026-04-18-subplan-4-next-stage-expansion.md) `§八` 下沉整理  
-> 对应计划：[`../Plan/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/2026-04-18-subplan-4-next-stage-expansion.md)  
+> 来源：从 [`../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md) `§八` 下沉整理  
+> 对应计划：[`../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md)  
 > 状态：✅ 归档  
 > 用途：保留 2026-04-18 同日多次重排的完整轨迹，避免活跃计划继续承载高 token 历史推理
 
@@ -56,9 +56,9 @@
 ### 5. 同日收口：Phase 3 文档三层落盘
 
 - 范围收敛稳定后，同日补齐了真正开工需要的三层文档：
-  - Umbrella：[`../Plan/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/2026-04-18-subplan-4-next-stage-expansion.md)
+  - Umbrella：[`../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md)
   - 实施级 Spec：[`../Specs/2026-04-18-rank-match-phase3-implementation-spec.md`](../Specs/2026-04-18-rank-match-phase3-implementation-spec.md)
-  - 实施子子计划：[`../Plan/2026-04-18-rank-match-phase3-implementation.md`](../Plan/2026-04-18-rank-match-phase3-implementation.md)
+  - 实施子子计划：[`../Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md`](../Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md)
 
 ---
 
@@ -83,8 +83,8 @@
 
 - [`../Overview.md`](../Overview.md)
 - [`../Plan/README.md`](../Plan/README.md)
-- [`../Plan/2026-04-16-open-backlog-consolidation.md`](../Plan/2026-04-16-open-backlog-consolidation.md)
-- [`../Plan/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/2026-04-18-subplan-4-next-stage-expansion.md)
+- [`../Plan/v0.1/2026-04-16-open-backlog-consolidation.md`](../Plan/v0.1/2026-04-16-open-backlog-consolidation.md)
+- [`../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md)
 - [`../Specs/_index.md`](../Specs/_index.md)
 
 其中真正留下为长期事实源的只有：
@@ -97,7 +97,7 @@
 ## 五、当前应如何使用这段历史
 
 - 想知道**现在做什么**：先看 [`../Overview.md`](../Overview.md)
-- 想知道 **Phase 3 当前执行事实**：看 [`../Plan/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/2026-04-18-subplan-4-next-stage-expansion.md)
+- 想知道 **Phase 3 当前执行事实**：看 [`../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md`](../Plan/v0.1/2026-04-18-subplan-4-next-stage-expansion.md)
 - 想知道 **为什么最后只剩 Phase 3**：看本报告
 
 这份报告是归档，不是活跃入口。
