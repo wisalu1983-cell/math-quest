@@ -1,0 +1,4 @@
+# v0.2-1-1（F3 开发者工具栏）· 双构建双路径发布
+# 两版产物（/math-quest/ 纯净 · /math-quest/dev/ 带 F3）均不希望被搜索引擎索引
+User-agent: *
+Disallow: /
