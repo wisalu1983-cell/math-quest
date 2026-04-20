@@ -19,8 +19,27 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
+      # v0.2-1-1（F3 开发者工具栏）· 双构建双路径：
+      #   dist/        → 纯净生产版（无 F3 代码），部署到 /math-quest/
+      #   dist-dev/    → 带 F3 测试版，拷贝到 dist/dev/，部署到 /math-quest/dev/
+      - name: Build (clean)
         run: npm run build
+
+      - name: Build (with dev tool)
+        run: npm run build:with-dev-tool
+
+      - name: Merge outputs
+        run: |
+          mkdir -p dist/dev
+          cp -r dist-dev/. dist/dev/
+
+      - name: Verify clean build has no F3 code
+        run: |
+          if grep -r "mq-dev-tool-root" dist/assets dist/index.html; then
+            echo "[F3-guard] ❌ 纯净版构建泄漏了 F3 代码"
+            exit 1
+          fi
+          echo "[F3-guard] ✓ 纯净版构建未含 F3 标记"
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4

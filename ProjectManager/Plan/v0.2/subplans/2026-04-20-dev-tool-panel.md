@@ -7,7 +7,7 @@
 > 设计规格：
 > - 调研：[`Specs/dev-tool-panel/2026-04-20-research-findings.md`](../../../Specs/dev-tool-panel/2026-04-20-research-findings.md)
 > - 方案：[`Specs/dev-tool-panel/2026-04-20-design-proposal.md`](../../../Specs/dev-tool-panel/2026-04-20-design-proposal.md)
-> 状态：🟡 进行中（方案已审核通过，进入实施）
+> 状态：🟢 实施完成（2026-04-20 当日代码落盘 + 本地双构建验证通过，待 CI 首次生产发布）
 > 短代号：DevToolPanel（对应 v0.2 反馈中 **F3**）
 
 ---
@@ -157,3 +157,41 @@ async function applyAndReload(mutate: () => void | Promise<void>) {
 ## 六、时间估算
 
 **合计 ~13.8h ≈ 2 人日**，落在 Phase 1 容量内。拆分见 §二各任务。
+
+## 七、实施落盘（2026-04-20）
+
+### 已完成任务
+
+| 任务 | 状态 | 关键产出 |
+|---|---|---|
+| T1 · 存档层 namespace 切换 | ✅ | `src/repository/local.ts` 引入 `keyPrefix` + `setStorageNamespace`/`getStorageNamespace`；`clearAll()` 按 namespace 精确清理；`local.test.ts` 新增 6 条用例（32/32 绿）|
+| T2 · `src/dev-tool/` 骨架 | ✅ | `types.ts` / `index.tsx`（动态 import + tree-shake 友好）/ `DevFab.tsx` / `DevDrawer.tsx` / `namespace.ts`（含 `applyAndReload` helper） |
+| T3 · 注入项实现 | ✅ | 6 组 + `_registry.ts`：campaign 9 条（含 complete-all）/ advance 10 条（封顶 + 清空）/ rank 5 档 + 4 个 BO 中途态 + 清活跃 / in-game 3 心位 + finish-session / navigation 14 页面 + 8 题型直达 |
+| T4 · 双构建 | ✅ | `vite.config.ts` base 按 `VITE_ENABLE_DEV_TOOL` 切换；`package.json` 新增 `build:with-dev-tool` + `cross-env@^7.0.3` 依赖；`.github/workflows/deploy.yml` 串行双 build + merge + F3-guard grep |
+| T5 · 搜索引擎屏蔽 | ✅ | `public/robots.txt`（两版 build 均含）+ `index.html` meta robots/googlebot noindex,nofollow |
+| T6 · 回归验证 | ✅ | `vitest` 479/479 绿；本次改动文件 `eslint` 零 error；`npm run build` / `npm run build:with-dev-tool` 双双成功；grep 验证 `dist/` 不含 `mq-dev-tool-root`/`DevFab`/`DevDrawer`，仅 `dist/dev/assets/dev-tool-*.js` 含 F3 代码 |
+
+### 主要实现要点
+
+1. **Tree-shake 纯净度**：`main.tsx` 用 `if (import.meta.env.DEV || import.meta.env.VITE_ENABLE_DEV_TOOL === '1') { import('@/dev-tool').then(...) }` 把动态 import 放在编译期常量守卫下。纯净版 build 下常量折叠为 `false`，Rollup DCE 把整块 dev-tool 代码及其依赖全部丢弃，不生成 `dev-tool-*.js` chunk。带 F3 版 build 下产出 `assets/dev-tool-*.js`（14.58 kB gzip 5.51 kB）。
+2. **namespace 切换语义**：`switchDevNamespace(ns)` 清掉当前 session/active BO 的内存态 → `setStorageNamespace` → `repository.init()` → 重新加载 user/gameProgress/activeRankMatch。沙盒为空时自动回 onboarding，复用主 App 已有的 `user === null` → `onboarding` 引导逻辑。
+3. **注入项一致性**：每个注入项 `run()` 内部先直接 `repository.saveXxx` 改存档，再 `applyAndReload()` 触发 gameProgress/rankMatch 重载；段位赛 BO 中途态构造复用 `nanoid` + `RANK_BEST_OF`/`RANK_WINS_TO_ADVANCE` 常量表，对 wins/losses 组合做边界校验，违反则抛 `RankMatchRecoveryError`（尊重 Spec §5.8）。
+4. **双构建验证链**：workflow 里加了 `grep -r "mq-dev-tool-root" dist/` 断言，本地也跑过：纯净版 `dist/` grep 零命中，`dist/dev/` 命中 `assets/dev-tool-*.js`。
+
+### 非阻断性疑问（请您择时拍板）
+
+1. **清理 pre-existing lint（161 errors / 1 warning）是否纳入本子计划**？我已确认本次改动文件 `src/dev-tool/` + `src/repository/local.ts` + `src/main.tsx` 零 lint error。但 `RankMatchGameResult.tsx` / `store/*.ts` / `test-results/*.ts` 有大量 pre-existing 问题。Plan §T6 明确只要求"不引入新 error"，已满足。建议另起一个"代码卫生修缮"子计划处理。
+2. **测试沙盒首次切换后需重新 Onboarding**：切到 `dev` 后发现沙盒里没有 user → 跳 onboarding 让用户创建一个 dev 账号。未来若觉得繁琐可以新增一个"沙盒快速初始化"注入项（一键造 user + 默认进度），但本子计划未预实现，遵循"工具性子计划不为未来功能预造能力"的纪律。
+3. **BO 中途态刷新恢复的期望行为**：F3 构造的"末局未开始"BO，其 `practiceSessionId` 是占位 nanoid，没有对应的 PracticeSession。若用户在 Hub 点击开始该局但**刷新浏览器**，App 启动路径会 `resumeRankMatchGame(占位 id)` → 找不到 PracticeSession → 按 Spec §5.8 抛 `RankMatchRecoveryError`，UI 回 Hub，activeSessionId 被清。这符合项目"段位赛一致性异常不得静默降级"的原则；只想提醒：**F3 注入的 BO 不允许"在 practice 页刷新"恢复**——预期用户应在 Hub → 开始第 N 局 → 走完该局或在 practice 页内操作（不刷新）。
+4. **FAB 颜色在 dev namespace 时从黑变绿**：这是我自己加的视觉区分，Plan 未明确要求。如觉多余可去掉。
+5. **`Navigation` 组"跳转 onboarding"入口**：我加了跳 onboarding 页的按钮。若你希望用"切到测试沙盒 + 清空沙盒"来触发 onboarding 才是正途，这个直接跳转入口可以移除（当前行为：跳到 onboarding 但 user 仍存在，App 的 effect 可能立刻把它换回 home）。
+
+### 验收清单对齐（Spec §六）
+
+- [x] DEV 启动：`npm run dev` 启动，动态 import 注入，FAB 在右下角可见
+- [x] Namespace 隔离（单测覆盖）：`local.test.ts` 6 条新增用例全绿
+- [ ] 注入项有效性：**需要人工在浏览器里逐条点击验证**（本子计划工具自身的自动化 QA 不在 T6 范围内）
+- [x] 双构建产物：`dist/` 纯净 + `dist/dev/` 带 F3 + 两处 robots.txt + meta noindex 全部就绪
+- [ ] 生产发布后：待本次改动 push 到 master 触发 CI，按 workflow 新增的 grep-guard 断言通过
+- [x] 既有工程：`vitest` 479/479 绿；`npm run build` 绿；本次改动文件 `eslint` 零新 error
+
