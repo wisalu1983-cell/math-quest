@@ -939,6 +939,40 @@ describe('Vertical Calc - Approximate (取近似值)', () => {
   });
 });
 
+// ==================== Number Sense - B1 退化题过滤 ====================
+describe('Number Sense - B1 退化题过滤', () => {
+  it('round 子题型：500 次采样 answer !== num（无退化题）', () => {
+    const qs = genN((p) => generateNumberSense({ ...p, subtypeFilter: 'round' }), 5, 500);
+    for (const q of qs) {
+      if (q.type === 'numeric-input' && typeof q.solution.answer === 'number') {
+        const numMatch = q.prompt.match(/将\s*([\d,]+)\s*四舍五入/);
+        if (numMatch) {
+          const num = Number(numMatch[1].replace(/,/g, ''));
+          expect(q.solution.answer).not.toBe(num);
+        }
+      }
+    }
+  });
+
+  it('floor-ceil 子题型：500 次采样 answer !== parseInt(numStr)（无退化题）', () => {
+    const qs = genN((p) => generateNumberSense({ ...p, subtypeFilter: 'floor-ceil' }), 5, 500);
+    for (const q of qs) {
+      if (q.type === 'numeric-input' && typeof q.solution.answer === 'number') {
+        const numMatch = q.prompt.match(/将\s*([\d.]+)\s*取近似/);
+        if (numMatch) {
+          const num = Number(numMatch[1]);
+          // 如果 num 是整数（退化条件），answer 应已被 retry 避开
+          if (Number.isInteger(num)) {
+            // retry 兜底后 num 不再是整数，此断言不会触发
+            // 若触发说明 retry 逻辑失效
+            expect(Number.isInteger(num)).toBe(false);
+          }
+        }
+      }
+    }
+  });
+});
+
 describe('Vertical Calc - Dispatcher Distribution (调度器分布)', () => {
   it('低档 100% 整数（v2.1：低档禁止小数）', () => {
     const qs = genN(generateVerticalCalc, 5, 1000);
