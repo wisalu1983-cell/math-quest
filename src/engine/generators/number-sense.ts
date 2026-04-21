@@ -224,17 +224,22 @@ function generateRoundBasic(difficulty: number, id: string): Question {
   if (numMax >= 10000) validPlaces.push(10000);
   const place = pick(validPlaces);
 
-  let num: number;
+  let num = randInt(100, numMax);
+  let answer = Math.floor(num / place + 0.5) * place;
   // 中档: 50% 概率生成 "5" 边界；高档 40%
   const fiveRate = difficulty >= 8 ? 0.4 : difficulty >= 6 ? 0.5 : 0;
-  if (Math.random() < fiveRate) {
-    const base = randInt(1, Math.floor(numMax / place) - 1) * place;
-    num = base + Math.floor(place / 2);
-  } else {
-    num = randInt(100, numMax);
+  for (let attempt = 0; attempt < 50; attempt++) {
+    if (Math.random() < fiveRate) {
+      const base = randInt(1, Math.floor(numMax / place) - 1) * place;
+      num = base + Math.floor(place / 2);
+    } else {
+      num = randInt(100, numMax);
+    }
+    answer = Math.floor(num / place + 0.5) * place;
+    if (answer !== num) break;
+    if (attempt === 49) num += 1; // 极端兜底
   }
-
-  const answer = Math.floor(num / place + 0.5) * place;
+  answer = Math.floor(num / place + 0.5) * place;
 
   return {
     id, topicId: 'number-sense', type: 'numeric-input', difficulty,
@@ -523,9 +528,19 @@ function generateFloorCeilBasic(difficulty: number, id: string): Question {
 
   const dp = difficulty <= 5 ? 1 : 2;
   const factor = Math.pow(10, dp);
-  const num = randInt(11, difficulty <= 5 ? 999 : 9999) / factor;
-
   const toInteger = dp === 1 || Math.random() < 0.5;
+
+  let num = randInt(11, difficulty <= 5 ? 999 : 9999) / factor;
+  for (let attempt = 0; attempt < 50; attempt++) {
+    num = randInt(11, difficulty <= 5 ? 999 : 9999) / factor;
+    if (toInteger) {
+      if (num % 1 !== 0) break;
+    } else {
+      if (Math.round(num * 100) % 10 !== 0) break;
+    }
+    if (attempt === 49) num += 0.1; // 极端兜底
+  }
+
   let answer: number;
 
   if (toInteger) {
