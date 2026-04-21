@@ -1,7 +1,8 @@
 ---
 name: qa-leader
 description: |
-  math-quest 项目 QA Leader 编排器：测试用例设计、三层 QA 流程
+  math-quest 项目 QA Leader 编排器：先按任务类型做最小 preflight，
+  查 QA/capability-registry.md 复用现成工具，再执行三层 QA
   （Code Review → 自动化 → 拟真人工）、缺陷分流与文档回写。
   触发词：QA、测试、视觉QA、体验测试、拟真QA、跑一轮QA、全量测试。
 ---
@@ -26,9 +27,18 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 
 ---
 
-## 步骤 0：测试用例设计规范
+## 步骤 0：最小 preflight 与测试用例设计规范
 
 用例不是凭空写的，必须从设计文档出发。
+
+### 最小 preflight
+
+1. 先判断本次 QA 任务类型：`自动化` / `视觉` / `拟真人工` / `混合`
+2. 再读取 `QA/capability-registry.md`，优先选用当前已经存在的工具、skill 和脚本
+3. 当前工具库已经覆盖时，直接复用；只有 registry 明确没有覆盖时，才允许新建脚本或新工具
+4. 正式 QA 文档与结果统一归档到 `QA/runs/<date>-<scope>/`
+5. 可复用 QA 脚本统一维护在 `QA/scripts/`
+6. 启动时不要求先翻历史 run 索引；只有用户明确要求参考某轮历史 QA 结果时，才查对应归档
 
 ### 输入要求
 
@@ -72,7 +82,7 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 - 每轮修复/迭代后，在上一版基础上创建新版（v1 -> v2 -> v3...）
 - 新版必须覆盖：新功能正向验证 + 旧缺陷回归检查 + 已修 ISSUE 的确认关闭
 - 已知缺陷用 `[KNOWN-DEFECT]` 标记；修复后转为正向验证用例
-- 文件命名：`test-results/{phase}/test-cases-v{N}.md`
+- 文件命名：`QA/runs/<date>-<scope>/test-cases-v{N}.md`
 
 ### 覆盖度分类
 
@@ -92,7 +102,7 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 | 环境 | 调用的 skill/plugin |
 |------|-------------------|
 | **Cursor** | `requesting-code-review`（obra/superpowers） |
-| **Claude Code** | `code-review` plugin（官方） |
+| **Claude Code** | `code-review` plugin（官方，`~/.claude/plugins/.../code-review/`） |
 
 ### 关注重点
 
@@ -105,30 +115,48 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 
 ## 第二层：自动化测试
 
-覆盖用例表中标记为"自动化"的部分。
+覆盖用例表中标记为"自动化"的部分。工具入口一律先以 `QA/capability-registry.md` 为准。
 
 ### 环境适配
 
 | 工具 | Cursor | Claude Code |
 |------|--------|-------------|
 | 单元测试 | Vitest | Vitest |
-| 浏览器测试 | Playwright（引用 `webapp-testing`） | Playwright + 可选 gstack `qa-only` |
-| 测试纪律 | `test-driven-development`（obra） | 同左（superpowers plugin） |
-| UI 回归 | `visual-screenshot-qa` | 同左 |
+| 浏览器测试 | Playwright（引用 `webapp-testing` skill） | Playwright + 可选 gstack `qa-only` 做通用扫描 |
+| 测试纪律 | `test-driven-development`（obra） | 同左（通过 superpowers plugin） |
+| UI 回归 | `visual-screenshot-qa`（新建全局 skill） | 同左 |
+
+### Vitest 覆盖范围
+
+- 题目生成器：各 generator 的输出正确性、选项数量、难度分布
+- 数据模型：normalize 函数、分数计算、进度状态机
+- Campaign Map：解锁条件、路线筛选
+
+### Playwright 覆盖范围
+
+- 用户旅程：注册 → 选择主题 → 进入关卡 → 答题 → 查看结算
+- 交互验证：输入框响应、按钮状态、导航跳转
+- 数据持久化：localStorage 读写、页面刷新后状态恢复
+
+### 视觉回归（调用 `visual-screenshot-qa`）
+
+- UI 修复后确认 token 一致性
+- 设计稿对照验证
+- 多视口适配检查
 
 ---
 
 ## 第三层：拟真人工 QA
 
-覆盖用例表中标记为"模拟人工"的部分。
+覆盖用例表中标记为"模拟人工"的部分。工具入口一律先以 `QA/capability-registry.md` 为准。
 
 ### 调用 skill
 
 | skill | 用途 |
 |-------|------|
-| `agent-as-user-qa` | 方法论：四栏协议、PASS/FAIL/RISK 判定、执行纪律 |
-| `visual-screenshot-qa` | 涉及设计稿对照的视觉验证场景 |
-| `verification-before-completion`（obra） | 证据纪律 |
+| `agent-as-user-qa`（新建全局 skill） | 方法论：四栏协议、PASS/FAIL/RISK 判定、执行纪律 |
+| `visual-screenshot-qa`（新建全局 skill） | 涉及设计稿对照的视觉验证场景 |
+| `verification-before-completion`（obra） | 证据纪律：每条判定必须附带证据 |
 
 ### 执行要求
 
@@ -144,48 +172,84 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 ### 发现阶段
 
 QA 发现问题后，写入 `ProjectManager/ISSUE_LIST.md`，每条包含：
-编号（ISSUE-NNN）、优先级（P0/P1/P2）、来源（CR/Auto/Manual + 用例 ID）、
-现象、用户感知、建议方向、状态。
 
-### 产品裁决
+| 字段 | 说明 |
+|------|------|
+| 编号 | `ISSUE-{NNN}`，递增 |
+| 优先级 | P0(阻塞)/P1(重要)/P2(增强) |
+| 来源 | 哪一层 QA 发现的（CR/Auto/Manual），具体用例 ID |
+| 现象 | 客观描述看到了什么 |
+| 用户感知 | 对用户体验的影响（不只是技术层面） |
+| 建议方向 | 建议的修复方向（可选） |
+| 状态 | `⬜ 待修复` / `⬜ 待评估` |
+
+### 产品裁决阶段
+
+产品负责人（用户）对每个 ISSUE 做三种裁决之一：
 
 | 裁决 | 状态变更 | 后续动作 |
 |------|---------|---------|
-| **接受** | `✅ 按产品决策接受（不修复）` | 添加产品结论；下轮移除 FAIL 预期 |
-| **修复** | `⬜ 待修复` → `✅ 已修复` | 进入修复排期；下轮添加回归验证 |
-| **降级/跟踪** | 调整优先级 | 保留为体验增强项持续跟踪 |
+| **接受** | `✅ 按产品决策接受（不修复）` | 添加产品结论说明；下轮用例中移除该场景的 FAIL 预期 |
+| **修复** | `⬜ 待修复` → 修复后改为 `✅ 已修复` | 进入修复排期；下轮用例中添加回归验证 |
+| **降级/跟踪** | 调整优先级，保持 `⬜ 待评估` | 保留为体验增强项持续跟踪 |
 
 ### 回写要求
 
-裁决后同步更新：`Overview.md`、`ISSUE_LIST.md`、QA 计划文件、QA 结果报告。
+裁决后必须同步更新以下文档：
+- `ProjectManager/Overview.md`：待解决问题列表
+- `ProjectManager/ISSUE_LIST.md`：ISSUE 状态和产品结论
+- 当轮 QA 计划文件：执行结果和结论
+- 当轮 QA 结果报告：补记产品决策
 
 ---
 
 ## 产出物规范
 
+### 目录结构
+
 ```
-test-results/{phase}/
-  test-cases-v{N}.md              # 测试用例表
-  {batch-name}-result.md          # 批次执行报告
-  {batch-name}-artifacts/         # 截图证据
-  {script-name}.test.ts           # Vitest 脚本
-  {script-name}.ts                # Playwright 脚本
+QA/runs/<date>-<scope>/
+  test-cases-v{N}.md                  # 测试用例表（版本迭代）
+  {batch-name}.md                     # 批次执行纲要
+  {batch-name}-result.md              # 批次执行报告
+  artifacts/                          # 截图证据目录
+    {case-id}-before.png
+    {case-id}-after.png
+    {case-id}-evidence.png
+  {script-name}.test.ts               # Vitest 自动化脚本
+  {script-name}.ts                    # Playwright 自动化脚本
 ```
+
+可复用 QA 脚本统一维护在 `QA/scripts/`。正式 run 优先引用现成脚本；仅在当前工具库无覆盖时才新增。
+
+### 命名约定
+
+- scope：`full-regression`、`prompt-nowrap`、`dev-tool-unit-test` 等
+- batch：`manual-qa-deep-experience-batch1`、`auto-qa-generators` 等
+- script：`qa-v3.test.ts`（Vitest）、`playwright-qa-v3.ts`（Playwright）
 
 ---
 
 ## 执行编排
 
+QA Leader 按以下顺序编排执行：
+
 ```
-步骤 0: 设计/更新测试用例
+步骤 0: 最小 preflight（判定任务类型 → 查 capability-registry → 复用现成工具）
     ↓
-第一层: Code Review（可选）
+步骤 1: 设计/更新测试用例
+    ↓
+第一层: Code Review（可选，仅在有新代码变更时）
     ↓
 第二层: 自动化测试（Vitest + Playwright + 视觉回归）
     ↓
 第三层: 拟真人工 QA（体验测试 + 视觉对照）
     ↓
-汇总: 缺陷分流 → ISSUE_LIST → 产品裁决 → 文档回写
+汇总: 缺陷分流 → 写入 ISSUE_LIST → 等待产品裁决 → 回写文档
 ```
 
-用户可指定范围："只跑自动化" / "只做体验测试" / "全量 QA" / "视觉回归"。
+每一层可以独立执行，也可以按需跳过。用户可以指定：
+- "只跑自动化"→ 跳过第一层和第三层
+- "只做体验测试"→ 跳过第一层和第二层
+- "全量 QA"→ 按顺序执行全部
+- "视觉回归"→ 只执行第二层的视觉回归部分

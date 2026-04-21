@@ -23,11 +23,30 @@
 3. 若要新起一篇开发文档或子计划，再补读当前版本的 `04-execution-discipline.md`
 4. 若需要判断 phase 依赖、归位或并行关系，再补读当前版本的 `03-phase-plan.md`
 5. 当前版本包状态与活跃状态可能未完全同步时，再快速读 `ProjectManager/Overview.md` 做状态校验
-6. 需要确认落盘、命名、索引时，再查 `ProjectManager/Plan/README.md`
+6. 需要确认命名、子计划位置、功能设计文档目录或 Plan 模板时，再定位 `ProjectManager/Plan/README.md` 的对应小节，不默认通读全文
 7. phase 文档未给出相关规格入口时，再查 `ProjectManager/Specs/_index.md`
 8. 如果是 bugfix / issue 驱动，再读 `ProjectManager/ISSUE_LIST.md`
 9. 激活 `.claude/skills/dev-doc-flow/SKILL.md`
 10. 若任务尚未归属版本 / phase，或与现有 `ProjectManager` 管理规则冲突，或文档归属不明确，先提醒用户决策，不在本文件中重复定义新规则
+
+---
+
+## QA 路由
+
+当用户明确要求以下任务时：
+
+- 跑一轮 QA / 全量测试 / QA 测试
+- 写测试用例 / 设计测试方案
+- 视觉 QA / 体验测试 / 拟真 QA
+
+按以下顺序处理：
+
+1. 激活 `.claude/skills/qa-leader/SKILL.md`
+2. 先按 `qa-leader` 的步骤 0 判断本次 QA 任务类型（自动化 / 视觉 / 拟真人工 / 混合）
+3. 再读 `QA/capability-registry.md`，优先复用已有工具、skill 和脚本；当前没有覆盖时才新造
+4. 正式 QA 文档与结果统一归档到 `QA/runs/<date>-<scope>/`
+5. 可复用 QA 脚本统一放 `QA/scripts/`
+6. 不默认翻历史 QA run；只有用户明确要求参考某轮历史结果时，才进入对应归档
 
 ---
 
@@ -42,7 +61,7 @@
 | 关闭 Issue | `ISSUE_LIST.md` 标记；仅历史项不改 `Overview.md` |
 | 规格新建/状态变化 | `Specs/*.md` + `Specs/_index.md`；影响阶段入口时再改 `Overview.md` |
 | 新建/归档实施计划 | `Plan/README.md`；影响活跃入口时再改 `Overview.md` |
-| 新建 QA 产物 | 交给 `qa-leader`；在对应 Plan 或 Report 引用 |
+| 新建 QA 产物 | 交给 `qa-leader`；正式产物归档到 `QA/runs/`，在对应 Plan 或 Report 引用 |
 | 历史复盘/机制说明 | `Reports/`，不默认回写 `Overview.md` |
 
 ---
@@ -68,5 +87,7 @@
 | pm-sync-check 触发规则 | `.cursor/rules/pm-sync-check.mdc` |
 | 开发文档流 | `.claude/skills/dev-doc-flow/SKILL.md` |
 | 生成器规格 / 难度档位 / 子题型 | `ProjectManager/Specs/2026-04-17-generator-redesign-v2.md` |
+| QA 根目录 | `QA/README.md` |
 | QA 流程规范 | `QA/qa-leader-canonical.md` |
+| QA 工具台账 | `QA/capability-registry.md` |
 | 真题参考库 | `reference-bank/README.md` |

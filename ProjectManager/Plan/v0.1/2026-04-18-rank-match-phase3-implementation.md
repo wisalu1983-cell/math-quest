@@ -544,13 +544,13 @@
 
 **新增产物**：
 
-- `ProjectManager/QA/2026-04-19-full-regression/test-cases-v1.md`
-- `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs`
-- `ProjectManager/QA/2026-04-19-full-regression/auto-result.md`
-- `ProjectManager/QA/2026-04-19-full-regression/batch-1-fresh-user-result.md`
-- `ProjectManager/QA/2026-04-19-full-regression/batch-2-advance-result.md`
-- `ProjectManager/QA/2026-04-19-full-regression/batch-3-rank-match-result.md`
-- `ProjectManager/QA/2026-04-19-full-regression/artifacts/`
+- `QA/runs/2026-04-19-full-regression/test-cases-v1.md`
+- `QA/runs/2026-04-19-full-regression/full-regression.mjs`
+- `QA/runs/2026-04-19-full-regression/auto-result.md`
+- `QA/runs/2026-04-19-full-regression/batch-1-fresh-user-result.md`
+- `QA/runs/2026-04-19-full-regression/batch-2-advance-result.md`
+- `QA/runs/2026-04-19-full-regression/batch-3-rank-match-result.md`
+- `QA/runs/2026-04-19-full-regression/artifacts/`
 
 **结果摘要**：
 
@@ -617,7 +617,7 @@
 - `npx vitest run` → **18 files / 473 tests PASS**
 - `npm run build` → ✅
 - `ReadLints`（本轮变更文件）→ 无新增 lint error
-- `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs` 复跑两次：
+- `QA/runs/2026-04-19-full-regression/full-regression.mjs` 复跑两次：
   - 第 1 次：`D-07` 转绿，但暴露 `D-01` 被 `App.tsx` 的 effect 依赖误触发
   - 第 2 次（收紧 `App` 启动恢复 effect 后）：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS，`console critical total: 0`
 - 关键观察：

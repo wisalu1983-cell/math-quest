@@ -85,10 +85,10 @@
 
 ## 产出清单
 
-- `ProjectManager/QA/2026-04-19-full-regression/test-cases-v1.md`
-- `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs`
-- `ProjectManager/QA/2026-04-19-full-regression/auto-result.md`
-- `ProjectManager/QA/2026-04-19-full-regression/batch-1-fresh-user-result.md`
-- `ProjectManager/QA/2026-04-19-full-regression/batch-2-advance-result.md`
-- `ProjectManager/QA/2026-04-19-full-regression/batch-3-rank-match-result.md`
-- `ProjectManager/QA/2026-04-19-full-regression/artifacts/`
+- `QA/runs/2026-04-19-full-regression/test-cases-v1.md`
+- `QA/runs/2026-04-19-full-regression/full-regression.mjs`
+- `QA/runs/2026-04-19-full-regression/auto-result.md`
+- `QA/runs/2026-04-19-full-regression/batch-1-fresh-user-result.md`
+- `QA/runs/2026-04-19-full-regression/batch-2-advance-result.md`
+- `QA/runs/2026-04-19-full-regression/batch-3-rank-match-result.md`
+- `QA/runs/2026-04-19-full-regression/artifacts/`

@@ -193,5 +193,5 @@ async function applyAndReload(mutate: () => void | Promise<void>) {
 - [x] 注入项有效性：用户 2026-04-21 人工 QA 确认通过
 - [x] 双构建产物：`dist/` 纯净 + `dist/dev/` 带 F3 + 两处 robots.txt + meta noindex 全部就绪
 - [ ] 生产发布后：待本次改动 push 到 master 触发 CI，按 workflow 新增的 grep-guard 断言通过
-- [x] 既有工程：`vitest` 501/501 绿（含本子计划新增 22 条，详见 `QA/2026-04-20-f3-dev-tool-unit-test/qa-result.md`）；`npm run build` 绿；本次改动文件 `eslint` 零新 error
+- [x] 既有工程：`vitest` 501/501 绿（含本子计划新增 22 条，详见 `QA/runs/2026-04-20-f3-dev-tool-unit-test/qa-result.md`）；`npm run build` 绿；本次改动文件 `eslint` 零新 error
 

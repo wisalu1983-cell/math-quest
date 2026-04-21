@@ -79,7 +79,7 @@ M3 完工后首次 `npm run build` 暴露 5 个 build-only 报错（`tsc --noEmi
 
 ### 2026-04-19 开新号全量回归（复跑全绿）
 
-`ISSUE-064` 修复后再次执行 `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs`。
+`ISSUE-064` 修复后再次执行 `QA/runs/2026-04-19-full-regression/full-regression.mjs`。
 - Fresh 10/10 PASS
 - Advance 6/6 PASS
 - Rank 9/9 PASS

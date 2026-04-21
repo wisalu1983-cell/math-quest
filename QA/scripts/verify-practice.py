@@ -5,7 +5,7 @@ import json, time, os, re
 from playwright.sync_api import sync_playwright
 
 BASE = "http://localhost:5178"
-OUT  = "test-results/fix-verify"
+OUT  = os.environ.get("QA_OUT_DIR", "QA/artifacts/fix-verify")
 os.makedirs(OUT, exist_ok=True)
 
 USER = {"id": "verify-test3", "nickname": "测试用户"}

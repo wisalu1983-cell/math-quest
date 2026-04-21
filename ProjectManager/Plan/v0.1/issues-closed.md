@@ -656,11 +656,11 @@
 
 ## 2026-04-19 全量回归（开新号）新发现
 
-> 来源：`ProjectManager/QA/2026-04-19-full-regression/auto-result.md` + `batch-3-rank-match-result.md`。首轮开新号全量回归发现 `D-07` 失败；同日修复后再次复跑，Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS。
+> 来源：`QA/runs/2026-04-19-full-regression/auto-result.md` + `batch-3-rank-match-result.md`。首轮开新号全量回归发现 `D-07` 失败；同日修复后再次复跑，Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS。
 
 ### ISSUE-064 (段位赛/P1): 局内刷新后只回到 Home，未直达当前 Practice
 - **状态**: ✅ 已关闭（2026-04-19，全量回归修复后复跑通过）
-- **来源**: `ProjectManager/QA/2026-04-19-full-regression/batch-3-rank-match-result.md` / `D-07`
+- **来源**: `QA/runs/2026-04-19-full-regression/batch-3-rank-match-result.md` / `D-07`
 - **位置**:
   - `src/App.tsx`：启动时 `loadUser` 后只把 `currentPage` 从 `onboarding` 推到 `home`，再调用 `loadActiveRankMatch(user.id)` 恢复 BO 层
   - `src/pages/Practice.tsx`：`resumeRankMatchGame()` 仅在当前页已经是 `practice` 且 `session` 为空时触发
@@ -695,5 +695,5 @@
   - **验证**：
     - `npx vitest run` → **473/473 PASS**
     - `npm run build` → ✅
-    - `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs` 二次复跑：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS
+    - `QA/runs/2026-04-19-full-regression/full-regression.mjs` 二次复跑：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS
     - `D-07` 观察值：`刷新前 index=5 qid=kinzfgUaTZ；刷新后 page=practice index=5 qid=kinzfgUaTZ`

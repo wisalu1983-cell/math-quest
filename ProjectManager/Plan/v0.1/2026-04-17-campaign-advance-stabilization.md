@@ -161,7 +161,7 @@ S3-T1 (梯度打分) 用户自己完成，不阻塞 agent
 3. [x] 父主计划 `Plan/v0.1/2026-04-16-open-backlog-consolidation.md` §七 — 已加子计划入口
 4. [x] `ISSUE_LIST.md` — ISSUE-058 已 2026-04-17 标 ✅；本轮 SMOKE-01/03 + Q-057-F01/F02 属子计划内部事项无独立 issue 号，不新开 ISSUE-059+
 5. [x] `Overview.md`（2026-04-18）— S1/S2 全组关闭；S3(agent 部分)/S4 全组关闭；S3-T1 待用户
-6. [x] QA 报告 — `ProjectManager/QA/2026-04-18-s3s4-verify/qa-result.md` 新建
+6. [x] QA 报告 — `QA/runs/2026-04-18-s3s4-verify/qa-result.md` 新建
 
 ---
 
@@ -231,7 +231,7 @@ S3-T1 (梯度打分) 用户自己完成，不阻塞 agent
 - `npx tsc -b`：0 错误
 - `npx vitest run`：270/270 PASS
 - 浏览器端（`agent-as-user-qa`）：A07 S1-LB L1 的凑整法题"用凑整法把 271 + 997 拆成更好算的形式。按顺序填入两个空（不要算出最后得数）：271 + 997 = 271 + ___ - ___"（65 字）在卡片内自然折为 3 行，所有数字/`+`/`=`/`___` 均未被拆开 → PASS
-- 证据：`ProjectManager/QA/2026-04-18-s1s2-verify/artifacts/QA-S2T1-evidence.png`
+- 证据：`QA/runs/2026-04-18-s1s2-verify/artifacts/QA-S2T1-evidence.png`
 
 副作用评估：短题（≤18 字）仍走 `text-[32px]`，中等题（19–25 字）走 `text-[24px]`，在常规卡宽（~320–512px）下继续保持单行展示；只有 25+ 字触发自然折行。无新引入 UX 退化。
 
@@ -247,7 +247,7 @@ S3-T1 (梯度打分) 用户自己完成，不阻塞 agent
 
 验证：
 - 浏览器端观察 A08 S1 第 1 关的 `46 − x = 18` 题 → 输入框 placeholder 为「写出移项后的完整等式」，不再是「例：4x = 20」 → PASS
-- 证据：`ProjectManager/QA/2026-04-18-s1s2-verify/artifacts/QA-S1T2-A08-and-S2T2-evidence.png`（与 QA-S1T2-A08 共用同一帧）
+- 证据：`QA/runs/2026-04-18-s1s2-verify/artifacts/QA-S1T2-A08-and-S2T2-evidence.png`（与 QA-S1T2-A08 共用同一帧）
 
 #### S2-T3：Q-057-F01（A01 S2-LB「口算拆分技巧」lane 名实对齐）
 
@@ -297,7 +297,7 @@ S3-T1 (梯度打分) 用户自己完成，不阻塞 agent
 
 - **S2-T4 浏览器终极确证**：A05 S2-LB 连跑观察无循环小数的验证未在本轮跑完（S2 解锁依赖 S1 两 lane 通关，成本过高）；本轮以代码 + 单测证据判 PASS，后续任意在 A05 S1 已通关的 session 中顺带补跑即可闭环
 - **S2-T3 真实体验观察**：权重调整属于概率分布调整，单测能保证"技巧题占比 ≥ 65%"，但 lane 整体观感（是否真有"口算拆分技巧"的训练感）需要后续拟真 QA / 真实试玩确认，挂到 S3 深度体验 QA 一并观察
-- QA 报告全文：`ProjectManager/QA/2026-04-18-s1s2-verify/qa-result.md`
+- QA 报告全文：`QA/runs/2026-04-18-s1s2-verify/qa-result.md`
 
 ### S3 执行结果
 
@@ -311,7 +311,7 @@ S3-T1 (梯度打分) 用户自己完成，不阻塞 agent
 - **expression-input**（A06）：浏览器端 `(71-34)+78` 输入 `71 - 34 + 78` → 判对 + explanation
 - **multi-select**：代码级 A-26 断言（answer 格式 = 逗号分隔排序大写字母 / answers 数组 / options 数组），3 个来源题型均 PASS
 
-证据：`ProjectManager/QA/2026-04-18-s3s4-verify/artifacts/QA-S3T2-expression-input-pass.png`
+证据：`QA/runs/2026-04-18-s3s4-verify/artifacts/QA-S3T2-expression-input-pass.png`
 
 #### S3-T3：A08 陷阱诊断可发现性
 

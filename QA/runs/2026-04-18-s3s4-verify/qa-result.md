@@ -1,7 +1,7 @@
 # 闯关+进阶稳定化 S3 深度体验 + S4 进阶专项 执行报告
 
 **执行日期**：2026-04-18
-**关联子计划**：[`Plan/v0.1/2026-04-17-campaign-advance-stabilization.md`](../../Plan/v0.1/2026-04-17-campaign-advance-stabilization.md) §S3 + §S4
+**关联子计划**：[`Plan/v0.1/2026-04-17-campaign-advance-stabilization.md`](../../ProjectManager/Plan/v0.1/2026-04-17-campaign-advance-stabilization.md) §S3 + §S4
 **用例范围**：S3-T2/T3/T4 浏览器+代码混合验证 + S4-T1/T2/T3/T4 代码+浏览器混合验证
 **目标用户画像**：上海五年级小学生（10-11 岁），数学能力中等
 **总计**：7 项（S3-T1 待用户不计）

@@ -3,13 +3,12 @@ verify-qa-fixes.py — 验证视觉 QA 修复效果
 逐一截图并用 JS 测量关键属性，确认 5 个修复点
 """
 
-import json, time
+import json, os, time
 from playwright.sync_api import sync_playwright
 
 BASE = "http://localhost:5178"
-OUT  = "test-results/fix-verify"
+OUT  = os.environ.get("QA_OUT_DIR", "QA/artifacts/fix-verify")
 
-import os
 os.makedirs(OUT, exist_ok=True)
 
 # 注入 localStorage 让 App 跳过 onboarding，直接进首页

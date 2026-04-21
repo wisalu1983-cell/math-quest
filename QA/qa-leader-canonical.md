@@ -14,9 +14,18 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 
 ---
 
-## 步骤 0：测试用例设计规范
+## 步骤 0：最小 preflight 与测试用例设计规范
 
 用例不是凭空写的，必须从设计文档出发。
+
+### 最小 preflight
+
+1. 先判断本次 QA 任务类型：`自动化` / `视觉` / `拟真人工` / `混合`
+2. 再读取 `QA/capability-registry.md`，优先选用当前已经存在的工具、skill 和脚本
+3. 当前工具库已经覆盖时，直接复用；只有 registry 明确没有覆盖时，才允许新建脚本或新工具
+4. 正式 QA 文档与结果统一归档到 `QA/runs/<date>-<scope>/`
+5. 可复用 QA 脚本统一维护在 `QA/scripts/`
+6. 启动时不要求先翻历史 run 索引；只有用户明确要求参考某轮历史 QA 结果时，才查对应归档
 
 ### 输入要求
 
@@ -60,7 +69,7 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 - 每轮修复/迭代后，在上一版基础上创建新版（v1 -> v2 -> v3...）
 - 新版必须覆盖：新功能正向验证 + 旧缺陷回归检查 + 已修 ISSUE 的确认关闭
 - 已知缺陷用 `[KNOWN-DEFECT]` 标记；修复后转为正向验证用例
-- 文件命名：`test-results/{phase}/test-cases-v{N}.md`
+- 文件命名：`QA/runs/<date>-<scope>/test-cases-v{N}.md`
 
 ### 覆盖度分类
 
@@ -93,7 +102,7 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 
 ## 第二层：自动化测试
 
-覆盖用例表中标记为"自动化"的部分。
+覆盖用例表中标记为"自动化"的部分。工具入口一律先以 `QA/capability-registry.md` 为准。
 
 ### 环境适配
 
@@ -126,7 +135,7 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 
 ## 第三层：拟真人工 QA
 
-覆盖用例表中标记为"模拟人工"的部分。
+覆盖用例表中标记为"模拟人工"的部分。工具入口一律先以 `QA/capability-registry.md` 为准。
 
 ### 调用 skill
 
@@ -186,21 +195,23 @@ QA 发现问题后，写入 `ProjectManager/ISSUE_LIST.md`，每条包含：
 ### 目录结构
 
 ```
-test-results/{phase}/
-  test-cases-v{N}.md                    # 测试用例表（版本迭代）
-  {batch-name}.md                       # 批次执行纲要
-  {batch-name}-result.md                # 批次执行报告
-  {batch-name}-artifacts/               # 截图证据目录
+QA/runs/<date>-<scope>/
+  test-cases-v{N}.md                  # 测试用例表（版本迭代）
+  {batch-name}.md                     # 批次执行纲要
+  {batch-name}-result.md              # 批次执行报告
+  artifacts/                          # 截图证据目录
     {case-id}-before.png
     {case-id}-after.png
     {case-id}-evidence.png
-  {script-name}.test.ts                 # Vitest 自动化脚本
-  {script-name}.ts                      # Playwright 自动化脚本
+  {script-name}.test.ts               # Vitest 自动化脚本
+  {script-name}.ts                    # Playwright 自动化脚本
 ```
+
+可复用 QA 脚本统一维护在 `QA/scripts/`。正式 run 优先引用现成脚本；仅在当前工具库无覆盖时才新增。
 
 ### 命名约定
 
-- phase：`phase1-full-retest`、`phase2-gamification` 等
+- scope：`full-regression`、`prompt-nowrap`、`dev-tool-unit-test` 等
 - batch：`manual-qa-deep-experience-batch1`、`auto-qa-generators` 等
 - script：`qa-v3.test.ts`（Vitest）、`playwright-qa-v3.ts`（Playwright）
 
@@ -211,7 +222,9 @@ test-results/{phase}/
 QA Leader 按以下顺序编排执行：
 
 ```
-步骤 0: 设计/更新测试用例
+步骤 0: 最小 preflight（判定任务类型 → 查 capability-registry → 复用现成工具）
+    ↓
+步骤 1: 设计/更新测试用例
     ↓
 第一层: Code Review（可选，仅在有新代码变更时）
     ↓

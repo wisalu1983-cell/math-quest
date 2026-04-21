@@ -1,9 +1,9 @@
 # v0.2-1-1（F3 开发者工具栏）单元测试审计报告
 
-**执行日期**：2026-04-20  
-**关联子计划**：[ProjectManager/Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md](../../Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md)（`v0.2-1-1` · DevToolPanel / **F3**）  
-**本轮定位**：**单元测试级（Vitest）审计**；不包含浏览器拟真、Playwright、dev server 手工点击验证。  
-**用例范围**：新增 **5** 个测试文件、**22** 条用例（在既有 `479` 条基础上 **+22**）；复用 `src/repository/local.test.ts` 中 **6** 条 namespace 用例作为既有证据（不逐条展开）。  
+**执行日期**：2026-04-20
+**关联子计划**：[ProjectManager/Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md](../../ProjectManager/Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md)（`v0.2-1-1` · DevToolPanel / **F3**）
+**本轮定位**：**单元测试级（Vitest）审计**；不包含浏览器拟真、Playwright、dev server 手工点击验证。
+**用例范围**：新增 **5** 个测试文件、**22** 条用例（在既有 `479` 条基础上 **+22**）；复用 `src/repository/local.test.ts` 中 **6** 条 namespace 用例作为既有证据（不逐条展开）。
 **总计**：**501** 条 Vitest 用例（本轮执行全绿）
 
 **结果统计**：PASS: **14** / FAIL: **0** / RISK: **0** / BLOCKED: **0**  

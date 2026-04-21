@@ -49,8 +49,8 @@
 
 ## 批次 B3：浏览器端到端（Playwright）
 
-**运行**: `node .qa-artifacts/qa-run.mjs` → **6/6 PASS**
-**截图**: `.qa-artifacts/shots/B3-*.png`
+**运行**: `node QA/artifacts/qa-run.mjs` → **6/6 PASS**
+**截图**: `QA/artifacts/shots/B3-*.png`
 
 | ID | 用户预期 | 操作路径 | 实际观察 | 判定 | 证据 |
 |----|---------|---------|---------|------|------|

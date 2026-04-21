@@ -7,7 +7,7 @@
 //   B3-05 点击 A01 S1-LA L1 进入 Practice，出题是加减类
 //   B3-06 注入旧 Boss 存档 + reload → A01 首页显示全关满星（11/11）
 //
-// 运行：node .qa-artifacts/qa-run.mjs
+// 运行：node QA/artifacts/qa-run.mjs
 // 前置：npm run dev 在 http://localhost:5177
 
 import { chromium } from 'playwright';
