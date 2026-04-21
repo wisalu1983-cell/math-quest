@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-21（v0.2-1-1 F3 开发者工具栏实施+QA 通过，进入 v0.2-1-2 准备）
+> 最后更新：2026-04-21（Phase 2 诊断报告用户确认，Phase 3 正式启动）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -51,10 +51,18 @@
   - vitest 503/503；E1 Playwright DOM 度量全通过；算式题型全部单行
   - B1 子计划：[`Plan/v0.2/subplans/2026-04-21-b1-生成器退化题修复.md`](Plan/v0.2/subplans/2026-04-21-b1-生成器退化题修复.md)
   - E1 子计划 + QA 报告：[`Plan/v0.2/subplans/2026-04-21-e1-题干折行修复.md`](Plan/v0.2/subplans/2026-04-21-e1-题干折行修复.md) · [`QA/2026-04-21-e1-prompt-nowrap/qa-result.md`](QA/2026-04-21-e1-prompt-nowrap/qa-result.md)
-- 规划包已落盘：`Plan/v0.2/` 下各文件完整；Phase 3 内容待 Phase 2 诊断报告产出后再充实
-- 工程基线（2026-04-21）：`npm run build` 绿，`vitest` 501/501 PASS；`npm run lint` pre-existing 161 error 属基线债务（本次改动文件 0 新增）
+- ✅ **Phase 2 联合诊断报告** 用户确认（2026-04-21）
+  - B2：数值设计问题 → Phase 3，采用方向 A（权重表整体上调）
+  - C1：设计问题 → Phase 4 A3 子议题
+  - D：实现问题 → Phase 3（结算 UI 动效重构）
+  - 报告：[`Reports/2026-04-21-phase-2-diagnosis.md`](Reports/2026-04-21-phase-2-diagnosis.md)
+- 🟡 **Phase 3 正式启动**（2026-04-21）
+  - ✅ `v0.2-3-1` B2 权重表：代码完成，vitest 503/503（待 F3 验证 + build）
+  - B2 子计划：[`Plan/v0.2/subplans/2026-04-21-b2-进阶权重表调整.md`](Plan/v0.2/subplans/2026-04-21-b2-进阶权重表调整.md)
+  - D 子计划：[`Plan/v0.2/subplans/2026-04-21-d-进阶结算UI重构.md`](Plan/v0.2/subplans/2026-04-21-d-进阶结算UI重构.md)
+- 工程基线（2026-04-21）：`npm run build` 绿，`vitest` 503/503 PASS
 
-**下一步**：Phase 1 全部完成（`1-1` + `1-2` ✅）→ 启动 Phase 2（三项合并短诊断：B2/C1/D）。
+**下一步**：执行 Phase 3 — B2（权重表）和 D（结算 UI）可并行或串行，建议先做 B2（纯常量改动，风险低）。
 
 ---
 
@@ -67,7 +75,7 @@
 - 当前反馈目录：[Plan/v0.2/01-feedback-catalog.md](Plan/v0.2/01-feedback-catalog.md)
 - 当前 Phase 计划：[Plan/v0.2/03-phase-plan.md](Plan/v0.2/03-phase-plan.md)
 - 当前执行纪律：[Plan/v0.2/04-execution-discipline.md](Plan/v0.2/04-execution-discipline.md)
-- 当前 Phase 1 详表：[Plan/v0.2/phases/phase-1.md](Plan/v0.2/phases/phase-1.md)
+- 当前 Phase 3 详表：[Plan/v0.2/phases/phase-3.md](Plan/v0.2/phases/phase-3.md)
 
 ### 全局管理入口
 

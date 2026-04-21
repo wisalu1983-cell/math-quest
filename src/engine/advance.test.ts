@@ -28,10 +28,10 @@ describe('getStarProgress', () => {
 });
 
 describe('getTierCounts', () => {
-  it('0★ → all normal', () => {
+  it('0★ → 40% normal + 60% hard（v0.2 方向A调整后）', () => {
     const c = getTierCounts(0, 5, 20);
-    expect(c.normal).toBe(20);
-    expect(c.hard).toBe(0);
+    expect(c.normal).toBe(8);
+    expect(c.hard).toBe(12);
     expect(c.demon).toBe(0);
   });
 
@@ -94,11 +94,11 @@ describe('buildAdvanceSlots', () => {
 describe('S4-T1: 3★-cap 题型压档场景（A01/A04/A08）', () => {
   const CAP3_TOPICS: TopicId[] = ['mental-arithmetic', 'operation-laws', 'equation-transpose'];
 
-  /** 边界矩阵：[hearts, 预期 tierCounts.normal/hard/demon] */
+  /** 边界矩阵：[hearts, 预期 tierCounts.normal/hard/demon]（v0.2 方向A调整后权重）*/
   const BOUNDARY_MATRIX: Array<{ hearts: number; star: string; expected: { normal: number; hard: number; demon: number } }> = [
-    { hearts: 0,  star: '0★', expected: { normal: 20, hard: 0,  demon: 0 } },
-    { hearts: 6,  star: '1★', expected: { normal: 12, hard: 8,  demon: 0 } },
-    { hearts: 18, star: '2★', expected: { normal: 4,  hard: 16, demon: 0 } },
+    { hearts: 0,  star: '0★', expected: { normal: 8,  hard: 12, demon: 0 } },
+    { hearts: 6,  star: '1★', expected: { normal: 4,  hard: 16, demon: 0 } },
+    { hearts: 18, star: '2★', expected: { normal: 0,  hard: 20, demon: 0 } },
     { hearts: 38, star: '3★', expected: { normal: 0,  hard: 20, demon: 0 } },
   ];
 
@@ -141,8 +141,8 @@ describe('S4-T1: 3★-cap 题型压档场景（A01/A04/A08）', () => {
   });
 
   describe('4. 子题型不退化为单一（跨档星级下）', () => {
-    // 只检查 1★ / 2★ 这两个跨档边界；0★ 全 normal 档、3★ 全 hard 档都是单档场景
-    // 但 SWOR 最多选 4 个 tag，只要单档 entries ≥ 2 就应该 ≥ 2 种
+    // 检查 1★ / 2★ 跨档边界；0★（Normal+Hard 混档）和 3★（全 Hard）单档题型也应有多种子题型
+    // SWOR 最多选 4 个 tag，只要 pool ≥ 2 就应该 ≥ 2 种
     for (const topicId of CAP3_TOPICS) {
       it(`${topicId} @ 1★(6❤️): slot.subtypeTag 唯一值数 ≥ 2`, () => {
         const slots = buildAdvanceSlots(topicId, 6);
