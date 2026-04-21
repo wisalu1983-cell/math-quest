@@ -20,6 +20,7 @@ test-screenshots/
 # Tool artifacts
 .superpowers/
 .ui-design/
+_staging/
 
 # Generated test scripts (auto-generated, not hand-written)
 test-*.cjs

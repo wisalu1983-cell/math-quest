@@ -122,22 +122,26 @@ function checkIndexIntegrity() {
     }
   }
 
-  // 从 _index.md 中提取所有反引号内的 *.md 文件名（粗粒度）
+  // 从 _index.md 中提取所有反引号内的 *.md 引用，验证对应 Spec 文件存在
+  // 保留完整相对路径（含子目录），过滤掉非 Specs 引用和示例占位符
   const referenced = new Set<string>();
   const re = /`([^`]+\.md)`/g;
   let m: RegExpExecArray | null;
   while ((m = re.exec(indexContent)) !== null) {
-    referenced.add(path.basename(m[1]));
+    const raw = m[1];
+    if (/[<>]/.test(raw)) continue;                          // 占位符示例文本
+    if (/^Plan\/|^ProjectManager\//.test(raw)) continue;    // 跨目录说明性引用
+    referenced.add(raw);
   }
-  for (const name of referenced) {
-    if (name === '_index.md') continue;
-    if (!fs.existsSync(path.join(SPECS_DIR, name))) {
+  for (const relPath of referenced) {
+    if (relPath === '_index.md') continue;
+    if (!fs.existsSync(path.join(SPECS_DIR, relPath))) {
       report({
         check: 'index-integrity',
         severity: 'warn',
-        message: `_index.md 引用了不存在的 Spec 文件：${name}`,
+        message: `_index.md 引用了不存在的 Spec 文件：${relPath}`,
         file: relRepo(INDEX_FILE),
-        line: findLine(indexContent, name),
+        line: findLine(indexContent, relPath),
         hint: '检查文件是否被改名/删除，更新 _index.md 对应行',
       });
     }
