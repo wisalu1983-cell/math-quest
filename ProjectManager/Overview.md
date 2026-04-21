@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-20（v0.2-1-1 F3 开发者工具栏子计划 4 步工作流完成，进入实施）
+> 最后更新：2026-04-21（v0.2-1-1 F3 开发者工具栏实施+QA 通过，进入 v0.2-1-2 准备）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -43,15 +43,15 @@
 
 **当前状态**：
 
-- 进行中 · **Phase 1 · `v0.2-1-1` F3 开发者工具栏**（4 步工作流已走完，进入实施）
-- 方案定稿：[`Specs/dev-tool-panel/2026-04-20-design-proposal.md`](Specs/dev-tool-panel/2026-04-20-design-proposal.md)（4 决策点：Namespace 切换隔离 + 悬浮 FAB + 侧栏抽屉 + DEV 自动显示 + 生产双构建双路径 + 声明式清单注入项）
-- 子计划 Plan：[`Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md`](Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md)（含 T1~T6 六个实施任务，工作量 ~2 人日）
-- 规划包已落盘：`Plan/v0.2/` 下 `00-overview.md` / `01-feedback-catalog.md` / `02-classification.md` / `03-phase-plan.md` / `04-execution-discipline.md` + `phases/phase-1.md` ~ `phase-5.md`
-- Phase 3 内容待 Phase 2 诊断报告产出后再充实
-- 工程基线（延续 v0.1 收口）：`npm run build` 绿，`vitest` 473/473 PASS；`npm run lint` 127 条 error 属基线债务
-- 精确检查点：`master@977933e`
+- ✅ **`v0.2-1-1` F3 开发者工具栏** 实施+QA 全部通过（2026-04-21）
+  - 单测 501/501 全绿（含新增 22 条）；双构建纯净度 grep 验证通过；用户人工 QA 确认注入项有效性
+  - 子计划详见：[`Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md`](Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md)
+  - QA 报告：[`QA/2026-04-20-f3-dev-tool-unit-test/qa-result.md`](QA/2026-04-20-f3-dev-tool-unit-test/qa-result.md)
+- ⬜ **`v0.2-1-2` B1 生成器退化题 + E1 题干折行**（Phase 1 最后一个子计划，待启动）
+- 规划包已落盘：`Plan/v0.2/` 下各文件完整；Phase 3 内容待 Phase 2 诊断报告产出后再充实
+- 工程基线（2026-04-21）：`npm run build` 绿，`vitest` 501/501 PASS；`npm run lint` pre-existing 161 error 属基线债务（本次改动文件 0 新增）
 
-**下一步**：启动 `v0.2-1-1` 实施任务 T1（`repository/local.ts` namespace 切换改造 + 单测），逐步推进 T2~T6。期间新发现的问题挂 `ISSUE_LIST.md`，不回写本文件。
+**下一步**：启动 `v0.2-1-2`（B1 生成器退化题 + E1 题干折行）4 步工作流（预期效果提炼 → 资料调研 → 方案设计 → 审核）。
 
 ---
 

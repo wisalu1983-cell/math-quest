@@ -51,7 +51,8 @@ interface BuildMidBOParams {
   losses: number;
 }
 
-function buildMidBO({ targetTier, wins, losses }: BuildMidBOParams): RankMatchSession {
+/** 导出供单测直接断言 BO 中途态构造规则（实现无额外分支）。 */
+export function buildMidBO({ targetTier, wins, losses }: BuildMidBOParams): RankMatchSession {
   const userId = requireUserId();
   const bestOf: RankMatchBestOf = RANK_BEST_OF[targetTier];
   const winsToAdvance = RANK_WINS_TO_ADVANCE[targetTier];
