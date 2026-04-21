@@ -47,11 +47,14 @@
   - 单测 501/501 全绿（含新增 22 条）；双构建纯净度 grep 验证通过；用户人工 QA 确认注入项有效性
   - 子计划详见：[`Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md`](Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md)
   - QA 报告：[`QA/2026-04-20-f3-dev-tool-unit-test/qa-result.md`](QA/2026-04-20-f3-dev-tool-unit-test/qa-result.md)
-- ⬜ **`v0.2-1-2` B1 生成器退化题 + E1 题干折行**（Phase 1 最后一个子计划，待启动）
+- ✅ **`v0.2-1-2` B1 生成器退化题 + E1 题干折行** 实施+QA 全部通过（2026-04-21）
+  - vitest 503/503；E1 Playwright DOM 度量全通过；算式题型全部单行
+  - B1 子计划：[`Plan/v0.2/subplans/2026-04-21-b1-生成器退化题修复.md`](Plan/v0.2/subplans/2026-04-21-b1-生成器退化题修复.md)
+  - E1 子计划 + QA 报告：[`Plan/v0.2/subplans/2026-04-21-e1-题干折行修复.md`](Plan/v0.2/subplans/2026-04-21-e1-题干折行修复.md) · [`QA/2026-04-21-e1-prompt-nowrap/qa-result.md`](QA/2026-04-21-e1-prompt-nowrap/qa-result.md)
 - 规划包已落盘：`Plan/v0.2/` 下各文件完整；Phase 3 内容待 Phase 2 诊断报告产出后再充实
 - 工程基线（2026-04-21）：`npm run build` 绿，`vitest` 501/501 PASS；`npm run lint` pre-existing 161 error 属基线债务（本次改动文件 0 新增）
 
-**下一步**：启动 `v0.2-1-2`（B1 生成器退化题 + E1 题干折行）4 步工作流（预期效果提炼 → 资料调研 → 方案设计 → 审核）。
+**下一步**：Phase 1 全部完成（`1-1` + `1-2` ✅）→ 启动 Phase 2（三项合并短诊断：B2/C1/D）。
 
 ---
 

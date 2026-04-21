@@ -1,10 +1,6 @@
 ---
 description: "math-quest 项目 QA Leader 编排器：测试用例设计、三层 QA 流程（Code Review → 自动化 → 拟真人工）、缺陷分流与文档回写。触发词：QA、测试、视觉QA、体验测试、拟真QA"
 alwaysApply: false
-globs:
-  - "test-results/**"
-  - "ProjectManager/ISSUE_LIST.md"
-  - "ProjectManager/Overview.md"
 ---
 
 <!-- QA Leader 编排器 — Cursor 适配件 -->

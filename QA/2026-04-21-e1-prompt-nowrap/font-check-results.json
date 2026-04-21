@@ -1,0 +1,51 @@
+{
+  "viewport": {
+    "width": 375,
+    "height": 812
+  },
+  "contentWidth": 303,
+  "results": [
+    {
+      "subtype": "round-short",
+      "prompt": "将 680 四舍五入到十位",
+      "fontSize": 27,
+      "measuredWidth": 282.03662109375,
+      "fits": true
+    },
+    {
+      "subtype": "round-medium",
+      "prompt": "将 12,345 四舍五入到千位",
+      "fontSize": 23,
+      "measuredWidth": 275.19140625,
+      "fits": true
+    },
+    {
+      "subtype": "estimate-long",
+      "prompt": "估算 492 + 435，结果取整十数",
+      "fontSize": 20,
+      "measuredWidth": 287.099609375,
+      "fits": true
+    },
+    {
+      "subtype": "compare-longest",
+      "prompt": "不计算，比较大小: 4.5 × 3.2 ○ 4.5 × 1.2",
+      "fontSize": 14,
+      "measuredWidth": 260.025390625,
+      "fits": true
+    },
+    {
+      "subtype": "floor-ceil",
+      "prompt": "用去尾法将 13.7 取近似到个位",
+      "fontSize": 20,
+      "measuredWidth": 274.62890625,
+      "fits": true
+    },
+    {
+      "subtype": "reverse-round",
+      "prompt": "一个一位小数四舍五入到个位后是 8，这个数最大是多少？",
+      "fontSize": 14,
+      "measuredWidth": 362.8037109375,
+      "fits": false
+    }
+  ]
+}
