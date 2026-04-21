@@ -60,4 +60,4 @@
 - 每个 Phase 内子计划的：子项拆解、里程碑、验收清单、工作量估算
 - 具体代码位置、Spec 修改内容、测试用例
 
-**→ 等到 Phase 启动时，另建独立 `Plan/YYYY-MM-DD-*.md` 文件展开。**
+**→ 等到 Phase 启动时，另建独立 `Plan/v0.2/subplans/YYYY-MM-DD-<feature-slug>.md` 文件展开。**

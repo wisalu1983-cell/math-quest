@@ -1,11 +1,12 @@
 // src/pages/SessionSummary.tsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useUIStore, useGameProgressStore } from '@/store';
 import { TOPICS } from '@/constants';
-import { TOPIC_STAR_CAP } from '@/constants/advance';
+import { TOPIC_STAR_CAP, STAR_THRESHOLDS_3, STAR_THRESHOLDS_5 } from '@/constants/advance';
 import { getStars, getStarProgress } from '@/engine/advance';
 import LoadingScreen from '@/components/LoadingScreen';
 import Hearts from '@/components/Hearts';
+import ConfettiEffect from '@/components/ConfettiEffect';
 import type { TopicId } from '@/types';
 
 // ─── 进阶结算视图 ───
@@ -32,7 +33,23 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
   const starsAfter  = currentStars;
   const leveled     = starsAfter > starsBefore;
 
+  const starProgressBefore = getStarProgress(Math.max(0, heartsAccBefore), cap);
   const starProgress = getStarProgress(heartsAccAfter, cap);
+
+  // 进度条 before→after 动效
+  const [animated, setAnimated] = useState(false);
+  useEffect(() => {
+    if (heartsEarned > 0) {
+      const timer = setTimeout(() => setAnimated(true), 300);
+      return () => clearTimeout(timer);
+    }
+  }, [heartsEarned]);
+
+  // 下一星段所需心数增量
+  const thresholds = cap === 3 ? STAR_THRESHOLDS_3 : STAR_THRESHOLDS_5;
+  const nextThreshold = starsAfter < cap
+    ? thresholds[starsAfter] - (starsAfter > 0 ? thresholds[starsAfter - 1] : 0)
+    : 0;
 
   return (
     <div className="min-h-dvh bg-bg flex flex-col items-center justify-center safe-top px-4">
@@ -40,20 +57,23 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
 
         {/* Banner */}
         <div className={`py-7 rounded-3xl border-2 stagger-1 ${
-          heartsEarned > 0
-            ? 'bg-success-lt border-success-mid'
-            : 'bg-card border-border-2'
+          leveled
+            ? 'bg-warning-lt border-warning'
+            : heartsEarned > 0
+              ? 'bg-success-lt border-success-mid'
+              : 'bg-card border-border-2'
         }`}>
           <div className="text-5xl mb-3">
-            {heartsEarned === 3 ? '🎉' : heartsEarned >= 1 ? '💪' : '😅'}
+            {leveled ? '🌟' : heartsEarned === 3 ? '🎉' : heartsEarned >= 1 ? '💪' : '😅'}
           </div>
           <h1 className="text-[22px] font-black">
-            {heartsEarned > 0 ? '练习完成！' : '白练一局，继续加油！'}
+            {leveled ? '升星啦！' : heartsEarned > 0 ? '练习完成！' : '白练一局，继续加油！'}
           </h1>
           <p className="text-text-2 text-sm font-bold mt-1.5">
             {topic?.name ?? '进阶训练'} · 进阶模式
           </p>
         </div>
+        <ConfettiEffect active={leveled} />
 
         {/* 心数投入 */}
         <div className="bg-card rounded-2xl border-2 border-border-2 p-4 stagger-2"
@@ -96,17 +116,29 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
             <div className="space-y-1">
               <div className="h-2 bg-border-2 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-warning rounded-full transition-all duration-700"
-                  style={{ width: `${Math.round(starProgress * 100)}%` }}
+                  className="h-full bg-warning rounded-full transition-[width] duration-700 ease-out"
+                  style={{ width: `${Math.round((animated ? starProgress : starProgressBefore) * 100)}%` }}
                 />
               </div>
               <p className="text-[12px] text-text-2 text-right">
                 {Math.round(starProgress * 100)}% → {starsAfter + 1}★
               </p>
+              {heartsEarned > 0 && (
+                <p className="text-[12px] text-text-2 text-center">
+                  本局 +{heartsEarned} ❤️ | 进度 {Math.round(starProgressBefore * 100)}% → {Math.round(starProgress * 100)}%
+                </p>
+              )}
             </div>
           )}
           {starsAfter >= cap && (
             <p className="text-xs font-bold text-warning text-center">已达满级 🏆</p>
+          )}
+
+          {/* 心→星简注 */}
+          {starsAfter < cap && nextThreshold > 0 && (
+            <p className="text-[11px] text-text-2 text-center mt-2">
+              每局最多 +3 ❤️ · 积 {nextThreshold} ❤️ 升 1★
+            </p>
           )}
         </div>
 

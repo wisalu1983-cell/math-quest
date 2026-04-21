@@ -46,23 +46,24 @@
 - ✅ **`v0.2-1-1` F3 开发者工具栏** 实施+QA 全部通过（2026-04-21）
   - 单测 501/501 全绿（含新增 22 条）；双构建纯净度 grep 验证通过；用户人工 QA 确认注入项有效性
   - 子计划详见：[`Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md`](Plan/v0.2/subplans/2026-04-20-dev-tool-panel.md)
-  - QA 报告：[`QA/2026-04-20-f3-dev-tool-unit-test/qa-result.md`](QA/2026-04-20-f3-dev-tool-unit-test/qa-result.md)
+  - QA 报告：[`QA/runs/2026-04-20-f3-dev-tool-unit-test/qa-result.md`](../QA/runs/2026-04-20-f3-dev-tool-unit-test/qa-result.md)
 - ✅ **`v0.2-1-2` B1 生成器退化题 + E1 题干折行** 实施+QA 全部通过（2026-04-21）
   - vitest 503/503；E1 Playwright DOM 度量全通过；算式题型全部单行
   - B1 子计划：[`Plan/v0.2/subplans/2026-04-21-b1-生成器退化题修复.md`](Plan/v0.2/subplans/2026-04-21-b1-生成器退化题修复.md)
-  - E1 子计划 + QA 报告：[`Plan/v0.2/subplans/2026-04-21-e1-题干折行修复.md`](Plan/v0.2/subplans/2026-04-21-e1-题干折行修复.md) · [`QA/2026-04-21-e1-prompt-nowrap/qa-result.md`](QA/2026-04-21-e1-prompt-nowrap/qa-result.md)
+  - E1 子计划 + QA 报告：[`Plan/v0.2/subplans/2026-04-21-e1-题干折行修复.md`](Plan/v0.2/subplans/2026-04-21-e1-题干折行修复.md) · [`QA/runs/2026-04-21-e1-prompt-nowrap/qa-result.md`](../QA/runs/2026-04-21-e1-prompt-nowrap/qa-result.md)
 - ✅ **Phase 2 联合诊断报告** 用户确认（2026-04-21）
   - B2：数值设计问题 → Phase 3，采用方向 A（权重表整体上调）
   - C1：设计问题 → Phase 4 A3 子议题
   - D：实现问题 → Phase 3（结算 UI 动效重构）
   - 报告：[`Reports/2026-04-21-phase-2-diagnosis.md`](Reports/2026-04-21-phase-2-diagnosis.md)
-- 🟡 **Phase 3 正式启动**（2026-04-21）
-  - ✅ `v0.2-3-1` B2 权重表：代码完成，vitest 503/503（待 F3 验证 + build）
+- ✅ **Phase 3 全部完成**（2026-04-21）
+  - ✅ `v0.2-3-1` B2 权重表：常量调整 + 单测更新，vitest 503/503
+  - ✅ `v0.2-3-2` D 结算UI重构：进度条 before→after 动效、对比标注、升星 Banner+Confetti、心→星简注
   - B2 子计划：[`Plan/v0.2/subplans/2026-04-21-b2-进阶权重表调整.md`](Plan/v0.2/subplans/2026-04-21-b2-进阶权重表调整.md)
   - D 子计划：[`Plan/v0.2/subplans/2026-04-21-d-进阶结算UI重构.md`](Plan/v0.2/subplans/2026-04-21-d-进阶结算UI重构.md)
 - 工程基线（2026-04-21）：`npm run build` 绿，`vitest` 503/503 PASS
 
-**下一步**：执行 Phase 3 — B2（权重表）和 D（结算 UI）可并行或串行，建议先做 B2（纯常量改动，风险低）。
+**下一步**：启动 Phase 4 — 题型教育设计重梳理（C1 档内梯度规范等）。
 
 ---
 

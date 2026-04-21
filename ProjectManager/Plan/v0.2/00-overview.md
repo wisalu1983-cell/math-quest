@@ -55,7 +55,7 @@
 
 | 动作 | 何时 | 何处 |
 |---|---|---|
-| 每个 Phase 的子计划落盘 | Phase 启动时 | `Plan/YYYY-MM-DD-*.md`（独立文件，不挤进本目录）|
+| 每个 Phase 的子计划落盘 | Phase 启动时 | `Plan/v0.2/subplans/YYYY-MM-DD-<feature-slug>.md`（独立文件，不挤进本目录）|
 | 子计划头部按 Plan 文件模板 | 每次新建 | `Plan/README.md` §Plan 文件模板（2026-04-17 生效）|
 | 索引入口 `Plan/README.md` 更新 | `v0.2-1-1` 启动时 | 加一行指向本目录 |
 | 主线切换 `Overview.md` | `v0.2-1-1` 启动时 | 当前主线字段切换 |
