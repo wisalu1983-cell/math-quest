@@ -6,6 +6,16 @@ import VerticalCalcBoard from '@/components/VerticalCalcBoard';
 import DecimalTrainingGrid from '@/components/DecimalTrainingGrid';
 import Hearts from '@/components/Hearts';
 import Dialog from '@/components/Dialog';
+
+// 题干字号：按权重字符数自适应，确保 375px 视口（可用宽 303px）内单行显示
+// 中文字符权重 1.0，ASCII/数字/运算符权重 0.6
+function promptFontSize(prompt: string): number {
+  const wLen = [...prompt].reduce(
+    (acc, c) => acc + (/[\u4e00-\u9fff\uff00-\uffef，。？！：；]/.test(c) ? 1.0 : 0.6),
+    0
+  );
+  return Math.max(14, Math.min(32, Math.floor(303 / wLen)));
+}
 import LoadingScreen from '@/components/LoadingScreen';
 import ConfettiEffect from '@/components/ConfettiEffect';
 import MathText from '@/components/MathText';
@@ -286,13 +296,10 @@ return (
                   </div>
                 </div>
               ) : (
-                <h2 className={`font-black text-center text-text leading-snug tracking-tight mb-0 whitespace-normal break-words ${
-                  currentQuestion.prompt.length > 25
-                    ? 'text-[20px]'
-                    : currentQuestion.prompt.length > 18
-                      ? 'text-[24px]'
-                      : 'text-[32px]'
-                }`}>
+                <h2
+                className="font-black text-center text-text leading-snug tracking-tight mb-0 whitespace-normal"
+                style={{ fontSize: `${promptFontSize(currentQuestion.prompt)}px` }}
+              >
                   {currentQuestion.prompt.includes('$') ? (
                     <MathText text={currentQuestion.prompt} />
                   ) : (
