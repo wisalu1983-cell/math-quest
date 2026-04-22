@@ -36,24 +36,10 @@ export function getSubtypeEntries(_difficulty: number): SubtypeDef[] {
 
 // ---------------------------------------------------------------------------
 // 估算 (estimate)
-//   低档：一步凑整（加减），取整十/整百
-//   中档：含乘法 + 方向判断（偏大/偏小）
-//   高档：多式估算比较 + 现实取整情境
+//   基础估算：自选凑整路径，结果按合理区间校验
+//   方向判断：估算结果相对精确值偏大 / 偏小
+//   情境估算：现实语境下判断进一法 / 去尾法
 // ---------------------------------------------------------------------------
-
-/** 估算取整精度：至多到最大位数小一位（4 位数→百，3 位数→十） */
-function getEstimatePlace(n: number): number {
-  const abs = Math.abs(n);
-  const digits = abs < 10 ? 1 : abs < 100 ? 2 : abs < 1000 ? 3 : abs < 10000 ? 4 : 5;
-  // 最大位的量级
-  const maxPlace = Math.pow(10, digits - 1); // 3位数→100, 4位数→1000
-  // 允许的精度范围：从 maxPlace/10 到 maxPlace（即小一位到同位）
-  const candidates: number[] = [];
-  const minPlace = Math.max(10, maxPlace / 10);
-  for (let p = minPlace; p <= maxPlace; p *= 10) candidates.push(p);
-  if (candidates.length === 0) return 10;
-  return candidates[randInt(0, candidates.length - 1)];
-}
 
 function generateEstimateBasic(difficulty: number, id: string): Question {
   // 乘法为主（≥70%），d=2 仍以加减为主（入门级），d≥3 起乘法主导
