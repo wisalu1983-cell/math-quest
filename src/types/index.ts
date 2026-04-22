@@ -66,6 +66,8 @@ export interface NumberSenseData {
   options?: string[];
   expressions?: string[];
   acceptedAnswers?: number[];
+  /** estimate-basic 区间验证：接受精确值 × (1 ± tolerance) 内的答案（0.15=±15%，0.10=±10%）*/
+  tolerance?: number;
 }
 
 export interface MentalArithmeticData {

@@ -436,12 +436,12 @@ describe('Campaign 结构验证', () => {
     // ISSUE-057（2026-04-17）范围扩张后：8 题型全面重构，"S3 综合无 filter"段
     // 被拆成聚焦 lane；A01/A04/A08 压为 2 档 + Boss。详见 Reports 迁移说明。
     const expected: Record<string, number> = {
-      'mental-arithmetic': 11, // 原 12，档 2 拆 2 lane、删去"综合挑战"段
+      'mental-arithmetic': 9,  // C1: S1-LA-L2(d=3), S2-LA-L2(d=7) 删除，共减2关
       'number-sense': 15,      // 原 15，S3"综合估算"改为聚焦估算 + 比较深化
-      'vertical-calc': 12,     // 原 12，S3"高阶笔算"改为大数乘法 + 除法近似
-      'operation-laws': 8,     // 原 10，压 2 档后 S2/S3 合并为"律的深化"
+      'vertical-calc': 11,     // C1: S1-LA-L2(d=3) 删除，共减1关
+      'operation-laws': 7,     // C1: S1-LA-L2(d=3) 删除，共减1关
       'decimal-ops': 12,       // 原 12，S3"综合"改为循环小数 + 反直觉性质
-      'bracket-ops': 10,       // 原 10，S3 原"division-property"在 v2.2 已降权为 0
+      'bracket-ops': 9,        // C1: S1-LA-L2(d=4) 删除，共减1关
       'multi-step': 13,        // 原 14，S3"高阶综合"改为错误诊断 + 隐藏因数
       'equation-transpose': 9, // 原 11，压 2 档后 S2/S3 合并为"双向移项与陷阱"
     };

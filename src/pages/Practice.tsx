@@ -23,6 +23,7 @@ import type { VerticalCalcData, TrainingField } from '@/types';
 import {
   getPracticeFeedbackAnnouncement,
 } from '@/utils/ui-accessibility';
+import { getMethodTip } from '@/utils/method-tips';
 
 export default function Practice() {
   const {
@@ -369,6 +370,20 @@ return (
                 </div>
               )}
             </div>
+
+            {/* Method tip — 题干阶段，最低档次时显示 */}
+            {(() => {
+              const tip = getMethodTip(currentQuestion);
+              if (!tip) return null;
+              return (
+                <div className="w-full mb-3">
+                  <div className="rounded-xl bg-primary/[0.07] border border-primary/20 px-4 py-2.5 flex items-start gap-2">
+                    <span className="text-primary text-base leading-none mt-0.5 flex-shrink-0">💡</span>
+                    <p className="text-sm font-semibold text-primary leading-snug">{tip}</p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Inputs — below card */}
             <div className="w-full stagger-2">

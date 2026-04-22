@@ -34,7 +34,6 @@ const mentalArithmeticMap: CampaignMap = {
           subtypeFilter: ['add', 'sub'],
           levels: [
             { levelId: 'mental-arithmetic-S1-LA-L1', difficulty: 2, questionCount: 10 },
-            { levelId: 'mental-arithmetic-S1-LA-L2', difficulty: 3, questionCount: 12 },
             { levelId: 'mental-arithmetic-S1-LA-L3', difficulty: 4, questionCount: 15 },
           ],
         },
@@ -60,7 +59,6 @@ const mentalArithmeticMap: CampaignMap = {
           subtypeFilter: ['order'],
           levels: [
             { levelId: 'mental-arithmetic-S2-LA-L1', difficulty: 6, questionCount: 15 },
-            { levelId: 'mental-arithmetic-S2-LA-L2', difficulty: 7, questionCount: 18 },
             { levelId: 'mental-arithmetic-S2-LA-L3', difficulty: 8, questionCount: 20 },
           ],
         },
@@ -212,7 +210,6 @@ const verticalCalcMap: CampaignMap = {
           subtypeFilter: ['int-add', 'int-sub'],
           levels: [
             { levelId: 'vertical-calc-S1-LA-L1', difficulty: 2, questionCount: 10 },
-            { levelId: 'vertical-calc-S1-LA-L2', difficulty: 3, questionCount: 12 },
             { levelId: 'vertical-calc-S1-LA-L3', difficulty: 4, questionCount: 15 },
           ],
         },
@@ -307,7 +304,6 @@ const operationLawsMap: CampaignMap = {
           subtypeFilter: ['identify-law', 'structure-blank', 'reverse-blank', 'simple-judge'],
           levels: [
             { levelId: 'operation-laws-S1-LA-L1', difficulty: 2, questionCount: 10 },
-            { levelId: 'operation-laws-S1-LA-L2', difficulty: 3, questionCount: 12 },
             { levelId: 'operation-laws-S1-LA-L3', difficulty: 4, questionCount: 15 },
           ],
         },
@@ -465,7 +461,6 @@ const bracketOpsMap: CampaignMap = {
           subtypeFilter: ['remove-bracket-plus', 'remove-bracket-minus'],
           levels: [
             { levelId: 'bracket-ops-S1-LA-L1', difficulty: 3, questionCount: 12 },
-            { levelId: 'bracket-ops-S1-LA-L2', difficulty: 4, questionCount: 15 },
             { levelId: 'bracket-ops-S1-LA-L3', difficulty: 5, questionCount: 18 },
           ],
         },

@@ -22,11 +22,21 @@ import type { SubtypeDef } from '@/types/gamification';
 
 export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
   if (difficulty <= 5) {
+    if (difficulty <= 3) {
+      // 档1-低 (d=2~3)：辨识+简单判断为主，反用填空权重为0
+      return [
+        { tag: 'identify-law',    weight: 55 },
+        { tag: 'simple-judge',    weight: 30 },
+        { tag: 'structure-blank', weight: 15 },
+        { tag: 'reverse-blank',   weight: 0 },
+      ];
+    }
+    // 档1-高 (d=4~5)：结构填空+反用填空为主，建立律的骨架理解
     return [
-      { tag: 'identify-law', weight: 40 },
-      { tag: 'structure-blank', weight: 25 },
-      { tag: 'reverse-blank', weight: 25 },
-      { tag: 'simple-judge', weight: 10 },
+      { tag: 'identify-law',    weight: 20 },
+      { tag: 'simple-judge',    weight: 10 },
+      { tag: 'structure-blank', weight: 35 },
+      { tag: 'reverse-blank',   weight: 35 },
     ];
   }
   return [
@@ -788,12 +798,21 @@ export function generateOperationLaws(params: GeneratorParams): Question {
 
   const entries: SubtypeEntry[] =
     difficulty <= 5
-      ? [
-          { tag: 'identify-law', weight: 40, gen: () => generateIdentifyLaw(difficulty, id) },
-          { tag: 'structure-blank', weight: 25, gen: () => generateStructureBlank(difficulty, id) },
-          { tag: 'reverse-blank', weight: 25, gen: () => generateReverseBlank(difficulty, id) },
-          { tag: 'simple-judge', weight: 10, gen: () => generateSimpleJudge(difficulty, id) },
-        ]
+      ? difficulty <= 3
+        ? [
+            // 档1-低 (d=2~3)：辨识+简单判断为主
+            { tag: 'identify-law',    weight: 55, gen: () => generateIdentifyLaw(difficulty, id) },
+            { tag: 'simple-judge',    weight: 30, gen: () => generateSimpleJudge(difficulty, id) },
+            { tag: 'structure-blank', weight: 15, gen: () => generateStructureBlank(difficulty, id) },
+            { tag: 'reverse-blank',   weight: 0,  gen: () => generateReverseBlank(difficulty, id) },
+          ]
+        : [
+            // 档1-高 (d=4~5)：结构填空+反用填空为主
+            { tag: 'identify-law',    weight: 20, gen: () => generateIdentifyLaw(difficulty, id) },
+            { tag: 'simple-judge',    weight: 10, gen: () => generateSimpleJudge(difficulty, id) },
+            { tag: 'structure-blank', weight: 35, gen: () => generateStructureBlank(difficulty, id) },
+            { tag: 'reverse-blank',   weight: 35, gen: () => generateReverseBlank(difficulty, id) },
+          ]
       : [
           { tag: 'counter-example', weight: 25, gen: () => generateCounterExample(difficulty, id) },
           { tag: 'easy-confuse', weight: 15, gen: () => generateEasyConfuse(difficulty, id) },

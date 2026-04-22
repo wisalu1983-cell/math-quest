@@ -21,17 +21,16 @@ function genN(fn: (p: { difficulty: number; id: string }) => any, difficulty: nu
 //   高档 (d≥8): 末尾0管理 + 需拆分技巧
 describe('Mental Arithmetic (口算速算)', () => {
   describe('低档 (difficulty=5)', () => {
-    it('乘法应为表内乘法（两端都在 2-9）', () => {
+    it('C1档1-高(d=4~5)乘法应为中档函数（含多位操作数）', () => {
       const qs = genN(generateMentalArithmetic, 5, 200);
       const muls = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
       expect(muls.length).toBeGreaterThan(0);
-      for (const q of muls) {
-        const [a, b] = q.data.operands;
-        expect(a).toBeGreaterThanOrEqual(2);
-        expect(a).toBeLessThanOrEqual(9);
-        expect(b).toBeGreaterThanOrEqual(2);
-        expect(b).toBeLessThanOrEqual(9);
-      }
+      // d=5 走 midMulMidZero，会有三位数操作数
+      const hasLargerOps = muls.some((q: any) => {
+        const [a] = q.data.operands;
+        return a >= 100;
+      });
+      expect(hasLargerOps).toBe(true);
     });
 
     it('除法应为表内除法（整除，商为 2-9）', () => {
@@ -141,15 +140,13 @@ describe('Mental Arithmetic (口算速算)', () => {
       }
     });
 
-    it('档 2 (d≥6) 运算顺序题：含括号子池 + 陷阱子池 各占一部分（v2.2）', () => {
+    it('C1 档2-低(d=6~7)运算顺序题只用含括号子池（orderMid）', () => {
       const qs = genN(generateMentalArithmetic, 7, 300);
       const orderQs = qs.filter(q => q.data.kind === 'multi-step');
       expect(orderQs.length).toBeGreaterThan(0);
       const withBrackets = orderQs.filter(q => q.data.expression.includes('('));
-      const trapOnly = orderQs.filter(q => !q.data.expression.includes('('));
-      // v2.2：档 2 order = midOrder(含括号) 50% + highOrder(陷阱无括号) 50%
-      expect(withBrackets.length).toBeGreaterThan(orderQs.length * 0.2);
-      expect(trapOnly.length).toBeGreaterThan(orderQs.length * 0.2);
+      // d=6~7 只走 orderMid，全部含括号
+      expect(withBrackets.length).toBe(orderQs.length);
     });
 
     it('档 2 (d≥6) 运算顺序题全部 numeric-input（MC 仅在档 1）', () => {
@@ -640,12 +637,24 @@ describe('Decimal Ops - Shift Extension (小数点左移)', () => {
 });
 
 describe('Decimal Ops - Special Values (特殊值)', () => {
-  it('difficulty≤5 应偶尔生成特殊值乘法（如 0.125×8）', () => {
-    const qs = genN(generateDecimalOps, 5, 600);
+  it('C1 档1-低(d=3)应偶尔生成特殊值乘法（如 0.125×8）', () => {
+    // C1规范化后：特殊值只在 d=3 生成，d=4~5 改为方向辨析/连续移位
+    const qs = genN(generateDecimalOps, 3, 600);
     const specials = qs.filter((q: any) =>
       q.data.subtype === 'mul' && q.solution.explanation.includes('特殊值')
     );
     expect(specials.length).toBeGreaterThan(0);
+  });
+
+  it('C1 档1-高(d=4~5)mul 应生成方向辨析或连续移位题', () => {
+    const qs = genN(generateDecimalOps, 4, 400);
+    const mulQs = qs.filter((q: any) => q.data.subtype === 'mul');
+    expect(mulQs.length).toBeGreaterThan(0);
+    // d=4 的乘法题应包含 0.1 或 0.01 或 × m ÷ n 形式（方向辨析/连续移位）
+    const hasDirection = mulQs.some((q: any) =>
+      q.data.expression.includes('0.1') || q.data.expression.includes('÷')
+    );
+    expect(hasDirection).toBe(true);
   });
 });
 
@@ -698,28 +707,31 @@ describe('Bracket Ops v2.1 - 答题形式', () => {
 
 // ==================== A01 Phase 2: Extended Ranges ====================
 describe('Mental Arithmetic - Extended Ranges (整十整百运算)', () => {
-  it('difficulty=5 应偶尔生成三位数整十/整百运算', () => {
-    const qs = genN(generateMentalArithmetic, 5, 500);
+  it('C1 档1-高(d=4~5)应稳定生成三位数运算（midAdd/midSub）', () => {
+    const qs = genN(generateMentalArithmetic, 5, 200);
     const singleStep = qs.filter((q: any) => q.data.kind !== 'multi-step');
-    const threeDigit = singleStep.filter((q: any) => {
+    const addSubQs = singleStep.filter((q: any) =>
+      q.data.operator === '+' || q.data.operator === '-'
+    );
+    expect(addSubQs.length).toBeGreaterThan(0);
+    // d=5 全走 midAdd/midSub，100% 应有三位数操作数
+    const threeDigit = addSubQs.filter((q: any) => {
       const ops = q.data.operands as number[];
       return ops.some((n: number) => n >= 100);
     });
-    expect(threeDigit.length).toBeGreaterThan(0);
+    expect(threeDigit.length).toBeGreaterThan(addSubQs.length * 0.8);
   });
 
-  it('三位数运算应为整十或整百数', () => {
-    const qs = genN(generateMentalArithmetic, 5, 500);
+  it('C1 档1-低(d=2~3)整十整百运算来自 lowAdd，不强制 d=5 为整十整百', () => {
+    // d=3 时仍走 lowAdd（d≤3），包含 25% 整十整百
+    const qs = genN(generateMentalArithmetic, 3, 300);
     const singleStep = qs.filter((q: any) => q.data.kind !== 'multi-step');
-    const threeDigit = singleStep.filter((q: any) => {
+    const addQs = singleStep.filter((q: any) => q.data.operator === '+');
+    const roundNums = addQs.filter((q: any) => {
       const ops = q.data.operands as number[];
-      return ops.some((n: number) => n >= 100);
+      return ops.some((n: number) => n >= 10 && n % 10 === 0);
     });
-    for (const q of threeDigit) {
-      const ops = q.data.operands as number[];
-      const bigNum = ops.find((n: number) => n >= 100)!;
-      expect(bigNum % 10).toBe(0);
-    }
+    expect(roundNums.length).toBeGreaterThan(0); // lowAdd 25% 是整十整百
   });
 });
 
@@ -824,10 +836,12 @@ describe('Equation Transpose - Concept (方程概念判断)', () => {
 
 // ==================== A02 Phase 3: Floor/Ceil + Reverse ====================
 describe('Number Sense - Floor/Ceil (去尾法/进一法)', () => {
-  it('应生成去尾法或进一法题', () => {
+  it('应生成去尾法或进一法情景题', () => {
     const qs = genN(generateNumberSense, 7, 500);
     const fcQs = qs.filter((q: any) =>
-      q.prompt.includes('去尾') || q.prompt.includes('进一')
+      q.data.subtype === 'round' &&
+      (q.prompt.includes('至少') || q.prompt.includes('最多')) &&
+      !q.prompt.includes('四舍五入')
     );
     expect(fcQs.length).toBeGreaterThan(0);
   });
@@ -835,10 +849,20 @@ describe('Number Sense - Floor/Ceil (去尾法/进一法)', () => {
   it('去尾法/进一法答案应为有效数字', () => {
     const qs = genN(generateNumberSense, 7, 500);
     const fcQs = qs.filter((q: any) =>
-      q.prompt.includes('去尾') || q.prompt.includes('进一')
+      q.data.subtype === 'round' &&
+      (q.prompt.includes('至少') || q.prompt.includes('最多')) &&
+      !q.prompt.includes('四舍五入')
     );
     for (const q of fcQs) {
       expect(isNaN(Number(q.solution.answer))).toBe(false);
+    }
+  });
+
+  it('低档(d=4~5)不生成含小数除法的复杂情景', () => {
+    const qs = genN((p) => generateNumberSense({ ...p, subtypeFilter: 'floor-ceil' }), 4, 200);
+    for (const q of qs) {
+      // 简单情景池：整数÷整数，答案≤20
+      expect(Number(q.solution.answer)).toBeLessThanOrEqual(20);
     }
   });
 });

@@ -244,11 +244,18 @@ function highSub(): Trio {
 /** 按档位+运算符选数。返回 [a, b, answer] */
 function generatePair(difficulty: number, op: '+' | '-' | '×' | '÷'): Trio {
   if (difficulty <= 5) {
-    // 档 1：基础心算
-    if (op === '+') return lowAdd();
-    if (op === '-') return lowSub();
-    if (op === '×') return lowMul();
-    return lowDiv();
+    if (difficulty <= 3) {
+      // 档1-低 (d=2~3)：低档函数——两位数加减/表内乘除
+      if (op === '+') return lowAdd();
+      if (op === '-') return lowSub();
+      if (op === '×') return lowMul();
+      return lowDiv();
+    }
+    // 档1-高 (d=4~5)：复用中档函数——含进退位/较大操作数
+    if (op === '+') return midAdd();
+    if (op === '-') return midSub();
+    if (op === '×') return midMulMidZero();
+    return midDiv();
   }
   // 档 2：合并原"中档陷阱"+ 原"高档拆分技巧"——75% 取高档技巧池，25% 取中档陷阱池
   // 权重由 0.5 调至 0.75（子计划 2.5 §S2-T3 方案 B），让 A01 S2-LB「口算拆分技巧」lane
@@ -594,14 +601,13 @@ function generateOperationOrder(difficulty: number, id: string): Question {
   if (difficulty <= 5) {
     // 档 1：两步无括号
     ({ expression, answer, firstStep, steps } = orderLow());
+  } else if (difficulty <= 7) {
+    // 档2-低 (d=6~7)：单括号改变顺序，两步混合顺序清晰（只用 orderMid）
+    ({ expression, answer, firstStep, steps } = orderMid());
   } else {
-    // 档 2：原中档含括号两步 + 原高档运算顺序陷阱，50:50 混合
-    if (Math.random() < 0.5) {
-      ({ expression, answer, firstStep, steps } = orderMid());
-    } else {
-      const res = orderHigh();
-      expression = res.expression; answer = res.answer; firstStep = res.firstStep; steps = res.steps; trap = res.trap;
-    }
+    // 档2-高 (d=8~9)：多重顺序陷阱（同级左右/丢项）（只用 orderHigh）
+    const res = orderHigh();
+    expression = res.expression; answer = res.answer; firstStep = res.firstStep; steps = res.steps; trap = res.trap;
   }
 
   // 档 1：50% MC 先算哪一步 + 50% numeric-input

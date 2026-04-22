@@ -230,7 +230,22 @@ function generateDivision(difficulty: number, id: string): Question {
   // v2.1：低档整数÷整数（整除）；中档整数÷出小数；高档已不走此函数（dec-div 承担）
   if (difficulty <= 5) {
     const b = randInt(2, 9);
-    const quotient = randInt(11, Math.floor(999 / b));
+    if (difficulty <= 3) {
+      // 档1-低 (d=2~3)：三位数÷一位数，商整数
+      const quotient = randInt(11, Math.floor(999 / b));
+      const a = b * quotient;
+      const steps = longDivisionSolution(a, b);
+      return {
+        id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+        prompt: `用竖式计算: ${a} ÷ ${b}`,
+        data: { kind: 'vertical-calc', operation: '÷' as const, operands: [a, b], steps: [] },
+        solution: { answer: quotient, steps, explanation: `${a} ÷ ${b} = ${quotient}` },
+        hints: ['从最高位开始，逐位试商'],
+        xpBase: 10 + (difficulty - 1) * 5,
+      };
+    }
+    // 档1-高 (d=4~5)：四位数÷一位数，商整数（操作步骤更多）
+    const quotient = randInt(111, Math.floor(9999 / b));
     const a = b * quotient;
     const steps = longDivisionSolution(a, b);
     return {
@@ -522,8 +537,21 @@ function generateApproximate(difficulty: number, id: string): Question {
 }
 
 function generateIntAdd(difficulty: number, id: string): Question {
-  const [lo, hi] = difficulty <= 5 ? [100, 999] : difficulty <= 7 ? [1000, 9999] : [10000, 99999];
-  const a = randInt(lo, hi); const b = randInt(lo, hi);
+  let a: number, b: number;
+  if (difficulty <= 5) {
+    if (difficulty <= 3) {
+      // 档1-低 (d=2~3)：三位数 + 两位数，单次进位
+      a = randInt(100, 999);
+      b = randInt(10, 99);
+    } else {
+      // 档1-高 (d=4~5)：三位数 + 三位数，多次进位，偶含中间0
+      a = randInt(100, 999);
+      b = randInt(100, 999);
+    }
+  } else {
+    const [lo, hi] = difficulty <= 7 ? [1000, 9999] : [10000, 99999];
+    a = randInt(lo, hi); b = randInt(lo, hi);
+  }
   return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
     prompt: `用竖式计算: ${a} + ${b}`,
     data: { kind: 'vertical-calc' as const, operation: '+' as const, operands: [a, b], steps: generateAdditionSteps(a, b, difficulty) },
@@ -533,8 +561,21 @@ function generateIntAdd(difficulty: number, id: string): Question {
 }
 
 function generateIntSub(difficulty: number, id: string): Question {
-  const [lo, hi] = difficulty <= 5 ? [100, 999] : difficulty <= 7 ? [1000, 9999] : [10000, 99999];
-  const a = randInt(lo, hi); const b = randInt(lo, a);
+  let a: number, b: number;
+  if (difficulty <= 5) {
+    if (difficulty <= 3) {
+      // 档1-低 (d=2~3)：三位数 - 两位数，单次退位
+      a = randInt(100, 999);
+      b = randInt(10, 99);
+    } else {
+      // 档1-高 (d=4~5)：三位数 - 三位数，多次退位，偶含中间0
+      a = randInt(200, 999);
+      b = randInt(100, a - 10);
+    }
+  } else {
+    const [lo, hi] = difficulty <= 7 ? [1000, 9999] : [10000, 99999];
+    a = randInt(lo, hi); b = randInt(lo, a);
+  }
   return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
     prompt: `用竖式计算: ${a} - ${b}`,
     data: { kind: 'vertical-calc' as const, operation: '-' as const, operands: [a, b], steps: generateSubtractionSteps(a, b, difficulty) },
@@ -545,12 +586,23 @@ function generateIntSub(difficulty: number, id: string): Question {
 
 function generateIntMul(difficulty: number, id: string): Question {
   if (difficulty > 5) return generateMultiDigitMult(difficulty, id);
-  const a = randInt(10, 99); const b = randInt(2, 9);
+  if (difficulty <= 3) {
+    // 档1-低 (d=2~3)：两位数 × 一位数
+    const a = randInt(10, 99); const b = randInt(2, 9);
+    return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
+      prompt: `用竖式计算: ${a} × ${b}`,
+      data: { kind: 'vertical-calc' as const, operation: '×' as const, operands: [a, b], steps: generateMultiplicationSteps(a, b, difficulty) },
+      solution: { answer: a * b, explanation: `${a} × ${b} = ${a * b}` },
+      hints: ['从个位开始，逐位相乘'], xpBase: 10 + (difficulty - 1) * 5,
+    };
+  }
+  // 档1-高 (d=4~5)：三位数 × 一位数（含进位）
+  const a = randInt(100, 999); const b = randInt(2, 9);
   return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
     prompt: `用竖式计算: ${a} × ${b}`,
     data: { kind: 'vertical-calc' as const, operation: '×' as const, operands: [a, b], steps: generateMultiplicationSteps(a, b, difficulty) },
     solution: { answer: a * b, explanation: `${a} × ${b} = ${a * b}` },
-    hints: ['从个位开始，逐位相乘'], xpBase: 10 + (difficulty - 1) * 5,
+    hints: ['从个位开始，逐位相乘，注意进位'], xpBase: 10 + (difficulty - 1) * 5,
   };
 }
 

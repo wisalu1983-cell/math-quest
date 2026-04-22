@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-21（Phase 2 诊断报告用户确认，Phase 3 正式启动）
+> 最后更新：2026-04-22（Phase 4 收口：补齐 4-4 子计划入口，同步主线/索引状态）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.2** | 📋 规划包已落盘，等待启动 Phase 1 | [Plan/v0.2/](Plan/v0.2/) |
+| **当前版本** | **v0.2** | 🟡 进行中（Phase 1~4 已完成，Phase 5 待启动） | [Plan/v0.2/](Plan/v0.2/) |
 | 上一版本 | v0.1 | ✅ 已发布（2026-04-19 收口，三层游戏化闭环完成） | [Plan/v0.1/](Plan/v0.1/) |
 
 > 版本命名与归档规则见 [Plan/README.md](Plan/README.md) §版本归档规则。本文件只呈现当前版本活跃信息；历史版本请进入对应 `Plan/vX.Y/` 目录。
@@ -56,14 +56,34 @@
   - C1：设计问题 → Phase 4 A3 子议题
   - D：实现问题 → Phase 3（结算 UI 动效重构）
   - 报告：[`Reports/2026-04-21-phase-2-diagnosis.md`](Reports/2026-04-21-phase-2-diagnosis.md)
-- ✅ **Phase 3 全部完成**（2026-04-21）
-  - ✅ `v0.2-3-1` B2 权重表：常量调整 + 单测更新，vitest 503/503
-  - ✅ `v0.2-3-2` D 结算UI重构：进度条 before→after 动效、对比标注、升星 Banner+Confetti、心→星简注
+- ✅ **Phase 3 全部完成**（2026-04-22）
+  - ✅ `v0.2-3-1` B2 权重表：常量调整 + 单测更新，F3 验证通过
+  - ✅ `v0.2-3-2` D 结算UI重构 v2：心逐颗飞入进度条动效 + 升星链 + 紧凑横排 Banner，vitest 503/503，build ✓
   - B2 子计划：[`Plan/v0.2/subplans/2026-04-21-b2-进阶权重表调整.md`](Plan/v0.2/subplans/2026-04-21-b2-进阶权重表调整.md)
   - D 子计划：[`Plan/v0.2/subplans/2026-04-21-d-进阶结算UI重构.md`](Plan/v0.2/subplans/2026-04-21-d-进阶结算UI重构.md)
-- 工程基线（2026-04-21）：`npm run build` 绿，`vitest` 503/503 PASS
+- ✅ **Phase 4 全部完成**（2026-04-22）：
+  - ✅ **`v0.2-4-C1` 档内梯度规范化** 完成（2026-04-22）：5条Lane从三关缩为两关 + 8个生成器档内子梯度改造，vitest 504/504，人工QA 3题型验证通过
+    - 子计划：[`Plan/v0.2/subplans/2026-04-22-c1-档内梯度规范化.md`](Plan/v0.2/subplans/2026-04-22-c1-档内梯度规范化.md)
+  - ✅ **`4-1` A3 审题原则总则** 完成（2026-04-22）：经结构化思考对话产出，规格文档入仓，A02 情景题库从 12 道扩至 22 道，vitest 504/504
+    - 规格：[`Specs/2026-04-22-审题原则总则.md`](Specs/2026-04-22-审题原则总则.md)
+  - ✅ **`4-2` A1估算+A2基础技巧类排查** 完成（2026-04-22）：题型-技巧映射表产出，estimate-basic 重设计（去精度指定+±15%容忍范围），floor-ceil-basic 决策删除
+    - 规格：[`Specs/2026-04-22-估算能力与基础技巧类排查.md`](Specs/2026-04-22-估算能力与基础技巧类排查.md)
+  - ✅ **`4-3` A4 逆向推理验证** 完成（2026-04-22）：A3 总则机制一回验成立；5 组 reverse-round 模板 + hints 改进方向
+    - 规格：[`Specs/2026-04-22-逆向推理A3回验.md`](Specs/2026-04-22-逆向推理A3回验.md)
+  - ✅ **`4-4` F1 方法 Tips 库落地** 完成（2026-04-22）：4 个子题型 Tip 文案落地，`getMethodTip()` 纯函数 + 18 条专项测试，Practice.tsx 题干卡片与答题框之间静态展示，vitest 523/523
+    - 触发规则：最低档次（d≤5）展示；compare 概念题 d≤8（Boss d=9 不展示）
+    - 子计划：[`Plan/v0.2/subplans/2026-04-22-4-4-method-tips.md`](Plan/v0.2/subplans/2026-04-22-4-4-method-tips.md)
+    - 新增文件：`src/utils/method-tips.ts`、`src/utils/method-tips.test.ts`
+  - ✅ **Phase 4 生成器改造补完** 完成（2026-04-22）：
+    - `4-2A` estimate-basic 重设计（新 prompt 格式 + ±15% 容忍验证）vitest 523/523
+    - `4-2B` floor-ceil-basic 删除 + context 20道分层（d=4~5 简单/d≥6 两层）
+    - `4-3` reverse-round 5模板 + hints 方向性改进
+    - 子计划：[`Plan/v0.2/subplans/2026-04-22-4-2a-estimate-basic重设计.md`](Plan/v0.2/subplans/2026-04-22-4-2a-estimate-basic重设计.md) · [`Plan/v0.2/subplans/2026-04-22-4-2b-floor-ceil重构.md`](Plan/v0.2/subplans/2026-04-22-4-2b-floor-ceil重构.md) · [`Plan/v0.2/subplans/2026-04-22-4-3-reverse-round模板扩充.md`](Plan/v0.2/subplans/2026-04-22-4-3-reverse-round模板扩充.md)
+  - ✅ **Phase 4 全量浏览器验收** 通过（2026-04-22）：4/4 PASS
+    - T01 reverse-round tip ✅、T02 floor-ceil tip ✅、T03 estimate 新格式 ✅、T04 compare tip ✅
+    - QA 报告：[`QA/runs/2026-04-22-4-tips-ui-qa/qa-result.md`](../QA/runs/2026-04-22-4-tips-ui-qa/qa-result.md)
 
-**下一步**：启动 Phase 4 — 题型教育设计重梳理（C1 档内梯度规范等）。
+**下一步**：启动 Phase 5 `5-1`（F2 本地版：数据模型 + 存档 + UI）。入口：[`Plan/v0.2/phases/phase-5.md`](Plan/v0.2/phases/phase-5.md)
 
 ---
 
@@ -76,7 +96,8 @@
 - 当前反馈目录：[Plan/v0.2/01-feedback-catalog.md](Plan/v0.2/01-feedback-catalog.md)
 - 当前 Phase 计划：[Plan/v0.2/03-phase-plan.md](Plan/v0.2/03-phase-plan.md)
 - 当前执行纪律：[Plan/v0.2/04-execution-discipline.md](Plan/v0.2/04-execution-discipline.md)
-- 当前 Phase 3 详表：[Plan/v0.2/phases/phase-3.md](Plan/v0.2/phases/phase-3.md)
+- Phase 4 收口详表：[Plan/v0.2/phases/phase-4.md](Plan/v0.2/phases/phase-4.md)
+- 下一步入口：[Plan/v0.2/phases/phase-5.md](Plan/v0.2/phases/phase-5.md)
 
 ### 全局管理入口
 

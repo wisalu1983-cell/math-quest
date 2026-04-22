@@ -477,6 +477,14 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       const userNum = parseFloat(answer);
       correct = !isNaN(userNum) && qData.acceptedAnswers.includes(userNum);
     }
+    // 1b. 估算题：tolerance 区间判定（estimate-basic 重设计，±15%/±10%）
+    else if (qData.kind === 'number-sense' && typeof qData.tolerance === 'number') {
+      const exact = typeof solution.answer === 'number' ? solution.answer : parseFloat(String(solution.answer));
+      const userNum = parseFloat(answer);
+      if (!isNaN(exact) && !isNaN(userNum) && exact !== 0) {
+        correct = Math.abs(userNum - exact) / exact <= qData.tolerance;
+      }
+    }
     // 2. 多选题：集合相等
     else if (currentQuestion.type === 'multi-select' && solution.answers) {
       correct = isMultiChoiceEqual(answer, solution.answers);

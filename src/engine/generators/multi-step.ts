@@ -394,7 +394,9 @@ function generateHiddenFactorExec(difficulty: number, id: string): Question {
 // ============================================================
 
 function dispatchLow(difficulty: number, id: string): Question {
-  return Math.random() < 0.5
+  // C1档内梯度规范化：d=2 辨识为主（80%），d=3 执行为主（80%）
+  const recognizeProb = difficulty <= 2 ? 0.8 : 0.2;
+  return Math.random() < recognizeProb
     ? generateRecognizeSimplifiableLow(difficulty, id)
     : generateFillSplitLow(difficulty, id);
 }

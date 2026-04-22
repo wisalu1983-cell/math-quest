@@ -188,12 +188,15 @@ describe('A01 口算速算 2 档（v2.2）', () => {
       for (const q of qs) expect(q.type).toBe('numeric-input');
     });
 
-    it('运算顺序题池覆盖含括号（原中档）+ 陷阱型（原高档）', () => {
-      const qs = genFiltered(generateMentalArithmetic, 9, ['order'], 200);
-      const withBrackets = qs.filter(q => q.prompt.includes('('));
-      // 档 2 的 order 是 midOrder+highOrder 各 50% 混合
-      expect(withBrackets.length).toBeGreaterThan(20); // 原中档含括号子池仍有产出
-      expect(qs.length - withBrackets.length).toBeGreaterThan(20); // 原高档陷阱子池仍有产出
+    it('C1 档2-低(d=6~7)运算顺序题只出含括号子池（orderMid），档2-高(d=8~9)只出陷阱池（orderHigh）', () => {
+      // d=7: 100% orderMid（含括号）
+      const qsMid = genFiltered(generateMentalArithmetic, 7, ['order'], 100);
+      const withBracketsMid = qsMid.filter(q => q.prompt.includes('('));
+      expect(withBracketsMid.length).toBe(qsMid.length);
+      // d=9: 100% orderHigh（无括号陷阱）
+      const qsHigh = genFiltered(generateMentalArithmetic, 9, ['order'], 100);
+      const trapOnly = qsHigh.filter(q => !q.prompt.includes('('));
+      expect(trapOnly.length).toBe(qsHigh.length);
     });
 
     it('除法题答案为有效整数（覆盖原中档和原高档两个池）', () => {

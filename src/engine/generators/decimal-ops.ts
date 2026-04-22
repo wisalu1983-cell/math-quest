@@ -57,7 +57,9 @@ function round(value: number, places: number): number {
 // ==================== 低档：add-sub = 位值 / 互换 ====================
 
 function generatePlaceValueOrConvert(id: string, difficulty: number): Question {
-  const variant = randInt(0, 3);
+  // C1档内梯度规范化：d=2 位值组合（variant 0,1），d=3 分数/小数互换（variant 2,3）
+  const useConvert = difficulty >= 3;
+  const variant = useConvert ? randInt(2, 3) : randInt(0, 1);
 
   // 变式 0：位值组合 —— "a 个十分之一 + b 个百分之一 = ?"
   if (variant === 0) {
@@ -182,7 +184,51 @@ function generateMidPlaceExtend(id: string, difficulty: number): Question {
 // ==================== 低档 mul：简单移位 × / 特殊值乘法 ====================
 
 function generateLowMul(id: string, difficulty: number): Question {
-  // 20% 特殊值，80% 简单右移
+  // C1档内梯度规范化：
+  // d=3 (档1-低)：简单一步移位（×10, ÷100等）或特殊值（0.25×4=1）
+  // d=4~5 (档1-高)：连续移位（×10÷100）或×0.1/÷0.1方向辨析
+  if (difficulty >= 4) {
+    // 档1-高：50% 方向辨析（×0.1 vs ÷0.1），50% 连续移位
+    if (Math.random() < 0.5) {
+      // 方向辨析：×0.1 等价于 ÷10，÷0.1 等价于 ×10
+      const aScaled = randInt(11, 99);
+      const a = aScaled / 10;
+      const shift = Math.random() < 0.5 ? 0.1 : 0.01;
+      const answer = a * shift;
+      const expression = `${formatNum(a)} × ${formatNum(shift)}`;
+      return {
+        id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+        prompt: `计算: ${expression}`,
+        data: { kind: 'decimal-ops', expression, subtype: 'mul' },
+        solution: {
+          answer: formatNum(round(answer, 4)),
+          explanation: `乘 ${formatNum(shift)} 相当于小数点向左移 ${shift === 0.1 ? 1 : 2} 位：${expression} = ${formatNum(round(answer, 4))}`,
+        },
+        hints: [`× ${formatNum(shift)} 等价于 ÷ ${shift === 0.1 ? 10 : 100}`],
+        xpBase: 10 + (difficulty - 1) * 5,
+      };
+    }
+    // 连续移位：a × m ÷ n
+    const a = randInt(1, 99) / 10;
+    const shifts = [10, 100];
+    const m = shifts[randInt(0, 1)];
+    const n = shifts[randInt(0, 1)];
+    const answer = a * m / n;
+    const expression = `${formatNum(a)} × ${m} ÷ ${n}`;
+    return {
+      id, topicId: 'decimal-ops', type: 'numeric-input', difficulty,
+      prompt: `计算: ${expression}`,
+      data: { kind: 'decimal-ops', expression, subtype: 'mul' },
+      solution: {
+        answer: formatNum(round(answer, 4)),
+        explanation: `先右移 ${Math.log10(m)} 位，再左移 ${Math.log10(n)} 位：${expression} = ${formatNum(round(answer, 4))}`,
+      },
+      hints: ['×10ⁿ 小数点右移 n 位，÷10ⁿ 小数点左移 n 位，按顺序做'],
+      xpBase: 10 + (difficulty - 1) * 5,
+    };
+  }
+
+  // 档1-低 (d=3)：原逻辑（特殊值 20% + 简单单步移位 80%）
   if (Math.random() < 0.2) {
     const specials = [
       { a: 0.125, b: 8, answer: 1 },

@@ -17,6 +17,15 @@ dist-ssr
 test-results/
 test-screenshots/
 
+# QA process artifacts and reports
+QA/artifacts/
+QA/b2-screenshots/
+QA/runs/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
 # Tool artifacts
 .superpowers/
 .ui-design/

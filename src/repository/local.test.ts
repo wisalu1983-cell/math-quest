@@ -159,14 +159,15 @@ describe('migrateCampaignIfNeeded（策略 X）', () => {
     expect(twice).toBe(once); // 引用相等 = 没触发迁移
   });
 
-  it('8 题型 getAllLevelIds 总数 = 90（新结构总关卡数）', () => {
+  it('8 题型 getAllLevelIds 总数 = 85（C1档内梯度规范化后总关卡数）', () => {
     // 防回归：8 题型各自关卡数总和
-    // A01:11 + A02:15 + A03:12 + A04:8 + A05:12 + A06:10 + A07:13 + A08:9 = 90
+    // A01:9 + A02:15 + A03:11 + A04:7 + A05:12 + A06:9 + A07:13 + A08:9 = 85
+    // C1变更: A01减2(S1-LA-L2+S2-LA-L2), A03/A04/A06各减1
     let total = 0;
     for (const topicId of Object.keys(CAMPAIGN_MAPS)) {
       total += getAllLevelIds(topicId).length;
     }
-    expect(total).toBe(90);
+    expect(total).toBe(85);
   });
 });
 
