@@ -7,18 +7,19 @@
 //   B3-05 点击 A01 S1-LA L1 进入 Practice，出题是加减类
 //   B3-06 注入旧 Boss 存档 + reload → A01 首页显示全关满星（11/11）
 //
-// 运行：node QA/artifacts/qa-run.mjs
+// 运行：node QA/scripts/qa-run.mjs
 // 前置：npm run dev 在 http://localhost:5177
 
 import { chromium } from 'playwright';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import fs from 'node:fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const BASE = 'http://localhost:5177';
-const shots = path.join(__dirname, 'shots');
-import fs from 'node:fs';
-if (!fs.existsSync(shots)) fs.mkdirSync(shots);
+const artifactsDir = path.resolve(__dirname, '..', 'artifacts');
+const shots = path.join(artifactsDir, 'shots');
+if (!fs.existsSync(shots)) fs.mkdirSync(shots, { recursive: true });
 
 const results = [];
 function record(id, title, expect, observe, verdict) {
@@ -198,7 +199,7 @@ async function main() {
   console.log(`PASS=${pass} FAIL=${fail} RISK=${risk} 总=${results.length}`);
 
   fs.writeFileSync(
-    path.join(__dirname, 'b3-results.json'),
+    path.join(artifactsDir, 'b3-results.json'),
     JSON.stringify(results, null, 2),
     'utf-8'
   );
