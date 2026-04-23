@@ -75,6 +75,17 @@
 |------|------|---------|
 | `2026-04-21-pm-sync-check-子目录适配修复.md` | **待实施** | pm-sync-check 脚本 4 处修复：Specs 子目录扫描覆盖（Check 1a/2）、Plan→Spec 引用解析（Check 4）、Backlog↔ISSUE_LIST ID 互斥（新 Check 6） |
 
+### 维度 E：在线服务 / 账号 / 同步
+
+| Spec | 状态 | 关键断言 |
+|------|------|---------|
+| `v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md` | **草稿**（v0.3 设计规格，2026-04-23 创建） | Supabase Magic Link 登录 + 本地优先后台同步架构；5 张 Supabase 表（profiles / game_progress / history_records / rank_match_sessions / sync_metadata）+ RLS；合并策略：GameProgress 字段级 max/union、History 追加去重、RankMatch 状态优先级；段位赛必须联网启动；访客模式保留；本地存档 v3→v4 |
+
+**本维度的跨系统硬约束**：
+- 任何新增持久化数据字段都需要同步更新合并策略（`src/sync/merge.ts`）
+- Repository 接口不变——Zustand stores 不感知同步存在
+- `CURRENT_VERSION` 递增必须注册对应 `migrateV{n}ToV{n+1}` 函数
+
 ---
 
 ## 维度交叉矩阵（快速查询：我在做 X 要查哪些 Spec）

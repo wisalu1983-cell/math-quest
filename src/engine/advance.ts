@@ -199,11 +199,10 @@ function ensureActiveTierCoverage(
   mergedPool: WeightedTag[],
   tierCounts: { normal: number; hard: number; demon: number }
 ): WeightedTag[] {
-  const activeTiers: Array<[DifficultyTier, number]> = [
-    ['normal', tierCounts.normal],
-    ['hard', tierCounts.hard],
-    ['demon', tierCounts.demon],
-  ].filter(([, count]) => count > 0);
+  const activeTiers: Array<[DifficultyTier, number]> = [];
+  if (tierCounts.normal > 0) activeTiers.push(['normal', tierCounts.normal]);
+  if (tierCounts.hard > 0) activeTiers.push(['hard', tierCounts.hard]);
+  if (tierCounts.demon > 0) activeTiers.push(['demon', tierCounts.demon]);
 
   const tierTagMap = new Map<DifficultyTier, Set<string>>();
   for (const [tier] of activeTiers) {

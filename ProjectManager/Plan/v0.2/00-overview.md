@@ -1,7 +1,9 @@
-# 主线概览
+# v0.2 版本收口快照
 
 > 所属版本：v0.2  
+> 收口日期：2026-04-23（Phase 1~5 完成，`qa-leader` 三层 QA 全部通过）
 > 所属主线：[README](./README.md)
+> 本文件角色：v0.2 完工时从 `ProjectManager/Overview.md` 抽取的**快照**，保留版本结束瞬间的状态记录。Overview.md 已切换到 v0.3 的活跃视图。
 
 ---
 
@@ -43,11 +45,13 @@
 
 ## 当前进度
 
-> 本文件是版本收口快照的预留位，版本进行中不承担进度追踪。活跃状态见：
-> - 版本级：[`README.md`](./README.md) 头部 `状态：` 字段
-> - 项目级：[`../../Overview.md`](../../Overview.md)
->
-> 版本收口时，本节将被替换为 Overview.md 的最终状态快照。
+- ✅ Phase 1：开发者工具栏、生成器退化题修复、题干折行修复全部完成
+- ✅ Phase 2：三项联合诊断完成并确认执行方向
+- ✅ Phase 3：进阶权重表与结算 UI 重构完成
+- ✅ Phase 4：题型教育设计重梳理、方法 Tips 库与生成器补完全部完成
+- ✅ Phase 5：历史答题记录（本地版）完成，`mq_history` 数据层 + 记录首页 + 逐题详情全部落地
+- ✅ `qa-leader` 三层 QA 已全部完成，正式结论见 [`../../../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md`](../../../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)
+- ✅ 收口遗留项已转入 [`../../Backlog.md`](../../Backlog.md)：`BL-003` compare 概念题方法提示补证、`BL-004` Practice 答题页状态重置实现清理
 
 ## 与项目管理体系的接入
 
