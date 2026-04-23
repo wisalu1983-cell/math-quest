@@ -30,6 +30,7 @@ __pycache__/
 .superpowers/
 .ui-design/
 _staging/
+.worktrees/
 
 # Generated test scripts (auto-generated, not hand-written)
 test-*.cjs
