@@ -1,151 +1,165 @@
 import { useUIStore } from '@/store';
 import { repository } from '@/repository/local';
-import { TOPICS, DIFFICULTY_TIERS } from '@/constants';
-import { TopicIcon } from '@/components/TopicIcon';
+import {
+  getHistoryDurationMs,
+  getHistoryModeLabel,
+  getHistoryResultLabel,
+  getHistoryStats,
+} from '@/utils/history';
 
-function formatTime(ts: number): string {
+function formatDate(ts: number): string {
   const d = new Date(ts);
   return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 }
 
-function formatMs(ms: number): string {
+function formatDuration(ms: number | null): string {
+  if (ms === null) return '—';
   const sec = Math.round(ms / 1000);
   return sec < 60 ? `${sec}秒` : `${Math.floor(sec / 60)}分${sec % 60}秒`;
 }
 
-export default function SessionDetail() {
-  const { setPage, viewingSessionId } = useUIStore();
+function getResultClasses(result: ReturnType<typeof repository.getHistory>[number]['result']): string {
+  switch (result) {
+    case 'win':
+      return 'border-success/25 bg-success/10 text-success';
+    case 'lose':
+      return 'border-danger/20 bg-danger/10 text-danger';
+    case 'incomplete':
+    default:
+      return 'border-border-2 bg-card-2 text-text-2';
+  }
+}
 
-  const session = repository.getSessions().find(s => s.id === viewingSessionId);
-  if (!session) {
+interface SessionDetailProps {
+  recordId?: string | null;
+}
+
+export default function SessionDetail({ recordId: recordIdProp }: SessionDetailProps) {
+  const setPage = useUIStore(s => s.setPage);
+  const viewingSessionId = useUIStore(s => s.viewingSessionId);
+  const recordId = recordIdProp ?? viewingSessionId;
+
+  const record = repository.getHistory().find(item => item.id === recordId);
+  if (!record) {
     return (
       <div className="min-h-dvh bg-bg flex items-center justify-center">
         <div className="text-center">
           <p className="text-text-2 mb-4">找不到该练习记录</p>
-          <button className="btn-primary" onClick={() => setPage('history')}>返回</button>
+          <button className="btn-primary" onClick={() => setPage('progress')}>返回记录首页</button>
         </div>
       </div>
     );
   }
 
-  const total = session.questions.length;
-  const correct = session.questions.filter(q => q.correct).length;
-  const accuracy = total > 0 ? Math.round(correct / total * 100) : 0;
-  const totalTime = session.endedAt ? session.endedAt - session.startedAt : 0;
-  const avgTime = total > 0 ? Math.round(session.questions.reduce((s, q) => s + q.timeMs, 0) / total) : 0;
-  const topicNames = [TOPICS.find(t => t.id === session.topicId)].filter(Boolean);
-  const diffTier = DIFFICULTY_TIERS.find(t => t.value === session.difficulty);
+  const stats = getHistoryStats(record);
+  const totalDuration = formatDuration(getHistoryDurationMs(record));
 
   return (
     <div className="min-h-dvh bg-bg pb-6 safe-top">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-card border-b-2 border-border-2 px-4 py-3">
+      <div className="sticky top-0 z-10 bg-card/95 border-b-2 border-border-2 px-4 py-3 backdrop-blur-sm">
         <div className="max-w-lg mx-auto flex items-center gap-3">
           <button
-            onClick={() => setPage('history')}
-            aria-label="返回练习历史"
+            onClick={() => setPage('progress')}
+            aria-label="返回记录首页"
             className="text-2xl text-text-2 hover:text-text transition-colors"
-          >←</button>
-          <h1 className="text-[17px] font-black">练习详情</h1>
+          >
+            ←
+          </button>
+          <div>
+            <h1 className="text-[17px] font-black">练习详情</h1>
+            <p className="text-[11px] text-text-2">逐题查看题干、对错、答案对比和耗时</p>
+          </div>
         </div>
       </div>
 
       <div className="max-w-lg mx-auto px-4 py-4 space-y-4">
-        {/* Summary card */}
-        <div className="card space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              {topicNames.map(t => t && (
-                <span key={t.id} className="text-sm font-black flex items-center gap-1.5">
-                  <span style={{ color: t.color, width: 18, height: 18 }}>
-                    <TopicIcon topicId={t.id} size={18} />
-                  </span>
-                  {t.name}
-                </span>
-              ))}
-            </div>
-            <span className="text-xs text-text-2">{formatTime(session.startedAt)}</span>
+        <section
+          className="overflow-hidden rounded-[28px] border-2 border-border-2 bg-card p-4"
+          style={{
+            boxShadow: '0 1px 8px rgba(0,0,0,.06)',
+            backgroundImage: 'linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(244,240,231,.96) 100%)',
+          }}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-text px-3 py-1 text-xs font-black text-card">
+              {getHistoryModeLabel(record.sessionMode)}
+            </span>
+            <span className={`rounded-full border px-3 py-1 text-xs font-black ${getResultClasses(record.result)}`}>
+              {getHistoryResultLabel(record.result)}
+            </span>
+            <span className="ml-auto text-xs text-text-2">{formatDate(record.startedAt)}</span>
           </div>
 
-          <div className="grid grid-cols-3 gap-2 text-center">
-            <div>
-              <div className={`text-xl font-bold ${accuracy >= 80 ? 'text-success' : accuracy >= 60 ? 'text-warning' : 'text-danger'}`}>
-                {accuracy}%
-              </div>
-              <div className="text-[12px] text-text-2">准确率</div>
+          <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="rounded-2xl bg-card-2 px-3 py-3 text-center">
+              <div className="text-xl font-black text-text">{stats.accuracy}%</div>
+              <div className="mt-1 text-[11px] font-bold text-text-2">正确率</div>
             </div>
-            <div>
-              <div className="text-xl font-bold text-text">{correct}/{total}</div>
-              <div className="text-[12px] text-text-2">正确/总数</div>
+            <div className="rounded-2xl bg-card-2 px-3 py-3 text-center">
+              <div className="text-xl font-black text-text">{stats.correct}/{stats.total}</div>
+              <div className="mt-1 text-[11px] font-bold text-text-2">正确/总数</div>
             </div>
-            <div>
-              <div className="text-xl font-bold text-text">{session.heartsRemaining} ♥</div>
-              <div className="text-[12px] text-text-2">剩余心数</div>
+            <div className="rounded-2xl bg-card-2 px-3 py-3 text-center">
+              <div className="text-xl font-black text-text">{totalDuration}</div>
+              <div className="mt-1 text-[11px] font-bold text-text-2">总耗时</div>
             </div>
           </div>
+        </section>
 
-          <div className="flex gap-4 text-xs text-text-2 pt-1 border-t border-border">
-            <span>难度: {diffTier ? `${diffTier.icon} ${diffTier.label}` : session.difficulty}</span>
-            <span>用时: {formatMs(totalTime)}</span>
-            <span>平均: {formatMs(avgTime)}/题</span>
+        <section>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-black text-text">逐题记录</h2>
+            <span className="text-xs font-bold text-text-2">{record.questions.length} 题</span>
           </div>
-        </div>
 
-        {/* Question list */}
-        <div>
-          <h2 className="text-sm font-bold text-text-2 mb-3">逐题详情</h2>
-          <div className="space-y-2">
-            {session.questions.map((attempt, i) => (
-              <div
-                key={attempt.questionId}
-                className={`card border-l-4 ${attempt.correct ? 'border-l-success' : 'border-l-danger'}`}
+          <div className="space-y-3">
+            {record.questions.map((question, index) => (
+              <article
+                key={`${record.id}-${index}`}
+                className={`rounded-[24px] border-2 bg-card p-4 ${
+                  question.correct
+                    ? 'border-success/20'
+                    : 'border-danger/20'
+                }`}
+                style={{ boxShadow: '0 1px 6px rgba(0,0,0,.05)' }}
               >
-                {/* Question header */}
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-bold text-text-2">
-                    第 {i + 1} 题
-                    {(() => {
-                      const t = TOPICS.find(t => t.id === attempt.question.topicId);
-                      return t ? (
-                        <span className="ml-1.5 inline-flex align-middle" style={{ color: t.color, width: 14, height: 14 }}>
-                          <TopicIcon topicId={t.id} size={14} />
-                        </span>
-                      ) : null;
-                    })()}
-                  </span>
-                  <div className="flex items-center gap-2 text-xs">
-                    <span className="text-text-2">{formatMs(attempt.timeMs)}</span>
-                    <span className={`font-bold ${attempt.correct ? 'text-success' : 'text-danger'}`}>
-                      {attempt.correct ? '正确' : '错误'}
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-black text-text-2">第 {index + 1} 题</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-2">{formatDuration(question.timeMs)}</span>
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-black ${
+                        question.correct
+                          ? 'bg-success/10 text-success'
+                          : 'bg-danger/10 text-danger'
+                      }`}
+                    >
+                      {question.correct ? '正确' : '错误'}
                     </span>
                   </div>
                 </div>
 
-                {/* Question prompt */}
-                <p className="text-sm font-medium mb-2">{attempt.question.prompt}</p>
+                <p className="mt-3 text-sm font-semibold leading-6 text-text">{question.prompt}</p>
 
-                {/* Answer comparison */}
-                <div className="flex gap-4 text-xs">
-                  {!attempt.correct && (
-                    <span className="text-danger">
-                      你的答案: {attempt.userAnswer}
+                <div className="mt-4 space-y-2 text-xs">
+                  {!question.correct ? (
+                    <div className="rounded-2xl bg-danger/6 px-3 py-2 text-danger">
+                      <span className="font-black">你的答案：</span>
+                      <span>{question.userAnswer || '未填写'}</span>
+                    </div>
+                  ) : null}
+
+                  <div className="rounded-2xl bg-card-2 px-3 py-2 text-text-2">
+                    <span className="font-black text-text">
+                      {question.correct ? '答案：' : '正确答案：'}
                     </span>
-                  )}
-                  <span className={attempt.correct ? 'text-success' : 'text-text-2'}>
-                    {attempt.correct ? '答案' : '正确答案'}: {String(attempt.question.solution.answer)}
-                  </span>
-                </div>
-
-                {/* Explanation for wrong answers */}
-                {!attempt.correct && attempt.question.solution.explanation && (
-                  <div className="mt-2 text-xs text-text-2 bg-card-2 rounded-lg p-2">
-                    {attempt.question.solution.explanation}
+                    <span>{question.correctAnswer}</span>
                   </div>
-                )}
-              </div>
+                </div>
+              </article>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </div>
   );

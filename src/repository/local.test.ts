@@ -337,6 +337,64 @@ describe('repository.getGameProgress · 默认 rankProgress（Phase 3 M1）', ()
   });
 });
 
+describe('repository 历史记录（v0.2-5-1）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+    setStorageNamespace('main');
+  });
+
+  afterEach(() => {
+    setStorageNamespace('main');
+  });
+
+  it('新账号无记录 → getHistory 返回 []', () => {
+    const historyRepo = repository as unknown as {
+      getHistory?: () => unknown[];
+    };
+
+    expect(typeof historyRepo.getHistory).toBe('function');
+    expect(historyRepo.getHistory?.()).toEqual([]);
+  });
+
+  it('saveHistoryRecord 追加写入 mq_history，保留时间顺序', () => {
+    const historyRepo = repository as unknown as {
+      getHistory?: () => Array<{ id: string; result: string }>;
+      saveHistoryRecord?: (record: unknown) => void;
+    };
+
+    expect(typeof historyRepo.saveHistoryRecord).toBe('function');
+
+    historyRepo.saveHistoryRecord?.({
+      id: 'h-1',
+      userId: 'u1',
+      sessionMode: 'campaign',
+      startedAt: 1000,
+      endedAt: 2000,
+      completed: true,
+      result: 'win',
+      topicId: 'mental-arithmetic',
+      questions: [],
+    });
+    historyRepo.saveHistoryRecord?.({
+      id: 'h-2',
+      userId: 'u1',
+      sessionMode: 'advance',
+      startedAt: 3000,
+      endedAt: 4000,
+      completed: true,
+      result: 'lose',
+      topicId: 'number-sense',
+      questions: [],
+    });
+
+    expect(historyRepo.getHistory?.()).toEqual([
+      expect.objectContaining({ id: 'h-1', result: 'win' }),
+      expect.objectContaining({ id: 'h-2', result: 'lose' }),
+    ]);
+    expect(localStorage.getItem('mq_history')).not.toBeNull();
+  });
+});
+
 // ─── Phase 3 M1：clearAll 作为显式用户操作保留 ───
 
 describe('repository.clearAll · 仅作为显式用户操作保留（Spec §6.3）', () => {
@@ -348,6 +406,7 @@ describe('repository.clearAll · 仅作为显式用户操作保留（Spec §6.3�
     localStorage.setItem('mq_user', 'u');
     localStorage.setItem('mq_game_progress', 'gp');
     localStorage.setItem('mq_sessions', 'ss');
+    localStorage.setItem('mq_history', 'hh');
     localStorage.setItem('mq_progress', 'legacy');
     localStorage.setItem('mq_version', '3');
 
@@ -356,6 +415,7 @@ describe('repository.clearAll · 仅作为显式用户操作保留（Spec §6.3�
     expect(localStorage.getItem('mq_user')).toBeNull();
     expect(localStorage.getItem('mq_game_progress')).toBeNull();
     expect(localStorage.getItem('mq_sessions')).toBeNull();
+    expect(localStorage.getItem('mq_history')).toBeNull();
     expect(localStorage.getItem('mq_progress')).toBeNull();
     // version 自身保留（显式清数据不等于回滚版本号）
     expect(localStorage.getItem('mq_version')).toBe('3');
@@ -491,12 +551,14 @@ describe('Storage Namespace（F3 · v0.2-1-1）', () => {
     localStorage.setItem('mq_dev_user', 'dev-user');
     localStorage.setItem('mq_dev_sessions', 'dev-ss');
     localStorage.setItem('mq_dev_rank_match_sessions', 'dev-rm');
+    localStorage.setItem('mq_dev_history', 'dev-history');
 
     repository.clearAll();
 
     expect(localStorage.getItem('mq_dev_user')).toBeNull();
     expect(localStorage.getItem('mq_dev_sessions')).toBeNull();
     expect(localStorage.getItem('mq_dev_rank_match_sessions')).toBeNull();
+    expect(localStorage.getItem('mq_dev_history')).toBeNull();
     // main 侧完整保留
     expect(localStorage.getItem('mq_user')).toBe('main-user');
     expect(localStorage.getItem('mq_game_progress')).toBe('main-gp');

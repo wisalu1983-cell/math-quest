@@ -13,6 +13,7 @@ import { rankProgressInjections } from './rank-progress';
 import { rankActiveSessionInjections } from './rank-active-session';
 import { inGameInjections } from './in-game';
 import { navigationInjections } from './navigation';
+import { historyRecordInjections } from './history-records';
 
 export const allInjections: DevInjection[] = [
   ...campaignInjections,
@@ -21,4 +22,5 @@ export const allInjections: DevInjection[] = [
   ...rankActiveSessionInjections,
   ...inGameInjections,
   ...navigationInjections,
+  ...historyRecordInjections,
 ];

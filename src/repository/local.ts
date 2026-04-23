@@ -1,5 +1,5 @@
 // src/repository/local.ts
-import type { User, PracticeSession, TopicId } from '@/types';
+import type { User, PracticeSession, TopicId, HistoryRecord } from '@/types';
 import type {
   GameProgress,
   RankMatchSession,
@@ -49,6 +49,7 @@ const KEYS = {
   user: () => `${keyPrefix}user`,
   gameProgress: () => `${keyPrefix}game_progress`,
   sessions: () => `${keyPrefix}sessions`,
+  history: () => `${keyPrefix}history`,
   /** Spec §6.4：RankMatchSession 独立 key，与 PracticeSession 分存 */
   rankMatchSessions: () => `${keyPrefix}rank_match_sessions`,
   version: () => `${keyPrefix}version`,
@@ -285,6 +286,20 @@ export const repository = {
     return read<PracticeSession[]>(KEYS.sessions()) ?? [];
   },
 
+  getHistory(): HistoryRecord[] {
+    return read<HistoryRecord[]>(KEYS.history()) ?? [];
+  },
+
+  saveHistoryRecord(record: HistoryRecord): void {
+    const history = this.getHistory();
+    history.push(record);
+    write(KEYS.history(), history);
+  },
+
+  clearHistory(): void {
+    localStorage.removeItem(KEYS.history());
+  },
+
   /**
    * 保存 PracticeSession。按 id upsert：已有同 id 条目则覆盖，否则追加。
    *
@@ -366,6 +381,7 @@ export const repository = {
       localStorage.removeItem(KEYS.user());
       localStorage.removeItem(KEYS.gameProgress());
       localStorage.removeItem(KEYS.sessions());
+      localStorage.removeItem(KEYS.history());
       localStorage.removeItem(KEYS.rankMatchSessions());
       localStorage.removeItem('mq_progress');
       return;

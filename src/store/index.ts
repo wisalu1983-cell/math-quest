@@ -9,6 +9,8 @@ import type {
   WrongQuestion,
   TrainingField,
   TrainingFieldMistake,
+  HistoryRecord,
+  HistoryResult,
 } from '@/types';
 import { repository } from '@/repository/local';
 import { useGameProgressStore } from './gamification';
@@ -88,6 +90,34 @@ function rebuildPendingWrongQuestions(session: PracticeSession): WrongQuestion[]
       wrongAnswer: attempt.userAnswer,
       wrongAt: attempt.attemptedAt,
     }));
+}
+
+function deriveHistoryResult(completed: boolean, heartsRemaining: number): HistoryResult {
+  if (!completed) return 'incomplete';
+  return heartsRemaining > 0 ? 'win' : 'lose';
+}
+
+function buildHistoryRecord(session: PracticeSession): HistoryRecord {
+  return {
+    id: session.id,
+    userId: session.userId,
+    sessionMode: session.sessionMode,
+    startedAt: session.startedAt,
+    endedAt: session.endedAt,
+    completed: session.completed,
+    result: deriveHistoryResult(session.completed, session.heartsRemaining),
+    topicId: session.topicId,
+    rankMatchMeta: session.rankMatchMeta
+      ? { primaryTopics: session.rankMatchMeta.primaryTopics }
+      : undefined,
+    questions: session.questions.map(attempt => ({
+      prompt: attempt.question.prompt,
+      userAnswer: attempt.userAnswer,
+      correctAnswer: String(attempt.question.solution.answer),
+      correct: attempt.correct,
+      timeMs: attempt.timeMs,
+    })),
+  };
 }
 
 // ─── User Store ───
@@ -610,6 +640,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       rankMatchAction = useRankMatchStore.getState().handleGameFinished(completedSession);
     }
 
+    repository.saveHistoryRecord(buildHistoryRecord(completedSession));
+
     set({
       active: false,
       session: null,
@@ -694,12 +726,15 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
     }
 
     if (session) {
-      repository.saveSession({
+      const abandonedSession: PracticeSession = {
         ...session,
         endedAt: Date.now(),
         heartsRemaining: hearts,
         completed: false,
-      });
+      };
+
+      repository.saveSession(abandonedSession);
+      repository.saveHistoryRecord(buildHistoryRecord(abandonedSession));
     }
 
     set({
@@ -762,9 +797,17 @@ export const useUIStore = create<UIStore>((set) => ({
 // 让其他文件可从 store/index 直接导入 useGameProgressStore
 export { useGameProgressStore } from './gamification';
 
+declare global {
+  interface Window {
+    __MQ_SESSION__?: typeof useSessionStore;
+    __MQ_GAME_PROGRESS__?: typeof useGameProgressStore;
+    __MQ_UI__?: typeof useUIStore;
+  }
+}
+
 // E2E 测试钩子：仅在浏览器 DEV 环境暴露 store，供 Playwright 读取当前题目的正确答案
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  (window as any).__MQ_SESSION__ = useSessionStore;
-  (window as any).__MQ_GAME_PROGRESS__ = useGameProgressStore;
-  (window as any).__MQ_UI__ = useUIStore;
+  window.__MQ_SESSION__ = useSessionStore;
+  window.__MQ_GAME_PROGRESS__ = useGameProgressStore;
+  window.__MQ_UI__ = useUIStore;
 }

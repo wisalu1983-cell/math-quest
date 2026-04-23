@@ -6,7 +6,7 @@ export type NavTab = 'home' | 'progress' | 'wrong-book' | 'profile';
 
 const NAV_ITEMS: { tab: NavTab; iconKey: NavIconKey; label: string }[] = [
   { tab: 'home',       iconKey: 'home',      label: '学习' },
-  { tab: 'progress',   iconKey: 'progress',  label: '进度' },
+  { tab: 'progress',   iconKey: 'progress',  label: '记录' },
   { tab: 'wrong-book', iconKey: 'wrongbook', label: '错题' },
   { tab: 'profile',    iconKey: 'profile',   label: '我的' },
 ];

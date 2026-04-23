@@ -211,6 +211,31 @@ export interface QuestionAttempt {
   attemptedAt: number;
 }
 
+export type HistoryResult = 'win' | 'lose' | 'incomplete';
+
+export interface HistoryQuestionRecord {
+  prompt: string;
+  userAnswer: string;
+  correctAnswer: string;
+  correct: boolean;
+  timeMs: number;
+}
+
+export interface HistoryRecord {
+  id: string;
+  userId: string;
+  sessionMode: GameSessionMode;
+  startedAt: number;
+  endedAt?: number;
+  completed: boolean;
+  result: HistoryResult;
+  topicId: TopicId;
+  rankMatchMeta?: {
+    primaryTopics: TopicId[];
+  };
+  questions: HistoryQuestionRecord[];
+}
+
 export interface PracticeSession {
   id: string;
   userId: string;
