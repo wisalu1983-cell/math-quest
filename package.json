@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "build:with-dev-tool": "cross-env VITE_ENABLE_DEV_TOOL=1 tsc -b && cross-env VITE_ENABLE_DEV_TOOL=1 vite build --outDir dist-dev",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@types/howler": "^2.2.12",
