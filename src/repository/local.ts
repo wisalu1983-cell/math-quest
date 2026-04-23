@@ -1,5 +1,6 @@
 // src/repository/local.ts
 import type { User, PracticeSession, TopicId, HistoryRecord } from '@/types';
+import type { DirtyKey } from '@/sync/types';
 import type {
   GameProgress,
   RankMatchSession,
@@ -26,6 +27,18 @@ export function setStorageNamespace(ns: StorageNamespace): void {
 
 export function getStorageNamespace(): StorageNamespace {
   return keyPrefix === PREFIX_DEV ? 'dev' : 'main';
+}
+
+type SyncNotifyFn = ((key: DirtyKey) => void) | null;
+
+let syncNotify: SyncNotifyFn = null;
+
+export function setSyncNotify(fn: SyncNotifyFn): void {
+  syncNotify = fn;
+}
+
+function notifySync(key: DirtyKey): void {
+  syncNotify?.(key);
 }
 
 // 供 F3 精确清理测试沙盒用：返回当前 namespace 下所有 key（main 下仅 mq_* 非 mq_dev_*；dev 下仅 mq_dev_*）
@@ -259,8 +272,21 @@ export const repository = {
     return read<User>(KEYS.user());
   },
 
-  saveUser(user: User): void {
+  getSyncStateKey(): string {
+    return KEYS.syncState();
+  },
+
+  getAuthUserIdKey(): string {
+    return KEYS.authUserId();
+  },
+
+  saveUserSilent(user: User): void {
     write(KEYS.user(), user);
+  },
+
+  saveUser(user: User): void {
+    this.saveUserSilent(user);
+    notifySync('profiles');
   },
 
   getGameProgress(userId: string): GameProgress {
@@ -286,8 +312,13 @@ export const repository = {
     };
   },
 
-  saveGameProgress(progress: GameProgress): void {
+  saveGameProgressSilent(progress: GameProgress): void {
     write(KEYS.gameProgress(), progress);
+  },
+
+  saveGameProgress(progress: GameProgress): void {
+    this.saveGameProgressSilent(progress);
+    notifySync('game_progress');
   },
 
   getSessions(): PracticeSession[] {
@@ -298,10 +329,15 @@ export const repository = {
     return read<HistoryRecord[]>(KEYS.history()) ?? [];
   },
 
+  saveHistorySilent(records: HistoryRecord[]): void {
+    write(KEYS.history(), records);
+  },
+
   saveHistoryRecord(record: HistoryRecord): void {
     const history = this.getHistory();
     history.push(record);
-    write(KEYS.history(), history);
+    this.saveHistorySilent(history);
+    notifySync('history_records');
   },
 
   clearHistory(): void {
@@ -357,10 +393,15 @@ export const repository = {
     return normalized;
   },
 
+  saveRankMatchSessionsSilent(sessions: Record<string, RankMatchSession>): void {
+    write(KEYS.rankMatchSessions(), sessions);
+  },
+
   saveRankMatchSession(session: RankMatchSession): void {
     const all = this.getRankMatchSessions();
     all[session.id] = session;
-    write(KEYS.rankMatchSessions(), all);
+    this.saveRankMatchSessionsSilent(all);
+    notifySync('rank_match_sessions');
   },
 
   getRankMatchSession(id: string): RankMatchSession | null {
@@ -372,7 +413,7 @@ export const repository = {
     const all = this.getRankMatchSessions();
     if (!(id in all)) return;
     delete all[id];
-    write(KEYS.rankMatchSessions(), all);
+    this.saveRankMatchSessionsSilent(all);
   },
 
   /**

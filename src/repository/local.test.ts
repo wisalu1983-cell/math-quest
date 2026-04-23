@@ -8,6 +8,7 @@ import {
   migrateRankProgressIfNeeded,
   migrateV2ToV3,
   migrateV3ToV4,
+  setSyncNotify,
   repository,
   setStorageNamespace,
   getStorageNamespace,
@@ -474,6 +475,20 @@ function makeRankSession(id: string, userId = 'u1'): RankMatchSession {
   } as RankMatchSession;
 }
 
+function makeHistoryRecord(id: string, startedAt: number) {
+  return {
+    id,
+    userId: 'u1',
+    sessionMode: 'campaign' as const,
+    startedAt,
+    endedAt: startedAt + 100,
+    completed: true,
+    result: 'win' as const,
+    topicId: 'number-sense' as const,
+    questions: [],
+  };
+}
+
 describe('repository.saveRankMatchSession / getRankMatchSession（ISSUE-060 M2 遗留补做）', () => {
   beforeEach(() => {
     installLocalStorageMock();
@@ -663,5 +678,102 @@ describe('repository.getRankMatchSessions · 旧 rank-match 存档归一化', ()
 
     const all = repository.getRankMatchSessions() as Record<string, RankMatchSession & { status?: string }>;
     expect(all.legacyCompleted?.status).toBe('completed');
+  });
+});
+
+describe('repository 同步桥接（v0.3 Phase 2）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+    setStorageNamespace('main');
+  });
+
+  afterEach(() => {
+    setSyncNotify(null);
+    setStorageNamespace('main');
+  });
+
+  it('同步相关写操作会通知对应 DirtyKey，saveSession 不通知', () => {
+    const notified: string[] = [];
+    setSyncNotify((key) => notified.push(key));
+
+    repository.saveUser({
+      id: 'u1',
+      nickname: 'Alice',
+      avatarSeed: 'seed',
+      createdAt: 0,
+      settings: { soundEnabled: true, hapticsEnabled: true },
+    });
+    repository.saveGameProgress(emptyProgress());
+    repository.saveHistoryRecord(makeHistoryRecord('h-sync', 100));
+    repository.saveRankMatchSession(makeRankSession('rs-sync'));
+    repository.saveSession({
+      id: 'ps-local-only',
+      userId: 'u1',
+      topicId: 'number-sense',
+      startedAt: 100,
+      difficulty: 1,
+      sessionMode: 'campaign',
+      targetLevelId: 'level-1',
+      questions: [],
+      heartsRemaining: 3,
+      completed: false,
+    });
+
+    expect(notified).toEqual([
+      'profiles',
+      'game_progress',
+      'history_records',
+      'rank_match_sessions',
+    ]);
+  });
+
+  it('silent 写方法会落盘，但不会触发同步通知', () => {
+    const syncRepo = repository as typeof repository & {
+      saveUserSilent: (user: Parameters<typeof repository.saveUser>[0]) => void;
+      saveGameProgressSilent: (progress: Parameters<typeof repository.saveGameProgress>[0]) => void;
+      saveHistorySilent: (records: ReturnType<typeof repository.getHistory>) => void;
+      saveRankMatchSessionsSilent: (sessions: ReturnType<typeof repository.getRankMatchSessions>) => void;
+      getSyncStateKey: () => string;
+      getAuthUserIdKey: () => string;
+    };
+    const notified: string[] = [];
+    setSyncNotify((key) => notified.push(key));
+
+    syncRepo.saveUserSilent({
+      id: 'u-silent',
+      nickname: 'Silent',
+      avatarSeed: 'seed',
+      createdAt: 0,
+      settings: { soundEnabled: true, hapticsEnabled: true },
+    });
+    syncRepo.saveGameProgressSilent({
+      ...emptyProgress(),
+      userId: 'u-silent',
+      totalQuestionsAttempted: 5,
+    });
+    syncRepo.saveHistorySilent([makeHistoryRecord('h-silent', 100)]);
+    syncRepo.saveRankMatchSessionsSilent({
+      'rs-silent': makeRankSession('rs-silent'),
+    });
+
+    expect(repository.getUser()?.nickname).toBe('Silent');
+    expect(repository.getGameProgress('u-silent').totalQuestionsAttempted).toBe(5);
+    expect(repository.getHistory().map(record => record.id)).toEqual(['h-silent']);
+    expect(repository.getRankMatchSession('rs-silent')?.id).toBe('rs-silent');
+    expect(syncRepo.getSyncStateKey()).toBe('mq_sync_state');
+    expect(syncRepo.getAuthUserIdKey()).toBe('mq_auth_user_id');
+    expect(notified).toEqual([]);
+  });
+
+  it('namespace 切换后同步 key 也跟随前缀变化', () => {
+    const syncRepo = repository as typeof repository & {
+      getSyncStateKey: () => string;
+      getAuthUserIdKey: () => string;
+    };
+
+    setStorageNamespace('dev');
+
+    expect(syncRepo.getSyncStateKey()).toBe('mq_dev_sync_state');
+    expect(syncRepo.getAuthUserIdKey()).toBe('mq_dev_auth_user_id');
   });
 });
