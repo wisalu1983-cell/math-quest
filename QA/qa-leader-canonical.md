@@ -24,8 +24,23 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 2. 再读取 `QA/capability-registry.md`，优先选用当前已经存在的工具、skill 和脚本
 3. 当前工具库已经覆盖时，直接复用；只有 registry 明确没有覆盖时，才允许新建脚本或新工具
 4. 正式 QA 文档与结果统一归档到 `QA/runs/<date>-<scope>/`
-5. 可复用 QA 脚本统一维护在 `QA/scripts/`
+5. 标准 Playwright Test 用例统一维护在 `QA/e2e/`；独立 QA 脚本统一维护在 `QA/scripts/`
 6. 启动时不要求先翻历史 run 索引；只有用户明确要求参考某轮历史 QA 结果时，才查对应归档
+
+### AI 助手标准 QA 执行路径
+
+1. 先执行 `npm test`
+   - 标准单元测试入口，等同 `vitest run`
+   - 覆盖 `src/**/*.test.ts`
+   - 如果失败，先报告失败用例，不继续浏览器测试层
+2. 再执行 `npx playwright test`
+   - 标准浏览器测试入口
+   - 覆盖 `QA/e2e/*.spec.ts`
+   - 由 `playwright.config.ts` 自动拉起本地 dev server
+   - 如果失败，先报告失败用例，不继续把结果写成“已通过”
+3. 仅在明确需要旧脚本时才执行 `QA/scripts/`
+   - `QA/scripts/` 现存多数为历史脚本（存档），不是标准 QA 入口
+   - 这些脚本通常直接调用 Playwright API，可能需要单独准备 dev server / 造数
 
 ### 输入要求
 
@@ -109,9 +124,16 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）和 Claude Code 侧（`.claude/skil
 | 工具 | Cursor | Claude Code |
 |------|--------|-------------|
 | 单元测试 | Vitest | Vitest |
-| 浏览器测试 | Playwright（引用 `webapp-testing` skill） | Playwright + 可选 gstack `qa-only` 做通用扫描 |
+| 浏览器测试 | Playwright Test（`QA/e2e/*.spec.ts`，引用 `webapp-testing` skill） | Playwright Test + 可选 gstack `qa-only` 做通用扫描 |
 | 测试纪律 | `test-driven-development`（obra） | 同左（通过 superpowers plugin） |
 | UI 回归 | `visual-screenshot-qa`（新建全局 skill） | 同左 |
+
+### 标准入口
+
+- 单元测试标准入口：`npm test`
+- 浏览器测试标准入口：`npx playwright test`
+- 标准 Playwright Test 用例统一放在 `QA/e2e/*.spec.ts`
+- `QA/scripts/` 下的独立脚本默认视为历史脚本（存档），不计入标准自动化入口；只有 `QA/capability-registry.md` 明确要求时才按需调用
 
 ### Vitest 覆盖范围
 
@@ -195,19 +217,24 @@ QA 发现问题后，写入 `ProjectManager/ISSUE_LIST.md`，每条包含：
 ### 目录结构
 
 ```
-QA/runs/<date>-<scope>/
-  test-cases-v{N}.md                  # 测试用例表（版本迭代）
-  {batch-name}.md                     # 批次执行纲要
-  {batch-name}-result.md              # 批次执行报告
-  artifacts/                          # 截图证据目录
-    {case-id}-before.png
-    {case-id}-after.png
-    {case-id}-evidence.png
-  {script-name}.test.ts               # Vitest 自动化脚本
-  {script-name}.ts                    # Playwright 自动化脚本
+QA/
+  e2e/
+    {test-name}.spec.ts               # 标准 Playwright Test 用例
+  scripts/
+    {script-name}.py / {script-name}.mjs
+                                      # 独立 QA 脚本（多数为历史脚本/存档）
+  artifacts/                          # 截图与临时运行产物
+  runs/<date>-<scope>/
+    test-cases-v{N}.md                # 测试用例表（版本迭代）
+    {batch-name}.md                   # 批次执行纲要
+    {batch-name}-result.md            # 批次执行报告
+    artifacts/
+      {case-id}-before.png
+      {case-id}-after.png
+      {case-id}-evidence.png
 ```
 
-可复用 QA 脚本统一维护在 `QA/scripts/`。正式 run 优先引用现成脚本；仅在当前工具库无覆盖时才新增。
+标准浏览器测试统一维护在 `QA/e2e/`；独立 QA 脚本统一维护在 `QA/scripts/`。正式 run 优先引用现成脚本；仅在当前工具库无覆盖时才新增。
 
 ### 命名约定
 
