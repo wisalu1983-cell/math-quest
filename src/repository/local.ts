@@ -52,6 +52,8 @@ const KEYS = {
   history: () => `${keyPrefix}history`,
   /** Spec §6.4：RankMatchSession 独立 key，与 PracticeSession 分存 */
   rankMatchSessions: () => `${keyPrefix}rank_match_sessions`,
+  syncState: () => `${keyPrefix}sync_state`,
+  authUserId: () => `${keyPrefix}auth_user_id`,
   version: () => `${keyPrefix}version`,
 } as const;
 
@@ -64,7 +66,7 @@ const KEYS = {
  *   - 迁移链中任何一步抛错 → 旧 gameProgress 落到 mq_backup_v{old}_{ts} 备份，当次启动走"新存档 + 告警"
  *   - 严禁用 clearAll() / 单独 removeItem(gameProgress) 作为"版本不一致"的兜底；clearAll 只能作为显式用户操作
  */
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 const MAX_SESSIONS = 200;
 
 /**
@@ -147,12 +149,18 @@ export function migrateRankProgressIfNeeded(gp: GameProgress): GameProgress {
 /** v2 → v3：追加 rankProgress（Phase 3 M1） */
 export const migrateV2ToV3 = migrateRankProgressIfNeeded;
 
+/** v3 → v4：为 Supabase 认证与同步预留版本升级点，当前 GameProgress 结构不变 */
+export function migrateV3ToV4(gp: GameProgress): GameProgress {
+  return gp;
+}
+
 /**
  * 迁移链登记表：MIGRATIONS[n] 把 v{n} 提升到 v{n+1}。
  * 新增版本时在此追加条目，配套新增 migrateV{n}ToV{n+1} 纯函数。
  */
 const MIGRATIONS: Record<number, (gp: GameProgress) => GameProgress> = {
   2: migrateV2ToV3,
+  3: migrateV3ToV4,
 };
 
 /**

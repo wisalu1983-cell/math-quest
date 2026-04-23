@@ -20,6 +20,8 @@ import SessionDetail from '@/pages/SessionDetail';
 import RankMatchHub from '@/pages/RankMatchHub';
 import RankMatchGameResult from '@/pages/RankMatchGameResult';
 import RankMatchResult from '@/pages/RankMatchResult';
+import { LoginPage } from '@/pages/LoginPage';
+import { useAuthStore } from '@/store/auth';
 import { getDocumentTitle } from '@/utils/ui-accessibility';
 
 export default function App() {
@@ -31,6 +33,7 @@ export default function App() {
   useEffect(() => {
     repository.init();
     loadUser();
+    void useAuthStore.getState().initialize();
   }, [loadUser]);
 
   useEffect(() => {
@@ -76,6 +79,7 @@ export default function App() {
 
   const pages: Record<typeof currentPage, React.ReactNode> = {
     onboarding: <Onboarding />,
+    login: <LoginPage />,
     home: <Home />,
     'campaign-map': <CampaignMap />,
     'advance-select': <AdvanceSelect />,

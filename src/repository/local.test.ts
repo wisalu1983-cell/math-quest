@@ -7,6 +7,7 @@ import {
   migrateCampaignIfNeeded,
   migrateRankProgressIfNeeded,
   migrateV2ToV3,
+  migrateV3ToV4,
   repository,
   setStorageNamespace,
   getStorageNamespace,
@@ -195,6 +196,17 @@ describe('migrateRankProgressIfNeeded（v2→v3 · Phase 3 M1）', () => {
   });
 });
 
+describe('migrateV3ToV4（v0.3 Phase 1）', () => {
+  it('v3→v4 当前不改 GameProgress 结构，返回原引用', () => {
+    const gp: GameProgress = {
+      ...emptyProgress(),
+      rankProgress: { currentTier: 'rookie', history: [] },
+    };
+
+    expect(migrateV3ToV4(gp)).toBe(gp);
+  });
+});
+
 // ─── Phase 3 M1：repository.init 迁移链 + 备份（项目级原则） ───
 
 describe('repository.init · 项目级存档升级原则（Spec §6.3）', () => {
@@ -205,7 +217,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
   it('全新用户（无任何 key）→ 写入当前版本号，不触发备份', () => {
     repository.init();
-    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_version')).toBe('4');
     const keys: string[] = [];
     for (let i = 0; i < (localStorage as unknown as { length: number }).length; i++) {
       const k = localStorage.key(i);
@@ -214,7 +226,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
     expect(keys.some(k => k.startsWith('mq_backup_'))).toBe(false);
   });
 
-  it('v2 存档 + 有 gameProgress → 自动迁移，rankProgress 补默认值', () => {
+  it('v2 存档 + 有 gameProgress → 自动迁移到 v4，rankProgress 补默认值', () => {
     const v2Gp: GameProgress = {
       userId: 'u1',
       campaignProgress: {},
@@ -228,14 +240,14 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
-    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_version')).toBe('4');
     const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
     expect(stored.rankProgress).toEqual({ currentTier: 'apprentice', history: [] });
     expect(stored.totalQuestionsAttempted).toBe(10); // 原数据保留
     expect(stored.totalQuestionsCorrect).toBe(8);
   });
 
-  it('v3 存档 → noop（幂等）', () => {
+  it('v3 存档 + 有 gameProgress → 自动迁移到 v4，不改已有数据', () => {
     const v3Gp: GameProgress = {
       userId: 'u1',
       campaignProgress: {},
@@ -250,7 +262,28 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
+    expect(localStorage.getItem('mq_version')).toBe('4');
     const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
+    expect(stored.rankProgress).toEqual({ currentTier: 'rookie', history: [] });
+  });
+
+  it('v4 存档 → noop（幂等）', () => {
+    const v4Gp: GameProgress = {
+      userId: 'u1',
+      campaignProgress: {},
+      advanceProgress: {},
+      rankProgress: { currentTier: 'rookie', history: [] },
+      wrongQuestions: [],
+      totalQuestionsAttempted: 0,
+      totalQuestionsCorrect: 0,
+    };
+    localStorage.setItem('mq_version', '4');
+    localStorage.setItem('mq_game_progress', JSON.stringify(v4Gp));
+
+    repository.init();
+
+    const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
+    expect(localStorage.getItem('mq_version')).toBe('4');
     expect(stored.rankProgress).toEqual({ currentTier: 'rookie', history: [] });
   });
 
@@ -268,7 +301,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
     repository.init();
 
     // 版本更新到当前版本
-    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_version')).toBe('4');
 
     // 旧 gameProgress 落到备份 key
     const backupKeys: string[] = [];
@@ -293,7 +326,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
-    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_version')).toBe('4');
     expect(localStorage.getItem('mq_game_progress')).toBeNull();
     // 无备份生成
     const len = (localStorage as unknown as { length: number }).length;
@@ -533,12 +566,25 @@ describe('Storage Namespace（F3 · v0.2-1-1）', () => {
     expect(repository.getUser()?.nickname).toBe('Dev');
   });
 
+  it('saveUser / getUser 保留 supabaseId 字段', () => {
+    repository.saveUser({
+      id: 'u-supabase',
+      nickname: 'Alice',
+      avatarSeed: 'seed',
+      createdAt: 0,
+      supabaseId: 'sb-user-1',
+      settings: { soundEnabled: true, hapticsEnabled: true },
+    });
+
+    expect(repository.getUser()?.supabaseId).toBe('sb-user-1');
+  });
+
   it('dev namespace 下 repository.init 独立跑一次，不影响 mq_version', () => {
-    localStorage.setItem('mq_version', '3');
+    localStorage.setItem('mq_version', '4');
     setStorageNamespace('dev');
     repository.init();
-    expect(localStorage.getItem('mq_dev_version')).toBe('3');
-    expect(localStorage.getItem('mq_version')).toBe('3'); // main 侧不变
+    expect(localStorage.getItem('mq_dev_version')).toBe('4');
+    expect(localStorage.getItem('mq_version')).toBe('4'); // main 侧不变
   });
 
   it('dev 模式 clearAll 只清 mq_dev_*，不跨删 mq_*', () => {

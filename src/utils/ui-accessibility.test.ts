@@ -11,6 +11,7 @@ describe('ui accessibility helpers', () => {
     expect(getDocumentTitle('home')).toBe('数学大冒险 · 学习');
     expect(getDocumentTitle('campaign-map')).toBe('数学大冒险 · 闯关');
     expect(getDocumentTitle('session-detail')).toBe('数学大冒险 · 练习详情');
+    expect(getDocumentTitle('login' as never)).toBe('数学大冒险 · 登录');
     expect(getDocumentTitle('onboarding')).toBe('数学大冒险');
   });
 

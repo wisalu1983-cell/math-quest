@@ -16,6 +16,7 @@ export interface User {
   avatarSeed: string;
   createdAt: number;
   grade?: number;
+  supabaseId?: string;
   settings: UserSettings;
 }
 
