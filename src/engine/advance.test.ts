@@ -1,5 +1,5 @@
 // src/engine/advance.test.ts
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   getStars,
   getStarProgress,
@@ -83,6 +83,17 @@ describe('buildAdvanceSlots', () => {
       expect(slots.length).toBe(ADVANCE_QUESTION_COUNT);
     });
   }
+
+  it('operation-laws: 跨档抽样偏向单档时仍保持子题型数 ≤ 4', () => {
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0.9);
+    try {
+      const slots = buildAdvanceSlots('operation-laws', 0);
+      const uniqueTags = new Set(slots.map(s => s.subtypeTag));
+      expect(uniqueTags.size).toBeLessThanOrEqual(4);
+    } finally {
+      randomSpy.mockRestore();
+    }
+  });
 });
 
 // ─────────────────────────────────────────
