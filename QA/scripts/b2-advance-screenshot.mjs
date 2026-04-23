@@ -1,5 +1,15 @@
 // QA/scripts/b2-advance-screenshot.mjs
 import { chromium } from 'playwright';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const OUTPUT_DIR = path.resolve(__dirname, '..', 'artifacts', 'b2-screenshots');
+
+if (!fs.existsSync(OUTPUT_DIR)) {
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
+}
 
 const ALL_MENTAL_LEVELS = [
   'mental-arithmetic-S1-LA-L1', 'mental-arithmetic-S1-LA-L2', 'mental-arithmetic-S1-LA-L3',
@@ -60,7 +70,7 @@ async function run() {
     // 读取题干
     const prompt = await page.locator('[class*="text-"]').filter({ hasText: /计算|求|比较|估|填|判断|化简|解方程|移项/ }).first().textContent().catch(() => '');
     console.log(`题 ${i}: ${prompt.trim()}`);
-    await page.screenshot({ path: `QA/b2-screenshots/q${i}.png` });
+    await page.screenshot({ path: path.join(OUTPUT_DIR, `q${i}.png`) });
 
     // 输入随机答案并提交
     const input = page.locator('input[type="text"], input[type="number"], input[inputmode="decimal"]').first();
