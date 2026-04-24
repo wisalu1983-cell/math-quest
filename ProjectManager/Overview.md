@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-24（v0.3 Phase 1/2 收口：基建+认证、同步引擎完成；下一步 Phase 3 UI + 验收）
+> 最后更新：2026-04-24（v0.3 Phase 3 预研收口：账号同步用户体验与风险处理规则确认）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.3** | 🟡 进行中（Phase 1/2 完成 2026-04-24，Phase 3 待开始） | [Plan/v0.3/](Plan/v0.3/) |
+| **当前版本** | **v0.3** | 🟡 进行中（Phase 1/2 完成，Phase 3 预研已收口） | [Plan/v0.3/](Plan/v0.3/) |
 | 上一版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
 | 更早版本 | v0.1 | ✅ 已发布（2026-04-19 收口，三层游戏化闭环完成） | [Plan/v0.1/](Plan/v0.1/) |
 
@@ -48,16 +48,16 @@
 - ✅ 设计规格与实施计划完成，按 `implementation-plan.md` 执行中
 - ✅ Phase 1（基建 + 认证）完成：Supabase 客户端、AuthStore、LoginPage、v3→v4 迁移均就绪（commit `da17015`）
 - ✅ Phase 2（同步引擎）完成 2026-04-24：`src/sync/*` 四件套 + Repository `markDirty` 桥接 + silent 写；`npm test` 34 files / 582 tests 全绿，`npm run build` 通过（commit 链 `a9a1866` → `77217c9` → `07d6bc5` → `684d536`）
-- 📋 Phase 3（UI + 验收）待开始：已收 Phase 2 Code Review 4 条 RISK 进 [`Plan/v0.3/phases/phase-3.md`](Plan/v0.3/phases/phase-3.md#预研与遗留风险待办) 预研待办
+- ✅ Phase 3（UI + 验收）预研已收口：目标确认是"用户安全可用、可理解、可验收"的账号同步闭环；首次登录本地进度保护为 P0；账号切换要求不同账号数据严格隔离；同步状态、Supabase 不可用、段位赛联网规则与 4 条 RISK 处理方向已写入 [`Plan/v0.3/phases/phase-3.md`](Plan/v0.3/phases/phase-3.md#预研收口结论2026-04-24)
 - ✅ 改动范围与已收工的 v0.2 解耦：v0.3 聚焦 auth / sync / Supabase，不回头改 v0.2 的生成器、Tips、历史记录主线
 
 **入口**：
 - 设计规格：[`Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md`](Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md)
 - 实施计划：[`Plan/v0.3/implementation-plan.md`](Plan/v0.3/implementation-plan.md)
-- Phase 3 预研与 RISK 清单：[`Plan/v0.3/phases/phase-3.md`](Plan/v0.3/phases/phase-3.md#预研与遗留风险待办)
+- Phase 3 预研收口与 RISK 清单：[`Plan/v0.3/phases/phase-3.md`](Plan/v0.3/phases/phase-3.md#预研收口结论2026-04-24)
 - Backlog 来源：BL-001（已纳入 v0.3）
 
-**下一步**：启动 v0.3 Phase 3（UI + 验收）—— 同步状态指示器、首次登录合并引导、Profile 账号区域、段位赛联网检查，并在对应 Task 中消化 4 条 RISK。
+**下一步**：撰写 v0.3 Phase 3 开发文档，将预研收口规则拆成可执行任务；随后进入实现（同步状态指示器、首次登录合并引导、Profile 账号区域、段位赛联网检查、同步韧性与真实 Supabase 验收）。
 
 ---
 
