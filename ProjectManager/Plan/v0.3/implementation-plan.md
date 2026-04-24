@@ -1,5 +1,13 @@
 # v0.3 Supabase 在线账号与数据同步 · 实施计划
 
+> **⚠️ Phase 3 部分已作废（2026-04-24）。** 本文件的 Task 1.x / 2.x（Phase 1 / Phase 2）继续作为历史实施记录有效；**Task 3.x（Phase 3）草案以下面 5 份开发文档为准，不得按本文件 Phase 3 小节实施**：
+>
+> - [`Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md`](../../Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md)
+> - [`Specs/v03-supabase-account-sync/2026-04-24-phase3-01-startup-and-merge.md`](../../Specs/v03-supabase-account-sync/2026-04-24-phase3-01-startup-and-merge.md)
+> - [`Specs/v03-supabase-account-sync/2026-04-24-phase3-02-sync-status-ui.md`](../../Specs/v03-supabase-account-sync/2026-04-24-phase3-02-sync-status-ui.md)
+> - [`Specs/v03-supabase-account-sync/2026-04-24-phase3-03-rank-match-online.md`](../../Specs/v03-supabase-account-sync/2026-04-24-phase3-03-rank-match-online.md)
+> - [`Specs/v03-supabase-account-sync/2026-04-24-phase3-04-resilience-qa.md`](../../Specs/v03-supabase-account-sync/2026-04-24-phase3-04-resilience-qa.md)
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 为 math-quest 接入 Supabase 实现邮箱 Magic Link 登录 + 本地优先数据同步 + 跨设备进度合并。

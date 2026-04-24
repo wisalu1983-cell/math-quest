@@ -1,8 +1,22 @@
 # Phase 3：UI + 验收
 
 > 所属：v0.3 · 设计规格 §7/§9/§6.4/§13
-> 状态：📋 待开始
-> 依赖：Phase 2（SyncEngine + 合并策略就绪）
+> 状态：📋 预研已收口，开发文档已落地（2026-04-24）
+> 依赖：Phase 2（✅ 已完成 2026-04-24）
+
+---
+
+## 开发文档入口
+
+Phase 3 开发以下面 5 份开发文档为唯一依据，本页的旧 Task 清单已被开发文档整体取代：
+
+- [`../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md`](../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md) · 总览、决策清单、导航、RISK 落点、收尾条件
+- [`../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-01-startup-and-merge.md`](../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-01-startup-and-merge.md) · Task 3.0 启动门控 + Task 3.2 首次登录合并
+- [`../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-02-sync-status-ui.md`](../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-02-sync-status-ui.md) · Task 3.1 SyncStatusIndicator + Task 3.3 AccountSection
+- [`../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-03-rank-match-online.md`](../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-03-rank-match-online.md) · Task 3.4 段位赛联网 + 自动 suspend + 10 分钟接管
+- [`../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-04-resilience-qa.md`](../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-04-resilience-qa.md) · Task 3.5 指数退避 + RISK 3/4 + 真实 Supabase 验收剧本
+
+`implementation-plan.md` Phase 3 草案（Task 3.1~3.5）已作废；Phase 1 / Phase 2 部分保留作为历史实施记录。
 
 ---
 
@@ -41,4 +55,4 @@
   - 段位赛离线时按钮 disabled
   - 两台设备分别离线做题，联网后进度正确合并（需真实 Supabase 环境）
 
-详细步骤见 [`implementation-plan.md`](../implementation-plan.md) Task 3.1~3.5。
+详细步骤见 [`../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md`](../../../Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md) 及其 4 份分文档。

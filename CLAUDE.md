@@ -14,6 +14,7 @@
 - **默认目录**：仓库根目录 `.worktrees/`
 - **默认行为**：当前分支为 `master` / `main` 时，若用户没有明确要求直接在当前工作树修改，agent 直接使用 `.worktrees/`，不再单独询问目录位置
 - **安全前置**：创建项目内 worktree 前必须先确认 `.worktrees/` 已被 `.gitignore` 忽略
+- **文档前置**：在 worktree 内执行计划或开发文档前，必须确认该计划引用的 `ProjectManager / Specs / Reports / subplans / QA` 文档也存在于当前 worktree；若缺失，先同步文档，或明确声明以主工作区文档为 source of truth，并在收尾记录这个源头差异
 
 ---
 
