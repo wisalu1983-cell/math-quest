@@ -24,6 +24,7 @@ import {
   getPracticeFeedbackAnnouncement,
 } from '@/utils/ui-accessibility';
 import { getMethodTip } from '@/utils/method-tips';
+import { shouldAutoSuspendRankMatch } from '@/engine/rank-match/auto-suspend';
 
 export default function Practice() {
   const {
@@ -52,6 +53,8 @@ export default function Practice() {
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const sessionEndedRef = useRef(false);
+  const allowUnmountAutoSuspendRef = useRef(false);
 
   // Reset state when question changes
   useEffect(() => {
@@ -68,6 +71,56 @@ export default function Practice() {
     }
     if (inputRef.current) inputRef.current.focus();
   }, [currentQuestion?.id, currentQuestion?.type, currentQuestion?.solution.blanks]);
+
+  useEffect(() => {
+    if (session?.sessionMode === 'rank-match') {
+      sessionEndedRef.current = false;
+    }
+  }, [session?.id, session?.sessionMode]);
+
+  const autoSuspendRankMatch = useCallback(() => {
+    const sessionState = useSessionStore.getState();
+    if (!shouldAutoSuspendRankMatch({
+      session: sessionState.session,
+      activeRankSession: useRankMatchStore.getState().activeRankSession,
+      sessionEnded: sessionEndedRef.current,
+    })) {
+      return;
+    }
+
+    try {
+      sessionState.suspendRankMatchSession();
+      sessionEndedRef.current = true;
+    } catch (e) {
+      console.warn('[RankMatch] 自动中断保存失败', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    allowUnmountAutoSuspendRef.current = false;
+    const timer = window.setTimeout(() => {
+      allowUnmountAutoSuspendRef.current = true;
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (allowUnmountAutoSuspendRef.current) {
+        autoSuspendRankMatch();
+      }
+    };
+  }, [autoSuspendRankMatch]);
+
+  useEffect(() => {
+    const onBeforeUnload = () => autoSuspendRankMatch();
+    const onPageHide = () => autoSuspendRankMatch();
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+  }, [autoSuspendRankMatch]);
 
   // 注意：不要在此处 early return。下方还有 useCallback / useEffect 等 hooks，
   // 若 currentQuestion 从 truthy 变 null（例如 endSession 后），early return 会使
@@ -130,6 +183,7 @@ export default function Practice() {
 
   const handleNext = useCallback(() => {
     if (hearts <= 0 || currentIndex >= totalQuestions) {
+      sessionEndedRef.current = true;
       const completedSession = endSession();
       setLastSession(completedSession);
       if (completedSession.sessionMode === 'rank-match') {
@@ -163,6 +217,7 @@ export default function Practice() {
   };
 
   const handleSuspendRankMatch = () => {
+    sessionEndedRef.current = true;
     setShowQuitConfirm(false);
     suspendRankMatchSession();
     setPage('rank-match-hub');
@@ -174,9 +229,11 @@ export default function Practice() {
     setShowRestartConfirm(false);
     setShowQuitConfirm(false);
     try {
+      sessionEndedRef.current = true;
       cancelRankMatchSession();
       const restarted = useRankMatchStore.getState().startRankMatch(targetTier);
       startRankMatchGame(restarted.id, 1);
+      sessionEndedRef.current = false;
       setPage('practice');
     } catch (e) {
       console.warn('[RankMatch] 放弃并重开失败，回大厅', e);
@@ -635,6 +692,7 @@ return (
               <button
                 className="btn-flat flex-1"
                 onClick={() => {
+                  sessionEndedRef.current = true;
                   abandonSession();
                   setPage('home');
                 }}

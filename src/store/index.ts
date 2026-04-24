@@ -757,6 +757,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
 interface UIStore {
   currentPage:
     | 'onboarding'
+    | 'login'
     | 'home'
     | 'campaign-map'
     | 'advance-select'

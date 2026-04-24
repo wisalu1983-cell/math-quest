@@ -125,6 +125,8 @@ export interface RankMatchSession {
   status: RankMatchSessionStatus;
   outcome?: 'promoted' | 'eliminated';
   startedAt: number;
+  /** 云端最近更新时间；仅远端拉取后存在，用于跨设备接管判定 */
+  updatedAt?: string | number;
   suspendedAt?: number;
   cancelledAt?: number;
   endedAt?: number;

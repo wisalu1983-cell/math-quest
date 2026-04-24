@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useUserStore, useGameProgressStore, useUIStore } from '@/store';
 import { nanoid } from 'nanoid';
 import type { User } from '@/types';
+import { isSupabaseConfigured } from '@/lib/supabase';
 
 export default function Onboarding() {
   const [nickname, setNickname] = useState('');
@@ -9,6 +10,7 @@ export default function Onboarding() {
   const setUser = useUserStore(s => s.setUser);
   const loadGameProgress = useGameProgressStore(s => s.loadGameProgress);
   const setPage = useUIStore(s => s.setPage);
+  const supabaseConfigured = isSupabaseConfigured();
 
   const handleStart = () => {
     if (!nickname.trim()) return;
@@ -39,6 +41,15 @@ export default function Onboarding() {
           <button className="btn-primary w-full text-lg" onClick={() => setStep(1)}>
             开始冒险
           </button>
+          {supabaseConfigured ? (
+            <button
+              type="button"
+              className="text-sm text-text-2 underline decoration-dotted"
+              onClick={() => setPage('login')}
+            >
+              已有账号？登录
+            </button>
+          ) : null}
         </div>
       )}
 

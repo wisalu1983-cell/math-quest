@@ -1,5 +1,6 @@
 // src/repository/local.ts
 import type { User, PracticeSession, TopicId, HistoryRecord } from '@/types';
+import type { DirtyKey, SyncState } from '@/sync/types';
 import type {
   GameProgress,
   RankMatchSession,
@@ -28,6 +29,18 @@ export function getStorageNamespace(): StorageNamespace {
   return keyPrefix === PREFIX_DEV ? 'dev' : 'main';
 }
 
+type SyncNotifyFn = ((key: DirtyKey) => void) | null;
+
+let syncNotify: SyncNotifyFn = null;
+
+export function setSyncNotify(fn: SyncNotifyFn): void {
+  syncNotify = fn;
+}
+
+function notifySync(key: DirtyKey): void {
+  syncNotify?.(key);
+}
+
 // 供 F3 精确清理测试沙盒用：返回当前 namespace 下所有 key（main 下仅 mq_* 非 mq_dev_*；dev 下仅 mq_dev_*）
 function listCurrentNamespaceKeys(): string[] {
   const out: string[] = [];
@@ -52,6 +65,8 @@ const KEYS = {
   history: () => `${keyPrefix}history`,
   /** Spec §6.4：RankMatchSession 独立 key，与 PracticeSession 分存 */
   rankMatchSessions: () => `${keyPrefix}rank_match_sessions`,
+  syncState: () => `${keyPrefix}sync_state`,
+  authUserId: () => `${keyPrefix}auth_user_id`,
   version: () => `${keyPrefix}version`,
 } as const;
 
@@ -64,7 +79,7 @@ const KEYS = {
  *   - 迁移链中任何一步抛错 → 旧 gameProgress 落到 mq_backup_v{old}_{ts} 备份，当次启动走"新存档 + 告警"
  *   - 严禁用 clearAll() / 单独 removeItem(gameProgress) 作为"版本不一致"的兜底；clearAll 只能作为显式用户操作
  */
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 const MAX_SESSIONS = 200;
 
 /**
@@ -147,12 +162,18 @@ export function migrateRankProgressIfNeeded(gp: GameProgress): GameProgress {
 /** v2 → v3：追加 rankProgress（Phase 3 M1） */
 export const migrateV2ToV3 = migrateRankProgressIfNeeded;
 
+/** v3 → v4：为 Supabase 认证与同步预留版本升级点，当前 GameProgress 结构不变 */
+export function migrateV3ToV4(gp: GameProgress): GameProgress {
+  return gp;
+}
+
 /**
  * 迁移链登记表：MIGRATIONS[n] 把 v{n} 提升到 v{n+1}。
  * 新增版本时在此追加条目，配套新增 migrateV{n}ToV{n+1} 纯函数。
  */
 const MIGRATIONS: Record<number, (gp: GameProgress) => GameProgress> = {
   2: migrateV2ToV3,
+  3: migrateV3ToV4,
 };
 
 /**
@@ -251,8 +272,33 @@ export const repository = {
     return read<User>(KEYS.user());
   },
 
-  saveUser(user: User): void {
+  getSyncStateKey(): string {
+    return KEYS.syncState();
+  },
+
+  getAuthUserIdKey(): string {
+    return KEYS.authUserId();
+  },
+
+  getAuthUserId(): string | null {
+    return localStorage.getItem(KEYS.authUserId());
+  },
+
+  setAuthUserId(userId: string): void {
+    localStorage.setItem(KEYS.authUserId(), userId);
+  },
+
+  clearAuthUserId(): void {
+    localStorage.removeItem(KEYS.authUserId());
+  },
+
+  saveUserSilent(user: User): void {
     write(KEYS.user(), user);
+  },
+
+  saveUser(user: User): void {
+    this.saveUserSilent(user);
+    notifySync('profiles');
   },
 
   getGameProgress(userId: string): GameProgress {
@@ -278,8 +324,13 @@ export const repository = {
     };
   },
 
-  saveGameProgress(progress: GameProgress): void {
+  saveGameProgressSilent(progress: GameProgress): void {
     write(KEYS.gameProgress(), progress);
+  },
+
+  saveGameProgress(progress: GameProgress): void {
+    this.saveGameProgressSilent(progress);
+    notifySync('game_progress');
   },
 
   getSessions(): PracticeSession[] {
@@ -290,10 +341,15 @@ export const repository = {
     return read<HistoryRecord[]>(KEYS.history()) ?? [];
   },
 
+  saveHistorySilent(records: HistoryRecord[]): void {
+    write(KEYS.history(), records);
+  },
+
   saveHistoryRecord(record: HistoryRecord): void {
     const history = this.getHistory();
     history.push(record);
-    write(KEYS.history(), history);
+    this.saveHistorySilent(history);
+    notifySync('history_records');
   },
 
   clearHistory(): void {
@@ -349,10 +405,15 @@ export const repository = {
     return normalized;
   },
 
+  saveRankMatchSessionsSilent(sessions: Record<string, RankMatchSession>): void {
+    write(KEYS.rankMatchSessions(), sessions);
+  },
+
   saveRankMatchSession(session: RankMatchSession): void {
     const all = this.getRankMatchSessions();
     all[session.id] = session;
-    write(KEYS.rankMatchSessions(), all);
+    this.saveRankMatchSessionsSilent(all);
+    notifySync('rank_match_sessions');
   },
 
   getRankMatchSession(id: string): RankMatchSession | null {
@@ -360,11 +421,38 @@ export const repository = {
     return all[id] ?? null;
   },
 
+  /**
+   * 物理删除一条段位赛 session。
+   *
+   * 仅供 dev-tool 和单测调用。产品路径不允许调用：段位赛生命周期由
+   * RankMatchSession.status（active / suspended / cancelled / completed）表达，
+   * 不做跨端物理删除。
+   *
+   * 本方法不触发 SyncEngine.markDirty，因此本地删除不会同步到云端。只要调用方遵守
+   * "仅 dev-tool / 单测"约束，这一行为就是正确的：dev-tool 清理本地沙盒时，云端数据不应受影响。
+   *
+   * 相关决策：Phase 3 RISK-2，见
+   * ProjectManager/Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md。
+   */
   deleteRankMatchSession(id: string): void {
     const all = this.getRankMatchSessions();
     if (!(id in all)) return;
     delete all[id];
-    write(KEYS.rankMatchSessions(), all);
+    this.saveRankMatchSessionsSilent(all);
+  },
+
+  clearAccountScopedData(): void {
+    localStorage.removeItem(KEYS.user());
+    localStorage.removeItem(KEYS.gameProgress());
+    localStorage.removeItem(KEYS.history());
+    localStorage.removeItem(KEYS.rankMatchSessions());
+    localStorage.removeItem(KEYS.sessions());
+  },
+
+  discardPendingSyncAfterUserConfirmation(): void {
+    const current = read<SyncState>(KEYS.syncState());
+    if (!current) return;
+    write(KEYS.syncState(), { ...current, dirtyKeys: [] });
   },
 
   /**

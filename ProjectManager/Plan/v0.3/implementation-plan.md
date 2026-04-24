@@ -10,6 +10,8 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
+> **Phase 3 作废声明（2026-04-24）**：本文件的 Phase 3（Task 3.1~3.5）仍作为早期草案与历史记录保留，不再作为开发执行依据。Phase 3 代码侧已按 `ProjectManager/Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md` 及 4 份分文档完成；真实 Supabase 验收记录见 `ProjectManager/Plan/v0.3/phases/phase-3-acceptance.md`。Phase 1/2 内容仍保留为历史实施记录。
+
 **Goal:** 为 math-quest 接入 Supabase 实现邮箱 Magic Link 登录 + 本地优先数据同步 + 跨设备进度合并。
 
 **Architecture:** Repository 接口不变，写操作先落 localStorage 再通知 SyncEngine 推送远端。SyncEngine 独立于 React 渲染周期，负责 push/pull/merge。未登录时 SyncEngine 休眠，行为和现在完全一致。
@@ -237,19 +239,29 @@ create policy "用户读写自己的同步元数据" on sync_metadata
 -- ============================================================
 
 -- 新用户注册时自动创建业务表行
-create or replace function handle_new_user()
-returns trigger as $$
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
 begin
-  insert into profiles (id) values (new.id);
-  insert into game_progress (user_id) values (new.id);
-  insert into sync_metadata (user_id) values (new.id);
+  insert into public.profiles (id) values (new.id)
+  on conflict (id) do nothing;
+
+  insert into public.game_progress (user_id) values (new.id)
+  on conflict (user_id) do nothing;
+
+  insert into public.sync_metadata (user_id) values (new.id)
+  on conflict (user_id) do nothing;
+
   return new;
 end;
-$$ language plpgsql security definer;
+$$;
 
 create trigger on_auth_user_created
   after insert on auth.users
-  for each row execute function handle_new_user();
+  for each row execute function public.handle_new_user();
 
 -- 自动更新 updated_at
 create or replace function update_updated_at()

@@ -12,6 +12,8 @@ dist
 dist-dev
 dist-ssr
 *.local
+.env
+.env.local
 
 # Test artifacts
 test-results/

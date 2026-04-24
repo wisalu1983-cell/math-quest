@@ -7,6 +7,7 @@ interface DialogProps {
   title?: string;
   children: ReactNode;
   className?: string;
+  dismissible?: boolean;
 }
 
 const FOCUSABLE =
@@ -17,10 +18,17 @@ const FOCUSABLE =
  * - role="dialog" + aria-modal="true"
  * - 打开时自动聚焦第一个可聚焦元素
  * - Tab / Shift+Tab 焦点陷阱
- * - ESC 关闭
- * - 点击遮罩关闭
+ * - ESC 关闭（dismissible=false 时禁用）
+ * - 点击遮罩关闭（dismissible=false 时禁用）
  */
-export default function Dialog({ open, onClose, title, children, className = '' }: DialogProps) {
+export default function Dialog({
+  open,
+  onClose,
+  title,
+  children,
+  className = '',
+  dismissible = true,
+}: DialogProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -32,12 +40,14 @@ export default function Dialog({ open, onClose, title, children, className = '' 
     const focusable = Array.from(el.querySelectorAll<HTMLElement>(FOCUSABLE));
     focusable[0]?.focus();
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onClose();
-        return;
-      }
+      const onKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          if (dismissible) {
+            onClose();
+          }
+          return;
+        }
       if (e.key !== 'Tab') return;
       if (focusable.length === 0) { e.preventDefault(); return; }
 
@@ -52,7 +62,7 @@ export default function Dialog({ open, onClose, title, children, className = '' 
 
     document.addEventListener('keydown', onKeyDown);
     return () => document.removeEventListener('keydown', onKeyDown);
-  }, [open, onClose]);
+  }, [dismissible, open, onClose]);
 
   if (!open) return null;
 
@@ -60,7 +70,7 @@ export default function Dialog({ open, onClose, title, children, className = '' 
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/65"
       aria-hidden="false"
-      onClick={e => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={e => { if (dismissible && e.target === e.currentTarget) onClose(); }}
     >
       <div
         ref={ref}

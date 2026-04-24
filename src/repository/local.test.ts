@@ -7,6 +7,8 @@ import {
   migrateCampaignIfNeeded,
   migrateRankProgressIfNeeded,
   migrateV2ToV3,
+  migrateV3ToV4,
+  setSyncNotify,
   repository,
   setStorageNamespace,
   getStorageNamespace,
@@ -195,6 +197,17 @@ describe('migrateRankProgressIfNeeded（v2→v3 · Phase 3 M1）', () => {
   });
 });
 
+describe('migrateV3ToV4（v0.3 Phase 1）', () => {
+  it('v3→v4 当前不改 GameProgress 结构，返回原引用', () => {
+    const gp: GameProgress = {
+      ...emptyProgress(),
+      rankProgress: { currentTier: 'rookie', history: [] },
+    };
+
+    expect(migrateV3ToV4(gp)).toBe(gp);
+  });
+});
+
 // ─── Phase 3 M1：repository.init 迁移链 + 备份（项目级原则） ───
 
 describe('repository.init · 项目级存档升级原则（Spec §6.3）', () => {
@@ -205,7 +218,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
   it('全新用户（无任何 key）→ 写入当前版本号，不触发备份', () => {
     repository.init();
-    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_version')).toBe('4');
     const keys: string[] = [];
     for (let i = 0; i < (localStorage as unknown as { length: number }).length; i++) {
       const k = localStorage.key(i);
@@ -214,7 +227,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
     expect(keys.some(k => k.startsWith('mq_backup_'))).toBe(false);
   });
 
-  it('v2 存档 + 有 gameProgress → 自动迁移，rankProgress 补默认值', () => {
+  it('v2 存档 + 有 gameProgress → 自动迁移到 v4，rankProgress 补默认值', () => {
     const v2Gp: GameProgress = {
       userId: 'u1',
       campaignProgress: {},
@@ -228,14 +241,14 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
-    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_version')).toBe('4');
     const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
     expect(stored.rankProgress).toEqual({ currentTier: 'apprentice', history: [] });
     expect(stored.totalQuestionsAttempted).toBe(10); // 原数据保留
     expect(stored.totalQuestionsCorrect).toBe(8);
   });
 
-  it('v3 存档 → noop（幂等）', () => {
+  it('v3 存档 + 有 gameProgress → 自动迁移到 v4，不改已有数据', () => {
     const v3Gp: GameProgress = {
       userId: 'u1',
       campaignProgress: {},
@@ -250,7 +263,28 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
+    expect(localStorage.getItem('mq_version')).toBe('4');
     const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
+    expect(stored.rankProgress).toEqual({ currentTier: 'rookie', history: [] });
+  });
+
+  it('v4 存档 → noop（幂等）', () => {
+    const v4Gp: GameProgress = {
+      userId: 'u1',
+      campaignProgress: {},
+      advanceProgress: {},
+      rankProgress: { currentTier: 'rookie', history: [] },
+      wrongQuestions: [],
+      totalQuestionsAttempted: 0,
+      totalQuestionsCorrect: 0,
+    };
+    localStorage.setItem('mq_version', '4');
+    localStorage.setItem('mq_game_progress', JSON.stringify(v4Gp));
+
+    repository.init();
+
+    const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
+    expect(localStorage.getItem('mq_version')).toBe('4');
     expect(stored.rankProgress).toEqual({ currentTier: 'rookie', history: [] });
   });
 
@@ -268,7 +302,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
     repository.init();
 
     // 版本更新到当前版本
-    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_version')).toBe('4');
 
     // 旧 gameProgress 落到备份 key
     const backupKeys: string[] = [];
@@ -293,7 +327,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
-    expect(localStorage.getItem('mq_version')).toBe('3');
+    expect(localStorage.getItem('mq_version')).toBe('4');
     expect(localStorage.getItem('mq_game_progress')).toBeNull();
     // 无备份生成
     const len = (localStorage as unknown as { length: number }).length;
@@ -441,6 +475,20 @@ function makeRankSession(id: string, userId = 'u1'): RankMatchSession {
   } as RankMatchSession;
 }
 
+function makeHistoryRecord(id: string, startedAt: number) {
+  return {
+    id,
+    userId: 'u1',
+    sessionMode: 'campaign' as const,
+    startedAt,
+    endedAt: startedAt + 100,
+    completed: true,
+    result: 'win' as const,
+    topicId: 'number-sense' as const,
+    questions: [],
+  };
+}
+
 describe('repository.saveRankMatchSession / getRankMatchSession（ISSUE-060 M2 遗留补做）', () => {
   beforeEach(() => {
     installLocalStorageMock();
@@ -533,12 +581,25 @@ describe('Storage Namespace（F3 · v0.2-1-1）', () => {
     expect(repository.getUser()?.nickname).toBe('Dev');
   });
 
+  it('saveUser / getUser 保留 supabaseId 字段', () => {
+    repository.saveUser({
+      id: 'u-supabase',
+      nickname: 'Alice',
+      avatarSeed: 'seed',
+      createdAt: 0,
+      supabaseId: 'sb-user-1',
+      settings: { soundEnabled: true, hapticsEnabled: true },
+    });
+
+    expect(repository.getUser()?.supabaseId).toBe('sb-user-1');
+  });
+
   it('dev namespace 下 repository.init 独立跑一次，不影响 mq_version', () => {
-    localStorage.setItem('mq_version', '3');
+    localStorage.setItem('mq_version', '4');
     setStorageNamespace('dev');
     repository.init();
-    expect(localStorage.getItem('mq_dev_version')).toBe('3');
-    expect(localStorage.getItem('mq_version')).toBe('3'); // main 侧不变
+    expect(localStorage.getItem('mq_dev_version')).toBe('4');
+    expect(localStorage.getItem('mq_version')).toBe('4'); // main 侧不变
   });
 
   it('dev 模式 clearAll 只清 mq_dev_*，不跨删 mq_*', () => {
@@ -617,5 +678,162 @@ describe('repository.getRankMatchSessions · 旧 rank-match 存档归一化', ()
 
     const all = repository.getRankMatchSessions() as Record<string, RankMatchSession & { status?: string }>;
     expect(all.legacyCompleted?.status).toBe('completed');
+  });
+});
+
+describe('repository 同步桥接（v0.3 Phase 2）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+    setStorageNamespace('main');
+  });
+
+  afterEach(() => {
+    setSyncNotify(null);
+    setStorageNamespace('main');
+  });
+
+  it('同步相关写操作会通知对应 DirtyKey，saveSession 不通知', () => {
+    const notified: string[] = [];
+    setSyncNotify((key) => notified.push(key));
+
+    repository.saveUser({
+      id: 'u1',
+      nickname: 'Alice',
+      avatarSeed: 'seed',
+      createdAt: 0,
+      settings: { soundEnabled: true, hapticsEnabled: true },
+    });
+    repository.saveGameProgress(emptyProgress());
+    repository.saveHistoryRecord(makeHistoryRecord('h-sync', 100));
+    repository.saveRankMatchSession(makeRankSession('rs-sync'));
+    repository.saveSession({
+      id: 'ps-local-only',
+      userId: 'u1',
+      topicId: 'number-sense',
+      startedAt: 100,
+      difficulty: 1,
+      sessionMode: 'campaign',
+      targetLevelId: 'level-1',
+      questions: [],
+      heartsRemaining: 3,
+      completed: false,
+    });
+
+    expect(notified).toEqual([
+      'profiles',
+      'game_progress',
+      'history_records',
+      'rank_match_sessions',
+    ]);
+  });
+
+  it('silent 写方法会落盘，但不会触发同步通知', () => {
+    const syncRepo = repository as typeof repository & {
+      saveUserSilent: (user: Parameters<typeof repository.saveUser>[0]) => void;
+      saveGameProgressSilent: (progress: Parameters<typeof repository.saveGameProgress>[0]) => void;
+      saveHistorySilent: (records: ReturnType<typeof repository.getHistory>) => void;
+      saveRankMatchSessionsSilent: (sessions: ReturnType<typeof repository.getRankMatchSessions>) => void;
+      getSyncStateKey: () => string;
+      getAuthUserIdKey: () => string;
+    };
+    const notified: string[] = [];
+    setSyncNotify((key) => notified.push(key));
+
+    syncRepo.saveUserSilent({
+      id: 'u-silent',
+      nickname: 'Silent',
+      avatarSeed: 'seed',
+      createdAt: 0,
+      settings: { soundEnabled: true, hapticsEnabled: true },
+    });
+    syncRepo.saveGameProgressSilent({
+      ...emptyProgress(),
+      userId: 'u-silent',
+      totalQuestionsAttempted: 5,
+    });
+    syncRepo.saveHistorySilent([makeHistoryRecord('h-silent', 100)]);
+    syncRepo.saveRankMatchSessionsSilent({
+      'rs-silent': makeRankSession('rs-silent'),
+    });
+
+    expect(repository.getUser()?.nickname).toBe('Silent');
+    expect(repository.getGameProgress('u-silent').totalQuestionsAttempted).toBe(5);
+    expect(repository.getHistory().map(record => record.id)).toEqual(['h-silent']);
+    expect(repository.getRankMatchSession('rs-silent')?.id).toBe('rs-silent');
+    expect(syncRepo.getSyncStateKey()).toBe('mq_sync_state');
+    expect(syncRepo.getAuthUserIdKey()).toBe('mq_auth_user_id');
+    expect(notified).toEqual([]);
+  });
+
+  it('namespace 切换后同步 key 也跟随前缀变化', () => {
+    const syncRepo = repository as typeof repository & {
+      getSyncStateKey: () => string;
+      getAuthUserIdKey: () => string;
+    };
+
+    setStorageNamespace('dev');
+
+    expect(syncRepo.getSyncStateKey()).toBe('mq_dev_sync_state');
+    expect(syncRepo.getAuthUserIdKey()).toBe('mq_dev_auth_user_id');
+  });
+});
+
+describe('repository 账号归属锁与账号切换清理（v0.3 Phase 3）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+    setStorageNamespace('main');
+  });
+
+  afterEach(() => {
+    setStorageNamespace('main');
+  });
+
+  it('getAuthUserId / setAuthUserId / clearAuthUserId 读写当前 namespace 的账号归属锁', () => {
+    expect(repository.getAuthUserId()).toBeNull();
+
+    repository.setAuthUserId('sb-user-a');
+    expect(repository.getAuthUserId()).toBe('sb-user-a');
+    expect(localStorage.getItem('mq_auth_user_id')).toBe('sb-user-a');
+
+    repository.clearAuthUserId();
+    expect(repository.getAuthUserId()).toBeNull();
+  });
+
+  it('clearAccountScopedData 只清业务数据，不清 sync_state / auth_user_id / legacy mq_progress', () => {
+    localStorage.setItem('mq_user', 'user');
+    localStorage.setItem('mq_game_progress', 'gp');
+    localStorage.setItem('mq_history', 'history');
+    localStorage.setItem('mq_rank_match_sessions', 'rank');
+    localStorage.setItem('mq_sessions', 'sessions');
+    localStorage.setItem('mq_sync_state', JSON.stringify({ dirtyKeys: ['game_progress'], lastSyncedAt: null, deviceId: 'device' }));
+    localStorage.setItem('mq_auth_user_id', 'sb-user-a');
+    localStorage.setItem('mq_progress', 'legacy');
+
+    repository.clearAccountScopedData();
+
+    expect(localStorage.getItem('mq_user')).toBeNull();
+    expect(localStorage.getItem('mq_game_progress')).toBeNull();
+    expect(localStorage.getItem('mq_history')).toBeNull();
+    expect(localStorage.getItem('mq_rank_match_sessions')).toBeNull();
+    expect(localStorage.getItem('mq_sessions')).toBeNull();
+    expect(localStorage.getItem('mq_sync_state')).not.toBeNull();
+    expect(localStorage.getItem('mq_auth_user_id')).toBe('sb-user-a');
+    expect(localStorage.getItem('mq_progress')).toBe('legacy');
+  });
+
+  it('discardPendingSyncAfterUserConfirmation 只清 dirtyKeys，保留同步元信息', () => {
+    localStorage.setItem('mq_sync_state', JSON.stringify({
+      dirtyKeys: ['game_progress', 'rank_match_sessions'],
+      lastSyncedAt: '2026-04-24T00:00:00.000Z',
+      deviceId: 'device-1',
+    }));
+
+    repository.discardPendingSyncAfterUserConfirmation();
+
+    expect(JSON.parse(localStorage.getItem('mq_sync_state') ?? '{}')).toEqual({
+      dirtyKeys: [],
+      lastSyncedAt: '2026-04-24T00:00:00.000Z',
+      deviceId: 'device-1',
+    });
   });
 });
