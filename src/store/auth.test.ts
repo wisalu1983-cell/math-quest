@@ -61,9 +61,21 @@ const mockClient = {
   },
 };
 
+const mockSyncEngineState = {
+  syncState: {
+    dirtyKeys: [] as string[],
+  },
+};
+
 vi.mock('@/lib/supabase', () => ({
   getSupabaseClient: () => (mockState.clientEnabled ? mockClient : null),
   isSupabaseConfigured: () => mockState.clientEnabled,
+}));
+
+vi.mock('@/sync/engine', () => ({
+  useSyncEngine: {
+    getState: () => mockSyncEngineState,
+  },
 }));
 
 import { useAuthStore } from './auth';
@@ -84,6 +96,7 @@ describe('AuthStore', () => {
     mockState.session = null;
     mockState.otpError = null;
     mockState.authChangeCallback = null;
+    mockSyncEngineState.syncState.dirtyKeys = [];
     mockClient.auth.getSession.mockClear();
     mockClient.auth.onAuthStateChange.mockClear();
     mockClient.auth.signInWithOtp.mockClear();
@@ -165,6 +178,47 @@ describe('AuthStore', () => {
     });
 
     await useAuthStore.getState().signOut();
+
+    expect(mockClient.auth.signOut).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({
+      supabaseUser: null,
+      isAuthenticated: false,
+      magicLinkSent: false,
+    });
+  });
+
+  it('signOutGuarded 在存在 dirtyKeys 时阻止登出并返回脏数据列表', async () => {
+    mockSyncEngineState.syncState.dirtyKeys = ['game_progress', 'rank_match_sessions'];
+    useAuthStore.setState({
+      supabaseUser: mockUser,
+      isAuthenticated: true,
+      isLoading: false,
+      authError: null,
+      magicLinkSent: true,
+    });
+
+    const result = await useAuthStore.getState().signOutGuarded();
+
+    expect(result).toEqual({
+      ok: false,
+      reason: 'dirty',
+      dirtyKeys: ['game_progress', 'rank_match_sessions'],
+    });
+    expect(mockClient.auth.signOut).not.toHaveBeenCalled();
+    expect(useAuthStore.getState().isAuthenticated).toBe(true);
+  });
+
+  it('signOutForce 绕过 dirtyKeys 校验并清空登录态', async () => {
+    mockSyncEngineState.syncState.dirtyKeys = ['game_progress'];
+    useAuthStore.setState({
+      supabaseUser: mockUser,
+      isAuthenticated: true,
+      isLoading: false,
+      authError: null,
+      magicLinkSent: true,
+    });
+
+    await useAuthStore.getState().signOutForce();
 
     expect(mockClient.auth.signOut).toHaveBeenCalledTimes(1);
     expect(useAuthStore.getState()).toMatchObject({

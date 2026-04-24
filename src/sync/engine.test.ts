@@ -61,9 +61,16 @@ function installLocalStorageMock(): void {
 }
 
 function installBrowserMocks() {
+  const handlers = new Map<string, Set<() => void>>();
   const listeners = {
-    addEventListener: vi.fn(),
-    removeEventListener: vi.fn(),
+    addEventListener: vi.fn((event: string, handler: () => void) => {
+      const set = handlers.get(event) ?? new Set<() => void>();
+      set.add(handler);
+      handlers.set(event, set);
+    }),
+    removeEventListener: vi.fn((event: string, handler: () => void) => {
+      handlers.get(event)?.delete(handler);
+    }),
   };
 
   Object.defineProperty(globalThis, 'window', {
@@ -86,6 +93,11 @@ function installBrowserMocks() {
     listeners,
     setOnline(next: boolean) {
       online = next;
+    },
+    dispatch(event: string) {
+      for (const handler of handlers.get(event) ?? []) {
+        handler();
+      }
     },
   };
 }
@@ -134,6 +146,12 @@ async function loadModules() {
   return { ...local, ...engine };
 }
 
+async function flushPromises(): Promise<void> {
+  for (let i = 0; i < 8; i++) {
+    await Promise.resolve();
+  }
+}
+
 describe('SyncEngine', () => {
   beforeEach(() => {
     vi.resetModules();
@@ -159,19 +177,23 @@ describe('SyncEngine', () => {
     mockSupabaseClient.removeAllChannels.mockClear();
   });
 
-  it('initialize 会注册 sync notify 与 realtime，离线写操作只标记 dirty 不立即 push', async () => {
+  it('arm 会注册 sync notify 与 realtime，但不会触发远端读写', async () => {
     const browser = installBrowserMocks();
-    browser.setOnline(false);
+    browser.setOnline(true);
     const { repository, useSyncEngine } = await loadModules();
 
-    useSyncEngine.getState().initialize('u1');
+    useSyncEngine.getState().arm('u1');
     repository.saveUser(makeUser());
 
-    expect(useSyncEngine.getState().status).toBe('offline');
+    expect(useSyncEngine.getState().status).toBe('armed');
     expect(useSyncEngine.getState().syncState.deviceId).toBe('device-1');
     expect(useSyncEngine.getState().syncState.dirtyKeys).toEqual(['profiles']);
     expect(mockSupabaseClient.channel).toHaveBeenCalledTimes(1);
     expect(mockChannel.subscribe).toHaveBeenCalledTimes(1);
+    expect(remoteState.fetchRemoteProfile).not.toHaveBeenCalled();
+    expect(remoteState.fetchRemoteGameProgress).not.toHaveBeenCalled();
+    expect(remoteState.fetchRemoteHistory).not.toHaveBeenCalled();
+    expect(remoteState.fetchRemoteRankMatchSessions).not.toHaveBeenCalled();
     expect(remoteState.upsertRemoteProfile).not.toHaveBeenCalled();
   });
 
@@ -230,9 +252,9 @@ describe('SyncEngine', () => {
       'remote-rank': makeRankMatchSession('remote-rank', { status: 'completed', outcome: 'promoted', endedAt: 300 }),
     };
 
-    useSyncEngine.getState().initialize('u1');
+    useSyncEngine.getState().arm('u1');
     browser.setOnline(true);
-    await useSyncEngine.getState().fullSync();
+    await useSyncEngine.getState().start();
 
     expect(repository.getUser()?.nickname).toBe('Remote Kid');
     expect(repository.getGameProgress('u1').totalQuestionsAttempted).toBe(12);
@@ -255,7 +277,8 @@ describe('SyncEngine', () => {
       totalQuestionsCorrect: 15,
     }));
 
-    useSyncEngine.getState().initialize('u1');
+    useSyncEngine.getState().arm('u1');
+    await useSyncEngine.getState().start();
     useSyncEngine.getState().markDirty('game_progress');
     expect(useSyncEngine.getState().syncState.dirtyKeys).toEqual(['game_progress']);
 
@@ -273,17 +296,142 @@ describe('SyncEngine', () => {
     expect(useSyncEngine.getState().status).toBe('synced');
   });
 
-  it('shutdown 会解绑 realtime 与 sync notify，后续写操作不再产生 dirty', async () => {
+  it('shutdown 会解绑 realtime 与 sync notify，但不清空已有 dirtyKeys', async () => {
     const browser = installBrowserMocks();
     browser.setOnline(false);
     const { repository, useSyncEngine } = await loadModules();
 
-    useSyncEngine.getState().initialize('u1');
+    useSyncEngine.getState().arm('u1');
+    repository.saveUser(makeUser());
     useSyncEngine.getState().shutdown();
-    repository.saveUser(makeUser({ nickname: 'After Shutdown' }));
+    repository.saveGameProgress(makeGameProgress({ userId: 'after-shutdown', totalQuestionsAttempted: 1 }));
 
     expect(mockSupabaseClient.removeAllChannels).toHaveBeenCalled();
     expect(useSyncEngine.getState().status).toBe('idle');
+    expect(useSyncEngine.getState().syncState.dirtyKeys).toEqual(['profiles']);
+  });
+
+  it('shutdown 后再次 arm/start 可以重新同步', async () => {
+    const browser = installBrowserMocks();
+    browser.setOnline(false);
+    const { useSyncEngine } = await loadModules();
+
+    useSyncEngine.getState().arm('u1');
+    useSyncEngine.getState().shutdown();
+
+    browser.setOnline(true);
+    useSyncEngine.getState().arm('u1');
+    await useSyncEngine.getState().start();
+
+    expect(remoteState.fetchRemoteProfile).toHaveBeenCalledTimes(1);
+    expect(useSyncEngine.getState().status).toBe('synced');
+  });
+
+  it('push 失败后按 1 秒首档 retry，成功后清 retryCount 和 dirtyKeys', async () => {
+    const browser = installBrowserMocks();
+    browser.setOnline(true);
+    const { repository, useSyncEngine, RETRY_DELAYS_MS } = await loadModules();
+    remoteState.upsertRemoteGameProgress.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+    repository.saveGameProgressSilent(makeGameProgress({ totalQuestionsAttempted: 3 }));
+    useSyncEngine.getState().arm('u1');
+    await useSyncEngine.getState().start();
+    useSyncEngine.getState().markDirty('game_progress');
+    await flushPromises();
+
+    expect(useSyncEngine.getState().status).toBe('error');
+    expect(useSyncEngine.getState().retryCount).toBe(1);
+
+    await vi.advanceTimersByTimeAsync(RETRY_DELAYS_MS[0]);
+
+    expect(remoteState.upsertRemoteGameProgress).toHaveBeenCalledTimes(2);
+    expect(useSyncEngine.getState().retryCount).toBe(0);
+    expect(useSyncEngine.getState().syncState.dirtyKeys).toEqual([]);
+    expect(useSyncEngine.getState().status).toBe('synced');
+  });
+
+  it('连续失败时 retryCount 封顶为 MAX_RETRY，且不再安排下一次指数退避', async () => {
+    const browser = installBrowserMocks();
+    browser.setOnline(true);
+    const { repository, useSyncEngine, RETRY_DELAYS_MS, MAX_RETRY } = await loadModules();
+    remoteState.upsertRemoteGameProgress.mockResolvedValue(false);
+
+    repository.saveGameProgressSilent(makeGameProgress({ totalQuestionsAttempted: 3 }));
+    useSyncEngine.getState().arm('u1');
+    await useSyncEngine.getState().start();
+    useSyncEngine.getState().markDirty('game_progress');
+    await flushPromises();
+
+    for (const delay of RETRY_DELAYS_MS.slice(0, MAX_RETRY - 1)) {
+      await vi.advanceTimersByTimeAsync(delay);
+    }
+
+    expect(useSyncEngine.getState().retryCount).toBe(MAX_RETRY);
+    const callsAtExhaustion = remoteState.upsertRemoteGameProgress.mock.calls.length;
+
+    await vi.advanceTimersByTimeAsync(28_000);
+
+    expect(remoteState.upsertRemoteGameProgress).toHaveBeenCalledTimes(callsAtExhaustion);
+  });
+
+  it('markDirty 在 error 状态下会立即自愈重试，成功后清 retryCount', async () => {
+    const browser = installBrowserMocks();
+    browser.setOnline(true);
+    const { repository, useSyncEngine } = await loadModules();
+    remoteState.upsertRemoteGameProgress.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+    repository.saveGameProgressSilent(makeGameProgress({ totalQuestionsAttempted: 3 }));
+    useSyncEngine.getState().arm('u1');
+    await useSyncEngine.getState().start();
+    useSyncEngine.getState().markDirty('game_progress');
+    await flushPromises();
+
+    expect(useSyncEngine.getState().retryCount).toBe(1);
+    useSyncEngine.getState().markDirty('game_progress');
+    await flushPromises();
+
+    expect(remoteState.upsertRemoteGameProgress).toHaveBeenCalledTimes(2);
+    expect(useSyncEngine.getState().retryCount).toBe(0);
+    expect(useSyncEngine.getState().syncState.dirtyKeys).toEqual([]);
+  });
+
+  it('online 事件在 error 状态下会触发 fullSync 自愈，成功后清 retryCount', async () => {
+    const browser = installBrowserMocks();
+    browser.setOnline(true);
+    const { repository, useSyncEngine } = await loadModules();
+    remoteState.upsertRemoteGameProgress.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+    repository.saveGameProgressSilent(makeGameProgress({ totalQuestionsAttempted: 3 }));
+    useSyncEngine.getState().arm('u1');
+    await useSyncEngine.getState().start();
+    useSyncEngine.getState().markDirty('game_progress');
+    await flushPromises();
+
+    expect(useSyncEngine.getState().retryCount).toBe(1);
+    browser.dispatch('online');
+    await flushPromises();
+
+    expect(useSyncEngine.getState().retryCount).toBe(0);
+    expect(useSyncEngine.getState().syncState.dirtyKeys).toEqual([]);
+  });
+
+  it('30s 轮询在 error 且 dirtyKeys 非空时会触发 push 自愈', async () => {
+    const browser = installBrowserMocks();
+    browser.setOnline(true);
+    const { repository, useSyncEngine } = await loadModules();
+    remoteState.upsertRemoteGameProgress.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+
+    repository.saveGameProgressSilent(makeGameProgress({ totalQuestionsAttempted: 3 }));
+    useSyncEngine.getState().arm('u1');
+    await useSyncEngine.getState().start();
+    useSyncEngine.getState().markDirty('game_progress');
+    await flushPromises();
+
+    expect(useSyncEngine.getState().retryCount).toBe(1);
+    await vi.advanceTimersByTimeAsync(30_000);
+
+    expect(remoteState.upsertRemoteGameProgress).toHaveBeenCalledTimes(2);
+    expect(useSyncEngine.getState().retryCount).toBe(0);
     expect(useSyncEngine.getState().syncState.dirtyKeys).toEqual([]);
   });
 });

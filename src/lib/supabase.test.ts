@@ -15,6 +15,9 @@ describe('supabase client config', () => {
   });
 
   it('未配置环境变量时返回未配置状态，且不创建客户端', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', '');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', '');
+
     const { getSupabaseClient, isSupabaseConfigured } = await loadSupabaseModule();
 
     expect(isSupabaseConfigured()).toBe(false);

@@ -73,7 +73,7 @@ function makeGameProgress(advanceProgress: AdvanceProgress): GameProgress {
 function resetStores(gp: GameProgress): void {
   useUserStore.setState({ user: makeUser() });
   useGameProgressStore.setState({ gameProgress: gp });
-  useRankMatchStore.setState({ activeRankSession: null });
+  useRankMatchStore.setState({ activeRankSession: null, startedInThisSession: new Set() });
 }
 
 function makePracticeSnapshot(opts: {
@@ -156,6 +156,19 @@ describe('useRankMatchStore · startRankMatch', () => {
 
     expect(reactivated.status).toBe('active');
     expect(useRankMatchStore.getState().activeRankSession?.status).toBe('active');
+  });
+
+  it('startRankMatch 与 reactivateSuspendedMatch 会标记本启动周期发起的 session', () => {
+    resetStores(makeGameProgress(rookieAdvance()));
+    const session = useRankMatchStore.getState().startRankMatch('rookie');
+
+    expect(useRankMatchStore.getState().startedInThisSession.has(session.id)).toBe(true);
+
+    (useRankMatchStore.getState() as any).suspendActiveMatch();
+    useRankMatchStore.setState({ startedInThisSession: new Set() });
+    const reactivated = (useRankMatchStore.getState() as any).reactivateSuspendedMatch();
+
+    expect(useRankMatchStore.getState().startedInThisSession.has(reactivated.id)).toBe(true);
   });
 
   it('active session 可被 cancel；会话标记为 cancelled，activeSessionId 清空且 history 不追加', () => {

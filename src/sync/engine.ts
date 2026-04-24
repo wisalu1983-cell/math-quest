@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { nanoid } from 'nanoid';
 import { getSupabaseClient } from '@/lib/supabase';
 import { repository, setSyncNotify } from '@/repository/local';
-import { useAuthStore } from '@/store/auth';
 import type { User } from '@/types';
 import type { GameProgress } from '@/types/gamification';
 import { mergeGameProgress, mergeHistoryRecords, mergeRankMatchSessions } from './merge';
@@ -19,12 +18,15 @@ import {
 import type { DirtyKey, SyncState, SyncStatus } from './types';
 
 const SYNC_INTERVAL_MS = 30_000;
+export const RETRY_DELAYS_MS = [1_000, 2_000, 4_000, 8_000, 16_000, 30_000] as const;
+export const MAX_RETRY = RETRY_DELAYS_MS.length;
 
 interface SyncEngineState {
   status: SyncStatus;
   retryCount: number;
   syncState: SyncState;
-  initialize: (userId: string) => void;
+  arm: (userId: string) => void;
+  start: () => Promise<void>;
   shutdown: () => void;
   markDirty: (key: DirtyKey) => void;
   fullSync: () => Promise<void>;
@@ -89,10 +91,36 @@ function mergeProfile(localUser: User | null, userId: string, remote: NonNullabl
 export const useSyncEngine = create<SyncEngineState>((set, get) => {
   let activeUserId: string | null = null;
   let intervalId: ReturnType<typeof setInterval> | null = null;
+  let retryTimerId: ReturnType<typeof setTimeout> | null = null;
   let onlineHandler: (() => void) | null = null;
   let offlineHandler: (() => void) | null = null;
 
+  const clearRetryTimer = () => {
+    if (retryTimerId) {
+      clearTimeout(retryTimerId);
+      retryTimerId = null;
+    }
+  };
+
+  const scheduleRetry = (retryAttempt: number) => {
+    clearRetryTimer();
+    const delay = RETRY_DELAYS_MS[retryAttempt - 1];
+    if (delay === undefined) return;
+
+    retryTimerId = setTimeout(() => {
+      retryTimerId = null;
+      if (!activeUserId) return;
+      if (!isOnline()) {
+        set({ status: 'offline' });
+        return;
+      }
+      void push();
+    }, delay);
+  };
+
   const cleanupRuntime = () => {
+    clearRetryTimer();
+
     if (intervalId) {
       clearInterval(intervalId);
       intervalId = null;
@@ -122,6 +150,23 @@ export const useSyncEngine = create<SyncEngineState>((set, get) => {
     set({ syncState: state });
   };
 
+  const recordFailure = () => {
+    const previousRetry = get().retryCount;
+    const nextRetry = Math.min(MAX_RETRY, previousRetry + 1);
+    set({ status: 'error', retryCount: nextRetry });
+
+    if (get().syncState.dirtyKeys.length > 0 && previousRetry < MAX_RETRY) {
+      scheduleRetry(nextRetry);
+    } else {
+      clearRetryTimer();
+    }
+  };
+
+  const recordSuccess = () => {
+    clearRetryTimer();
+    set({ status: 'synced', retryCount: 0 });
+  };
+
   const push = async (): Promise<boolean> => {
     if (!activeUserId) {
       return false;
@@ -143,21 +188,25 @@ export const useSyncEngine = create<SyncEngineState>((set, get) => {
     for (const key of syncState.dirtyKeys) {
       let ok = false;
 
-      if (key === 'profiles') {
-        const user = repository.getUser();
-        ok = user
-          ? await upsertRemoteProfile(activeUserId, {
-            nickname: user.nickname,
-            avatarSeed: user.avatarSeed,
-            settings: user.settings,
-          })
-          : false;
-      } else if (key === 'game_progress') {
-        ok = await upsertRemoteGameProgress(activeUserId, repository.getGameProgress(activeUserId));
-      } else if (key === 'history_records') {
-        ok = await upsertRemoteHistoryRecords(activeUserId, repository.getHistory());
-      } else if (key === 'rank_match_sessions') {
-        ok = await upsertRemoteRankMatchSessions(activeUserId, repository.getRankMatchSessions());
+      try {
+        if (key === 'profiles') {
+          const user = repository.getUser();
+          ok = user
+            ? await upsertRemoteProfile(activeUserId, {
+              nickname: user.nickname,
+              avatarSeed: user.avatarSeed,
+              settings: user.settings,
+            })
+            : false;
+        } else if (key === 'game_progress') {
+          ok = await upsertRemoteGameProgress(activeUserId, repository.getGameProgress(activeUserId));
+        } else if (key === 'history_records') {
+          ok = await upsertRemoteHistoryRecords(activeUserId, repository.getHistory());
+        } else if (key === 'rank_match_sessions') {
+          ok = await upsertRemoteRankMatchSessions(activeUserId, repository.getRankMatchSessions());
+        }
+      } catch {
+        ok = false;
       }
 
       if (!ok) {
@@ -172,10 +221,11 @@ export const useSyncEngine = create<SyncEngineState>((set, get) => {
     };
 
     persistSyncState(nextState);
-    set({
-      status: remaining.length === 0 ? 'synced' : 'error',
-      retryCount: remaining.length === 0 ? 0 : get().retryCount + 1,
-    });
+    if (remaining.length === 0) {
+      recordSuccess();
+    } else {
+      recordFailure();
+    }
 
     return remaining.length === 0;
   };
@@ -242,27 +292,34 @@ export const useSyncEngine = create<SyncEngineState>((set, get) => {
     retryCount: 0,
     syncState: loadSyncState(),
 
-    initialize: (userId: string) => {
+    arm: (userId: string) => {
       cleanupRuntime();
       activeUserId = userId;
       const syncState = loadSyncState();
       persistSyncState(syncState);
-      set({ status: isOnline() ? 'idle' : 'offline', retryCount: 0 });
+      set({ status: 'armed', retryCount: 0 });
 
       setSyncNotify((key) => {
         get().markDirty(key);
       });
 
       intervalId = setInterval(() => {
-        if (activeUserId && isOnline()) {
-          void pull();
+        if (!activeUserId || !isOnline()) return;
+        const { status, syncState } = get();
+        if (status === 'error' && syncState.dirtyKeys.length > 0) {
+          clearRetryTimer();
+          void push();
+          return;
         }
+        void pull();
       }, SYNC_INTERVAL_MS);
 
       onlineHandler = () => {
+        clearRetryTimer();
         void get().fullSync();
       };
       offlineHandler = () => {
+        clearRetryTimer();
         set({ status: 'offline' });
       };
 
@@ -281,23 +338,30 @@ export const useSyncEngine = create<SyncEngineState>((set, get) => {
             table: 'game_progress',
             filter: `user_id=eq.${userId}`,
           }, () => {
-            void pull();
+            clearRetryTimer();
+            void get().fullSync();
           })
           .subscribe();
       }
+    },
 
-      if (isOnline()) {
-        void get().fullSync();
+    start: async () => {
+      if (!activeUserId) {
+        set({ status: 'idle' });
+        return;
       }
+
+      if (!isOnline()) {
+        set({ status: 'offline' });
+        return;
+      }
+
+      await get().fullSync();
     },
 
     shutdown: () => {
       cleanupRuntime();
       activeUserId = null;
-      persistSyncState({
-        ...get().syncState,
-        dirtyKeys: [],
-      });
       set({ status: 'idle', retryCount: 0 });
     },
 
@@ -308,6 +372,14 @@ export const useSyncEngine = create<SyncEngineState>((set, get) => {
           ...syncState,
           dirtyKeys: [...syncState.dirtyKeys, key],
         });
+      }
+
+      if (get().status === 'error') {
+        clearRetryTimer();
+      }
+
+      if (get().status === 'armed') {
+        return;
       }
 
       if (!isOnline()) {
@@ -340,28 +412,8 @@ export const useSyncEngine = create<SyncEngineState>((set, get) => {
           status: get().syncState.dirtyKeys.length === 0 ? 'synced' : 'error',
         });
       } catch {
-        set({
-          status: 'error',
-          retryCount: get().retryCount + 1,
-        });
+        recordFailure();
       }
     },
   };
-});
-
-let observedAuthUserId = useAuthStore.getState().supabaseUser?.id ?? null;
-
-useAuthStore.subscribe((state) => {
-  const nextUserId = state.supabaseUser?.id ?? null;
-  if (nextUserId === observedAuthUserId) {
-    return;
-  }
-
-  observedAuthUserId = nextUserId;
-  if (nextUserId) {
-    useSyncEngine.getState().initialize(nextUserId);
-    return;
-  }
-
-  useSyncEngine.getState().shutdown();
 });

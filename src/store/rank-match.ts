@@ -57,6 +57,8 @@ export class RankMatchRecoveryError extends Error {
 
 export interface RankMatchStore {
   activeRankSession: RankMatchSession | null;
+  startedInThisSession: Set<string>;
+  markAsStartedInThisSession: (sessionId: string) => void;
 
   /**
    * 开始挑战目标段位。
@@ -114,6 +116,14 @@ function writeRankProgress(patch: (prev: RankProgress) => RankProgress): void {
 }
 
 export const useRankMatchStore = create<RankMatchStore>((set, get) => {
+  const markAsStartedInThisSession = (sessionId: string): void => {
+    set(state => {
+      const next = new Set(state.startedInThisSession);
+      next.add(sessionId);
+      return { startedInThisSession: next };
+    });
+  };
+
   const clearActiveId = (): void => {
     writeRankProgress(prev => ({ ...prev, activeSessionId: undefined }));
     set({ activeRankSession: null });
@@ -121,6 +131,8 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => {
 
   return ({
   activeRankSession: null,
+  startedInThisSession: new Set<string>(),
+  markAsStartedInThisSession,
 
   startRankMatch: (targetTier, opts) => {
     if (get().activeRankSession) {
@@ -152,6 +164,7 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => {
     // ISSUE-060：立即落盘，保证刷新后可恢复
     repository.saveRankMatchSession(session);
 
+    markAsStartedInThisSession(session.id);
     set({ activeRankSession: session });
     return session;
   },
@@ -232,6 +245,7 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => {
       suspendedAt: Date.now(),
     };
     repository.saveRankMatchSession(nextSession);
+    markAsStartedInThisSession(nextSession.id);
     set({ activeRankSession: nextSession });
     return nextSession;
   },
@@ -250,6 +264,7 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => {
       suspendedAt: undefined,
     };
     repository.saveRankMatchSession(nextSession);
+    markAsStartedInThisSession(nextSession.id);
     set({ activeRankSession: nextSession });
     return nextSession;
   },

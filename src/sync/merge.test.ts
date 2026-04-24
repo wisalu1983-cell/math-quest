@@ -129,6 +129,17 @@ function makeRankMatchSession(
   };
 }
 
+function makeRankMatchGames(length: number): RankMatchSession['games'] {
+  return Array.from({ length }, (_, index) => ({
+    gameIndex: index + 1,
+    finished: index < length - 1,
+    won: index < length - 1 ? true : undefined,
+    practiceSessionId: `p-${index + 1}`,
+    startedAt: 100 + index * 100,
+    ...(index < length - 1 ? { endedAt: 150 + index * 100 } : {}),
+  }));
+}
+
 describe('mergeCompletedLevels', () => {
   it('本地空 + 远端有数据时取远端', () => {
     const remote = [makeCompletion('L1', 2, 100)];
@@ -384,5 +395,66 @@ describe('mergeRankMatchSessions', () => {
 
     expect(result.local.games).toHaveLength(2);
     expect(result.remoteOnly).toBeDefined();
+  });
+
+  it('RISK-4：同为 active，本地 games 更长时取本地 games', () => {
+    const result = mergeRankMatchSessions(
+      { s1: makeRankMatchSession('s1', { status: 'active', games: makeRankMatchGames(3) }) },
+      { s1: makeRankMatchSession('s1', { status: 'active', games: makeRankMatchGames(2) }) },
+    );
+
+    expect(result.s1.games).toHaveLength(3);
+  });
+
+  it('RISK-4：同为 active，远端 games 更长时取远端 games', () => {
+    const result = mergeRankMatchSessions(
+      { s1: makeRankMatchSession('s1', { status: 'active', games: makeRankMatchGames(2) }) },
+      { s1: makeRankMatchSession('s1', { status: 'active', games: makeRankMatchGames(3) }) },
+    );
+
+    expect(result.s1.games).toHaveLength(3);
+  });
+
+  it('远端段位赛 updatedAt 会保留，用于跨设备接管判定', () => {
+    const result = mergeRankMatchSessions(
+      { s1: makeRankMatchSession('s1', { status: 'active', games: makeRankMatchGames(2) }) },
+      {
+        s1: makeRankMatchSession('s1', {
+          status: 'active',
+          games: makeRankMatchGames(2),
+          updatedAt: '2026-04-24T10:00:00.000Z',
+        }),
+      },
+    );
+
+    expect(result.s1.updatedAt).toBe('2026-04-24T10:00:00.000Z');
+  });
+
+  it('RISK-4：同为 suspended，本地 games 更长时取本地 games', () => {
+    const result = mergeRankMatchSessions(
+      { s1: makeRankMatchSession('s1', { status: 'suspended', games: makeRankMatchGames(3) }) },
+      { s1: makeRankMatchSession('s1', { status: 'suspended', games: makeRankMatchGames(2) }) },
+    );
+
+    expect(result.s1.games).toHaveLength(3);
+  });
+
+  it('RISK-4：交换 local/remote 位置后，同优先级 games 更长者结果等价', () => {
+    const longer = makeRankMatchSession('s1', {
+      status: 'active',
+      games: makeRankMatchGames(3),
+      updatedAt: '2026-04-24T10:00:00.000Z',
+    });
+    const shorter = makeRankMatchSession('s1', {
+      status: 'active',
+      games: makeRankMatchGames(2),
+      updatedAt: '2026-04-24T09:00:00.000Z',
+    });
+
+    const left = mergeRankMatchSessions({ s1: longer }, { s1: shorter });
+    const right = mergeRankMatchSessions({ s1: shorter }, { s1: longer });
+
+    expect(left.s1.games).toEqual(right.s1.games);
+    expect(left.s1.updatedAt).toEqual(right.s1.updatedAt);
   });
 });

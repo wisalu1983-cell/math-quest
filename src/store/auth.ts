@@ -1,6 +1,8 @@
 import { create } from 'zustand';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { getSupabaseClient } from '@/lib/supabase';
+import { useSyncEngine } from '@/sync/engine';
+import type { DirtyKey } from '@/sync/types';
 
 interface AuthState {
   supabaseUser: SupabaseUser | null;
@@ -11,12 +13,17 @@ interface AuthState {
   initialize: () => Promise<void>;
   signInWithMagicLink: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signOutGuarded: () => Promise<
+    | { ok: true }
+    | { ok: false; reason: 'dirty'; dirtyKeys: DirtyKey[] }
+  >;
+  signOutForce: () => Promise<void>;
   clearError: () => void;
 }
 
 let unsubscribeAuthListener: (() => void) | null = null;
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   supabaseUser: null,
   isAuthenticated: false,
   isLoading: false,
@@ -107,6 +114,20 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
 
   signOut: async () => {
+    await get().signOutGuarded();
+  },
+
+  signOutGuarded: async () => {
+    const dirtyKeys = useSyncEngine.getState().syncState.dirtyKeys;
+    if (dirtyKeys.length > 0) {
+      return { ok: false, reason: 'dirty', dirtyKeys: [...dirtyKeys] };
+    }
+
+    await get().signOutForce();
+    return { ok: true };
+  },
+
+  signOutForce: async () => {
     const client = getSupabaseClient();
     set({ isLoading: true, authError: null });
 

@@ -1,11 +1,13 @@
 // src/App.tsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useUserStore, useUIStore, useGameProgressStore, useSessionStore } from '@/store';
 import { useRankMatchStore } from '@/store/rank-match';
 import { RankMatchRecoveryError } from '@/store/rank-match';
 import { repository } from '@/repository/local';
 import { getCurrentGameIndex } from '@/engine/rank-match/match-state';
 import { decideRankMatchRecovery } from '@/engine/rank-match/recovery-policy';
+import MergeGuideDialog from '@/components/MergeGuideDialog';
+import AccountMismatchDialog from '@/components/AccountMismatchDialog';
 import Onboarding from '@/pages/Onboarding';
 import Home from '@/pages/Home';
 import CampaignMap from '@/pages/CampaignMap';
@@ -22,6 +24,12 @@ import RankMatchGameResult from '@/pages/RankMatchGameResult';
 import RankMatchResult from '@/pages/RankMatchResult';
 import { LoginPage } from '@/pages/LoginPage';
 import { useAuthStore } from '@/store/auth';
+import { useSyncEngine } from '@/sync/engine';
+import {
+  runMergeFlow,
+  type AccountMismatchDialogState,
+  type MergeGuideDialogState,
+} from '@/sync/merge-flow';
 import { getDocumentTitle } from '@/utils/ui-accessibility';
 
 export default function App() {
@@ -29,12 +37,58 @@ export default function App() {
   const { loadGameProgress } = useGameProgressStore();
   const currentPage = useUIStore(s => s.currentPage);
   const setPage = useUIStore(s => s.setPage);
+  const [mergeDialog, setMergeDialog] = useState<MergeGuideDialogState | null>(null);
+  const [mismatchDialog, setMismatchDialog] = useState<AccountMismatchDialogState | null>(null);
 
   useEffect(() => {
     repository.init();
     loadUser();
     void useAuthStore.getState().initialize();
   }, [loadUser]);
+
+  useEffect(() => {
+    let runId = 0;
+
+    const handleAuthUser = (nextId: string | null, prevId: string | null) => {
+      if (nextId === prevId) return;
+
+      if (!nextId) {
+        runId += 1;
+        setMergeDialog(null);
+        setMismatchDialog(null);
+        useSyncEngine.getState().shutdown();
+        return;
+      }
+
+      const currentRunId = runId + 1;
+      runId = currentRunId;
+      useSyncEngine.getState().arm(nextId);
+
+      void runMergeFlow(nextId, {
+        setMergeDialog,
+        setMismatchDialog,
+      }).then(result => {
+        if (runId !== currentRunId || result.status !== 'started') return;
+        loadUser();
+        loadGameProgress(nextId);
+        setPage('home');
+      });
+    };
+
+    const unsubscribe = useAuthStore.subscribe((state, prev) => {
+      handleAuthUser(state.supabaseUser?.id ?? null, prev.supabaseUser?.id ?? null);
+    });
+
+    const currentId = useAuthStore.getState().supabaseUser?.id ?? null;
+    if (currentId) {
+      handleAuthUser(currentId, null);
+    }
+
+    return () => {
+      runId += 1;
+      unsubscribe();
+    };
+  }, [loadGameProgress, loadUser, setPage]);
 
   useEffect(() => {
     if (!user) return;
@@ -95,5 +149,11 @@ export default function App() {
     'rank-match-result': <RankMatchResult />,
   };
 
-  return <main id="main-content">{pages[currentPage]}</main>;
+  return (
+    <main id="main-content">
+      {pages[currentPage]}
+      {mergeDialog ? <MergeGuideDialog {...mergeDialog} /> : null}
+      {mismatchDialog ? <AccountMismatchDialog {...mismatchDialog} /> : null}
+    </main>
+  );
 }

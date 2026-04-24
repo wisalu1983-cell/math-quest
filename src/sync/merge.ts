@@ -233,7 +233,22 @@ function mergeSingleRankMatchSession(
     suspendedAt: pickDefined(remote.suspendedAt, local.suspendedAt),
     cancelledAt: pickDefined(remote.cancelledAt, local.cancelledAt),
     endedAt: pickDefined(remote.endedAt, local.endedAt),
+    updatedAt: pickLatestUpdatedAt(local.updatedAt, remote.updatedAt),
   };
+}
+
+function pickLatestUpdatedAt(
+  left: RankMatchSession['updatedAt'],
+  right: RankMatchSession['updatedAt'],
+): RankMatchSession['updatedAt'] {
+  if (left === undefined) return right;
+  if (right === undefined) return left;
+
+  const leftTime = typeof left === 'number' ? left : Date.parse(left);
+  const rightTime = typeof right === 'number' ? right : Date.parse(right);
+  if (Number.isNaN(leftTime)) return right;
+  if (Number.isNaN(rightTime)) return left;
+  return leftTime >= rightTime ? left : right;
 }
 
 export function mergeRankMatchSessions(

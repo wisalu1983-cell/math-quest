@@ -39,6 +39,7 @@ function mapRemoteRankMatchSession(row: RemoteRankMatchSession): RankMatchSessio
     ...(row.suspended_at !== null ? { suspendedAt: row.suspended_at } : {}),
     ...(row.cancelled_at !== null ? { cancelledAt: row.cancelled_at } : {}),
     ...(row.ended_at !== null ? { endedAt: row.ended_at } : {}),
+    updatedAt: row.updated_at,
   };
 }
 

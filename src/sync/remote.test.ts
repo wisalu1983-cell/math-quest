@@ -113,6 +113,7 @@ function makeRankMatchSession(id: string): RankMatchSession {
     games: [{ gameIndex: 1, finished: false, practiceSessionId: `${id}-g1`, startedAt: 100 }],
     status: 'active',
     startedAt: 100,
+    updatedAt: '2026-04-23T00:00:00.000Z',
   };
 }
 

@@ -13,7 +13,7 @@ import type {
   RankTier,
 } from '@/types/gamification';
 
-export type SyncStatus = 'idle' | 'syncing' | 'synced' | 'offline' | 'error';
+export type SyncStatus = 'idle' | 'armed' | 'syncing' | 'synced' | 'offline' | 'error';
 
 export type DirtyKey =
   | 'profiles'

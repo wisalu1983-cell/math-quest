@@ -777,3 +777,63 @@ describe('repository 同步桥接（v0.3 Phase 2）', () => {
     expect(syncRepo.getAuthUserIdKey()).toBe('mq_dev_auth_user_id');
   });
 });
+
+describe('repository 账号归属锁与账号切换清理（v0.3 Phase 3）', () => {
+  beforeEach(() => {
+    installLocalStorageMock();
+    setStorageNamespace('main');
+  });
+
+  afterEach(() => {
+    setStorageNamespace('main');
+  });
+
+  it('getAuthUserId / setAuthUserId / clearAuthUserId 读写当前 namespace 的账号归属锁', () => {
+    expect(repository.getAuthUserId()).toBeNull();
+
+    repository.setAuthUserId('sb-user-a');
+    expect(repository.getAuthUserId()).toBe('sb-user-a');
+    expect(localStorage.getItem('mq_auth_user_id')).toBe('sb-user-a');
+
+    repository.clearAuthUserId();
+    expect(repository.getAuthUserId()).toBeNull();
+  });
+
+  it('clearAccountScopedData 只清业务数据，不清 sync_state / auth_user_id / legacy mq_progress', () => {
+    localStorage.setItem('mq_user', 'user');
+    localStorage.setItem('mq_game_progress', 'gp');
+    localStorage.setItem('mq_history', 'history');
+    localStorage.setItem('mq_rank_match_sessions', 'rank');
+    localStorage.setItem('mq_sessions', 'sessions');
+    localStorage.setItem('mq_sync_state', JSON.stringify({ dirtyKeys: ['game_progress'], lastSyncedAt: null, deviceId: 'device' }));
+    localStorage.setItem('mq_auth_user_id', 'sb-user-a');
+    localStorage.setItem('mq_progress', 'legacy');
+
+    repository.clearAccountScopedData();
+
+    expect(localStorage.getItem('mq_user')).toBeNull();
+    expect(localStorage.getItem('mq_game_progress')).toBeNull();
+    expect(localStorage.getItem('mq_history')).toBeNull();
+    expect(localStorage.getItem('mq_rank_match_sessions')).toBeNull();
+    expect(localStorage.getItem('mq_sessions')).toBeNull();
+    expect(localStorage.getItem('mq_sync_state')).not.toBeNull();
+    expect(localStorage.getItem('mq_auth_user_id')).toBe('sb-user-a');
+    expect(localStorage.getItem('mq_progress')).toBe('legacy');
+  });
+
+  it('discardPendingSyncAfterUserConfirmation 只清 dirtyKeys，保留同步元信息', () => {
+    localStorage.setItem('mq_sync_state', JSON.stringify({
+      dirtyKeys: ['game_progress', 'rank_match_sessions'],
+      lastSyncedAt: '2026-04-24T00:00:00.000Z',
+      deviceId: 'device-1',
+    }));
+
+    repository.discardPendingSyncAfterUserConfirmation();
+
+    expect(JSON.parse(localStorage.getItem('mq_sync_state') ?? '{}')).toEqual({
+      dirtyKeys: [],
+      lastSyncedAt: '2026-04-24T00:00:00.000Z',
+      deviceId: 'device-1',
+    });
+  });
+});

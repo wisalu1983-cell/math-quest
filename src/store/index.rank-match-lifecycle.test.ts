@@ -67,7 +67,7 @@ function makeGP(advance: AdvanceProgress): GameProgress {
 function resetAllStores(gp: GameProgress): void {
   useUserStore.setState({ user: makeUser() });
   useGameProgressStore.setState({ gameProgress: gp });
-  useRankMatchStore.setState({ activeRankSession: null });
+  useRankMatchStore.setState({ activeRankSession: null, startedInThisSession: new Set() });
   useSessionStore.setState({
     active: false,
     session: null,

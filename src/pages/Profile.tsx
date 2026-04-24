@@ -1,13 +1,24 @@
+import { useState } from 'react';
 import { useUserStore, useGameProgressStore, useUIStore } from '@/store';
 import { TOPICS } from '@/constants';
+import AccountSection from '@/components/AccountSection';
 import BottomNav from '@/components/BottomNav';
 import LoadingScreen from '@/components/LoadingScreen';
+import SignOutConfirmDialog from '@/components/SignOutConfirmDialog';
 import { TopicIcon } from '@/components/TopicIcon';
+import { repository } from '@/repository/local';
+import { useAuthStore } from '@/store/auth';
+import type { DirtyKey } from '@/sync/types';
+
+type SignOutDialogState =
+  | { open: false }
+  | { open: true; dirtyKeys: DirtyKey[] };
 
 export default function Profile() {
   const user = useUserStore(s => s.user);
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const { setPage, soundEnabled, toggleSound } = useUIStore();
+  const [signOutDialog, setSignOutDialog] = useState<SignOutDialogState>({ open: false });
 
   if (!user) return <LoadingScreen />;
 
@@ -23,6 +34,12 @@ export default function Profile() {
 
   // 错题数
   const wrongCount = gameProgress?.wrongQuestions.length ?? 0;
+
+  const handleLogoutConfirm = async () => {
+    const result = await useAuthStore.getState().signOutGuarded();
+    if (result.ok) return;
+    setSignOutDialog({ open: true, dirtyKeys: result.dirtyKeys });
+  };
 
   return (
     <div className="min-h-dvh bg-bg pb-[88px] safe-top">
@@ -48,6 +65,11 @@ export default function Profile() {
             <p className="text-sm text-text-2 mt-1">数学大冒险</p>
           </div>
         </div>
+
+        <AccountSection
+          onLogin={() => setPage('login')}
+          onLogoutConfirm={handleLogoutConfirm}
+        />
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3">
@@ -128,6 +150,17 @@ export default function Profile() {
 
       {/* Bottom nav */}
       <BottomNav activeTab="profile" />
+      {signOutDialog.open ? (
+        <SignOutConfirmDialog
+          dirtyKeys={signOutDialog.dirtyKeys}
+          onCancel={() => setSignOutDialog({ open: false })}
+          onForce={async () => {
+            setSignOutDialog({ open: false });
+            repository.discardPendingSyncAfterUserConfirmation();
+            await useAuthStore.getState().signOutForce();
+          }}
+        />
+      ) : null}
     </div>
   );
 }

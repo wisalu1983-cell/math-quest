@@ -1,6 +1,6 @@
 // src/repository/local.ts
 import type { User, PracticeSession, TopicId, HistoryRecord } from '@/types';
-import type { DirtyKey } from '@/sync/types';
+import type { DirtyKey, SyncState } from '@/sync/types';
 import type {
   GameProgress,
   RankMatchSession,
@@ -280,6 +280,18 @@ export const repository = {
     return KEYS.authUserId();
   },
 
+  getAuthUserId(): string | null {
+    return localStorage.getItem(KEYS.authUserId());
+  },
+
+  setAuthUserId(userId: string): void {
+    localStorage.setItem(KEYS.authUserId(), userId);
+  },
+
+  clearAuthUserId(): void {
+    localStorage.removeItem(KEYS.authUserId());
+  },
+
   saveUserSilent(user: User): void {
     write(KEYS.user(), user);
   },
@@ -409,11 +421,38 @@ export const repository = {
     return all[id] ?? null;
   },
 
+  /**
+   * 物理删除一条段位赛 session。
+   *
+   * 仅供 dev-tool 和单测调用。产品路径不允许调用：段位赛生命周期由
+   * RankMatchSession.status（active / suspended / cancelled / completed）表达，
+   * 不做跨端物理删除。
+   *
+   * 本方法不触发 SyncEngine.markDirty，因此本地删除不会同步到云端。只要调用方遵守
+   * "仅 dev-tool / 单测"约束，这一行为就是正确的：dev-tool 清理本地沙盒时，云端数据不应受影响。
+   *
+   * 相关决策：Phase 3 RISK-2，见
+   * ProjectManager/Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md。
+   */
   deleteRankMatchSession(id: string): void {
     const all = this.getRankMatchSessions();
     if (!(id in all)) return;
     delete all[id];
     this.saveRankMatchSessionsSilent(all);
+  },
+
+  clearAccountScopedData(): void {
+    localStorage.removeItem(KEYS.user());
+    localStorage.removeItem(KEYS.gameProgress());
+    localStorage.removeItem(KEYS.history());
+    localStorage.removeItem(KEYS.rankMatchSessions());
+    localStorage.removeItem(KEYS.sessions());
+  },
+
+  discardPendingSyncAfterUserConfirmation(): void {
+    const current = read<SyncState>(KEYS.syncState());
+    if (!current) return;
+    write(KEYS.syncState(), { ...current, dirtyKeys: [] });
   },
 
   /**
