@@ -6,12 +6,26 @@
 > - `Reports/` — 调研/审视报告
 > - `ISSUE_LIST.md` — 待解决问题清单
 > - `Overview.md` — 活跃控制面（项目背景 / 当前阶段 / 当前状态 / 下一步 / 权威入口）
+>
+> QA 体系自 2026-04-21 起独立收口到仓库根目录 [`../QA/`](../QA/)，其中 `runs/` 存正式 QA 结果，`scripts/` 存可复用 QA 脚本。
 
 ---
 
 ## 计划维护规则
 
 本文件是**索引与模板入口**，不是项目当前状态总览。想看“现在在干什么”，请先读 [`../Overview.md`](../Overview.md)。
+
+## 常用速查
+
+只想确认某一条规则时，**直接定位对应小节，不默认通读全文**：
+
+| 想确认什么 | 去看哪一节 |
+|---|---|
+| Phase / 子计划怎么命名 | `## Phase 与子计划命名规则` |
+| 子计划 Plan 放哪里 | `## 子计划 Plan 文件位置规则` |
+| 功能设计文档放 `Specs` 哪个目录 | `## 功能设计文档子目录规则` |
+| 新 Plan 头部和必备章节怎么写 | `## Plan 文件模板` |
+| 版本目录、收口、归档怎么处理 | `## 版本归档规则` |
 
 后续统一遵守以下最小规则：
 
@@ -52,14 +66,192 @@
 
 ---
 
-## Plan 文件模板（2026-04-17 生效）
+## Phase 与子计划命名规则（2026-04-20 生效）
 
-所有**新建**的 Plan 文件头部必须包含以下栏目（可参考 `2026-04-17-generator-redesign-v2-implementation.md` §一、背景）：
+从 v0.2 起强制使用**数字序号**命名 Phase 与子计划，**不再使用希腊字母**。
+
+### 命名格式
+
+| 层级 | 正式 ID | 上下文内简写 | 文件位置 |
+|---|---|---|---|
+| Phase 级 | `vX.Y-P` | `Phase P` | `Plan/vX.Y/phases/phase-P.md` |
+| 子计划级 | `vX.Y-P-N` | `P-N` | `Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md`（2026-04-20 起；详见 §子计划 Plan 文件位置规则）|
+
+**示例**：
+
+- v0.2 的第 1 个 Phase → 正式 `v0.2-1`，在 v0.2 文档内简写为 `Phase 1`
+- v0.2 第 1 个 Phase 的第 1 个子计划 → 正式 `v0.2-1-1`，在 v0.2 文档内简写为 `1-1`
+- 跨版本引用 / Issue / Backlog / Reports 中必须用**正式 ID**，以避免歧义
+
+### 使用规则
+
+1. **Phase 文件内部**：可用简写 `Phase N` / `N-M`，已隐式绑定版本号
+2. **跨上下文引用**：必须用完整 ID `vX.Y-N` / `vX.Y-N-M`（如 `ISSUE_LIST.md`、`Backlog.md`、`Reports/*.md`、跨版本 Plan）
+3. **子计划文件位置与命名**：2026-04-20 起，子计划 Plan 落 `Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md`；在文件头部"父计划"字段标注正式 ID。历史遗留的 `Plan/YYYY-MM-DD-*.md`（2026-04-20 之前）不做回溯迁移
+4. **Phase 文件**：统一 `Plan/vX.Y/phases/phase-N.md`
+5. **新 Phase 子项登记到 ISSUE / Backlog 时**：用正式 ID 做来源引用（例：`来源：v0.2-4-1（A3 总则）`）
+
+### 历史兼容（仅作查旧文档用）
+
+以下映射表仅用于对照 2026-04-20 **之前**文档中的旧称呼：
+
+| 旧（希腊字母） | 新（数字） |
+|---|---|
+| Phase α | Phase 1 |
+| Phase β | Phase 2 |
+| Phase γ | Phase 3 |
+| Phase δ | Phase 4 |
+| Phase ε | Phase 5 |
+
+**新文档一律用新命名。旧归档文档不做回溯改写，在查阅时按本表对照即可。**
+
+---
+
+## 工具性子计划范围规则（2026-04-20 生效）
+
+测试工具 / 调试面板 / 造数脚本等"工具性子计划"的覆盖范围，**严格限定在本次开工时已存在的功能**上。
+
+### 核心规定
+
+1. **不为"尚未实现的功能"提前建工具**——即使该功能在同一主线的后续 Phase 里
+2. **新功能开工时，把它所需的工具能力作为该功能子计划的一部分一并做掉**
+3. **工具本身要预留扩展入口**（如插件式注册、面板分组结构），但不预先实现具体扩展项
+4. **例外**：若某工具能力本身就是"验证功能已做好"的必备条件，视为该功能子计划的子任务，不走本规则
+
+### 判定清单（启动工具性子计划时自检）
+
+- [ ] 逐项检查工具清单里的每一条能力，它所对应的**产品功能是否已在仓库里运行**
+- [ ] 对尚未实现的功能，把工具需求**登记到该功能的未来子计划**（Issue / Backlog 里挂链接）
+- [ ] 工具面板预留扩展位，但标注"待 XX 子计划开工时填入"
+
+### 出处与典型场景
+
+- 出处：2026-04-20 用户对 `v0.2-1-1`（F3 开发者工具栏，即测试状态一键注入面板）范围的澄清
+- 典型：F3（开发者工具栏）在 2026-04-20 开工时不为 `5-1`（F2 历史记录，当时尚未实现）预造样本数据；等到 `5-1` 开工时，再把"批量造历史记录样本"作为 `5-1` 的一部分挂到 F3 面板
+
+---
+
+## 功能设计文档子目录规则（2026-04-20 生效）
+
+从 2026-04-20 起，**每个功能相关的设计文档**统一收纳到 `Specs/` 下的一个**功能子目录**里。
+
+### 核心规定
+
+1. **一个功能 → 一个子目录**：命名用 **kebab-case 语义名**（例：`Specs/dev-tool-panel/`、`Specs/history-records/`、`Specs/tips-library/`），**不绑反馈代号**（如 F3/F2），因反馈代号是特定版本主线里的临时标签
+2. **子目录内文件**：仍用 `YYYY-MM-DD-<topic>.md` 命名，按需可以同时存在多个文件（调研报告、规格草稿、方案稿、决策复盘等同一功能下的全量文档都进此目录）
+3. **旧扁平文档不迁移**：2026-04-20 **之前**已在 `Specs/` 根下的扁平 Spec 保留原位置；新规则只约束**从今以后**新建的功能
+4. **跨功能共用的规格**：仍放在 `Specs/` 根下的扁平位置（例：`2026-04-14-difficulty-standard.md` 这类全局约束），不强制塞进某个功能子目录
+5. **索引书写**：`Specs/_index.md` 里的条目用**相对 `Specs/` 的相对路径**——老条目纯文件名即可，新条目写 `<feature-slug>/<YYYY-MM-DD-xxx>.md`
+
+### 判定清单
+
+新建 Spec / 调研 / 方案文件时：
+
+- [ ] 该文档是**某个具体功能**的专属设计材料？→ 放进对应功能子目录
+- [ ] 是**跨功能共用**的全局约束？→ 保留在 `Specs/` 根
+- [ ] 文件名是 `YYYY-MM-DD-<topic>.md` 格式？
+- [ ] 已在 `Specs/_index.md` 对应维度下登记（路径相对 `Specs/` 根）？
+
+### 与既有索引规则的兼容性
+
+`Specs/_index.md` 既有三条维护规则（"新增必登记/废弃交叉引用/修改同步摘要"）**不约束路径格式**——老条目（纯文件名 = 扁平）与新条目（`<feature-slug>/<filename>` = 子目录）可以共存于同一索引。已在 `_index.md` 加一节"路径兼容规则"作为书写约定。
+
+### 出处
+
+2026-04-20 用户在 `v0.2-1-1`（F3 开发者工具栏）调研阶段对"调研结果存到该功能对应的设计文档目录里"的澄清。
+
+---
+
+## 子计划 Plan 文件位置规则（2026-04-20 生效）
+
+从 2026-04-20 起，**子计划 Plan 文件**的位置遵循 `Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md`。
+
+### 核心规定
+
+1. **位置**：`Plan/vX.Y/subplans/` 下**扁平放**，**不再开功能子目录**——Plan 侧通常"一功能一版本一份文件"，不需要为聚合多文档而建子目录
+2. **文件名**：`YYYY-MM-DD-<feature-slug>.md`，其中 `<feature-slug>` 与 Specs 侧功能子目录名一致（例：`dev-tool-panel`、`history-records`）——通过**文件名里的 slug** 与 Specs 侧双胞胎关联，不靠路径结构对称
+3. **同功能多份 Plan**（罕见，如 P0/P1 阶段拆、紧急回滚单独留档）：用文件名后缀区分（例：`2026-04-20-dev-tool-panel-p0.md` / `2026-04-22-dev-tool-panel-p1.md`），仍扁平在 `subplans/` 下
+4. **旧位置**：2026-04-20 **之前**落在 `Plan/YYYY-MM-DD-*.md` 的历史 Plan 保留原位置，不回溯迁移
+
+### 为什么 Plan 侧和 Specs 侧组织维度不同
+
+| 维度 | Specs（设计资产）| Plan（实施动作）|
+|---|---|---|
+| 生命周期 | 跨版本长寿 | 绑定版本短寿 |
+| 同功能材料数 | 多（调研 / 规格 / 方案 / 复盘）| 通常一份 |
+| 组织维度 | 功能维度为主，版本是属性 | 版本维度为主，功能是属性 |
+| 目录结构 | `Specs/<feature>/` | `Plan/vX.Y/subplans/` |
+
+Plan 侧不与 Specs 侧镜像对称。Plan 文件的"功能归属"通过**文件名 slug** 和**文件头部 `设计规格：` 字段**交叉引用表达，不通过路径结构对称。
+
+### Agent 查询约定
+
+- **回顾某版本的所有子计划** → 遍历 `Plan/vX.Y/subplans/**`
+- **回顾某功能的所有设计材料** → 遍历 `Specs/<feature>/**`
+- **查找某功能在特定版本的实施计划** → 在 `Plan/vX.Y/subplans/` 下按文件名 `<feature-slug>` 搜
+
+### 出处
+
+2026-04-20 用户对 `v0.2-1-1`（F3 开发者工具栏）子计划 Plan 位置的澄清；前置讨论：方案 D.4。
+
+---
+
+## 版本归档规则（2026-04-20 生效）
+
+项目以版本为单位管理迭代。每个版本的活跃工作、收口快照、已关闭 issue 都收纳在对应版本目录内。
+
+### 核心规定
+
+1. **版本命名**：`vX.Y`（例：`v0.1` / `v0.2`）。`X` 升级用于大的架构 / 功能闭环升级；`Y` 升级用于当前 X 框架内的迭代。不强制对齐 semver，也不强制挂 git tag。
+2. **版本工作目录**：每个版本在 `Plan/` 下建一个 `vX.Y/` 子目录；该版本所有主计划、子计划、phase 文件、版本级 overview、已关闭 issue 归档都放在里面。
+3. **跨版本资产不按版本分**：`Specs/`、`Reports/`、`QA/`、`human-verification-bank-v2.md` 仍在原位，按需从版本目录里用相对路径引用。
+4. **跨版本工具性 Plan**：项管体系本身演进 / 工具机制类的 Plan（不属于任何产品版本），保留在 `Plan/` 根目录，用"所属版本：跨版本工具性"标注。
+5. **新建 Plan 必填"所属版本"字段**：见下方 Plan 文件模板。
+6. **`00-overview.md` 是收口快照，不是活跃文档**：版本进行中，`00-overview.md` 只保留规划时写定的静态上下文（背景、目标、阶段结构），不承担进度追踪。版本的活跃状态由 `vX.Y/README.md` 头部 `状态：` 字段（版本级）和全局 `Overview.md`（项目级）负责。版本收口时，`Overview.md` 的当前状态抽取写入 `00-overview.md`，成为该版本的永久历史记录。
+
+### 活跃视图 vs 归档视图
+
+| 文件 | 活跃视图只写什么 | 归档去向 |
+|---|---|---|
+| `Overview.md` | 当前版本的项目概览 / 状态 / 下一步 | 版本收口时抽取为 `Plan/vX.Y/00-overview.md` 快照 |
+| `ISSUE_LIST.md` | **当前版本开放**（未关闭）的 issue | 已关闭 → `Plan/vX.Y/issues-closed.md`；未关闭但延期 → `Backlog.md` |
+| `Plan/README.md` 索引 | 当前版本详细 Plan 表 + 历史版本入口链接 | 历史版本 Plan 详表下沉到 `Plan/vX.Y/README.md` |
+| `Backlog.md` | 未激活的需求 / 想法 / 延期候选 | 激活时条目在某版本里展开为正式 Plan；放弃时标注放弃 |
+
+### Backlog vs ISSUE_LIST 边界
+
+- **`ISSUE_LIST.md`**：已知的具体 bug / 欠账 / 实现问题；生命周期 open → closed
+- **`Backlog.md`**：未激活的需求 / 想法 / 方向 / 延期候选；生命周期 候选 → 纳入某版本 / 放弃
+- 同一条目不同时在两边：bug 进 ISSUE；需求 / 候选进 Backlog
+
+### ISSUE ID 规则
+
+- ID **跨版本连续**，搬到哪里 ID 都不变
+- 从 `ISSUE_LIST` 迁到 `Backlog`（延期）：ID 保留，状态标"候选（延期自 ISSUE-xxx）"
+- 从 `Backlog` 重新激活进 `ISSUE_LIST`：用原 ID
+- 新开 issue：从当前最大 ID 续编
+
+### 版本收口动作清单
+
+一个版本完工、准备切到下一版本时按以下步骤：
+
+1. **快照 Overview**：把 `Overview.md` 当前状态详细内容抽取，写入 `Plan/vX.Y/00-overview.md`（该版本收口快照）
+2. **归档 ISSUE**：把 `ISSUE_LIST.md` 里本版本已关闭的 issue 搬到 `Plan/vX.Y/issues-closed.md`；未关闭且决定延期的迁入 `Backlog.md`
+3. **切版本轴**：`Overview.md` 顶部"当前版本 / 上一版本"字段切换
+4. **更新索引**：`Plan/README.md` 顶部版本索引把收口版本标注"已发布"；当前版本切到新版本
+5. **变更日志**（可选）：规则层面调整才留 `Reports/YYYY-MM-DD-*-changelog.md`；纯版本切换无需留
+
+---
+
+## Plan 文件模板（2026-04-20 更新，在 2026-04-17 基础上追加"所属版本"字段）
+
+所有**新建**的 Plan 文件头部必须包含以下栏目：
 
 ```markdown
 # 〈计划名〉
 
 > 创建：YYYY-MM-DD  
+> 所属版本：vX.Y（或"跨版本工具性"）  
 > 父计划：〈如有〉  
 > 设计规格：〈对应 Specs/*.md〉  
 > 状态：⬜ 待排期 / 🟡 进行中 / ✅ 完成
@@ -95,102 +287,67 @@
 
 ---
 
-## 设计规格（Specs/）
+## 版本索引
 
-> 📑 **总索引**：[`Specs/_index.md`](../Specs/_index.md) —— 按维度分类的规格矩阵，新 Plan 开工前必读。
+| 版本 | 状态 | 入口 |
+|---|---|---|
+| **v0.3** | ✅ 已上线（2026-04-24；Phase 1/2/3 完成） | [v0.3/](./v0.3/) |
+| v0.2 | ✅ 已收工（2026-04-23；三层 QA 完成） | [v0.2/](./v0.2/) |
+| v0.1 | ✅ 已发布（2026-04-19 收口） | [v0.1/](./v0.1/) |
 
-| 文件 | 内容 |
-|------|------|
-| [_index.md](../Specs/_index.md) | **规格矩阵**（2026-04-17 新增；维度化索引 + 关键硬约束摘要）|
-| [2026-04-08-generator-improvements.md](../Specs/2026-04-08-generator-improvements.md) | 生成器改进总规格（含执行状态，全部完成）|
-| [2026-04-08-reference-bank-extraction-design.md](../Specs/2026-04-08-reference-bank-extraction-design.md) | 真题库提取设计 |
-| [2026-04-09-a03-block-b-design.md](../Specs/2026-04-09-a03-block-b-design.md) | A03 块B 组件重构设计 |
-| [2026-04-18-a03-block-b-plus-design.md](../Specs/2026-04-18-a03-block-b-plus-design.md) | A03 块B Plus 轻量路线设计：保留现有乘除法答题方式，困难档新增过程格结算纠错提示（**2026-04-18 二次重排后本阶段废弃；设计保留作历史参考**） |
-| [2026-04-10-gamification-redesign.md](../Specs/2026-04-10-gamification-redesign.md) | 游戏化重新设计规格（三层体系：闯关→进阶→段位赛） |
-| [2026-04-13-star-rank-numerical-design.md](../Specs/2026-04-13-star-rank-numerical-design.md) | 统一星级与段位数值设计（星级体系、心数门槛、段位门槛、时间节奏） |
-| [2026-04-16-generator-difficulty-tiering-spec.md](../Specs/2026-04-16-generator-difficulty-tiering-spec.md) | 生成器三档难度定义规范（题库边界 + 用户感知版；主规格之一） |
-| [2026-04-16-generator-subtype-difficulty-buckets.md](../Specs/2026-04-16-generator-subtype-difficulty-buckets.md) | 生成器子题型三档难度设计（旧实现导向整理，保留作测试/实现参考） |
-| [2026-04-17-generator-redesign-v2.md](../Specs/2026-04-17-generator-redesign-v2.md) | 生成器题型优化设计 **v2.2**（去重 + 陷阱体系 + 答题形式重做；A01/A04/A08 压 2 档对齐进阶规格；实施中）|
-| [2026-04-18-rank-match-phase3-implementation-spec.md](../Specs/2026-04-18-rank-match-phase3-implementation-spec.md) | **Phase 3 段位赛实施级规格**（2026-04-18 落盘）——定义 `RankTier`/`RankMatchSession`/`RankMatchGame`/`RankProgress` 数据模型；BO 用 `RankMatchSession` 包装、每局仍是 `PracticeSession` 的双结构会话；`CURRENT_VERSION 2→3` 追加式迁移；跨题型抽题器按段位新内容点编排（主考项 ≥40%、复习题 ≤25%、每场题量 20/25/25/30）|
+历史版本 Plan 的详细表格下沉至对应 `Plan/vX.Y/README.md`。本页索引只列版本入口与当前版本详表。
 
-## 实施计划（Plan/）
+---
+
+## 当前版本（v0.3）Plan 详表
+
+> 主线：Supabase 在线账号与数据同步 · 见 [v0.3/README.md](./v0.3/README.md)
 
 | 文件 | 内容 | 状态 |
-|------|------|------|
-| [2026-04-09-phase0-classification-adjustment.md](2026-04-09-phase0-classification-adjustment.md) | Phase 0 分类调整 | ✅ 完成 |
-| [2026-04-09-phase1-p0-improvements.md](2026-04-09-phase1-p0-improvements.md) | Phase 1 P0 高频考点 | ✅ 完成 |
-| [2026-04-09-phase2-p1-extensions.md](2026-04-09-phase2-p1-extensions.md) | Phase 2 P1 参数扩展 | ✅ 完成 |
-| [2026-04-09-phase3-p2-question-types.md](2026-04-09-phase3-p2-question-types.md) | Phase 3 P2 题型扩展 | ✅ 完成 |
-| [2026-04-09-a03-decimal-generator.md](2026-04-09-a03-decimal-generator.md) | A03 块A 生成器小数支持 | ✅ 完成 |
-| [2026-04-09-a03-block-b-component.md](2026-04-09-a03-block-b-component.md) | A03 块B 组件重构 | ✅ 完成 |
-| [2026-04-08-reference-bank-extraction.md](2026-04-08-reference-bank-extraction.md) | 真题库提取（A01-A08）| ✅ 完成 312题 |
+|---|---|---|
+| [v0.3/README.md](./v0.3/README.md) | 主线 README（版本入口） | ✅ 已上线（2026-04-24；账号同步系统生效） |
+| [v0.3/implementation-plan.md](./v0.3/implementation-plan.md) | 实施计划（Task / 文件清单 / 验收） | ✅ 设计完成 |
+| [v0.3/phases/phase-1.md](./v0.3/phases/phase-1.md) | Phase 1 · 基建 + 认证 | ✅ 已完成（2026-04-24） |
+| [v0.3/phases/phase-2.md](./v0.3/phases/phase-2.md) | Phase 2 · 同步引擎 | ✅ 已完成（2026-04-24） |
+| [v0.3/phases/phase-3.md](./v0.3/phases/phase-3.md) | Phase 3 · UI + 验收 | ✅ 已完成并上线（2026-04-24） |
 
-## 审视报告（Reports/）
+---
 
-| 文件 | 内容 |
-|------|------|
-| [2026-04-09-A03-vertical-calc-review.md](../Reports/2026-04-09-A03-vertical-calc-review.md) | A03 竖式笔算审视报告 |
-| [2026-04-17-pm-sync-check-retrospective.md](../Reports/2026-04-17-pm-sync-check-retrospective.md) | pm-sync-check 首轮回溯验证报告（v2.1→v2.2 实战用例；召回 2/2；L1+L2 收口） |
-| [2026-04-18-phase3-umbrella-replan-history.md](../Reports/2026-04-18-phase3-umbrella-replan-history.md) | Phase 3 Umbrella 同日重排归档报告：把“为何最后只剩 Phase 3”的完整轨迹下沉出活跃计划 |
+## 跨版本工具性 Plan（`Plan/` 根目录）
 
-## 游戏化重设计（Specs/2026-04-10-gamification-redesign.md）
+项管体系本身演进 / 工具机制类的 Plan，不属于任何产品版本。
 
 | 文件 | 内容 | 状态 |
-|------|------|------|
-| [2026-04-13-gamification-phase1-foundation-campaign.md](2026-04-13-gamification-phase1-foundation-campaign.md) | Phase 1：Foundation + 闯关系统（移除旧 XP 体系，新类型/Store/Repository，8 题型闯关地图，CampaignMap 页） | ✅ 开发完成，已浏览器验收 |
-| [2026-04-15-gamification-phase2-implementation.md](2026-04-15-gamification-phase2-implementation.md) | Phase 2 进阶系统实施计划（T1-T15 + A1-A6 全部完成） | ✅ 完成 |
+|---|---|---|
+| [2026-04-17-pm-document-sync-mechanism.md](./2026-04-17-pm-document-sync-mechanism.md) | 历史机制方案：文档同步机制首次设计、L1+L2 落地与回溯验证背景 | ✅ 历史记录 |
+| [2026-04-19-pm-token-efficiency-optimization.md](./2026-04-19-pm-token-efficiency-optimization.md) | 项目管理文档体系轻量化优化方案 | ✅ 完成 |
 
-| Phase 2（完成）| 进阶系统（心→星，难度自动调配） | ✅ 开发 + 浏览器验收完成 |
-| Phase 3（后移）| 段位赛系统（BO3/BO5/BO7），闯关+进阶体验稳定后再启动 | ⬜ 下阶段 |
+---
 
-## Phase 1 优化迭代
+## 历史版本归档入口
 
-| 文件 | 内容 | 状态 |
-|------|------|------|
-| [2026-04-14-phase1-hotfix-and-iteration.md](2026-04-14-phase1-hotfix-and-iteration.md) | Phase 1 热修复 + 优化迭代（去年级区分、History入口、路线匹配修复、出题质量、难度标准） | ✅ 完成 |
-| [2026-04-16-p1p2-fixes.md](2026-04-16-p1p2-fixes.md) | P1+P2 修复（试玩反馈 11 项：心数 bug / Boss 视觉与内容差异化 / 进阶引导 / 难度梯度 / 除法整除比例 / Practice UI / VerticalCalcBoard 焦点与退位提示） | ✅ 完成 |
-| [2026-04-16-generator-difficulty-recalibration.md](2026-04-16-generator-difficulty-recalibration.md) | 生成器难度分档重审（基于题库边界 + 用户感知；为三档主规格重写提供证据与结论） | ✅ 完成 |
-| [2026-04-16-open-backlog-consolidation.md](2026-04-16-open-backlog-consolidation.md) | **当前阶段主计划**——开放 backlog 统一整理；当前承接 Phase 3 主线与子计划 4 引用链 | 🟡 进行中 |
-| [2026-04-17-generator-redesign-v2-implementation.md](2026-04-17-generator-redesign-v2-implementation.md) | 生成器题型设计 v2.2 实施计划（对应 Specs/2026-04-17-generator-redesign-v2.md；5 阶段 + 阶段 6 二轮修订已全部完成）| ✅ 完成 |
-| [2026-04-17-campaign-advance-stabilization.md](2026-04-17-campaign-advance-stabilization.md) | **子计划 2.5（父=主计划 §四/§七）**——闯关+进阶模式稳定化：S1 阻塞级 / S2 重要 bug / S3 v2.2 深度体验 QA / S4 进阶专项验收 | ✅ 完成（2026-04-18）|
-| [2026-04-18-ui-consistency-cleanup.md](2026-04-18-ui-consistency-cleanup.md) | **子计划 3（父=主计划 §四）**——UI 一致性与代码整洁清理：B1 硬编码色+类型整洁 / B2 a11y 教学细化 / B3 a11y 评估项；12 项 ISSUE 全部关闭或降级关闭 | ✅ 完成（2026-04-18）|
-| [2026-04-18-subplan-4-next-stage-expansion.md](2026-04-18-subplan-4-next-stage-expansion.md) | **子计划 4 Umbrella（父=主计划 §四）**——下阶段扩展总纲；当前已收敛为单块 = Phase 3 段位赛 | ✅ 完成（收敛目标已达成；下一轮工作另起计划） |
-| [2026-04-18-rank-match-phase3-implementation.md](2026-04-18-rank-match-phase3-implementation.md) | **Phase 3 段位赛实施子子计划（父=子计划 4 Umbrella）**——按实施级规格落代码：M1 地基 → M2 抽题器 + 答题流驳接 → M3 UI → M4 验证 + 回写 | ✅ 完成（代码、验证、回写均已入仓；检查点 `master@977933e`） |
-| [2026-04-17-pm-document-sync-mechanism.md](2026-04-17-pm-document-sync-mechanism.md) | 历史机制方案：记录文档同步机制首次设计、L1+L2 落地与回溯验证背景 | ✅ 历史记录 |
-| [2026-04-19-pm-token-efficiency-optimization.md](2026-04-19-pm-token-efficiency-optimization.md) | 项目管理文档体系轻量化优化方案：以不牺牲可靠性为前提，重排 Overview / Plan / Spec / Issue 的角色分工，并收缩 `pm-sync-check` 触发范围 | ✅ 完成 |
+- **v0.2**：[v0.2/README.md](./v0.2/README.md) — 用户反馈驱动主线收口（Phase 1~5 完成，2026-04-23 收工）
+  - 收口快照：[v0.2/00-overview.md](./v0.2/00-overview.md)
+  - QA 总结：[`../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md`](../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)
+- **v0.1**：[v0.1/README.md](./v0.1/README.md) — 原型，三层游戏化闭环完成（Phase 1/2/3），2026-04-19 收口
+  - 收口快照：[v0.1/00-overview.md](./v0.1/00-overview.md)
+  - 已关闭 issue：[v0.1/issues-closed.md](./v0.1/issues-closed.md)
 
-## 设计规格新增
+---
 
-| 文件 | 内容 |
-|------|------|
-| [2026-04-14-difficulty-standard.md](../Specs/2026-04-14-difficulty-standard.md) | 难度基准文档（difficulty 1-10 各档定义 + 8 个生成器分档明细 + 校准记录） |
-| [2026-04-16-generator-difficulty-tiering-spec.md](../Specs/2026-04-16-generator-difficulty-tiering-spec.md) | 三档难度主规格（题库边界 + 用户感知版） |
-| [2026-04-16-generator-subtype-difficulty-buckets.md](../Specs/2026-04-16-generator-subtype-difficulty-buckets.md) | 旧版子题型级三档整理（实现导向，保留作参考） |
-| [2026-04-14-ui-redesign-spec.md](../Specs/2026-04-14-ui-redesign-spec.md) | UI/UX 整体重设计规格（阳光版 v5 批准；含颜色 token、图标系统、组件规范、交互规则、hotfix 分类；v1 炼金书院草案已废弃） |
-| [2026-04-14-ui-redesign-spec.md → 配套实施参考](./../.ui-design/design-system.md) | 设计系统参考文档（.ui-design/design-system.md）—— 实施级 token、SVG 图标说明、组件规格、Do/Don't |
+## 跨版本资产（不按版本分）
 
-## UI Hotfix 子计划
+### 设计规格（`../Specs/`）
 
-| 文件 | 内容 | 状态 |
-|------|------|------|
-| [2026-04-14-ui-hotfix-6-1.md](2026-04-14-ui-hotfix-6-1.md) | UI redesign spec §6.1 的独立 hotfix 执行计划 | ✅ 完成 |
+> 📑 **总索引**：[`Specs/_index.md`](../Specs/_index.md) —— 按维度分类的规格矩阵，新 Plan 开工前必读。详细 Specs 列表不在本页展开。
 
-## UI 整体重设计（阳光版 v5）
+### 审视报告（`../Reports/`）
 
-| 阶段 | 内容 | 状态 |
-|------|------|------|
-| Phase A | Token + 组件基础设施（BottomNav/ProgressBar/Hearts/LoadingScreen/Dialog）| ✅ 完成（2026-04-14）|
-| Phase B | 全量页面级改造（Home/CampaignMap/Practice/Summary/WrongBook/Progress/Profile 等）| ✅ 完成（2026-04-14）|
-| Phase C | 动效打磨（stagger 入场动画 + 推荐关卡跳动）| ✅ 完成（2026-04-15）|
-| Design Review | 设计系统合规审查 + 修复（94% 合规）| ✅ 完成（2026-04-15）|
-| WCAG AA 审查 | 无障碍审查 + 修复（CampaignMap 键盘/输入框 aria/skip-link 等）| ✅ 完成（2026-04-15）|
-| 浏览器实测 | E2E 主路径验收（Playwright，0 JS 错误）| ✅ 完成（2026-04-15）|
+> 📑 见 [`../Reports/`](../Reports/) 目录，按日期归档。
 
-## 视觉 QA 修复（Reports/2026-04-15-visual-qa-results.md）
+### QA 产物（`../QA/`）
 
-| 文件 | 内容 | 状态 |
-|------|------|------|
-| [2026-04-15-visual-qa-fixes.md](2026-04-15-visual-qa-fixes.md) | 视觉 QA 修复（F2/VR-01/VR-02/VR-04/VR-05/F1，共 5 个文件改动）| ✅ 完成（2026-04-15）|
+> 📑 见 [`../QA/`](../QA/) 目录。
 
 ## 说明
 

@@ -1,7 +1,7 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-19（Phase 3 主线已完成并入仓；开新号全量 QA 复跑全绿）  
-> 角色：**活跃控制面 / 总管**。本文件只保留项目背景、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档。
+> 最后更新：2026-04-24（v0.3 Phase 3 收口：账号同步代码验证、真实 Supabase 验收、线上发布完成）
+> 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
 
@@ -18,57 +18,84 @@
 
 1. 用真题参考库校准生成器质量
 2. 完成三层游戏化闭环：闯关 → 进阶 → 段位赛
+3. 基于真实用户反馈持续打磨体验与能力训练设计
 
 **当前范围**：聚焦 A 领域（A01-A08 数与运算）；A09、B、C、D 暂不在本阶段范围内。
 
 ---
 
-## 当前阶段
+## 版本轴
 
-**阶段目标**：在 A01-A08 生成器与闯关/进阶已稳定的基础上，完成 Phase 3 段位赛最小闭环，让三层游戏化结构真正跑通。
+| 阶段 | 版本 | 状态 | 入口 |
+|---|---|---|---|
+| **当前版本** | **v0.3** | ✅ 已上线（Phase 1/2/3 完成，账号同步系统生效） | [Plan/v0.3/](Plan/v0.3/) |
+| 上一版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
+| 更早版本 | v0.1 | ✅ 已发布（2026-04-19 收口，三层游戏化闭环完成） | [Plan/v0.1/](Plan/v0.1/) |
 
-**当前主线**：Phase 3 段位赛（已完成；当前处于“等待下一轮主线领取”状态）。
+> 版本命名与归档规则见 [Plan/README.md](Plan/README.md) §版本归档规则。本文件只呈现当前版本活跃信息；历史版本请进入对应 `Plan/vX.Y/` 目录。
+
+---
+
+## 当前阶段（v0.3）
+
+**阶段目标**：接入 Supabase 在线账号系统，实现跨设备数据同步。
+
+**主线**：邮箱 Magic Link 登录 + 本地优先后台同步 + 多设备冲突确定性合并（3 Phase：基建+认证 → 同步引擎 → UI+验收）。
 
 **当前状态**：
 
-- Phase 3 三层落盘已完成：Umbrella、实施级 Spec、实施子子计划均已落盘
-- **M1 已完工**（2026-04-19）：类型层 + 常量层 + `entry-gate.ts` 纯函数入场校验 + `match-state.ts` BO 状态机（含 §7.4 提前结束强制）+ `repository/local.ts` 迁移链（v2→v3，项目级原则落地）+ 段位赛最小 store。6 条项目级硬约束全部核验通过
-- **M2 已完工**（2026-04-19，同日收口）：抽题器（`question-picker.ts` 胜场游标 + 三桶分配 + 难度配额 + 交错混合）+ 自检钩子（`picker-validators.ts` 覆盖 Spec §5.7 五类硬约束）+ 段位赛答题流驳接（`store/index.ts::startRankMatchGame` 预生成题序；`endSession` 的 rank-match 分支调用 `handleGameFinished` 并通过新字段 `lastRankMatchAction` 供 UI 路由）。Spec §5.8 校验失败走 `PickerValidationError`，不允许静默降级
-- **M2 遗留补做已完工**（2026-04-19 同日独立 session）：
-  - `ISSUE-060`（P1）段位赛单局中途刷新恢复 —— 方案 A 变体 A2：`PracticeSession.rankQuestionQueue` + `mq_rank_match_sessions` 独立 key，分层恢复入口 `loadActiveRankMatch` + `resumeRankMatchGame`，一致性异常一律抛 `RankMatchRecoveryError` + 清 `activeSessionId`（Spec §5.8）
-  - `ISSUE-061`（P2）复习题错题频次加权 —— `distributeReviewTopics` 纯函数（窗口 N=50，保底 1 道/主题 + 余量原始错题次数最大余数法分配）
-  - M3 UI 作用域零触碰，UI 接入入口通过 store 方法暴露
-- **M3 已完工**（2026-04-19）：UI 三页（`RankMatchHub` / `RankMatchGameResult` / `RankMatchResult`）+ `RankBadge` 组件 + 三条路由注册（`useUIStore.currentPage`，Spec §8.3）+ `globals.css` 段位徽章色 CSS 变量（`--rank-*`，Spec §8.4）+ `Home.tsx` 独立段位赛入口卡片（活跃赛事/缺口提示/入场引导三态）+ `Practice.tsx` BO 进度徽标 + `endSession` 后路由到单局结算页 + 刷新恢复双层接入（`App.tsx` `loadActiveRankMatch` / `Practice.tsx` `resumeRankMatchGame`）。`RankMatchRecoveryError` 全链路显式路由回 Hub，无静默降级（Spec §5.8）
-- **M4 代码闭环已完成**（2026-04-19，同日完成）：M3 完工后首次 `npm run build` 暴露 5 个 build-only 报错（`tsc --noEmit` 不覆盖的 `erasableSyntaxOnly` 路径 + 未用 import），按用户决策归入 M4 验证项一并处理；拟真 QA 阶段以 Playwright 自写 E2E（`test-results/phase3-rank-match/m4-e2e.mjs`）走完整用户旅程，**22 条用例 / 0 FAIL / 0 RISK**，覆盖主路径（学徒→新秀 BO3 两连胜晋级）+ 失败复盘（连败走 MatchResult + 薄弱题型前 3）+ 刷新恢复（G-01 / G-03）；E2E 过程暴露并当场修复两个 P1 bug：`ISSUE-062`（Practice 早退位于 hooks 之前违反规则）、`ISSUE-063`（`startRankMatchGame` 找不到下一局 placeholder）。四栏报告：`test-results/phase3-rank-match/m4-user-qa-report.md`
-- **2026-04-19 开新号全量回归已复跑全绿**：`ISSUE-064` 修复后再次执行 `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs`。结果：Fresh 10/10 PASS，Advance 6/6 PASS，Rank 9/9 PASS；`D-07` 已恢复为“刷新后直达当前 `Practice`”，`D-08` 继续保持 PASS，`console critical total: 0`
-- **当前精确检查点**：`master@977933e`（`更新全量回归测试结果与问题修复记录`）；当前本地与 `origin/master` 对齐，可在另一台机器 `git pull` 后从同一状态继续
-- 工程基线当前口径：`npm run build` 绿，`vitest` **473/473**；`npm run lint` 仍有 **127 条 error**，属于现有基线债务，本轮如实记录在全量 QA 自动化报告中
-- 本阶段明确不做：A03+、A09、B/C/D
-- 当前开放问题与历史关闭项不在本页展开，统一看 `ISSUE_LIST.md`
-- 遗留开放项：晋级动画（M3 设计审查 m-3 漏网）按用户决策不入 `ISSUE_LIST`，Phase 3 上线后按真实反馈再评估；当前真正开放问题只剩 `ISSUE-059`（非当前主线）
+- ✅ BL-001 已正式纳入 v0.3，版本入口与实施计划已落盘
+- ✅ 设计规格与实施计划完成，按 `implementation-plan.md` 执行中
+- ✅ Phase 1（基建 + 认证）完成：Supabase 客户端、AuthStore、LoginPage、v3→v4 迁移均就绪（commit `da17015`）
+- ✅ Phase 2（同步引擎）完成 2026-04-24：`src/sync/*` 四件套 + Repository `markDirty` 桥接 + silent 写；`npm test` 34 files / 582 tests 全绿，`npm run build` 通过（commit 链 `a9a1866` → `77217c9` → `07d6bc5` → `684d536`）
+- ✅ Phase 3（UI + 验收）已完成并上线：账号同步 UI、首次登录合并、账号隔离、段位赛联网门控、同步韧性与 4 条 RISK 均已闭环；真实 Supabase 8 个验收剧本通过，记录见 [`Plan/v0.3/phases/phase-3-acceptance.md`](Plan/v0.3/phases/phase-3-acceptance.md)
+- ✅ v0.3 已发布到 GitHub Pages：主干 commit `f34dc38`，线上地址 [`https://wisalu1983-cell.github.io/math-quest/`](https://wisalu1983-cell.github.io/math-quest/)
+- ✅ 改动范围与已收工的 v0.2 解耦：v0.3 聚焦 auth / sync / Supabase，不回头改 v0.2 的生成器、Tips、历史记录主线
 
-**下一步**：明天继续时，不需要再补提交或补 Phase 3 收口文档；先按 `Overview.md` → `ISSUE_LIST.md` → `Plan/README.md` 复核当前状态，然后按已确认方向决定是否把“本地用户数据存档 / 账号系统前置数据模型”立为下一轮主线。`ISSUE-059` 仍保持开放，但维持低优先级，不抢下一轮主线。
+**入口**：
+- 设计规格：[`Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md`](Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md)
+- 实施计划：[`Plan/v0.3/implementation-plan.md`](Plan/v0.3/implementation-plan.md)
+- Phase 3 收口与真实 Supabase 验收：[`Plan/v0.3/phases/phase-3.md`](Plan/v0.3/phases/phase-3.md) · [`Plan/v0.3/phases/phase-3-acceptance.md`](Plan/v0.3/phases/phase-3-acceptance.md)
+- Backlog 来源：BL-001（已纳入 v0.3）
+
+**下一步**：做 v0.3 版本级收口决策。若不追加 v0.3 功能，按 `Plan/README.md` 版本归档规则抽取 `Plan/v0.3/00-overview.md` 快照，并切入下一版本规划；若线上观察到新问题，进入 `ISSUE_LIST.md` 或 `Backlog.md`。
+
+---
+
+## 上一版本收口（v0.2）
+
+**收口结论**：v0.2 已于 2026-04-23 收工。
+
+**收口事实**：
+
+- ✅ Phase 1~5 全部完成
+- ✅ `qa-leader` 三层全量 QA 已完成：Code Review / 自动化 / 拟真人工 QA 全部通过
+- ✅ 正式收口报告已归档：[`QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md`](../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)
+- ✅ 本轮遗留项已转入 Backlog：`BL-003` compare 概念题方法提示补证、`BL-004` Practice 答题页状态重置实现清理
 
 ---
 
 ## 权威入口
 
-### 执行入口
+### 版本活跃入口
 
-- 当前阶段主计划：[2026-04-16-open-backlog-consolidation.md](Plan/2026-04-16-open-backlog-consolidation.md)
-- 当前 Umbrella：[2026-04-18-subplan-4-next-stage-expansion.md](Plan/2026-04-18-subplan-4-next-stage-expansion.md)
-- 当前实施子子计划：[2026-04-18-rank-match-phase3-implementation.md](Plan/2026-04-18-rank-match-phase3-implementation.md)
+- 当前版本根目录：[Plan/v0.3/](Plan/v0.3/)
+- 当前版本入口：[Plan/v0.3/README.md](Plan/v0.3/README.md)
+- 当前实施计划：[Plan/v0.3/implementation-plan.md](Plan/v0.3/implementation-plan.md)
+- 当前设计规格：[Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md](Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md)
 
-### 规格入口
-
-- 当前实施级唯一入口：[2026-04-18-rank-match-phase3-implementation-spec.md](Specs/2026-04-18-rank-match-phase3-implementation-spec.md)
-- 规格导航总索引：[Specs/_index.md](Specs/_index.md)
-
-### 问题与历史
+### 全局管理入口
 
 - 开放问题权威源：[ISSUE_LIST.md](ISSUE_LIST.md)
-- 计划索引 / 模板 / 归档入口：[Plan/README.md](Plan/README.md)
+- 未激活候选 / 延期条目：[Backlog.md](Backlog.md)
+- 计划索引 / 模板 / 版本归档规则：[Plan/README.md](Plan/README.md)
+- 规格导航总索引：[Specs/_index.md](Specs/_index.md)
 - 复盘 / 历史机制记录：[Reports/](Reports/)
+
+### 历史版本
+
+- v0.2 版本归档：[Plan/v0.2/](Plan/v0.2/)（[README](Plan/v0.2/README.md) · [收口快照](Plan/v0.2/00-overview.md) · [QA 总结](../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)）
+- v0.1 版本归档：[Plan/v0.1/](Plan/v0.1/)（[README](Plan/v0.1/README.md) · [收口快照](Plan/v0.1/00-overview.md) · [已关闭 issue](Plan/v0.1/issues-closed.md)）
 
 ### 低频扩展
 

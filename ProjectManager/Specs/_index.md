@@ -1,6 +1,6 @@
 # Specs 规格矩阵（_index）
 
-> 版本：v1.5 | 创建：2026-04-17 | 上次修订：2026-04-19（删除维度 D；QA 方法论设计文档已迁移至 `E:/Projects/QALeader`）  
+> 版本：v1.10 | 创建：2026-04-17 | 上次修订：2026-04-24（维度 E 更新 v0.3 Supabase 账号同步规格状态与 Phase 3 开发文档入口）
 > 用途：**新计划启动前的必查清单**——按讨论维度定位已有规格，避免漏检历史约束。
 
 ## 为什么要这个文件
@@ -25,7 +25,7 @@
 
 | Spec | 状态 | 关键断言（关乎其他模块的最重要约束） |
 |------|------|-----------------------------------|
-| `2026-04-17-generator-redesign-v2.md` | **生效**（v2.1） | 8 个题型生成器的最新规格；档位分布、答题形式、陷阱策略 |
+| `2026-04-17-generator-redesign-v2.md` | **生效**（v2.2，含 2026-04-22 增补） | 8 个题型生成器的最新规格；Phase 4 已补充 A02 重设计与 C1 档内子梯度的引用优先级 |
 | `2026-04-16-generator-difficulty-tiering-spec.md` | **生效** | 三档难度定义主规格：基础档/提高档/挑战档的认知目标与边界 |
 | `2026-04-16-generator-subtype-difficulty-buckets.md` | 历史参考 | 实现导向的旧版子题型分档，已被 v2.1 替代；不作为产品分档主依据 |
 | `2026-04-14-difficulty-standard.md` | **生效** | `difficulty=5` 的锚点定义：上海五年级小学毕业生正常考试应做对 |
@@ -33,6 +33,9 @@
 | `2026-04-08-reference-bank-extraction-design.md` | 生效 | 真题库提取方法和覆盖策略 |
 | `2026-04-09-a03-block-b-design.md` | **生效（已落地）** | A03 VerticalCalcBoard 组件设计 |
 | `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 2026-04-18 二次重排后 A03+ 不进入代码实施；设计规格文件保留以备未来重启时参考；本阶段任何改动都**不得**再引用其作为生效规格 |
+| `2026-04-22-审题原则总则.md` | **生效** | A3 审题原则总则：审题步骤定义（A/B/B'/C/D）、双机制设计原则、适用题型矩阵；作为 4-2/4-3/4-4 设计依据 |
+| `2026-04-22-估算能力与基础技巧类排查.md` | **生效** | 4-2 产出：A02 各子题型"题型-技巧"映射表；estimate-basic prompt 格式变更（去掉精度指定 + ±15% 接受范围）；floor-ceil-basic 删除决策（选方案 B，扩情景池至 20 道）；F1 Tips 库可提炼内容边界 |
+| `2026-04-22-逆向推理A3回验.md` | **生效** | 4-3 产出：reverse-round 第 1 关回验 A3 机制一成立；hints 过度提示问题及改进方向；5 组 prompt 模板扩充；高档扩展路径（两位小数 + 最大最小差值题） |
 
 **本维度的跨系统硬约束**：
 - 所有新题型设计必须参考"档位定义主规格"`2026-04-16-generator-difficulty-tiering-spec.md`
@@ -60,10 +63,33 @@
 | `2026-04-14-ui-redesign-spec.md` | **生效**（阳光版 v5 已批准） | 全产品视觉语言 + 组件规范；字号下限 11px；关卡卡片固定 96px |
 | `2026-04-18-rank-match-phase3-implementation-spec.md` | **生效（实施级；2026-04-18 落盘）** | Phase 3 段位赛 UI 信息架构：新增 `/rank-match` / `/rank-match/session` / `/rank-match/game-result` / `/rank-match/match-result` 四个页面；Home 段位赛入口需独立卡片化（替代现有"进阶训练"里的占位文案）；段位徽标色需作为 token 进入 `globals.css`，不允许在组件里写死 |
 | `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 过程格错误提示 UI 方案本阶段不落地；文件保留以备未来重启时参考 |
+| `dev-tool-panel/2026-04-20-research-findings.md` | **进行中**（仅调研；规格未定） | `v0.2-1-1` 开发者工具栏的第 2 步调研事实清单；第 3 步方案设计尚未落盘 |
 
 **本维度的跨系统硬约束**：
 - 任何新增 UI 组件 / 页面必须遵守阳光版 v5 的色彩、字号、间距约定
 - 任何涉及题目渲染的改动（如新答题形式）必须评估是否突破 UI Spec 的卡片尺寸约束
+
+### 维度 D：工具 / 基建
+
+| Spec | 状态 | 关键断言 |
+|------|------|---------|
+| `2026-04-21-pm-sync-check-子目录适配修复.md` | **待实施** | pm-sync-check 脚本 4 处修复：Specs 子目录扫描覆盖（Check 1a/2）、Plan→Spec 引用解析（Check 4）、Backlog↔ISSUE_LIST ID 互斥（新 Check 6） |
+
+### 维度 E：在线服务 / 账号 / 同步
+
+| Spec | 状态 | 关键断言 |
+|------|------|---------|
+| `v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md` | **生效（v0.3 已上线，2026-04-24）** | Supabase Magic Link 登录 + 本地优先后台同步架构；5 张 Supabase 表（profiles / game_progress / history_records / rank_match_sessions / sync_metadata）+ RLS；合并策略：GameProgress 字段级 max/union、History 追加去重、RankMatch 状态优先级；段位赛必须联网启动；访客模式保留；本地存档 v3→v4 |
+| `v03-supabase-account-sync/2026-04-24-phase3-00-index.md` | **已实施（v0.3 Phase 3 收口，2026-04-24）** | Phase 3 开发文档总览；固定启动门控、首次登录合并、同步状态、账号隔离、段位赛联网、同步韧性、真实 Supabase 验收与 RISK 收口规则 |
+| `v03-supabase-account-sync/2026-04-24-phase3-01-startup-and-merge.md` | **已实施（v0.3 Phase 3，2026-04-24）** | SyncEngine `arm/start/shutdown` 三态门控；`hasMeaningfulLocalProgress`；首次登录本地/云端六场景；账号归属锁与账号不匹配保护 |
+| `v03-supabase-account-sync/2026-04-24-phase3-02-sync-status-ui.md` | **已实施（v0.3 Phase 3，2026-04-24）** | Home/Profile 同步状态展示；账号区；登出未同步保护；Onboarding 登录入口；持续离线时保持登录态 |
+| `v03-supabase-account-sync/2026-04-24-phase3-03-rank-match-online.md` | **已实施（v0.3 Phase 3，2026-04-24）** | 段位赛开始/下一局联网门控；Practice 离开自动 suspend；远端活跃段位赛 10 分钟接管；跨设备段位赛状态规则 |
+| `v03-supabase-account-sync/2026-04-24-phase3-04-resilience-qa.md` | **已实施（v0.3 Phase 3，2026-04-24）** | SyncEngine 指数退避与自愈触发器；RISK-3/RISK-4 测试补强；真实 Supabase 8 个验收剧本与收尾报告要求 |
+
+**本维度的跨系统硬约束**：
+- 任何新增持久化数据字段都需要同步更新合并策略（`src/sync/merge.ts`）
+- Repository 接口不变——Zustand stores 不感知同步存在
+- `CURRENT_VERSION` 递增必须注册对应 `migrateV{n}ToV{n+1}` 函数
 
 ---
 
@@ -89,3 +115,13 @@
 2. **废弃/替代一份 Spec**：必须把被替代的标 `历史参考`，并在"关键断言"里指向新规格文件。
 3. **修改一份 Spec 里的关键断言**：必须同步更新本索引里该行的"关键断言"摘要。
 4. **本索引自身修订**：每次修订在顶部"版本"行递增，便于回溯。
+
+## 路径兼容规则（2026-04-20 追加）
+
+配合 `Plan/README.md` §功能设计文档子目录规则（2026-04-20 生效），本索引的条目路径书写约定如下：
+
+- **老条目（2026-04-20 之前扁平放在 `Specs/` 根）**：继续写纯文件名（= 相对 `Specs/` 的相对路径），**不做回溯迁移**。例：`2026-04-17-generator-redesign-v2.md`
+- **新条目（2026-04-20 之后按功能子目录归档）**：写 `<feature-slug>/<YYYY-MM-DD-xxx>.md`（同样是相对 `Specs/` 的相对路径）。例：`dev-tool-panel/2026-04-20-research-findings.md`
+- **跨功能共用规格**（如全局难度标准、全产品视觉语言）：仍保留在 `Specs/` 根，沿用扁平写法
+
+本文件的三条维护规则对两种路径同时生效，不区分新老。

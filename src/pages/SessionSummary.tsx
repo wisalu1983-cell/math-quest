@@ -1,14 +1,29 @@
 // src/pages/SessionSummary.tsx
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useUIStore, useGameProgressStore } from '@/store';
 import { TOPICS } from '@/constants';
-import { TOPIC_STAR_CAP } from '@/constants/advance';
+import { TOPIC_STAR_CAP, STAR_THRESHOLDS_3, STAR_THRESHOLDS_5, ADVANCE_MAX_HEARTS } from '@/constants/advance';
 import { getStars, getStarProgress } from '@/engine/advance';
 import LoadingScreen from '@/components/LoadingScreen';
 import Hearts from '@/components/Hearts';
+import ConfettiEffect from '@/components/ConfettiEffect';
 import type { TopicId } from '@/types';
 
 // ─── 进阶结算视图 ───
+
+type HeartStep = { stars: number; progress: number; leveledUp: boolean };
+
+function computeHeartSteps(accBefore: number, heartsEarned: number, cap: 3 | 5): HeartStep[] {
+  const steps: HeartStep[] = [];
+  for (let i = 0; i < heartsEarned; i++) {
+    const acc = accBefore + i + 1;
+    const s = getStars(acc, cap);
+    const p = getStarProgress(acc, cap);
+    const prevStars = i === 0 ? getStars(Math.max(0, accBefore), cap) : steps[i - 1].stars;
+    steps.push({ stars: s, progress: p, leveledUp: s > prevStars });
+  }
+  return steps;
+}
 
 function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accuracy }: {
   topicId: TopicId;
@@ -17,96 +32,244 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
   totalCount: number;
   accuracy: number;
 }) {
-  const setPage = useUIStore(s => s.setPage);
+  const setPage      = useUIStore(s => s.setPage);
   const gameProgress = useGameProgressStore(s => s.gameProgress);
-  const cap = TOPIC_STAR_CAP[topicId];
-  const advProg = gameProgress?.advanceProgress[topicId] ?? null;
-  const currentStars = advProg ? getStars(advProg.heartsAccumulated, cap) : 0;
-  const progress = advProg;
-  const topic = TOPICS.find(t => t.id === topicId);
+  const cap          = TOPIC_STAR_CAP[topicId];
+  const advProg      = gameProgress?.advanceProgress[topicId] ?? null;
+  const topic        = TOPICS.find(t => t.id === topicId);
 
-  // 上一次的心数（结算前）
-  const heartsAccAfter  = progress?.heartsAccumulated ?? 0;
-  const heartsAccBefore = heartsAccAfter - heartsEarned;
-  const starsBefore = getStars(Math.max(0, heartsAccBefore), cap);
-  const starsAfter  = currentStars;
-  const leveled     = starsAfter > starsBefore;
+  const heartsAccAfter    = advProg?.heartsAccumulated ?? 0;
+  const heartsAccBefore   = heartsAccAfter - heartsEarned;
+  const starsBefore       = getStars(Math.max(0, heartsAccBefore), cap);
+  const starsAfter        = advProg ? getStars(heartsAccAfter, cap) : 0;
+  const starProgressBefore = getStarProgress(Math.max(0, heartsAccBefore), cap);
+  const starProgressAfter  = getStarProgress(heartsAccAfter, cap);
+  const thresholds        = cap === 3 ? STAR_THRESHOLDS_3 : STAR_THRESHOLDS_5;
+  const heartsNeeded      = starsAfter < cap ? thresholds[starsAfter] - heartsAccAfter : 0;
+  const steps             = computeHeartSteps(heartsAccBefore, heartsEarned, cap);
 
-  const starProgress = getStarProgress(heartsAccAfter, cap);
+  // ── animation state ──
+  const [displayStars,   setDisplayStars]   = useState(starsBefore);
+  const [displayProgress, setDisplayProgress] = useState(starProgressBefore);
+  const [withTransition, setWithTransition] = useState(true);
+  const [heartVisible,   setHeartVisible]   = useState(() => Array(heartsEarned).fill(false) as boolean[]);
+  const [heartSpent,     setHeartSpent]     = useState(() => Array(heartsEarned).fill(false) as boolean[]);
+  const [heartPulsing,   setHeartPulsing]   = useState(false);
+  const [bannerLeveled,  setBannerLeveled]  = useState(false);
+  const [showConfetti,   setShowConfetti]   = useState(false);
+  const [showDelta,      setShowDelta]      = useState(false);
+  const [bouncingStarIdx, setBouncingStarIdx] = useState<number | null>(null);
+
+  // ── refs ──
+  const heartRefs  = useRef<(HTMLSpanElement | null)[]>([]);
+  const trackRef   = useRef<HTMLDivElement>(null);
+  const progressRef = useRef(starProgressBefore);
+  const timers     = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  function addTimer(fn: () => void, ms: number) {
+    const id = setTimeout(fn, ms);
+    timers.current.push(id);
+    return id;
+  }
+
+  function setDP(value: number, transition = true) {
+    progressRef.current = value;
+    setWithTransition(transition);
+    setDisplayProgress(value);
+  }
+
+  function flyHeart(idx: number, onLand: () => void) {
+    const heartEl = heartRefs.current[idx];
+    const trackEl = trackRef.current;
+    if (!heartEl || !trackEl) { onLand(); return; }
+
+    const hr = heartEl.getBoundingClientRect();
+    const tr = trackRef.current!.getBoundingClientRect();
+    const fillRight = tr.left + progressRef.current * tr.width;
+    const fillMidY  = tr.top  + tr.height / 2;
+
+    // dim the source heart
+    setHeartSpent(prev => { const n = [...prev]; n[idx] = true; return n; });
+
+    const flier = document.createElement('div');
+    flier.setAttribute('data-mq-flier', '');
+    flier.style.cssText = `
+      position:fixed;
+      left:${hr.left + hr.width / 2 - 14}px;
+      top:${hr.top}px;
+      font-size:26px;
+      z-index:1001;
+      pointer-events:none;
+    `;
+    flier.textContent = '❤️';
+    document.body.appendChild(flier);
+
+    const dx = fillRight - (hr.left + hr.width / 2 - 14);
+    const dy = fillMidY  - (hr.top  + hr.height / 2);
+
+    const anim = flier.animate([
+      { transform: 'translate(0,0) scale(1)',                    opacity: 1 },
+      { transform: `translate(${dx * .25}px,-18px) scale(0.72)`, opacity: 1, offset: 0.3 },
+      { transform: `translate(${dx}px,${dy}px) scale(0.18)`,    opacity: 0 },
+    ], { duration: 420, easing: 'cubic-bezier(0.4,0,0.2,1)', fill: 'forwards' });
+
+    anim.onfinish = () => { flier.remove(); onLand(); };
+  }
+
+  useEffect(() => {
+    // Scene 1: hearts bounce in, 120 ms stagger
+    for (let i = 0; i < heartsEarned; i++) {
+      addTimer(() => {
+        setHeartVisible(prev => { const n = [...prev]; n[i] = true; return n; });
+      }, 500 + i * 120);
+    }
+
+    if (heartsEarned === 0) return;
+
+    const allEnteredAt = 500 + heartsEarned * 120;
+    addTimer(() => setHeartPulsing(true), allEnteredAt + 300);
+
+    // Scene 2: inject hearts one by one
+    function inject(idx: number) {
+      if (idx >= heartsEarned) {
+        addTimer(() => setShowDelta(true), 300);
+        return;
+      }
+
+      setHeartPulsing(false);
+      const step = steps[idx];
+
+      flyHeart(idx, () => {
+        if (step.leveledUp) {
+          // fill to 100% first
+          setDP(1.0);
+          addTimer(() => {
+            // star bounces into gold
+            setDisplayStars(step.stars);
+            setBouncingStarIdx(step.stars - 1);
+            addTimer(() => setBouncingStarIdx(null), 450);
+
+            setShowConfetti(true);
+            setBannerLeveled(true);
+            addTimer(() => setShowConfetti(false), 2500);
+
+            // instant-reset progress bar, then grow to new segment
+            addTimer(() => {
+              setDP(0, false);
+              requestAnimationFrame(() => requestAnimationFrame(() => {
+                setDP(step.progress, true);
+                addTimer(() => inject(idx + 1), 850);
+              }));
+            }, 500);
+          }, 380);
+        } else {
+          setDP(step.progress);
+          addTimer(() => inject(idx + 1), 650);
+        }
+      });
+    }
+
+    addTimer(() => inject(0), allEnteredAt + 550);
+
+    return () => {
+      timers.current.forEach(clearTimeout);
+      document.querySelectorAll('[data-mq-flier]').forEach(el => el.remove());
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-dvh bg-bg flex flex-col items-center justify-center safe-top px-4">
-      <div className="max-w-sm w-full text-center space-y-5">
+      <div className="max-w-sm w-full text-center space-y-3">
 
-        {/* Banner */}
-        <div className={`py-7 rounded-3xl border-2 stagger-1 ${
-          heartsEarned > 0
-            ? 'bg-success-lt border-success-mid'
-            : 'bg-card border-border-2'
+        {/* Banner — compact horizontal */}
+        <div className={`py-3.5 px-5 rounded-2xl border-2 stagger-1 text-center
+          transition-[background-color,border-color] duration-500 ${
+          bannerLeveled
+            ? 'bg-warning-lt border-warning'
+            : heartsEarned > 0
+              ? 'bg-success-lt border-success-mid'
+              : 'bg-card border-border-2'
         }`}>
-          <div className="text-5xl mb-3">
-            {heartsEarned === 3 ? '🎉' : heartsEarned >= 1 ? '💪' : '😅'}
-          </div>
-          <h1 className="text-[22px] font-black">
-            {heartsEarned > 0 ? '练习完成！' : '白练一局，继续加油！'}
-          </h1>
-          <p className="text-text-2 text-sm font-bold mt-1.5">
-            {topic?.name ?? '进阶训练'} · 进阶模式
-          </p>
-        </div>
-
-        {/* 心数投入 */}
-        <div className="bg-card rounded-2xl border-2 border-border-2 p-4 stagger-2"
-             style={{ boxShadow: '0 1px 5px rgba(0,0,0,.07)' }}>
-          <p className="text-xs font-bold text-text-2 mb-2">本次投入进度</p>
-          <div className="flex items-center justify-center gap-2">
-            <Hearts count={heartsEarned} />
-            <span className="text-lg font-black text-primary">+{heartsEarned} ❤️</span>
+          <div className="inline-flex items-center gap-3">
+            <span className="text-4xl leading-none">
+              {bannerLeveled ? '🌟' : heartsEarned === 3 ? '🎉' : heartsEarned >= 1 ? '💪' : '😅'}
+            </span>
+            <div className="text-left">
+              <p className="text-[18px] font-black leading-tight">
+                {bannerLeveled ? '升星啦！' : heartsEarned > 0 ? '练习完成！' : '白练一局，继续加油！'}
+              </p>
+              <p className="text-text-2 text-xs font-bold mt-0.5">
+                {topic?.name ?? '进阶训练'} · 进阶模式
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* 星级进度 */}
+        <ConfettiEffect active={showConfetti} />
+
+        {/* 合并进阶进度卡片：星星行 + 心行 + 进度条 */}
         <div className="bg-card rounded-2xl border-2 border-border-2 p-4 stagger-2"
              style={{ boxShadow: '0 1px 5px rgba(0,0,0,.07)' }}>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-bold text-text-2">星级进度</p>
-            {leveled && (
-              <span className="text-xs font-black text-warning bg-warning/10 px-2 py-0.5 rounded-full">
-                ✨ 升星！
-              </span>
-            )}
-          </div>
 
-          {/* 星星 */}
-          <div className="flex justify-center gap-1 mb-3">
+          {/* Stars */}
+          <div className="flex justify-center gap-1.5 mb-4">
             {Array.from({ length: cap }).map((_, i) => (
               <span
                 key={i}
-                className={`text-2xl transition-all duration-300 ${
-                  i < starsAfter ? 'text-warning' : 'text-border-2'
-                } ${leveled && i === starsAfter - 1 ? 'scale-125' : ''}`}
-              >
-                ★
-              </span>
+                className={`text-[30px] leading-none transition-colors duration-300 ${
+                  i < displayStars ? 'text-warning' : 'text-border-2'
+                } ${bouncingStarIdx === i ? 'animate-star-bounce' : ''}`}
+              >★</span>
             ))}
           </div>
 
-          {/* 进度条 */}
+          {/* Hearts */}
+          {heartsEarned > 0 && (
+            <div className="flex justify-center gap-3.5 mb-4">
+              {Array.from({ length: heartsEarned }).map((_, i) => (
+                <span
+                  key={i}
+                  ref={el => { heartRefs.current[i] = el; }}
+                  className={`text-[28px] leading-none transition-[opacity,transform] duration-300 ${
+                    heartSpent[i]
+                      ? 'opacity-15 scale-50'
+                      : heartVisible[i]
+                        ? `opacity-100 scale-100 ${heartPulsing ? 'animate-bounce-rec' : ''}`
+                        : 'opacity-0 scale-0'
+                  }`}
+                >❤️</span>
+              ))}
+            </div>
+          )}
+
+          {/* Progress bar */}
           {starsAfter < cap && (
-            <div className="space-y-1">
-              <div className="h-2 bg-border-2 rounded-full overflow-hidden">
+            <div className="space-y-1.5">
+              <div ref={trackRef} className="h-2.5 bg-border-2 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-warning rounded-full transition-all duration-700"
-                  style={{ width: `${Math.round(starProgress * 100)}%` }}
+                  className={`h-full bg-warning rounded-full ${
+                    withTransition ? 'transition-[width] duration-500 ease-out' : ''
+                  }`}
+                  style={{ width: `${Math.round(displayProgress * 100)}%` }}
                 />
               </div>
-              <p className="text-[12px] text-text-2 text-right">
-                {Math.round(starProgress * 100)}% → {starsAfter + 1}★
+              <p className={`text-[11px] text-text-2 text-center transition-opacity duration-500 ${
+                showDelta ? 'opacity-100' : 'opacity-0'
+              }`}>
+                {starsBefore}★ {Math.round(starProgressBefore * 100)}% → {starsAfter}★ {Math.round(starProgressAfter * 100)}%
               </p>
             </div>
           )}
           {starsAfter >= cap && (
             <p className="text-xs font-bold text-warning text-center">已达满级 🏆</p>
+          )}
+
+          {/* 心→星简注 */}
+          {heartsNeeded > 0 && (
+            <p className="text-[11px] text-text-2 text-center mt-2.5">
+              每局最多+{ADVANCE_MAX_HEARTS} ❤️，还差 {heartsNeeded}❤️升到{starsAfter + 1}★
+            </p>
           )}
         </div>
 
@@ -119,25 +282,19 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
           </div>
           <div className="bg-card rounded-2xl p-4 border-2 border-border-2"
                style={{ boxShadow: '0 1px 5px rgba(0,0,0,.07)' }}>
-            <div className={`text-2xl font-black ${accuracy >= 80 ? 'text-success' : accuracy >= 60 ? 'text-primary' : 'text-warning'}`}>
-              {accuracy}%
-            </div>
+            <div className={`text-2xl font-black ${
+              accuracy >= 80 ? 'text-success' : accuracy >= 60 ? 'text-primary' : 'text-warning'
+            }`}>{accuracy}%</div>
             <div className="text-xs font-bold text-text-2 mt-1">正确率</div>
           </div>
         </div>
 
         {/* 操作按钮 */}
         <div className="space-y-3 stagger-3">
-          <button
-            onClick={() => setPage('advance-select')}
-            className="btn-flat w-full"
-          >
+          <button onClick={() => setPage('advance-select')} className="btn-flat w-full">
             再来一局 ▶
           </button>
-          <button
-            onClick={() => setPage('home')}
-            className="btn-secondary w-full"
-          >
+          <button onClick={() => setPage('home')} className="btn-secondary w-full">
             回首页
           </button>
         </div>

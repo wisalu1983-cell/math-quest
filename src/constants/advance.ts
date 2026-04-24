@@ -57,18 +57,19 @@ export function randDifficultyInTier(tier: DifficultyTier): number {
 // 每行：[fractionalStars, normal%, hard%, demon%]
 // 对 5★ 题型使用全部 6 行；对 3★ 题型使用前 4 行（demon 永远为 0）
 
+// v0.2 方向A调整：0★/1★/2★ 档将 Normal 比例大幅压缩，让通关高难度后进阶起步即有挑战性
 export const TIER_WEIGHT_BREAKPOINTS_5STAR: ReadonlyArray<[number, number, number, number]> = [
-  [0, 100, 0,   0],
-  [1, 60,  40,  0],
-  [2, 20,  80,  0],
+  [0, 40,  60,  0],
+  [1, 20,  80,  0],
+  [2, 0,   100, 0],
   [3, 0,   80,  20],
   [4, 0,   50,  50],
   [5, 0,   10,  90],
 ];
 
 export const TIER_WEIGHT_BREAKPOINTS_3STAR: ReadonlyArray<[number, number, number, number]> = [
-  [0, 100, 0,   0],
-  [1, 60,  40,  0],
-  [2, 20,  80,  0],
+  [0, 40,  60,  0],
+  [1, 20,  80,  0],
+  [2, 0,   100, 0],
   [3, 0,   100, 0],
 ];

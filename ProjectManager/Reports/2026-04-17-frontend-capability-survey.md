@@ -1,7 +1,7 @@
 # 前端能力调查报告（生成器 v2.1 阶段 1）
 
 > 创建：2026-04-17  
-> 对应计划：`Plan/2026-04-17-generator-redesign-v2-implementation.md` 阶段 1  
+> 对应计划：`Plan/v0.1/2026-04-17-generator-redesign-v2-implementation.md` 阶段 1  
 > 状态：✅ 完成  
 > 方法：仓库只读调查（依赖清单、类型定义、Practice 页、Store、生成器引用）
 

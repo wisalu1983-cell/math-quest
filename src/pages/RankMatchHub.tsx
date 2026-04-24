@@ -7,11 +7,16 @@ import { useUIStore, useSessionStore, useGameProgressStore } from '@/store';
 import { useRankMatchStore, RankMatchRecoveryError } from '@/store/rank-match';
 import { isTierUnlocked, getTierGaps } from '@/engine/rank-match/entry-gate';
 import { getCurrentGameIndex } from '@/engine/rank-match/match-state';
+import {
+  getRankMatchTakeoverState,
+  getTakeoverMinutesLeft,
+} from '@/engine/rank-match/takeover-policy';
 import { RANK_BEST_OF, RANK_WINS_TO_ADVANCE, TIER_LABEL, TIER_ORDER, type ChallengeableTier } from '@/constants/rank-match';
 import { TOPICS } from '@/constants';
 import RankBadge from '@/components/RankBadge';
 import BottomNav from '@/components/BottomNav';
 import Dialog from '@/components/Dialog';
+import { useOnlineStatus } from '@/hooks/useOnlineStatus';
 import type { RankTier } from '@/types/gamification';
 
 const TIER_DESC: Record<RankTier, string> = {
@@ -25,10 +30,19 @@ const TIER_DESC: Record<RankTier, string> = {
 export default function RankMatchHub() {
   const { setPage } = useUIStore();
   const { startRankMatchGame, resumeRankMatchGame } = useSessionStore();
-  const { activeRankSession, startRankMatch, reactivateSuspendedMatch, cancelActiveMatch } = useRankMatchStore();
+  const {
+    activeRankSession,
+    startedInThisSession,
+    markAsStartedInThisSession,
+    startRankMatch,
+    reactivateSuspendedMatch,
+    cancelActiveMatch,
+  } = useRankMatchStore();
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
+  const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const online = useOnlineStatus();
 
   const rankProgress = gameProgress?.rankProgress;
   const advanceProgress = gameProgress?.advanceProgress ?? {};
@@ -36,6 +50,10 @@ export default function RankMatchHub() {
 
   function handleStartChallenge(tier: Exclude<RankTier, 'apprentice'>) {
     setErrorMsg(null);
+    if (!online) {
+      setErrorMsg('段位赛需要联网才能进行');
+      return;
+    }
     try {
       const session = startRankMatch(tier as ChallengeableTier);
       startRankMatchGame(session.id, 1);
@@ -67,11 +85,17 @@ export default function RankMatchHub() {
           throw new Error(`找不到第 ${currentIdx} 局的 PracticeSession`);
         }
         resumeRankMatchGame(targetGame.practiceSessionId);
+        markAsStartedInThisSession(activeRankSession.id);
         setPage('practice');
       } else {
+        if (!online) {
+          setErrorMsg('段位赛需要联网才能开始下一局');
+          return;
+        }
         // 局间：开始下一局
         const nextIdx = activeRankSession.games.length + 1;
         startRankMatchGame(activeRankSession.id, nextIdx);
+        markAsStartedInThisSession(activeRankSession.id);
         setPage('practice');
       }
     } catch (e) {
@@ -85,6 +109,11 @@ export default function RankMatchHub() {
   function handleRestartMatch() {
     setErrorMsg(null);
     if (!activeRankSession) return;
+    if (!online) {
+      setErrorMsg('段位赛需要联网才能重新开始');
+      setShowRestartConfirm(false);
+      return;
+    }
     const targetTier = activeRankSession.targetTier;
     try {
       cancelActiveMatch();
@@ -98,11 +127,75 @@ export default function RankMatchHub() {
     }
   }
 
+  function handleTakeoverMatch() {
+    setErrorMsg(null);
+    if (!activeRankSession) return;
+
+    try {
+      const currentIdx = getCurrentGameIndex(activeRankSession);
+      if (currentIdx !== undefined) {
+        const targetGame = activeRankSession.games.find(g => g.gameIndex === currentIdx);
+        if (!targetGame) {
+          throw new Error(`找不到第 ${currentIdx} 局的 PracticeSession`);
+        }
+        resumeRankMatchGame(targetGame.practiceSessionId);
+        markAsStartedInThisSession(activeRankSession.id);
+        setPage('practice');
+        return;
+      }
+
+      if (!online) {
+        setErrorMsg('段位赛需要联网才能开始下一局');
+        return;
+      }
+
+      const nextIdx = activeRankSession.games.length + 1;
+      startRankMatchGame(activeRankSession.id, nextIdx);
+      markAsStartedInThisSession(activeRankSession.id);
+      setPage('practice');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : '接管挑战失败，请稍后重试');
+    }
+  }
+
+  function handleAbandonActiveMatch() {
+    setErrorMsg(null);
+    try {
+      cancelActiveMatch();
+      setShowAbandonConfirm(false);
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : '放弃挑战失败，请稍后重试');
+      setShowAbandonConfirm(false);
+    }
+  }
+
   // 活跃赛事优先展示
   if (activeRankSession && !activeRankSession.outcome) {
     const currentIdx = getCurrentGameIndex(activeRankSession);
     const wins = activeRankSession.games.filter(g => g.finished && g.won).length;
     const losses = activeRankSession.games.filter(g => g.finished && !g.won).length;
+    const takeoverState = getRankMatchTakeoverState({
+      session: activeRankSession,
+      startedInThisSession,
+      now: Date.now(),
+    });
+    const isAnotherDeviceActive = takeoverState === 'another-device-active';
+    const isStaleActiveTakeoverable = takeoverState === 'stale-active-takeoverable';
+    const minutesLeft = getTakeoverMinutesLeft(activeRankSession, Date.now());
+    const statusLabel = activeRankSession.status === 'suspended'
+      ? '中断中的挑战'
+      : isAnotherDeviceActive
+        ? '另一台设备正在进行中'
+        : isStaleActiveTakeoverable
+          ? '可在本设备接管'
+          : '正在挑战';
+    const statusSub = activeRankSession.status === 'suspended'
+      ? '已保留当前挑战进度，可继续或放弃重开'
+      : isAnotherDeviceActive
+        ? `检测到另一台设备正在挑战，约 ${minutesLeft} 分钟后可在本设备接管`
+        : isStaleActiveTakeoverable
+          ? '这场挑战超过 10 分钟无响应，本设备可接管继续'
+          : `${wins}胜 ${losses}负 · 需${activeRankSession.winsToAdvance}胜晋级`;
 
     return (
       <div className="min-h-dvh bg-bg pb-[88px] safe-top">
@@ -118,15 +211,13 @@ export default function RankMatchHub() {
               <RankBadge tier={activeRankSession.targetTier} size="lg" showLabel />
               <div className="flex-1">
                 <div className="text-[13px] font-bold text-text-2 mb-0.5">
-                  {activeRankSession.status === 'suspended' ? '中断中的挑战' : '正在挑战'}
+                  {statusLabel}
                 </div>
                 <div className="text-[17px] font-black text-text">
                   {TIER_LABEL[activeRankSession.targetTier]} BO{activeRankSession.bestOf}
                 </div>
                 <div className="text-[12px] text-text-2 mt-0.5">
-                  {activeRankSession.status === 'suspended'
-                    ? '已保留当前挑战进度，可继续或放弃重开'
-                    : `${wins}胜 ${losses}负 · 需${activeRankSession.winsToAdvance}胜晋级`}
+                  {statusSub}
                 </div>
               </div>
             </div>
@@ -150,7 +241,39 @@ export default function RankMatchHub() {
               ))}
             </div>
 
-            {activeRankSession.status === 'suspended' ? (
+            {isAnotherDeviceActive ? (
+              <div className="flex flex-col gap-3">
+                <p className="text-[13px] text-text-2">
+                  这场挑战正在另一台设备上进行。等待对方结束，或稍后在本设备接管继续。
+                </p>
+                <button
+                  onClick={() => setShowAbandonConfirm(true)}
+                  className="w-full btn-secondary rounded-2xl text-center"
+                >
+                  放弃这局挑战
+                </button>
+              </div>
+            ) : isStaleActiveTakeoverable ? (
+              <div className="flex flex-col gap-3">
+                <p className="text-[13px] text-text-2">
+                  这场挑战在另一台设备上超过 10 分钟无响应，本设备可接管继续。
+                </p>
+                <button
+                  onClick={handleTakeoverMatch}
+                  className="w-full btn-flat rounded-2xl text-center disabled:opacity-45"
+                  disabled={!online && currentIdx === undefined}
+                >
+                  {currentIdx !== undefined ? `继续第 ${currentIdx} 局` : '开始下一局'}
+                </button>
+                <button
+                  onClick={() => setShowRestartConfirm(true)}
+                  className="w-full btn-secondary rounded-2xl text-center disabled:opacity-45"
+                  disabled={!online}
+                >
+                  放弃，重新开始
+                </button>
+              </div>
+            ) : activeRankSession.status === 'suspended' ? (
               <div className="flex flex-col gap-3">
                 <button
                   onClick={handleResumeMatch}
@@ -168,7 +291,8 @@ export default function RankMatchHub() {
             ) : (
               <button
                 onClick={handleResumeMatch}
-                className="w-full btn-flat rounded-2xl text-center"
+                className="w-full btn-flat rounded-2xl text-center disabled:opacity-45"
+                disabled={!online && currentIdx === undefined}
               >
                 {currentIdx !== undefined ? `继续第 ${currentIdx} 局` : '开始下一局'}
               </button>
@@ -178,6 +302,11 @@ export default function RankMatchHub() {
           {errorMsg && (
             <div className="p-3 bg-danger-lt rounded-xl border border-danger/30 text-[13px] text-danger font-semibold">
               {errorMsg}
+            </div>
+          )}
+          {!online && (
+            <div className="mt-3 p-3 bg-warning-lt rounded-xl border border-warning/30 text-[13px] text-warning font-semibold">
+              当前离线，段位赛需要联网才能开始新一局或重新开始。
             </div>
           )}
         </div>
@@ -201,6 +330,29 @@ export default function RankMatchHub() {
               onClick={handleRestartMatch}
             >
               确认重开
+            </button>
+          </div>
+        </Dialog>
+        <Dialog
+          open={showAbandonConfirm}
+          onClose={() => setShowAbandonConfirm(false)}
+          title="放弃这局挑战？"
+        >
+          <p className="text-sm text-text-2 mb-4">
+            这会把当前段位赛标记为已放弃，并同步到账号的其它设备。
+          </p>
+          <div className="flex gap-3">
+            <button
+              className="btn-secondary flex-1"
+              onClick={() => setShowAbandonConfirm(false)}
+            >
+              返回
+            </button>
+            <button
+              className="btn-flat flex-1"
+              onClick={handleAbandonActiveMatch}
+            >
+              确认放弃
             </button>
           </div>
         </Dialog>
@@ -228,6 +380,12 @@ export default function RankMatchHub() {
         {errorMsg && (
           <div className="mb-4 p-3 bg-danger-lt rounded-xl border border-danger/30 text-[13px] text-danger font-semibold">
             {errorMsg}
+          </div>
+        )}
+
+        {!online && (
+          <div className="mb-4 p-3 bg-warning-lt rounded-xl border border-warning/30 text-[13px] text-warning font-semibold">
+            当前离线，段位赛需要联网才能进行。恢复网络后可开始挑战。
           </div>
         )}
 
@@ -270,8 +428,9 @@ export default function RankMatchHub() {
                 {unlocked && (
                   <button
                     onClick={() => handleStartChallenge(cTier)}
-                    className="shrink-0 px-4 py-2 rounded-2xl text-[13px] font-black text-white"
-                    style={{ background: `var(--rank-${tier})` }}
+                    disabled={!online}
+                    className="shrink-0 px-4 py-2 rounded-2xl text-[13px] font-black text-white disabled:opacity-45"
+                    style={{ background: online ? `var(--rank-${tier})` : 'var(--color-border)' }}
                     aria-label={`挑战${TIER_LABEL[tier]}段位`}
                   >
                     挑战

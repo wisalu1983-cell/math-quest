@@ -36,86 +36,79 @@ export function getSubtypeEntries(_difficulty: number): SubtypeDef[] {
 
 // ---------------------------------------------------------------------------
 // 估算 (estimate)
-//   低档：一步凑整（加减），取整十/整百
-//   中档：含乘法 + 方向判断（偏大/偏小）
-//   高档：多式估算比较 + 现实取整情境
+//   基础估算：自选凑整路径，结果按合理区间校验
+//   方向判断：估算结果相对精确值偏大 / 偏小
+//   情境估算：现实语境下判断进一法 / 去尾法
 // ---------------------------------------------------------------------------
 
-/** 估算取整精度：至多到最大位数小一位（4 位数→百，3 位数→十） */
-function getEstimatePlace(n: number): number {
-  const abs = Math.abs(n);
-  const digits = abs < 10 ? 1 : abs < 100 ? 2 : abs < 1000 ? 3 : abs < 10000 ? 4 : 5;
-  // 最大位的量级
-  const maxPlace = Math.pow(10, digits - 1); // 3位数→100, 4位数→1000
-  // 允许的精度范围：从 maxPlace/10 到 maxPlace（即小一位到同位）
-  const candidates: number[] = [];
-  const minPlace = Math.max(10, maxPlace / 10);
-  for (let p = minPlace; p <= maxPlace; p *= 10) candidates.push(p);
-  if (candidates.length === 0) return 10;
-  return candidates[randInt(0, candidates.length - 1)];
-}
-
 function generateEstimateBasic(difficulty: number, id: string): Question {
-  const ops: ('+' | '-' | '×')[] = difficulty <= 5 ? ['+', '-'] : ['+', '-', '×'];
-  const op = pick(ops);
-  const max = difficulty <= 5 ? 500 : difficulty <= 7 ? 5000 : 50000;
+  // 乘法为主（≥70%），d=2 仍以加减为主（入门级），d≥3 起乘法主导
+  const isMul = difficulty <= 2 ? Math.random() < 0.3 : Math.random() < 0.70;
+  const op: '+' | '-' | '×' = isMul ? '×' : (Math.random() < 0.5 ? '+' : '-');
 
-  // 难度梯度：控制精确值在取整区间内的偏向程度
-  // bias = 精确值落在区间 [roundDown, roundUp] 中偏向一端的程度
-  // 低档(d≤5): 90% 区间（靠近某一端），中档(d6-7): 70%，高档(d≥8): 50%
-  const biasRange = difficulty <= 5 ? 0.90 : difficulty <= 7 ? 0.70 : 0.50;
+  let exact = 0;
+  let expression = '';
 
-  let exact: number = 0;
-  let expression: string = '';
-
-  for (let attempt = 0; attempt < 50; attempt++) {
-    let a = randInt(10, max);
-    let b = randInt(10, max);
-    switch (op) {
-      case '+': exact = a + b; expression = `${a} + ${b}`; break;
-      case '-': {
-        if (a < b) [a, b] = [b, a];
-        exact = a - b;
-        if (exact < 10) { exact = a + b; expression = `${a} + ${b}`; }
-        else { expression = `${a} - ${b}`; }
-        break;
+  if (op === '×') {
+    // 优先选有自然凑整路径的数字组合：接近整数的小数、近百/近十整数
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const style = randInt(0, 2);
+      let a: number, b: number;
+      if (style === 0) {
+        // 接近整数的小数 × 小整数（如 4.99 × 3, 19.8 × 5）
+        const base = randInt(2, difficulty <= 5 ? 15 : 50);
+        const offset = pick([-0.01, -0.02, 0.01, 0.02, -0.1, 0.1, -0.2, 0.2] as const);
+        a = Math.round((base + offset) * 100) / 100;
+        b = randInt(2, difficulty <= 5 ? 9 : 20);
+      } else if (style === 1) {
+        // 近百/近十整数 × 单位数（如 199 × 6, 305 × 4）
+        const base = randInt(1, difficulty <= 5 ? 9 : 50) * (difficulty <= 5 ? 100 : randInt(1, 2) === 1 ? 100 : 10);
+        const delta = pick([-2, -1, 1, 2, -5, 5] as const);
+        a = base + delta;
+        b = randInt(2, difficulty <= 5 ? 9 : 25);
+      } else {
+        // 两位数 × 两位数（如 23 × 48）
+        a = randInt(difficulty <= 5 ? 20 : 20, difficulty <= 5 ? 60 : 200);
+        b = randInt(difficulty <= 5 ? 20 : 20, difficulty <= 5 ? 60 : 200);
       }
-      case '×': {
-        a = randInt(10, difficulty <= 7 ? 99 : 999);
-        b = randInt(2, difficulty <= 7 ? 20 : 99);
-        exact = a * b; expression = `${a} × ${b}`; break;
-      }
+      exact = Math.round(a * b * 1000) / 1000;
+      expression = `${a} × ${b}`;
+      if (exact > 0) break;
     }
-
-    const place = getEstimatePlace(exact);
-    const roundDown = Math.floor(exact / place) * place;
-    const fraction = (exact - roundDown) / place; // 0~1 之间
-    // 偏向度：fraction 离 0 或 1 的最小距离占 place 的比例
-    const edgeDist = Math.min(fraction, 1 - fraction);
-    // edgeDist < biasRange/2 表示在允许范围内（越大越靠中间越难）
-    if (edgeDist <= biasRange / 2) break;
+  } else {
+    // 加减法：限三位数以上操作数（两位数加减估算意义极低）
+    const min = 100;
+    const max = difficulty <= 5 ? 999 : 9999;
+    let a = randInt(min, max);
+    let b = randInt(min, max);
+    if (op === '-') {
+      if (a < b) [a, b] = [b, a];
+      exact = a - b;
+      if (exact < 50) { exact = a + b; expression = `${a} + ${b}`; }
+      else { expression = `${a} − ${b}`; }
+    } else {
+      exact = a + b;
+      expression = `${a} + ${b}`;
+    }
   }
 
-  const place = getEstimatePlace(exact);
-  const placeNames: Record<number, string> = { 1: '个', 10: '十', 100: '百', 1000: '千', 10000: '万' };
-  const placeName = placeNames[place] ?? String(place);
-
-  const roundDown = Math.floor(exact / place) * place;
-  const roundUp = roundDown + place;
-  const closest = (exact - roundDown <= roundUp - exact) ? roundDown : roundUp;
+  // 乘法接受 ±15%，加减法接受 ±10%
+  const tolerance = op === '×' ? 0.15 : 0.10;
+  const lo = Math.round(exact * (1 - tolerance));
+  const hi = Math.round(exact * (1 + tolerance));
 
   return {
     id,
     topicId: 'number-sense',
     type: 'numeric-input',
     difficulty,
-    prompt: `估算 ${expression}，结果取整${placeName}数`,
-    data: { kind: 'number-sense', subtype: 'estimate' },
+    prompt: `估算 ${expression}，大约是多少？`,
+    data: { kind: 'number-sense', subtype: 'estimate', tolerance },
     solution: {
-      answer: closest,
-      explanation: `${expression} = ${exact}，最接近的整${placeName}数是 ${closest}`,
+      answer: exact,
+      explanation: `${expression} = ${exact}，合理估算范围 ${lo} ~ ${hi}`,
     },
-    hints: [`把每个数四舍五入到${placeName}位再计算`],
+    hints: ['把每个数凑到最近的整数/整十/整百，再计算'],
     xpBase: 10 + (difficulty - 1) * 5,
   };
 }
@@ -180,6 +173,31 @@ function generateEstimateRealContext(difficulty: number, id: string): Question {
       answer: 4,
       explanation: '5 ÷ 1.2 ≈ 4.17，只能算完整沙发套（去尾法）→ 4',
     },
+    {
+      prompt: '每个空瓶可以装 2.5 千克色拉油，王老师要把 25.5 千克色拉油装满瓶子，至少需要几个瓶子？',
+      answer: 11,
+      explanation: '25.5÷2.5=10.2，剩余需要再多一个瓶（进一法）→ 11',
+    },
+    {
+      prompt: '每 0.85 千克曲奇饼干装成 1 盒，蛋糕店有 15.4 千克曲奇饼干，至少需要几个盒子才能装完？',
+      answer: 19,
+      explanation: '15.4÷0.85≈18.12，剩余需要再多一个盒子（进一法）→ 19',
+    },
+    {
+      prompt: '美心蛋糕房每个生日蛋糕需要 0.32 千克面粉，李师傅领了 4 千克面粉，最多可以做几个生日蛋糕？',
+      answer: 12,
+      explanation: '4÷0.32=12.5，只能做完整个（去尾法）→ 12',
+    },
+    {
+      prompt: '李老师带 50 元钱去买圆珠笔，每支圆珠笔 1.4 元，最多能买几支？',
+      answer: 35,
+      explanation: '50÷1.4≈35.71，钱不够就不能买（去尾法）→ 35',
+    },
+    {
+      prompt: '50 千克油要装进油桶，每个油桶最多装 3 千克，至少需要几个油桶才能把油全部装完？',
+      answer: 17,
+      explanation: '50÷3≈16.67，剩余油也需要一个桶（进一法）→ 17',
+    },
   ];
   const sel = pick(pool);
   return {
@@ -199,10 +217,27 @@ function generateEstimate(difficulty: number, id: string): Question {
     return generateEstimateBasic(difficulty, id);
   }
   if (difficulty >= 6) {
-    // 中档：40% 方向判断 / 60% 含乘法估算
+    // 中档 d=6~7：
+    // d=7: 多式估算比较；现实取整情境（进一/去尾 vs 四舍五入对比）
+    if (difficulty >= 7) {
+      if (Math.random() < 0.5) return generateEstimateRealContext(difficulty, id);
+    }
+    // d=6: 含乘法的较复杂估算
     if (Math.random() < 0.4) return generateEstimateDirection(difficulty, id);
     return generateEstimateBasic(difficulty, id);
   }
+  if (difficulty >= 4) {
+    // 档1-高 (d=4~5)：含乘法的估算 + 方向判断
+    if (Math.random() < 0.3) return generateEstimateDirection(difficulty, id);
+    return generateEstimateBasic(difficulty, id);
+  }
+  // 档1-低 (d=2~3)：d=2 只有加减，d=3 开始包含乘法
+  if (difficulty <= 2) {
+    // d=2: 严格只用加减法估算
+    return generateEstimateBasic(difficulty, id);
+  }
+  // d=3: 25% 方向判断（含乘法方向），75% 基础估算（ops 包含 ×）
+  if (Math.random() < 0.25) return generateEstimateDirection(difficulty, id);
   return generateEstimateBasic(difficulty, id);
 }
 
@@ -224,17 +259,22 @@ function generateRoundBasic(difficulty: number, id: string): Question {
   if (numMax >= 10000) validPlaces.push(10000);
   const place = pick(validPlaces);
 
-  let num: number;
+  let num = randInt(100, numMax);
+  let answer = Math.floor(num / place + 0.5) * place;
   // 中档: 50% 概率生成 "5" 边界；高档 40%
   const fiveRate = difficulty >= 8 ? 0.4 : difficulty >= 6 ? 0.5 : 0;
-  if (Math.random() < fiveRate) {
-    const base = randInt(1, Math.floor(numMax / place) - 1) * place;
-    num = base + Math.floor(place / 2);
-  } else {
-    num = randInt(100, numMax);
+  for (let attempt = 0; attempt < 50; attempt++) {
+    if (Math.random() < fiveRate) {
+      const base = randInt(1, Math.floor(numMax / place) - 1) * place;
+      num = base + Math.floor(place / 2);
+    } else {
+      num = randInt(100, numMax);
+    }
+    answer = Math.floor(num / place + 0.5) * place;
+    if (answer !== num) break;
+    if (attempt === 49) num += 1; // 极端兜底
   }
-
-  const answer = Math.floor(num / place + 0.5) * place;
+  answer = Math.floor(num / place + 0.5) * place;
 
   return {
     id, topicId: 'number-sense', type: 'numeric-input', difficulty,
@@ -341,6 +381,12 @@ function generateRound(difficulty: number, id: string): Question {
     // v2.2 中档：70% 小数四舍五入（含 5 边界 / 进位跨位），30% 整数保留为常规训练
     return Math.random() < 0.70 ? generateRoundDecimal(difficulty, id) : generateRoundBasic(difficulty, id);
   }
+  // 低档 (d=4~5)：d=4 整数四舍五入（无5边界），d=5 引入小数精度或5边界
+  if (difficulty >= 5) {
+    // d=5：40% 小数四舍五入（含5边界陷阱）
+    return Math.random() < 0.40 ? generateRoundDecimal(difficulty, id) : generateRoundBasic(difficulty, id);
+  }
+  // d=4：只用整数，不产生5边界陷阱（已在 generateRoundBasic 内通过 fiveRate=0 控制）
   return generateRoundBasic(difficulty, id);
 }
 
@@ -508,62 +554,46 @@ function generateCompareConcept(difficulty: number, id: string): Question {
 function generateCompare(difficulty: number, id: string): Question {
   if (difficulty >= 8) return generateCompareConcept(difficulty, id);
   if (difficulty >= 6) return generateCompareExpr(difficulty, id);
+  // 低档 (d=2~5)：d=2~3 走 generateCompareLow，d=4~5 走 generateCompareExpr（两表达式互比）
+  if (difficulty >= 4) return generateCompareExpr(difficulty, id);
   return generateCompareLow(difficulty, id);
 }
 
 // ---------------------------------------------------------------------------
 // 去尾法 / 进一法 (floor-ceil)
-//   低档：直接取整
-//   中档/高档：现实情境（判断哪种方法适用）
+//   全档位走情景题，按 difficulty 分层（d=4~5 简单情景；d≥6 两层全开）
 // ---------------------------------------------------------------------------
 
-function generateFloorCeilBasic(difficulty: number, id: string): Question {
-  const isFloor = Math.random() < 0.5;
-  const methodName = isFloor ? '去尾法' : '进一法';
-
-  const dp = difficulty <= 5 ? 1 : 2;
-  const factor = Math.pow(10, dp);
-  const num = randInt(11, difficulty <= 5 ? 999 : 9999) / factor;
-
-  const toInteger = dp === 1 || Math.random() < 0.5;
-  let answer: number;
-
-  if (toInteger) {
-    answer = isFloor ? Math.floor(num) : Math.ceil(num);
-  } else {
-    answer = isFloor
-      ? Math.floor(num * 10) / 10
-      : Math.ceil(num * 10) / 10;
-  }
-
-  const placeText = toInteger ? '个位' : '十分位';
-  const numStr = num.toFixed(dp);
-
-  return {
-    id, topicId: 'number-sense', type: 'numeric-input', difficulty,
-    prompt: `用${methodName}将 ${numStr} 取近似到${placeText}`,
-    data: { kind: 'number-sense', subtype: 'round' },
-    solution: {
-      answer,
-      explanation: isFloor
-        ? `去尾法: 直接去掉${placeText}后面的数字，${numStr} → ${answer}`
-        : `进一法: 只要${placeText}后面有数字就进1，${numStr} → ${answer}`,
-    },
-    hints: [isFloor ? '去尾法: 不管后面是几，直接舍去' : '进一法: 不管后面是几，都向前进1'],
-    xpBase: 10 + (difficulty - 1) * 5,
-  };
-}
-
-/** 中/高档：现实情境（应用题） */
+/** 情景题：判断用进一法还是去尾法（全档位替代机械题） */
 function generateFloorCeilContext(difficulty: number, id: string): Question {
-  const pool: Array<{ prompt: string; answer: number; explanation: string }> = [
+  // 简单情景（d=4~5 专属）：整数÷整数，答案≤20，短文本
+  const simplePool: Array<{ prompt: string; answer: number; explanation: string }> = [
     { prompt: '一辆大巴能坐 40 人，有 137 人春游，至少需要几辆？', answer: 4, explanation: '137÷40=3.425，必须多一辆（进一法）→ 4' },
-    { prompt: '做一件上衣需要 2.5 米布料，25 米布料最多做几件？', answer: 10, explanation: '25÷2.5=10（正好整数）→ 10' },
-    { prompt: '一瓶饮料装 0.6 升，把 5 升饮料装满瓶子，最多装满几瓶？', answer: 8, explanation: '5÷0.6≈8.33，只数"装满"的（去尾法）→ 8' },
-    { prompt: '一本书 180 页，每天读 13 页，至少几天能读完？', answer: 14, explanation: '180÷13≈13.85，剩下的页也要读完（进一法）→ 14' },
-    { prompt: '4.6 米的木料截成 0.8 米的小段，最多截几段？', answer: 5, explanation: '4.6÷0.8=5.75，只能要完整段（去尾法）→ 5' },
+    { prompt: '一本书 180 页，每天读 13 页，至少几天能读完？', answer: 14, explanation: '180÷13≈13.85，剩余页也要读完（进一法）→ 14' },
     { prompt: '篮筐能装 35 个苹果，386 个苹果至少需要几个篮筐？', answer: 12, explanation: '386÷35≈11.03，必须多一筐装剩下（进一法）→ 12' },
+    { prompt: '学校组织 580 名学生参加秋游，每辆车限载 30 人，至少要几辆车？', answer: 20, explanation: '580÷30≈19.33，剩余学生也需要一辆（进一法）→ 20' },
+    { prompt: '50 本书装箱，每箱装 8 本，至少需要几个箱子？', answer: 7, explanation: '50÷8=6.25，剩余 2 本也需要一个箱子（进一法）→ 7' },
+    { prompt: '班级有 35 人去参观，每辆车坐 8 人，至少需要几辆车？', answer: 5, explanation: '35÷8=4.375，剩余同学也需要一辆（进一法）→ 5' },
+    { prompt: '一捆铁丝 20 米，每段截 3 米，最多截几段？', answer: 6, explanation: '20÷3≈6.67，只能取完整段（去尾法）→ 6' },
+    { prompt: '工厂有 55 个零件装盒，每盒装 6 个，至少需要几个盒子？', answer: 10, explanation: '55÷6≈9.17，剩余零件也需要一个盒子（进一法）→ 10' },
   ];
+  // 复杂情景（d≥6 可用）：含小数，答案无上限
+  const complexPool: Array<{ prompt: string; answer: number; explanation: string }> = [
+    { prompt: '做一件上衣需要 2.5 米布料，25 米布料最多做几件？', answer: 10, explanation: '25÷2.5=10（整除）→ 10' },
+    { prompt: '一瓶饮料装 0.6 升，把 5 升饮料装满瓶子，最多装满几瓶？', answer: 8, explanation: '5÷0.6≈8.33，只数"装满"的（去尾法）→ 8' },
+    { prompt: '4.6 米的木料截成 0.8 米的小段，最多截几段？', answer: 5, explanation: '4.6÷0.8=5.75，只能要完整段（去尾法）→ 5' },
+    { prompt: '一根 18.5 分米的木棒，截成每段 1.1 分米的小段，最多截几段？', answer: 16, explanation: '18.5÷1.1≈16.82，只能取完整段（去尾法）→ 16' },
+    { prompt: '每个玻璃瓶最多装 0.4 千克，2.5 千克油至少要几个玻璃瓶？', answer: 7, explanation: '2.5÷0.4=6.25，剩余不足 0.4 千克也需要一个瓶（进一法）→ 7' },
+    { prompt: '用 75 分米彩带制作蝴蝶结，每个需要 1.3 分米，最多做几个？', answer: 57, explanation: '75÷1.3≈57.69，只能做完整个（去尾法）→ 57' },
+    { prompt: '每本字典 25.5 元，孙老师拿 150 元，最多能买几本？', answer: 5, explanation: '150÷25.5≈5.88，钱不够就不能买（去尾法）→ 5' },
+    { prompt: '每瓶墨水可以写 0.4 万字，小明要写 2.5 万字，至少需要几瓶墨水？', answer: 7, explanation: '2.5÷0.4=6.25，剩余部分也需要一瓶（进一法）→ 7' },
+    { prompt: '一台机器每小时生产 2.5 个零件，要生产 18 个，至少需要几小时？', answer: 8, explanation: '18÷2.5=7.2，剩余时间不够生产完整一个（进一法）→ 8' },
+    { prompt: '每件运动服需要 1.8 米布料，现有 14 米布料，最多能做几件？', answer: 7, explanation: '14÷1.8≈7.78，只能做完整件（去尾法）→ 7' },
+    { prompt: '一辆货车每次最多运 3.5 吨货物，要运 25 吨货，至少要运几次？', answer: 8, explanation: '25÷3.5≈7.14，剩余货物也需要再运一次（进一法）→ 8' },
+    { prompt: '蛋糕店用 12.7 千克面粉做蛋糕，每个蛋糕需要 0.9 千克，最多做几个？', answer: 14, explanation: '12.7÷0.9≈14.11，只能做完整个（去尾法）→ 14' },
+  ];
+
+  const pool = difficulty <= 5 ? simplePool : [...simplePool, ...complexPool];
   const sel = pick(pool);
   return {
     id, topicId: 'number-sense', type: 'numeric-input', difficulty,
@@ -576,8 +606,7 @@ function generateFloorCeilContext(difficulty: number, id: string): Question {
 }
 
 function generateFloorCeil(difficulty: number, id: string): Question {
-  if (difficulty >= 6 && Math.random() < 0.5) return generateFloorCeilContext(difficulty, id);
-  return generateFloorCeilBasic(difficulty, id);
+  return generateFloorCeilContext(difficulty, id);
 }
 
 // ---------------------------------------------------------------------------
@@ -589,15 +618,35 @@ function generateFloorCeil(difficulty: number, id: string): Question {
 function generateReverseRound(difficulty: number, id: string): Question {
   const askMax = Math.random() < 0.5;
 
-  // 低/中档：一位小数 → 个位；高档：两位小数 → 十分位
-  const targetIsInt = difficulty <= 7;
-  if (targetIsInt) {
-    const target = randInt(3, 99); // 四舍五入到个位后的数
-    // 最大：target + 0.4；最小：target - 0.5（但要让结果仍合法）
+  // 低/中档（d≤7）：一位小数 → 个位，5 种模板
+  if (difficulty <= 7) {
+    const target = randInt(3, 99);
     const answerStr = askMax ? `${target}.4` : `${target - 1}.5`;
+    const maxHint = `四舍五入后恰好是 ${target}——原数最大能走到哪里还不会进位到 ${target + 1}？`;
+    const minHint = `什么样的数，四舍五入后会"入"到 ${target}？它最小是多少？`;
+
+    const templateIdx = randInt(1, 5);
+    let prompt: string;
+    if (templateIdx === 1) {
+      prompt = `一个一位小数四舍五入到个位后是 ${target}，这个数${askMax ? '最大' : '最小'}是多少？`;
+    } else if (templateIdx === 2) {
+      prompt = `某一位小数用四舍五入法保留到整数，近似值是 ${target}，这个小数${askMax ? '最大' : '最小'}是多少？`;
+    } else if (templateIdx === 3) {
+      prompt = `四舍五入到个位后等于 ${target} 的一位小数，${askMax ? '最大' : '最小'}可以是多少？`;
+    } else if (templateIdx === 4) {
+      // 模板 4：填数字题，不用 askMax 分支，而是固定方向
+      if (askMax) {
+        prompt = `${target}.□ 用四舍五入法取到个位后结果仍然是 ${target}，□ 里最大能填几？`;
+      } else {
+        prompt = `${target - 1}.□ 用四舍五入法取到个位后，结果变成了 ${target}，□ 里最小能填几？`;
+      }
+    } else {
+      prompt = `小明把一个一位小数用四舍五入法凑成整数后写下了 ${target}，这个一位小数原来${askMax ? '最大' : '最小'}可能是多少？`;
+    }
+
     return {
       id, topicId: 'number-sense', type: 'numeric-input', difficulty,
-      prompt: `一个一位小数四舍五入到个位后是 ${target}，这个数${askMax ? '最大' : '最小'}是多少？`,
+      prompt,
       data: { kind: 'number-sense', subtype: 'round' },
       solution: {
         answer: answerStr,
@@ -605,15 +654,14 @@ function generateReverseRound(difficulty: number, id: string): Question {
           ? `最大的一位小数是 ${answerStr}（再大就会进位到 ${target + 1}）`
           : `最小的一位小数是 ${answerStr}（再小就会舍去到 ${target - 1}）`,
       },
-      hints: [askMax ? '最大到多少还能"四舍"' : '最小到多少还能"五入"到这个数'],
+      hints: [askMax ? maxHint : minHint],
       xpBase: 10 + (difficulty - 1) * 5,
     };
   }
 
-  // 高档：两位小数 → 一位
-  const targetScaled = randInt(10, 99); // 1.0 ~ 9.9
+  // 高档（d≥8）：两位小数 → 一位
+  const targetScaled = randInt(10, 99);
   const targetStr = (targetScaled / 10).toFixed(1);
-  // 最大：target + 0.04（即原数 X.X4）；最小：(target-0.1) + 0.05 即 (X-1).(X)5
   const answerScaled = askMax ? targetScaled * 10 + 4 : targetScaled * 10 - 5;
   const answerStr = (answerScaled / 100).toFixed(2);
   return {
@@ -626,7 +674,9 @@ function generateReverseRound(difficulty: number, id: string): Question {
         ? `最大的两位小数是 ${answerStr}（再大就会进位）`
         : `最小的两位小数是 ${answerStr}（再小就会舍去）`,
     },
-    hints: [askMax ? '两位小数的"千分位"位置上放最大可舍去的数字' : '两位小数的"千分位"位置上放最小可进位的数字'],
+    hints: [askMax
+      ? `四舍五入后恰好是 ${targetStr}——原数最大能走到哪里还不会进位到更大值？`
+      : `什么样的两位小数，四舍五入后会"入"到 ${targetStr}？它最小是多少？`],
     xpBase: 10 + (difficulty - 1) * 5,
   };
 }

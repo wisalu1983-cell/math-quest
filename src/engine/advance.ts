@@ -193,6 +193,64 @@ function weightedSwor(pool: WeightedTag[], k: number): WeightedTag[] {
   return selected;
 }
 
+function ensureActiveTierCoverage(
+  topicId: TopicId,
+  selectedTags: WeightedTag[],
+  mergedPool: WeightedTag[],
+  tierCounts: { normal: number; hard: number; demon: number }
+): WeightedTag[] {
+  const activeTiers: Array<[DifficultyTier, number]> = [];
+  if (tierCounts.normal > 0) activeTiers.push(['normal', tierCounts.normal]);
+  if (tierCounts.hard > 0) activeTiers.push(['hard', tierCounts.hard]);
+  if (tierCounts.demon > 0) activeTiers.push(['demon', tierCounts.demon]);
+
+  const tierTagMap = new Map<DifficultyTier, Set<string>>();
+  for (const [tier] of activeTiers) {
+    tierTagMap.set(
+      tier,
+      new Set(SUBTYPE_ENTRY_MAP[topicId](repDifficulty(tier)).map(entry => entry.tag))
+    );
+  }
+
+  const weightMap = new Map(mergedPool.map(entry => [entry.tag, entry.mergedWeight]));
+  const next = [...selectedTags];
+
+  const coversTier = (tag: WeightedTag, tier: DifficultyTier) =>
+    tierTagMap.get(tier)?.has(tag.tag) ?? false;
+
+  const canRemove = (index: number) => {
+    const candidate = next[index];
+    return activeTiers.every(([tier]) => {
+      if (!coversTier(candidate, tier)) return true;
+      return next.some((tag, otherIndex) => otherIndex !== index && coversTier(tag, tier));
+    });
+  };
+
+  for (const [tier] of activeTiers) {
+    if (next.some(tag => coversTier(tag, tier))) continue;
+
+    const replacement = SUBTYPE_ENTRY_MAP[topicId](repDifficulty(tier))
+      .filter(entry => !next.some(tag => tag.tag === entry.tag))
+      .map(entry => ({
+        tag: entry.tag,
+        mergedWeight: weightMap.get(entry.tag) ?? entry.weight,
+      }))
+      .sort((a, b) => b.mergedWeight - a.mergedWeight)[0];
+
+    if (!replacement) continue;
+
+    const removableIndex = next
+      .map((tag, index) => ({ tag, index }))
+      .filter(({ index }) => canRemove(index))
+      .sort((a, b) => a.tag.mergedWeight - b.tag.mergedWeight)[0]?.index;
+
+    if (removableIndex === undefined) continue;
+    next[removableIndex] = replacement;
+  }
+
+  return next;
+}
+
 // ─── 档内槽位分配 ───
 
 /**
@@ -254,7 +312,12 @@ export function buildAdvanceSlots(
 
   // 2. 合并子题型池，SWOR 选 4 个
   const mergedPool = buildMergedPool(topicId, tierCounts, total);
-  const selectedTags = weightedSwor(mergedPool, ADVANCE_MAX_SUBTYPES);
+  const selectedTags = ensureActiveTierCoverage(
+    topicId,
+    weightedSwor(mergedPool, ADVANCE_MAX_SUBTYPES),
+    mergedPool,
+    tierCounts
+  );
 
   // 3. 按档分配槽位
   const slots: AdvanceSlot[] = [];

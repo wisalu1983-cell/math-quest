@@ -432,9 +432,17 @@ function generateLowMildT1(difficulty: number, id: string): Question {
 // ==================== 分发器 ====================
 
 function dispatchLow(difficulty: number, id: string): Question {
-  // 档 1：70% 一步移项（含轻度陷阱）+ 25% 轻度 T1 + 5% 概念
+  // C1档内梯度规范化：
+  // d=2 (档1-低)：90% 简单一步移项（无陷阱），5% 概念，5% 轻度T1
+  // d=3 (档1-高)：50% 一步移项，45% 轻度T1（含减号后x项），5% 概念
   const r = Math.random();
-  if (r < 0.70) return generateLowOneStep(difficulty, id);
+  if (difficulty <= 2) {
+    if (r < 0.90) return generateLowOneStep(difficulty, id);
+    if (r < 0.95) return generateEquationConcept(difficulty, id);
+    return generateLowMildT1(difficulty, id);
+  }
+  // d=3
+  if (r < 0.50) return generateLowOneStep(difficulty, id);
   if (r < 0.95) return generateLowMildT1(difficulty, id);
   return generateEquationConcept(difficulty, id);
 }
@@ -465,16 +473,34 @@ export function generateEquationTranspose(params: GeneratorParams): Question {
     { tag: 'equation-concept',      weight: 10, gen: () => generateEquationConcept(difficulty, id) },
   ];
 
-  // 档 2（d≥6）
-  const tier2: SubtypeEntry[] = [
-    { tag: 'move-both-sides',       weight: 30, gen: () => generateHighT4(difficulty, id) },
-    { tag: 'bracket-equation',      weight: 25, gen: () => dispatchBracketEquation(difficulty, id) },
-    { tag: 'move-from-linear',      weight: 15, gen: () => dispatchMoveFromLinearHigh(difficulty, id) },
-    { tag: 'error-diagnose',        weight: 15, gen: () => generateHighErrorDiagnose(difficulty, id) },
-    { tag: 'solve-after-transpose', weight: 10, gen: () => generateSolveAfterTranspose(difficulty, id) },
+  // 档 2（d≥6）C1档内梯度规范化：
+  // d=6 (档2-低)：简单双向移项(T4) + T1/T2陷阱 为主，不含括号展开
+  // d=7 (档2-高)：引入括号展开(T3)和T3+T4叠加 + 错误诊断
+  const tier2Low: SubtypeEntry[] = [
+    { tag: 'move-both-sides',       weight: 50, gen: () => generateHighT4(difficulty, id) },
+    { tag: 'move-from-linear',      weight: 30, gen: () => dispatchMoveFromLinearHigh(difficulty, id) },
+    { tag: 'solve-after-transpose', weight: 15, gen: () => generateSolveAfterTranspose(difficulty, id) },
     { tag: 'division-equation',     weight: 5,  gen: () => generateDivisionEquation(difficulty, id) },
+    // 兼容 subtypeFilter 中可能出现的 tag
+    { tag: 'bracket-equation',      weight: 0,  gen: () => dispatchBracketEquation(difficulty, id) },
+    { tag: 'error-diagnose',        weight: 0,  gen: () => generateHighErrorDiagnose(difficulty, id) },
+  ];
+  const tier2High: SubtypeEntry[] = [
+    { tag: 'move-both-sides',       weight: 25, gen: () => generateHighT4(difficulty, id) },
+    { tag: 'bracket-equation',      weight: 30, gen: () => dispatchBracketEquation(difficulty, id) },
+    { tag: 'move-from-linear',      weight: 15, gen: () => dispatchMoveFromLinearHigh(difficulty, id) },
+    { tag: 'error-diagnose',        weight: 20, gen: () => generateHighErrorDiagnose(difficulty, id) },
+    { tag: 'solve-after-transpose', weight: 7,  gen: () => generateSolveAfterTranspose(difficulty, id) },
+    { tag: 'division-equation',     weight: 3,  gen: () => generateDivisionEquation(difficulty, id) },
   ];
 
-  const entries = difficulty <= 5 ? tier1 : tier2;
+  let entries: SubtypeEntry[];
+  if (difficulty <= 5) {
+    entries = tier1;
+  } else if (difficulty <= 6) {
+    entries = tier2Low;
+  } else {
+    entries = tier2High;
+  }
   return pickSubtype(entries, subtypeFilter);
 }

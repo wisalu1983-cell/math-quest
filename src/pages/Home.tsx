@@ -13,7 +13,9 @@ import BottomNav from '@/components/BottomNav';
 import LoadingScreen from '@/components/LoadingScreen';
 import ProgressBar from '@/components/ProgressBar';
 import RankBadge from '@/components/RankBadge';
+import SyncStatusIndicator from '@/components/SyncStatusIndicator';
 import { TopicIcon } from '@/components/TopicIcon';
+import { useAuthStore } from '@/store/auth';
 
 function getGreeting(name: string): string {
   const h = new Date().getHours();
@@ -50,6 +52,7 @@ export default function Home() {
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const { setPage, setSelectedTopicId } = useUIStore();
   const activeRankSession = useRankMatchStore(s => s.activeRankSession);
+  const supabaseUser = useAuthStore(s => s.supabaseUser);
 
   if (!user || !gameProgress) return <LoadingScreen />;
 
@@ -113,14 +116,20 @@ export default function Home() {
       {/* ── Logo 栏 ── */}
       <div className="sticky top-0 z-10 bg-card border-b-2 border-border-2 px-5 py-3.5 flex items-center justify-between">
         <span className="text-[15px] font-black text-primary">数学大冒险</span>
-        <div
-          className="w-9 h-9 rounded-full bg-primary flex items-center justify-center
-                     text-[15px] font-black text-white select-none"
-          style={{ boxShadow: '0 2px 8px rgba(255,107,53,.4)' }}
-          aria-label={`用户：${user.nickname}`}
-        >
-          {user.nickname[0]}
-        </div>
+        {supabaseUser ? (
+          <SyncStatusIndicator />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setPage('profile')}
+            className="w-9 h-9 rounded-full bg-primary flex items-center justify-center
+                       text-[15px] font-black text-white select-none"
+            style={{ boxShadow: '0 2px 8px rgba(255,107,53,.4)' }}
+            aria-label={`用户：${user.nickname}`}
+          >
+            {user.nickname[0]}
+          </button>
+        )}
       </div>
 
       <div className="max-w-lg mx-auto px-5">

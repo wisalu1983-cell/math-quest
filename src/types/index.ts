@@ -16,6 +16,7 @@ export interface User {
   avatarSeed: string;
   createdAt: number;
   grade?: number;
+  supabaseId?: string;
   settings: UserSettings;
 }
 
@@ -66,6 +67,8 @@ export interface NumberSenseData {
   options?: string[];
   expressions?: string[];
   acceptedAnswers?: number[];
+  /** estimate-basic 区间验证：接受精确值 × (1 ± tolerance) 内的答案（0.15=±15%，0.10=±10%）*/
+  tolerance?: number;
 }
 
 export interface MentalArithmeticData {
@@ -207,6 +210,31 @@ export interface QuestionAttempt {
   timeMs: number;
   hintsUsed: number;
   attemptedAt: number;
+}
+
+export type HistoryResult = 'win' | 'lose' | 'incomplete';
+
+export interface HistoryQuestionRecord {
+  prompt: string;
+  userAnswer: string;
+  correctAnswer: string;
+  correct: boolean;
+  timeMs: number;
+}
+
+export interface HistoryRecord {
+  id: string;
+  userId: string;
+  sessionMode: GameSessionMode;
+  startedAt: number;
+  endedAt?: number;
+  completed: boolean;
+  result: HistoryResult;
+  topicId: TopicId;
+  rankMatchMeta?: {
+    primaryTopics: TopicId[];
+  };
+  questions: HistoryQuestionRecord[];
 }
 
 export interface PracticeSession {

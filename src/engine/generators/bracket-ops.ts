@@ -12,10 +12,20 @@ import { formatNum } from './utils';
 // 题干统一写"直接去掉括号，写出等价的式子（不要算出结果）"以避免学生算出数值提交。
 
 export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
-  if (difficulty <= 5) return [
-    { tag: 'remove-bracket-plus',  weight: 50 },
-    { tag: 'remove-bracket-minus', weight: 50 },
-  ];
+  if (difficulty <= 5) {
+    if (difficulty <= 3) {
+      // 档1-低 (d=3): 只出 remove-bracket-plus
+      return [
+        { tag: 'remove-bracket-plus',  weight: 100 },
+        { tag: 'remove-bracket-minus', weight: 0 },
+      ];
+    }
+    // 档1-高 (d=4~5): 主出 remove-bracket-minus（减号去括号，核心陷阱）
+    return [
+      { tag: 'remove-bracket-plus',  weight: 30 },
+      { tag: 'remove-bracket-minus', weight: 70 },
+    ];
+  }
   if (difficulty <= 7) return [
     { tag: 'add-bracket',          weight: 45 },
     { tag: 'division-property',    weight: 35 },
@@ -353,10 +363,18 @@ function generateErrorDiagnose(difficulty: number, id: string): Question {
 export function generateBracketOps(params: GeneratorParams): Question {
   const { difficulty, id = '', subtypeFilter } = params;
 
-  const lowEntries: SubtypeEntry[] = [
-    { tag: 'remove-bracket-plus',  weight: 50, gen: () => generateRemoveBracketPlus(difficulty, id) },
-    { tag: 'remove-bracket-minus', weight: 50, gen: () => generateRemoveBracketMinus(difficulty, id) },
-  ];
+  // 低档子题型权重按 d 区间分配（C1档内梯度规范化）
+  // d=3 (档1-低): 只出 remove-bracket-plus（加号后括号，符号不变）
+  // d=5 (档1-高): 主出 remove-bracket-minus（减号后括号，符号全变，核心陷阱）
+  const lowEntries: SubtypeEntry[] = difficulty <= 3
+    ? [
+        { tag: 'remove-bracket-plus',  weight: 100, gen: () => generateRemoveBracketPlus(difficulty, id) },
+        { tag: 'remove-bracket-minus', weight: 0,   gen: () => generateRemoveBracketMinus(difficulty, id) },
+      ]
+    : [
+        { tag: 'remove-bracket-plus',  weight: 30,  gen: () => generateRemoveBracketPlus(difficulty, id) },
+        { tag: 'remove-bracket-minus', weight: 70,  gen: () => generateRemoveBracketMinus(difficulty, id) },
+      ];
 
   const midEntries: SubtypeEntry[] = [
     { tag: 'add-bracket',          weight: 45, gen: () => generateAddBracket(difficulty, id) },

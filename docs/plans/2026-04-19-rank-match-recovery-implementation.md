@@ -369,12 +369,12 @@ git commit -m "修复段位赛刷新恢复并接入中断重开入口"
 ### Task 4: 全量验证、复跑 Rank QA、回写项目记录
 
 **Files:**
-- Modify: `ProjectManager/QA/2026-04-19-full-regression/batch-3-rank-match-result.md`
-- Modify: `ProjectManager/QA/2026-04-19-full-regression/auto-result.md`
-- Modify: `ProjectManager/QA/2026-04-19-full-regression/artifacts/raw-results.json`
+- Modify: `QA/runs/2026-04-19-full-regression/batch-3-rank-match-result.md`
+- Modify: `QA/runs/2026-04-19-full-regression/auto-result.md`
+- Modify: `QA/runs/2026-04-19-full-regression/artifacts/raw-results.json`
 - Modify: `ProjectManager/ISSUE_LIST.md`
 - Modify: `ProjectManager/Overview.md`
-- Modify: `ProjectManager/Plan/2026-04-18-rank-match-phase3-implementation.md`
+- Modify: `ProjectManager/Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md`
 - Modify: `ProjectManager/Plan/README.md`
 
 **Step 1: Run focused tests before QA**
@@ -403,7 +403,7 @@ Expected:
 
 **Step 3: Re-run D-07 and rank batch using existing QA harness**
 
-当前 `ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs` 没有 batch filter，因此先沿用现有脚本，重点检查 Rank 批次结果。
+当前 `QA/runs/2026-04-19-full-regression/full-regression.mjs` 没有 batch filter，因此先沿用现有脚本，重点检查 Rank 批次结果。
 
 先在独立终端启动 dev server：
 
@@ -414,7 +414,7 @@ npm run dev
 再执行：
 
 ```bash
-node ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs
+node QA/runs/2026-04-19-full-regression/full-regression.mjs
 ```
 
 检查重点：
@@ -433,7 +433,7 @@ node ProjectManager/QA/2026-04-19-full-regression/full-regression.mjs
    - 关闭记录中写明：
      - 局内意外退出改为启动期自动恢复
      - 主动中断与放弃重开作为新语义一并落地
-2. `ProjectManager/Plan/2026-04-18-rank-match-phase3-implementation.md`
+2. `ProjectManager/Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md`
    - 追加本轮修复与复跑结果
    - 把“阻塞中”改成“待最终收口”或本轮真实状态
 3. `ProjectManager/Overview.md`
@@ -457,6 +457,6 @@ Expected:
 仅当用户明确要求提交时执行：
 
 ```bash
-git add ProjectManager/QA/2026-04-19-full-regression ProjectManager/ISSUE_LIST.md ProjectManager/Overview.md ProjectManager/Plan/2026-04-18-rank-match-phase3-implementation.md ProjectManager/Plan/README.md
+git add QA/runs/2026-04-19-full-regression ProjectManager/ISSUE_LIST.md ProjectManager/Overview.md ProjectManager/Plan/v0.1/2026-04-18-rank-match-phase3-implementation.md ProjectManager/Plan/README.md
 git commit -m "修复段位赛恢复缺陷并补齐中断重开语义"
 ```

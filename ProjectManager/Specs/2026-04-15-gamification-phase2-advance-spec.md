@@ -5,7 +5,7 @@
 > 前置文档：  
 > - [游戏化重新设计规格](2026-04-10-gamification-redesign.md)  
 > - [统一星级与段位数值设计](2026-04-13-star-rank-numerical-design.md)  
-> - Phase 1 实施计划：[2026-04-13-gamification-phase1-foundation-campaign.md](../Plan/2026-04-13-gamification-phase1-foundation-campaign.md)
+> - Phase 1 实施计划：[2026-04-13-gamification-phase1-foundation-campaign.md](../Plan/v0.1/2026-04-13-gamification-phase1-foundation-campaign.md)
 
 ---
 
@@ -153,19 +153,21 @@ function getStarProgress(heartsAccumulated: number, cap: 3 | 5): number {
 
 ### 4.3 档位权重表（按星级）
 
+> ⚠️ **v0.2 方向A调整（2026-04-21）**：0★/1★/2★ Normal 比例大幅压缩，让通关高难度闯关后进阶起步即有挑战性。详见 `Plan/v0.2/subplans/2026-04-21-b2-进阶权重表调整.md`。
+
 | 星级（currentStars） | Normal% | Hard% | Demon% |
 |--------------------|---------|-------|--------|
-| 0★ | 100 | 0 | 0 |
-| 1★ | 60 | 40 | 0 |
-| 2★ | 20 | 80 | 0 |
+| 0★ | ~~100~~ → **40** | ~~0~~ → **60** | 0 |
+| 1★ | ~~60~~ → **20** | ~~40~~ → **80** | 0 |
+| 2★ | ~~20~~ → **0** | ~~80~~ → **100** | 0 |
 | 3★（3★ 封顶题型） | 0 | 100 | 0 |
 | 3★（5★ 题型） | 0 | 80 | 20 |
 | 4★ | 0 | 50 | 50 |
 | 5★ | 0 | 10 | 90 |
 
 **星级间线性插值**：实际权重在相邻两行之间按 `starProgress`（0~1）线性内插。例如玩家处于 1★ 且 50% 进度时：
-- Normal% = lerp(60, 20, 0.5) = 40
-- Hard% = lerp(40, 80, 0.5) = 60
+- Normal% = lerp(20, 0, 0.5) = 10
+- Hard% = lerp(80, 100, 0.5) = 90
 
 ### 4.4 pickAdvanceDifficulty() 算法
 

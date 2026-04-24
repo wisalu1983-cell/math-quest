@@ -6,6 +6,16 @@ import VerticalCalcBoard from '@/components/VerticalCalcBoard';
 import DecimalTrainingGrid from '@/components/DecimalTrainingGrid';
 import Hearts from '@/components/Hearts';
 import Dialog from '@/components/Dialog';
+
+// 题干字号：按权重字符数自适应，确保 375px 视口（可用宽 303px）内单行显示
+// 中文字符权重 1.0，ASCII/数字/运算符权重 0.6
+function promptFontSize(prompt: string): number {
+  const wLen = [...prompt].reduce(
+    (acc, c) => acc + (/[\u4e00-\u9fff\uff00-\uffef，。？！：；]/.test(c) ? 1.0 : 0.6),
+    0
+  );
+  return Math.max(14, Math.min(32, Math.floor(303 / wLen)));
+}
 import LoadingScreen from '@/components/LoadingScreen';
 import ConfettiEffect from '@/components/ConfettiEffect';
 import MathText from '@/components/MathText';
@@ -13,6 +23,8 @@ import type { VerticalCalcData, TrainingField } from '@/types';
 import {
   getPracticeFeedbackAnnouncement,
 } from '@/utils/ui-accessibility';
+import { getMethodTip } from '@/utils/method-tips';
+import { shouldAutoSuspendRankMatch } from '@/engine/rank-match/auto-suspend';
 
 export default function Practice() {
   const {
@@ -41,6 +53,8 @@ export default function Practice() {
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const sessionEndedRef = useRef(false);
+  const allowUnmountAutoSuspendRef = useRef(false);
 
   // Reset state when question changes
   useEffect(() => {
@@ -57,6 +71,56 @@ export default function Practice() {
     }
     if (inputRef.current) inputRef.current.focus();
   }, [currentQuestion?.id, currentQuestion?.type, currentQuestion?.solution.blanks]);
+
+  useEffect(() => {
+    if (session?.sessionMode === 'rank-match') {
+      sessionEndedRef.current = false;
+    }
+  }, [session?.id, session?.sessionMode]);
+
+  const autoSuspendRankMatch = useCallback(() => {
+    const sessionState = useSessionStore.getState();
+    if (!shouldAutoSuspendRankMatch({
+      session: sessionState.session,
+      activeRankSession: useRankMatchStore.getState().activeRankSession,
+      sessionEnded: sessionEndedRef.current,
+    })) {
+      return;
+    }
+
+    try {
+      sessionState.suspendRankMatchSession();
+      sessionEndedRef.current = true;
+    } catch (e) {
+      console.warn('[RankMatch] 自动中断保存失败', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    allowUnmountAutoSuspendRef.current = false;
+    const timer = window.setTimeout(() => {
+      allowUnmountAutoSuspendRef.current = true;
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+      if (allowUnmountAutoSuspendRef.current) {
+        autoSuspendRankMatch();
+      }
+    };
+  }, [autoSuspendRankMatch]);
+
+  useEffect(() => {
+    const onBeforeUnload = () => autoSuspendRankMatch();
+    const onPageHide = () => autoSuspendRankMatch();
+
+    window.addEventListener('beforeunload', onBeforeUnload);
+    window.addEventListener('pagehide', onPageHide);
+    return () => {
+      window.removeEventListener('beforeunload', onBeforeUnload);
+      window.removeEventListener('pagehide', onPageHide);
+    };
+  }, [autoSuspendRankMatch]);
 
   // 注意：不要在此处 early return。下方还有 useCallback / useEffect 等 hooks，
   // 若 currentQuestion 从 truthy 变 null（例如 endSession 后），early return 会使
@@ -119,6 +183,7 @@ export default function Practice() {
 
   const handleNext = useCallback(() => {
     if (hearts <= 0 || currentIndex >= totalQuestions) {
+      sessionEndedRef.current = true;
       const completedSession = endSession();
       setLastSession(completedSession);
       if (completedSession.sessionMode === 'rank-match') {
@@ -152,6 +217,7 @@ export default function Practice() {
   };
 
   const handleSuspendRankMatch = () => {
+    sessionEndedRef.current = true;
     setShowQuitConfirm(false);
     suspendRankMatchSession();
     setPage('rank-match-hub');
@@ -163,9 +229,11 @@ export default function Practice() {
     setShowRestartConfirm(false);
     setShowQuitConfirm(false);
     try {
+      sessionEndedRef.current = true;
       cancelRankMatchSession();
       const restarted = useRankMatchStore.getState().startRankMatch(targetTier);
       startRankMatchGame(restarted.id, 1);
+      sessionEndedRef.current = false;
       setPage('practice');
     } catch (e) {
       console.warn('[RankMatch] 放弃并重开失败，回大厅', e);
@@ -286,13 +354,10 @@ return (
                   </div>
                 </div>
               ) : (
-                <h2 className={`font-black text-center text-text leading-snug tracking-tight mb-0 whitespace-normal break-words ${
-                  currentQuestion.prompt.length > 25
-                    ? 'text-[20px]'
-                    : currentQuestion.prompt.length > 18
-                      ? 'text-[24px]'
-                      : 'text-[32px]'
-                }`}>
+                <h2
+                className="font-black text-center text-text leading-snug tracking-tight mb-0 whitespace-normal"
+                style={{ fontSize: `${promptFontSize(currentQuestion.prompt)}px` }}
+              >
                   {currentQuestion.prompt.includes('$') ? (
                     <MathText text={currentQuestion.prompt} />
                   ) : (
@@ -362,6 +427,20 @@ return (
                 </div>
               )}
             </div>
+
+            {/* Method tip — 题干阶段，最低档次时显示 */}
+            {(() => {
+              const tip = getMethodTip(currentQuestion);
+              if (!tip) return null;
+              return (
+                <div className="w-full mb-3">
+                  <div className="rounded-xl bg-primary/[0.07] border border-primary/20 px-4 py-2.5 flex items-start gap-2">
+                    <span className="text-primary text-base leading-none mt-0.5 flex-shrink-0">💡</span>
+                    <p className="text-sm font-semibold text-primary leading-snug">{tip}</p>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Inputs — below card */}
             <div className="w-full stagger-2">
@@ -613,6 +692,7 @@ return (
               <button
                 className="btn-flat flex-1"
                 onClick={() => {
+                  sessionEndedRef.current = true;
                   abandonSession();
                   setPage('home');
                 }}

@@ -1,5 +1,6 @@
 // src/repository/local.ts
-import type { User, PracticeSession, TopicId } from '@/types';
+import type { User, PracticeSession, TopicId, HistoryRecord } from '@/types';
+import type { DirtyKey, SyncState } from '@/sync/types';
 import type {
   GameProgress,
   RankMatchSession,
@@ -8,13 +9,65 @@ import type {
 } from '@/types/gamification';
 import { CAMPAIGN_MAPS, getAllLevelIds, isCampaignFullyCompleted } from '@/constants/campaign';
 
+/**
+ * Storage Namespace（v0.2-1-1 / F3 开发者工具栏）
+ *
+ * 默认 prefix = 'mq_'，与历史行为完全一致。
+ * F3 把 prefix 切到 'mq_dev_' 以构造"测试沙盒"，让注入操作不触碰真实用户数据。
+ * 切换是**运行时**行为，切回 'main' 后 `mq_*` 数据原样可读。
+ */
+export type StorageNamespace = 'main' | 'dev';
+const PREFIX_MAIN = 'mq_';
+const PREFIX_DEV = 'mq_dev_';
+let keyPrefix: typeof PREFIX_MAIN | typeof PREFIX_DEV = PREFIX_MAIN;
+
+export function setStorageNamespace(ns: StorageNamespace): void {
+  keyPrefix = ns === 'dev' ? PREFIX_DEV : PREFIX_MAIN;
+}
+
+export function getStorageNamespace(): StorageNamespace {
+  return keyPrefix === PREFIX_DEV ? 'dev' : 'main';
+}
+
+type SyncNotifyFn = ((key: DirtyKey) => void) | null;
+
+let syncNotify: SyncNotifyFn = null;
+
+export function setSyncNotify(fn: SyncNotifyFn): void {
+  syncNotify = fn;
+}
+
+function notifySync(key: DirtyKey): void {
+  syncNotify?.(key);
+}
+
+// 供 F3 精确清理测试沙盒用：返回当前 namespace 下所有 key（main 下仅 mq_* 非 mq_dev_*；dev 下仅 mq_dev_*）
+function listCurrentNamespaceKeys(): string[] {
+  const out: string[] = [];
+  const len = (localStorage as unknown as { length: number }).length;
+  for (let i = 0; i < len; i++) {
+    const k = localStorage.key(i);
+    if (!k) continue;
+    if (keyPrefix === PREFIX_MAIN) {
+      // main：匹配所有 mq_* 但要排除 mq_dev_*
+      if (k.startsWith(PREFIX_MAIN) && !k.startsWith(PREFIX_DEV)) out.push(k);
+    } else {
+      if (k.startsWith(PREFIX_DEV)) out.push(k);
+    }
+  }
+  return out;
+}
+
 const KEYS = {
-  user: 'mq_user',
-  gameProgress: 'mq_game_progress',
-  sessions: 'mq_sessions',
+  user: () => `${keyPrefix}user`,
+  gameProgress: () => `${keyPrefix}game_progress`,
+  sessions: () => `${keyPrefix}sessions`,
+  history: () => `${keyPrefix}history`,
   /** Spec §6.4：RankMatchSession 独立 key，与 PracticeSession 分存 */
-  rankMatchSessions: 'mq_rank_match_sessions',
-  version: 'mq_version',
+  rankMatchSessions: () => `${keyPrefix}rank_match_sessions`,
+  syncState: () => `${keyPrefix}sync_state`,
+  authUserId: () => `${keyPrefix}auth_user_id`,
+  version: () => `${keyPrefix}version`,
 } as const;
 
 /**
@@ -26,7 +79,7 @@ const KEYS = {
  *   - 迁移链中任何一步抛错 → 旧 gameProgress 落到 mq_backup_v{old}_{ts} 备份，当次启动走"新存档 + 告警"
  *   - 严禁用 clearAll() / 单独 removeItem(gameProgress) 作为"版本不一致"的兜底；clearAll 只能作为显式用户操作
  */
-const CURRENT_VERSION = 3;
+const CURRENT_VERSION = 4;
 const MAX_SESSIONS = 200;
 
 /**
@@ -109,12 +162,18 @@ export function migrateRankProgressIfNeeded(gp: GameProgress): GameProgress {
 /** v2 → v3：追加 rankProgress（Phase 3 M1） */
 export const migrateV2ToV3 = migrateRankProgressIfNeeded;
 
+/** v3 → v4：为 Supabase 认证与同步预留版本升级点，当前 GameProgress 结构不变 */
+export function migrateV3ToV4(gp: GameProgress): GameProgress {
+  return gp;
+}
+
 /**
  * 迁移链登记表：MIGRATIONS[n] 把 v{n} 提升到 v{n+1}。
  * 新增版本时在此追加条目，配套新增 migrateV{n}ToV{n+1} 纯函数。
  */
 const MIGRATIONS: Record<number, (gp: GameProgress) => GameProgress> = {
   2: migrateV2ToV3,
+  3: migrateV3ToV4,
 };
 
 /**
@@ -173,33 +232,35 @@ export const repository = {
    * - 已是当前版本 → noop
    * - 旧版本 → 按 MIGRATIONS 串行迁移；失败落到 mq_backup_v{old}_{ts} + 丢弃原 gameProgress
    *   严禁 clearAll：用户历史进度是不可再生资产，未来任何 Phase 升级也必须沿用此原则
+   *
+   * namespace 感知：切到 'dev' 后再调 init，会在 mq_dev_* 上独立跑一次。
    */
   init() {
-    const storedVersion = read<number>(KEYS.version);
+    const storedVersion = read<number>(KEYS.version());
 
     if (storedVersion === CURRENT_VERSION) return;
 
     if (storedVersion === null) {
-      write(KEYS.version, CURRENT_VERSION);
+      write(KEYS.version(), CURRENT_VERSION);
       return;
     }
 
-    const rawGp = read<GameProgress>(KEYS.gameProgress);
+    const rawGp = read<GameProgress>(KEYS.gameProgress());
 
     if (!rawGp) {
-      write(KEYS.version, CURRENT_VERSION);
+      write(KEYS.version(), CURRENT_VERSION);
       return;
     }
 
     try {
       const migrated = runMigrationChain(storedVersion, rawGp);
-      write(KEYS.gameProgress, migrated);
-      write(KEYS.version, CURRENT_VERSION);
+      write(KEYS.gameProgress(), migrated);
+      write(KEYS.version(), CURRENT_VERSION);
     } catch (e) {
-      const backupKey = `mq_backup_v${storedVersion}_${Date.now()}`;
+      const backupKey = `${keyPrefix}backup_v${storedVersion}_${Date.now()}`;
       write(backupKey, rawGp);
-      localStorage.removeItem(KEYS.gameProgress);
-      write(KEYS.version, CURRENT_VERSION);
+      localStorage.removeItem(KEYS.gameProgress());
+      write(KEYS.version(), CURRENT_VERSION);
       console.warn(
         `[repository] 存档从 v${storedVersion} 迁移到 v${CURRENT_VERSION} 失败，已备份至 ${backupKey}，本次启动使用新存档。`,
         e,
@@ -208,22 +269,47 @@ export const repository = {
   },
 
   getUser(): User | null {
-    return read<User>(KEYS.user);
+    return read<User>(KEYS.user());
+  },
+
+  getSyncStateKey(): string {
+    return KEYS.syncState();
+  },
+
+  getAuthUserIdKey(): string {
+    return KEYS.authUserId();
+  },
+
+  getAuthUserId(): string | null {
+    return localStorage.getItem(KEYS.authUserId());
+  },
+
+  setAuthUserId(userId: string): void {
+    localStorage.setItem(KEYS.authUserId(), userId);
+  },
+
+  clearAuthUserId(): void {
+    localStorage.removeItem(KEYS.authUserId());
+  },
+
+  saveUserSilent(user: User): void {
+    write(KEYS.user(), user);
   },
 
   saveUser(user: User): void {
-    write(KEYS.user, user);
+    this.saveUserSilent(user);
+    notifySync('profiles');
   },
 
   getGameProgress(userId: string): GameProgress {
-    const raw = read<GameProgress>(KEYS.gameProgress);
+    const raw = read<GameProgress>(KEYS.gameProgress());
     if (raw && raw.userId === userId) {
       if (!raw.advanceProgress) raw.advanceProgress = {};
 
       const afterCampaign = migrateCampaignIfNeeded(raw);
       const migrated = migrateRankProgressIfNeeded(afterCampaign);
       if (migrated !== raw) {
-        write(KEYS.gameProgress, migrated);
+        write(KEYS.gameProgress(), migrated);
       }
       return migrated;
     }
@@ -238,12 +324,36 @@ export const repository = {
     };
   },
 
+  saveGameProgressSilent(progress: GameProgress): void {
+    write(KEYS.gameProgress(), progress);
+  },
+
   saveGameProgress(progress: GameProgress): void {
-    write(KEYS.gameProgress, progress);
+    this.saveGameProgressSilent(progress);
+    notifySync('game_progress');
   },
 
   getSessions(): PracticeSession[] {
-    return read<PracticeSession[]>(KEYS.sessions) ?? [];
+    return read<PracticeSession[]>(KEYS.sessions()) ?? [];
+  },
+
+  getHistory(): HistoryRecord[] {
+    return read<HistoryRecord[]>(KEYS.history()) ?? [];
+  },
+
+  saveHistorySilent(records: HistoryRecord[]): void {
+    write(KEYS.history(), records);
+  },
+
+  saveHistoryRecord(record: HistoryRecord): void {
+    const history = this.getHistory();
+    history.push(record);
+    this.saveHistorySilent(history);
+    notifySync('history_records');
+  },
+
+  clearHistory(): void {
+    localStorage.removeItem(KEYS.history());
   },
 
   /**
@@ -265,7 +375,7 @@ export const repository = {
         sessions.splice(0, sessions.length - MAX_SESSIONS);
       }
     }
-    write(KEYS.sessions, sessions);
+    write(KEYS.sessions(), sessions);
   },
 
   getRecentSessions(limit: number): PracticeSession[] {
@@ -279,7 +389,7 @@ export const repository = {
   // 联合恢复；本层只负责 I/O，一致性校验由 store 层承担。
 
   getRankMatchSessions(): Record<string, RankMatchSession> {
-    const raw = read<Record<string, StoredRankMatchSession>>(KEYS.rankMatchSessions) ?? {};
+    const raw = read<Record<string, StoredRankMatchSession>>(KEYS.rankMatchSessions()) ?? {};
     let changed = false;
     const normalized: Record<string, RankMatchSession> = {};
     for (const [id, session] of Object.entries(raw)) {
@@ -290,15 +400,20 @@ export const repository = {
       }
     }
     if (changed) {
-      write(KEYS.rankMatchSessions, normalized);
+      write(KEYS.rankMatchSessions(), normalized);
     }
     return normalized;
+  },
+
+  saveRankMatchSessionsSilent(sessions: Record<string, RankMatchSession>): void {
+    write(KEYS.rankMatchSessions(), sessions);
   },
 
   saveRankMatchSession(session: RankMatchSession): void {
     const all = this.getRankMatchSessions();
     all[session.id] = session;
-    write(KEYS.rankMatchSessions, all);
+    this.saveRankMatchSessionsSilent(all);
+    notifySync('rank_match_sessions');
   },
 
   getRankMatchSession(id: string): RankMatchSession | null {
@@ -306,23 +421,63 @@ export const repository = {
     return all[id] ?? null;
   },
 
+  /**
+   * 物理删除一条段位赛 session。
+   *
+   * 仅供 dev-tool 和单测调用。产品路径不允许调用：段位赛生命周期由
+   * RankMatchSession.status（active / suspended / cancelled / completed）表达，
+   * 不做跨端物理删除。
+   *
+   * 本方法不触发 SyncEngine.markDirty，因此本地删除不会同步到云端。只要调用方遵守
+   * "仅 dev-tool / 单测"约束，这一行为就是正确的：dev-tool 清理本地沙盒时，云端数据不应受影响。
+   *
+   * 相关决策：Phase 3 RISK-2，见
+   * ProjectManager/Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md。
+   */
   deleteRankMatchSession(id: string): void {
     const all = this.getRankMatchSessions();
     if (!(id in all)) return;
     delete all[id];
-    write(KEYS.rankMatchSessions, all);
+    this.saveRankMatchSessionsSilent(all);
+  },
+
+  clearAccountScopedData(): void {
+    localStorage.removeItem(KEYS.user());
+    localStorage.removeItem(KEYS.gameProgress());
+    localStorage.removeItem(KEYS.history());
+    localStorage.removeItem(KEYS.rankMatchSessions());
+    localStorage.removeItem(KEYS.sessions());
+  },
+
+  discardPendingSyncAfterUserConfirmation(): void {
+    const current = read<SyncState>(KEYS.syncState());
+    if (!current) return;
+    write(KEYS.syncState(), { ...current, dirtyKeys: [] });
   },
 
   /**
    * 完整清空本地存档。
    * 仅保留给"用户显式点击 '清空存档' 按钮"这一路径使用；
    * 严禁在任何版本升级 / 启动探测分支中调用（Spec 2026-04-18 §6.3 项目级原则）。
+   *
+   * 清理范围限定在**当前 namespace** 下的 key：
+   *   - namespace='main'：清 mq_* 下的业务 key + legacy `mq_progress`；不跨删 mq_dev_*
+   *   - namespace='dev'：清 mq_dev_* 下的所有 key（"清空测试沙盒"）
    */
   clearAll(): void {
-    localStorage.removeItem(KEYS.user);
-    localStorage.removeItem(KEYS.gameProgress);
-    localStorage.removeItem(KEYS.sessions);
-    localStorage.removeItem(KEYS.rankMatchSessions);
-    localStorage.removeItem('mq_progress');
+    if (keyPrefix === PREFIX_MAIN) {
+      localStorage.removeItem(KEYS.user());
+      localStorage.removeItem(KEYS.gameProgress());
+      localStorage.removeItem(KEYS.sessions());
+      localStorage.removeItem(KEYS.history());
+      localStorage.removeItem(KEYS.rankMatchSessions());
+      localStorage.removeItem('mq_progress');
+      return;
+    }
+    // dev namespace：整组 removeItem（覆盖未来新增的 mq_dev_* key）
+    const toRemove = listCurrentNamespaceKeys();
+    for (const k of toRemove) {
+      localStorage.removeItem(k);
+    }
   },
 };

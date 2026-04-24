@@ -6,10 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:with-dev-tool": "cross-env VITE_ENABLE_DEV_TOOL=1 tsc -b && cross-env VITE_ENABLE_DEV_TOOL=1 vite build --outDir dist-dev",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.104.0",
     "@types/howler": "^2.2.12",
     "@types/katex": "^0.16.8",
     "date-fns": "^4.1.0",
@@ -27,11 +30,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/vite": "^4.2.2",
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "cross-env": "^7.0.3",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
