@@ -2,7 +2,7 @@
 
 > 所属版本：v0.3
 > 创建：2026-04-23
-> 状态：📋 当前版本（待开工）
+> 状态：🟡 进行中（Phase 1/2 完成 2026-04-24，Phase 3 待开始）
 > 设计规格：[`Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md`](../../Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md)
 
 ---
