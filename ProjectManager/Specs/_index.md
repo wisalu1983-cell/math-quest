@@ -1,6 +1,6 @@
 # Specs 规格矩阵（_index）
 
-> 版本：v1.9 | 创建：2026-04-17 | 上次修订：2026-04-22（维度 A 追加 4-2/4-3 设计稿，并回写 generator-redesign-v2 v2.2 增补）  
+> 版本：v1.10 | 创建：2026-04-17 | 上次修订：2026-04-24（维度 E 更新 v0.3 Supabase 账号同步规格状态与 Phase 3 开发文档入口）
 > 用途：**新计划启动前的必查清单**——按讨论维度定位已有规格，避免漏检历史约束。
 
 ## 为什么要这个文件
@@ -79,7 +79,12 @@
 
 | Spec | 状态 | 关键断言 |
 |------|------|---------|
-| `v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md` | **草稿**（v0.3 设计规格，2026-04-23 创建） | Supabase Magic Link 登录 + 本地优先后台同步架构；5 张 Supabase 表（profiles / game_progress / history_records / rank_match_sessions / sync_metadata）+ RLS；合并策略：GameProgress 字段级 max/union、History 追加去重、RankMatch 状态优先级；段位赛必须联网启动；访客模式保留；本地存档 v3→v4 |
+| `v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md` | **生效（v0.3 已上线，2026-04-24）** | Supabase Magic Link 登录 + 本地优先后台同步架构；5 张 Supabase 表（profiles / game_progress / history_records / rank_match_sessions / sync_metadata）+ RLS；合并策略：GameProgress 字段级 max/union、History 追加去重、RankMatch 状态优先级；段位赛必须联网启动；访客模式保留；本地存档 v3→v4 |
+| `v03-supabase-account-sync/2026-04-24-phase3-00-index.md` | **已实施（v0.3 Phase 3 收口，2026-04-24）** | Phase 3 开发文档总览；固定启动门控、首次登录合并、同步状态、账号隔离、段位赛联网、同步韧性、真实 Supabase 验收与 RISK 收口规则 |
+| `v03-supabase-account-sync/2026-04-24-phase3-01-startup-and-merge.md` | **已实施（v0.3 Phase 3，2026-04-24）** | SyncEngine `arm/start/shutdown` 三态门控；`hasMeaningfulLocalProgress`；首次登录本地/云端六场景；账号归属锁与账号不匹配保护 |
+| `v03-supabase-account-sync/2026-04-24-phase3-02-sync-status-ui.md` | **已实施（v0.3 Phase 3，2026-04-24）** | Home/Profile 同步状态展示；账号区；登出未同步保护；Onboarding 登录入口；持续离线时保持登录态 |
+| `v03-supabase-account-sync/2026-04-24-phase3-03-rank-match-online.md` | **已实施（v0.3 Phase 3，2026-04-24）** | 段位赛开始/下一局联网门控；Practice 离开自动 suspend；远端活跃段位赛 10 分钟接管；跨设备段位赛状态规则 |
+| `v03-supabase-account-sync/2026-04-24-phase3-04-resilience-qa.md` | **已实施（v0.3 Phase 3，2026-04-24）** | SyncEngine 指数退避与自愈触发器；RISK-3/RISK-4 测试补强；真实 Supabase 8 个验收剧本与收尾报告要求 |
 
 **本维度的跨系统硬约束**：
 - 任何新增持久化数据字段都需要同步更新合并策略（`src/sync/merge.ts`）

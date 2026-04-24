@@ -4,6 +4,7 @@
 > 总览：[`00-index`](./2026-04-24-phase3-00-index.md)
 > 关键决策：T4（`RETRY_DELAYS`）、T5（自愈触发器）、RISK-3 / RISK-4 修复
 > 前置：[`01-startup-and-merge`](./2026-04-24-phase3-01-startup-and-merge.md) / [`02-sync-status-ui`](./2026-04-24-phase3-02-sync-status-ui.md) / [`03-rank-match-online`](./2026-04-24-phase3-03-rank-match-online.md)
+> 状态：✅ 已实施并验收（2026-04-24）
 
 ---
 
@@ -203,20 +204,20 @@ describe('mergeRankMatchSessions · RISK-4 对称用例', () => {
 
 ## 实施步骤
 
-- [ ] **Step 1**：复用 Task 3.0 已导出的 `RETRY_DELAYS_MS` / `MAX_RETRY` 常量；实现 `scheduleRetry`；`push` 失败分支调用
-- [ ] **Step 2**：`markDirty` / `onlineHandler` / 轮询的自愈路径
-- [ ] **Step 3**：`cleanupRuntime` 清理 retryTimer
-- [ ] **Step 4**：`src/sync/engine.test.ts` 新增：
+- [x] **Step 1**：复用 Task 3.0 已导出的 `RETRY_DELAYS_MS` / `MAX_RETRY` 常量；实现 `scheduleRetry`；`push` 失败分支调用
+- [x] **Step 2**：`markDirty` / `onlineHandler` / 轮询的自愈路径
+- [x] **Step 3**：`cleanupRuntime` 清理 retryTimer
+- [x] **Step 4**：`src/sync/engine.test.ts` 新增：
   - push 失败 1 次后 1s 内 retry（用 `vi.useFakeTimers` + `vi.advanceTimersByTime`）
   - 连续 6 次失败后 retryCount=6 不再 schedule
   - online 事件在 error 状态下复位 retryCount
   - markDirty 在 error 状态下复位 retryCount + 触发立即 push
   - 30s 轮询在 error + dirtyKeys 非空时触发 push
-- [ ] **Step 5**：`src/sync/merge.test.ts` 新增 RISK-4 对称用例（4 个）
-- [ ] **Step 6**：`npm test` 全量通过；`npm run build` 通过
-- [ ] **Step 7**：commit `feat(v0.3): SyncEngine 指数退避 + 自愈触发器 (RISK-3) + mergeRankMatchSessions 对称用例 (RISK-4)`
-- [ ] **Step 8**：真实 Supabase 验收（见下）
-- [ ] **Step 9**：Phase 3 收尾报告（见下）
+- [x] **Step 5**：`src/sync/merge.test.ts` 新增 RISK-4 对称用例（4 个）
+- [x] **Step 6**：`npm test` 全量通过；`npm run build` 通过
+- [x] **Step 7**：commit `feat(v0.3): SyncEngine 指数退避 + 自愈触发器 (RISK-3) + mergeRankMatchSessions 对称用例 (RISK-4)`
+- [x] **Step 8**：真实 Supabase 验收（见下）
+- [x] **Step 9**：Phase 3 收尾报告（见下）
 
 ---
 
@@ -395,14 +396,14 @@ Phase 2 结束基线 582 tests → Phase 3 结束预估约 660 tests。实际以
 
 ## Task 收尾条件
 
-- [ ] Step 1-7 代码改动 + commit
-- [ ] 真实 Supabase 8 个剧本全部通过
-- [ ] `Plan/v0.3/phases/phase-3-acceptance.md` 写完（每个剧本的通过证据）
-- [ ] `Plan/v0.3/phases/phase-3.md` 状态改为 ✅ 已完成
-- [ ] `Plan/v0.3/implementation-plan.md` 顶部添加"Phase 3 以 Specs/... 为准"的废弃声明
-- [ ] `Plan/v0.3/README.md` 主线状态更新
-- [ ] worktree 的改动 cherry-pick / merge 回主线
-- [ ] 最终 `npm test` + `npm run build` 全量通过
+- [x] Step 1-7 代码改动 + commit
+- [x] 真实 Supabase 8 个剧本全部通过
+- [x] `Plan/v0.3/phases/phase-3-acceptance.md` 写完（每个剧本的通过证据）
+- [x] `Plan/v0.3/phases/phase-3.md` 状态改为 ✅ 已完成
+- [x] `Plan/v0.3/implementation-plan.md` 顶部添加"Phase 3 以 Specs/... 为准"的废弃声明
+- [x] `Plan/v0.3/README.md` 主线状态更新
+- [x] worktree 的改动 merge 回主线
+- [x] 最终 `npm test` + `npm run build` 全量通过
 
 ---
 

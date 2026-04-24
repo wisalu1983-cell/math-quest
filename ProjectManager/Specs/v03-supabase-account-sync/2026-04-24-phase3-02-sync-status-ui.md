@@ -4,6 +4,7 @@
 > 总览：[`00-index`](./2026-04-24-phase3-00-index.md)
 > 设计规格：[`v03-supabase-账号与同步系统`](./2026-04-23-v03-supabase-账号与同步系统.md) §6 / §7.1
 > 前置任务：[`01-startup-and-merge`](./2026-04-24-phase3-01-startup-and-merge.md)（依赖其 `arm/start/shutdown` 与 signOutGuarded）
+> 状态：✅ 已实施并验收（2026-04-24）
 
 ---
 

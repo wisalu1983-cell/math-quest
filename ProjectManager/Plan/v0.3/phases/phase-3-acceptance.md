@@ -1,7 +1,7 @@
 # Phase 3 真实 Supabase 验收记录
 
 > 日期：2026-04-24
-> 状态：真实 Supabase 环境已配置；8 个剧本均已通过；最终 test/build 已通过
+> 状态：真实 Supabase 环境已配置；8 个剧本均已通过；最终 test/build 已通过；线上发布已通过访问检查
 
 ## 环境配置
 
@@ -20,11 +20,19 @@ Supabase Dashboard 侧人工配置已完成：
 
 ## 代码侧验证
 
-- `npm test -- --run`：通过，42 个测试文件，637 个测试（2026-04-24 复跑）
+- `npm test -- --run`：通过，42 个测试文件，638 个测试（2026-04-24 复跑）
 - `npm run build`：通过（2026-04-24 复跑）
 - 本地页面：`http://127.0.0.1:5174/` 可访问；登录页邮箱输入框与"发送登录链接"按钮可渲染；浏览器 console 无错误
 - Supabase Data API：`profiles` 查询返回 `200 OK`；未登录状态下 RLS 返回空数组
 - RISK-2 调用点复核：`deleteRankMatchSession` 仅在 `repository/local.test.ts` 与 `dev-tool/injections/rank-active-session.ts` 调用，无产品路径调用者
+
+## 线上发布补充
+
+- `master` commit：`f34dc38 发布 v0.3 账号同步系统`
+- GitHub Pages：[`https://wisalu1983-cell.github.io/math-quest/`](https://wisalu1983-cell.github.io/math-quest/)
+- GitHub Actions：`Deploy to GitHub Pages` 已成功完成
+- 线上访问检查：HTTP 200；生产包无 DEV 工具入口
+- 线上账号检查：生产包已包含 Supabase URL 与 publishable key；线上 Magic Link 发送请求成功，页面显示"登录链接已发送"
 
 ## 真实 Supabase 剧本
 
@@ -48,12 +56,14 @@ Supabase Dashboard 侧人工配置已完成：
 | RISK-3 | 已修复。`RETRY_DELAYS_MS = [1,2,4,8,16,30]s`；push 失败指数退避；`online` / `markDirty` / Realtime / 30s 轮询均可自愈，成功后清 `retryCount`。 | Task 3.5 |
 | RISK-4 | 已修复。`mergeRankMatchSessions` 新增同优先级、games 更长者胜出的对称测试。 | Task 3.5 |
 
-## 待执行命令
+## 历史复跑命令
 
-继续真实验收时：
+如后续需要复跑本地真实环境验收，可使用：
 
 ```bash
 npm run dev -- --host 127.0.0.1 --port 5174
 ```
 
 然后按 `ProjectManager/Specs/v03-supabase-account-sync/2026-04-24-phase3-04-resilience-qa.md` 的 8 个剧本逐项补证。
+
+当前 Phase 3 收口不再依赖该命令；上述 8 个剧本已经通过。

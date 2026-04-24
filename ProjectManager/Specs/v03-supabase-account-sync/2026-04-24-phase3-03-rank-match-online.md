@@ -5,6 +5,7 @@
 > 产品规则：[`Plan/v0.3/phases/phase-3.md`](../../Plan/v0.3/phases/phase-3.md#预研收口结论) · 段位赛联网
 > 关键决策：P1（方案 C · 10 分钟阈值）、P5（status 表达生命周期，不做物理删除）、T6（B 设备直接继续写入，无需改 status）
 > 前置任务：[`01-startup-and-merge`](./2026-04-24-phase3-01-startup-and-merge.md)
+> 状态：✅ 已实施并验收（2026-04-24）
 
 ---
 
