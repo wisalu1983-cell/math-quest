@@ -193,6 +193,37 @@ function longDivisionSolution(a: number, b: number): string[] {
 }
 
 /** Generate a multi-row vertical-fill question for multi-digit multiplication */
+function generateTwoDigitByTwoDigitMult(difficulty: number, id: string): Question {
+  const pickOperand = () => {
+    let value = randInt(12, 99);
+    while (value % 10 === 0) value = randInt(12, 99);
+    return value;
+  };
+  const a = pickOperand();
+  const b = pickOperand();
+  const answer = a * b;
+  const steps = multiDigitMultSolution(a, b);
+
+  return {
+    id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
+    prompt: `用竖式计算: ${a} × ${b}`,
+    data: {
+      kind: 'vertical-calc',
+      operation: '×' as const,
+      operands: [a, b],
+      steps: [],
+      multiplicationBoard: {
+        mode: 'integer',
+        integerOperands: [a, b],
+        operandInputMode: 'static',
+      },
+    },
+    solution: { answer, steps, explanation: `${a} × ${b} = ${answer}` },
+    hints: ['先用第二个数的个位乘第一个数，再用十位乘，最后把部分积相加'],
+    xpBase: 10 + (difficulty - 1) * 5,
+  };
+}
+
 function generateMultiDigitMult(difficulty: number, id: string): Question {
   let a: number, b: number;
   if (difficulty <= 7) {
@@ -240,10 +271,10 @@ function generateMultiDigitMult(difficulty: number, id: string): Question {
 function generateDivision(difficulty: number, id: string): Question {
   // v2.1：低档整数÷整数（整除）；中档整数÷出小数；高档已不走此函数（dec-div 承担）
   if (difficulty <= 5) {
-    const b = randInt(2, 9);
+    const b = randInt(4, 9);
     if (difficulty <= 3) {
       // 档1-低 (d=2~3)：三位数÷一位数，商整数
-      const quotient = randInt(11, Math.floor(999 / b));
+      const quotient = randInt(Math.ceil(100 / b), Math.floor(999 / b));
       const a = b * quotient;
       const steps = longDivisionSolution(a, b);
       return {
@@ -256,7 +287,7 @@ function generateDivision(difficulty: number, id: string): Question {
       };
     }
     // 档1-高 (d=4~5)：四位数÷一位数，商整数（操作步骤更多）
-    const quotient = randInt(111, Math.floor(9999 / b));
+    const quotient = randInt(Math.ceil(1000 / b), Math.floor(9999 / b));
     const a = b * quotient;
     const steps = longDivisionSolution(a, b);
     return {
@@ -268,15 +299,7 @@ function generateDivision(difficulty: number, id: string): Question {
       xpBase: 10 + (difficulty - 1) * 5,
     };
   }
-  // 中档：整数÷整数，商是一位或两位小数（如 7÷4=1.75、9÷4=2.25、15÷4=3.75）
-  // 选择能整除到 .25 或 .5 或 .75 的组合
-  const patterns: Array<[number, number, number]> = [
-    [7, 4, 1.75], [9, 4, 2.25], [15, 4, 3.75], [13, 4, 3.25], [11, 4, 2.75],
-    [9, 2, 4.5], [13, 2, 6.5], [21, 2, 10.5], [15, 2, 7.5],
-    [9, 5, 1.8], [17, 5, 3.4], [21, 5, 4.2], [33, 5, 6.6], [29, 5, 5.8],
-    [18, 8, 2.25], [14, 8, 1.75], [30, 8, 3.75],
-  ];
-  const [a, b, q] = patterns[randInt(0, patterns.length - 1)];
+  const { dividend: a, divisor: b, quotient: q } = generateFiniteDecimalIntDivision();
   const steps = [
     `${a} ÷ ${b}，商的整数部分 ${Math.floor(a / b)}`,
     `余数不够除时，商上加小数点，余数后补0继续除`,
@@ -290,6 +313,43 @@ function generateDivision(difficulty: number, id: string): Question {
     hints: ['整数除完后，商上加小数点，余数后补0继续除'],
     xpBase: 10 + (difficulty - 1) * 5,
   };
+}
+
+function pickFiniteDecimalPlaces(): number {
+  const r = Math.random();
+  if (r < 0.35) return 1;
+  if (r < 0.80) return 2;
+  return 3;
+}
+
+function generateFiniteDecimalIntDivision(): {
+  dividend: number;
+  divisor: number;
+  quotient: number;
+} {
+  for (let attempt = 0; attempt < 200; attempt++) {
+    const divisor = randInt(4, 19);
+    const decimalPlaces = pickFiniteDecimalPlaces();
+    const scale = 10 ** decimalPlaces;
+    const minScaled = Math.ceil((100 * scale) / divisor);
+    const maxScaled = Math.floor((999 * scale) / divisor);
+    if (minScaled >= maxScaled) continue;
+
+    const quotientScaled = randInt(minScaled, maxScaled);
+    if (quotientScaled % scale === 0) continue;
+
+    const rawDividend = quotientScaled * divisor;
+    if (rawDividend % scale !== 0) continue;
+
+    const dividend = rawDividend / scale;
+    const quotient = quotientScaled / scale;
+    if (dividend < 100 || dividend >= 1000) continue;
+    if (Number.isInteger(quotient)) continue;
+
+    return { dividend, divisor, quotient };
+  }
+
+  return { dividend: 275, divisor: 8, quotient: 34.375 };
 }
 
 // ===== 小数加减法 (vertical-fill) =====
@@ -435,13 +495,19 @@ function generateDecimalMul(difficulty: number, id: string): Question {
 function generateDecimalDiv(difficulty: number, id: string): Question {
   if (difficulty <= 7) {
     // 中档：小数÷整数
-    const intDivisor = randInt(2, 9);
-    const qDp = randInt(1, 2);
-    const qFactor = Math.pow(10, qDp);
-    let qScaled = randInt(11, 999);
-    while (qScaled % 10 === 0) qScaled++;
-    const quotient = qScaled / qFactor;
-    const dividend = (qScaled * intDivisor) / qFactor;
+    let intDivisor = 4;
+    let quotient = 0;
+    let dividend = 0;
+    for (let attempt = 0; attempt < 100; attempt++) {
+      intDivisor = randInt(4, 9);
+      const qDp = randInt(1, 2);
+      const qFactor = Math.pow(10, qDp);
+      let qScaled = randInt(11, 999);
+      while (qScaled % 10 === 0) qScaled++;
+      quotient = qScaled / qFactor;
+      dividend = (qScaled * intDivisor) / qFactor;
+      if (!(Number.isInteger(dividend) && dividend >= 10 && dividend < 100)) break;
+    }
     const expression = `${formatNum(dividend)} ÷ ${intDivisor}`;
     const steps = [`商的小数点与被除数的小数点对齐`, `${expression} = ${formatNum(quotient)}`];
     return {
@@ -524,14 +590,14 @@ function generateApproximate(difficulty: number, id: string): Question {
     opChar = '×';
     expression = `${a.toFixed(2)} × ${b.toFixed(2)}`;
   } else {
-    // 高档重点：整数÷整数除不尽（如 7÷3, 22÷7 这种）
+    // 高档重点：三位数整数÷整数除不尽，保留取近似训练但避开口算级短除。
     if (difficulty >= 8 && Math.random() < 0.5) {
-      const patterns: Array<[number, number]> = [
-        [7, 3], [22, 7], [11, 9], [13, 6], [17, 6], [23, 7], [31, 9], [5, 3], [8, 3], [25, 7],
-      ];
-      const [aa, bb] = patterns[randInt(0, patterns.length - 1)];
-      a = aa; b = bb; exactAnswer = aa / bb; opChar = '÷';
-      expression = `${aa} ÷ ${bb}`;
+      const pair = generateApproximateIntDivision();
+      a = pair.dividend;
+      b = pair.divisor;
+      exactAnswer = a / b;
+      opChar = '÷';
+      expression = `${a} ÷ ${b}`;
     } else {
       const divisorScaled = randInt(21, 99);
       let dividendScaled = randInt(200, 9999);
@@ -559,6 +625,15 @@ function generateApproximate(difficulty: number, id: string): Question {
     hints: ['先用竖式算出比要求多一位的结果，再四舍五入'],
     xpBase: 10 + (difficulty - 1) * 5,
   };
+}
+
+function generateApproximateIntDivision(): { dividend: number; divisor: number } {
+  for (let attempt = 0; attempt < 100; attempt++) {
+    const dividend = randInt(100, 999);
+    const divisor = randInt(4, 19);
+    if (dividend % divisor !== 0) return { dividend, divisor };
+  }
+  return { dividend: 685, divisor: 7 };
 }
 
 function generateIntAdd(difficulty: number, id: string): Question {
@@ -620,6 +695,9 @@ function generateIntMul(difficulty: number, id: string): Question {
       solution: { answer: a * b, explanation: `${a} × ${b} = ${a * b}` },
       hints: ['从个位开始，逐位相乘'], xpBase: 10 + (difficulty - 1) * 5,
     };
+  }
+  if (Math.random() < 0.15) {
+    return generateTwoDigitByTwoDigitMult(difficulty, id);
   }
   // 档1-高 (d=4~5)：三位数 × 一位数（含进位）
   const a = randInt(100, 999); const b = randInt(2, 9);

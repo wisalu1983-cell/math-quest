@@ -16,6 +16,7 @@ import { repository } from '@/repository/local';
 import { useGameProgressStore } from './gamification';
 import { nanoid } from 'nanoid';
 import { generateQuestion } from '@/engine';
+import { generateUniqueQuestion } from '@/engine/question-dedupe';
 import { CAMPAIGN_MAX_HEARTS } from '@/constants';
 import { getCampaignLevel, getSubtypeFilter } from '@/constants/campaign';
 import { buildAdvanceSlots } from '@/engine/advance';
@@ -153,6 +154,8 @@ interface SessionStore {
   pendingWrongQuestions: WrongQuestion[];
   /** 段位赛预生成题序（由 startRankMatchGame 填充，nextQuestion 按 currentIndex 取） */
   rankQuestionQueue: Question[];
+  /** session 内完全重复治理：仅内存生效，不写入 PracticeSession / repository */
+  sessionDuplicateSignatures: Set<string>;
   /** 段位赛单局结束后的下一步行动（endSession 的 rank-match 分支写入，UI 据此决定路由） */
   lastRankMatchAction: GameFinishedNextAction | null;
 
@@ -201,6 +204,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   lastTrainingFieldMistakes: [],
   pendingWrongQuestions: [],
   rankQuestionQueue: [],
+  sessionDuplicateSignatures: new Set<string>(),
   lastRankMatchAction: null,
 
   startCampaignSession: (topicId, levelId) => {
@@ -232,6 +236,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
+      sessionDuplicateSignatures: new Set<string>(),
     });
 
     get().nextQuestion();
@@ -314,6 +319,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
       rankQuestionQueue: questions,
+      sessionDuplicateSignatures: new Set<string>(),
       lastRankMatchAction: null,
     });
 
@@ -411,6 +417,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: restoredPendingWrongQuestions,
       rankQuestionQueue: stored.rankQuestionQueue,
+      sessionDuplicateSignatures: new Set<string>(),
       currentQuestion: nextQ,
       lastRankMatchAction: null,
     });
@@ -447,13 +454,14 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
+      sessionDuplicateSignatures: new Set<string>(),
     });
 
     get().nextQuestion();
   },
 
   nextQuestion: () => {
-    const { session, currentIndex, totalQuestions, rankQuestionQueue } = get();
+    const { session, currentIndex, totalQuestions, rankQuestionQueue, sessionDuplicateSignatures } = get();
     if (!session || currentIndex >= totalQuestions) return;
 
     let question: Question;
@@ -478,7 +486,16 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
           : undefined;
       }
 
-      question = generateQuestion(session.topicId, difficulty, subtypeFilter);
+      question = generateUniqueQuestion({
+        generate: () => generateQuestion(session.topicId, difficulty, subtypeFilter),
+        seen: sessionDuplicateSignatures,
+        context: {
+          sessionMode: session.sessionMode,
+          topicId: session.topicId,
+          difficulty,
+          subtypeTag: subtypeFilter?.join('|'),
+        },
+      });
     }
 
     set({
@@ -650,6 +667,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
+      sessionDuplicateSignatures: new Set<string>(),
       lastRankMatchAction: rankMatchAction,
     });
 
@@ -677,6 +695,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
+      sessionDuplicateSignatures: new Set<string>(),
       lastRankMatchAction: null,
     });
   },
@@ -711,6 +730,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
+      sessionDuplicateSignatures: new Set<string>(),
       lastRankMatchAction: null,
     });
   },
@@ -748,6 +768,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
+      sessionDuplicateSignatures: new Set<string>(),
       lastRankMatchAction: null,
     });
   },

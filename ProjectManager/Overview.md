@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-25（v0.4 Phase 2 已完成；Phase 3 预研已收口）
+> 最后更新：2026-04-25（v0.4 Phase 3 已完成；Phase 4 待开工）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.4** | ✅ Phase 1 / Phase 2 已完成；Phase 3 预研已收口，待复跑抽样后开工 | [Plan/v0.4/](Plan/v0.4/) |
+| **当前版本** | **v0.4** | ✅ Phase 1 / Phase 2 / Phase 3 已完成；Phase 4 待开工 | [Plan/v0.4/](Plan/v0.4/) |
 | 上一版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
 | 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
 | 更早版本 | v0.1 | ✅ 已发布（2026-04-19 收口，三层游戏化闭环完成） | [Plan/v0.1/](Plan/v0.1/) |
@@ -51,7 +51,7 @@
 - ✅ Phase 1 已完成：多位整数乘法竖式、小数乘法复用、小数答案等价、竖式可读性、`ISSUE-059` 修复
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
 - ✅ Phase 2 已完成：A04「运算律」/ A06「括号变换」取消玩家独立入口并从新主链路断联；相关能力迁入 A07「简便计算」低档知识点 lane；`npm test -- --run` 48/48 files、672/672 tests 通过，`npm run build` 通过，浏览器拟真验收通过
-- ✅ Phase 3 预研已收口：入口见 [`Plan/v0.4/phases/phase-3-research.md`](Plan/v0.4/phases/phase-3-research.md)；当前代码抽样确认 A03 `difficulty=4 + int-mul` 仍是 100% `三位数 × 一位数`，缺少已决策的 `2位数 × 2位数` 15% 档位分布，A03 进阶 3★ 仍有小规模短除样本，重复题根因是有限模板池 + 无 session 去重；实施前需基于 Phase 2 后的新 IA 复跑
+- ✅ Phase 3 已完成：题目质量与生成器诊断入口见 [`Plan/v0.4/phases/phase-3.md`](Plan/v0.4/phases/phase-3.md)；A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布达标，A03 进阶 3★ 短除候选降为 0，A02 compare 质量优化完成，session 内完全重复治理已覆盖 campaign / advance / rank-match
 - ✅ 当前版本开放 issue 数为 0
 - 📋 剩余待决策项：进位格三档规则、Phase 5 是否保留在 v0.4
 
@@ -64,7 +64,7 @@
 - 当前开放 issue：[`ISSUE_LIST.md`](ISSUE_LIST.md)
 - Backlog 来源：[`Backlog.md`](Backlog.md)
 
-**下一步**：按 Phase 3 预研口径复跑题目质量抽样并创建实施子计划，另行确认 `BL-005.2` 进位格三档规则与 `Phase 5` 去留。
+**下一步**：确认 `BL-005.2` 进位格三档规则并启动 Phase 4；另行确认 `Phase 5` 去留。
 
 ---
 
