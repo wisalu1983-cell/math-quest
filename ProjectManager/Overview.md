@@ -51,7 +51,7 @@
 - ✅ Phase 1 已完成：多位整数乘法竖式、小数乘法复用、小数答案等价、竖式可读性、`ISSUE-059` 修复
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
 - ✅ Phase 2 已完成：A04「运算律」/ A06「括号变换」取消玩家独立入口并从新主链路断联；相关能力迁入 A07「简便计算」低档知识点 lane；`npm test -- --run` 48/48 files、672/672 tests 通过，`npm run build` 通过，浏览器拟真验收通过
-- ✅ Phase 3 预研已收口：入口见 [`Plan/v0.4/phases/phase-3-research.md`](Plan/v0.4/phases/phase-3-research.md)；当前代码抽样确认 A03 第四关缺少 `2位数 × 2位数` 桥接、A03 进阶 3★ 仍有小规模短除样本、重复题根因是有限模板池 + 无 session 去重；实施前需基于 Phase 2 后的新 IA 复跑
+- ✅ Phase 3 预研已收口：入口见 [`Plan/v0.4/phases/phase-3-research.md`](Plan/v0.4/phases/phase-3-research.md)；当前代码抽样确认 A03 `difficulty=4 + int-mul` 仍是 100% `三位数 × 一位数`，缺少已决策的 `2位数 × 2位数` 15% 档位分布，A03 进阶 3★ 仍有小规模短除样本，重复题根因是有限模板池 + 无 session 去重；实施前需基于 Phase 2 后的新 IA 复跑
 - ✅ 当前版本开放 issue 数为 0
 - 📋 剩余待决策项：进位格三档规则、Phase 5 是否保留在 v0.4
 
