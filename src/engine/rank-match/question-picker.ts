@@ -18,6 +18,7 @@ import type {
   RankMatchSession,
 } from '@/types/gamification';
 import { generateQuestion } from '@/engine';
+import { generateUniqueQuestion } from '@/engine/question-dedupe';
 import {
   RANK_QUESTIONS_PER_GAME,
   RANK_PRIMARY_BY_WIN_SLOT,
@@ -83,7 +84,7 @@ export class PickerValidationError extends Error {
 // ─── 主算法 ───
 
 export function pickQuestionsForGame(params: PickQuestionsParams): PickQuestionsResult {
-  const { session, gameIndex, advanceProgress: _advanceProgress, wrongQuestions = [] } = params;
+  const { session, gameIndex, wrongQuestions = [] } = params;
   const tier = session.targetTier;
   const totalCount = RANK_QUESTIONS_PER_GAME[tier];
 
@@ -100,6 +101,7 @@ export function pickQuestionsForGame(params: PickQuestionsParams): PickQuestions
   const primaryCount = Math.ceil(totalCount * 0.40);
   const reviewCount = diffCfg.review === null ? 0 : Math.floor(totalCount * 0.25);
   const nonPrimaryCount = totalCount - primaryCount - reviewCount;
+  const seenSignatures = new Set<string>();
 
   // 生成三桶
   const primary = generateBucket({
@@ -107,12 +109,14 @@ export function pickQuestionsForGame(params: PickQuestionsParams): PickQuestions
     count: primaryCount,
     band: 'primary',
     tier,
+    seenSignatures,
   });
   const nonPrimary = generateBucket({
     topics: nonPrimaryTopics.length > 0 ? nonPrimaryTopics : primaryTopics,
     count: nonPrimaryCount,
     band: 'nonPrimary',
     tier,
+    seenSignatures,
   });
   // 复习桶：§5.6 按错题频次加权产出 topicsPerSlot；generateBucket 直接按该序列映射主题
   const review = diffCfg.review === null
@@ -122,6 +126,7 @@ export function pickQuestionsForGame(params: PickQuestionsParams): PickQuestions
         count: reviewCount,
         band: 'review',
         tier,
+        seenSignatures,
         topicsPerSlot: distributeReviewTopics({
           reviewTopics,
           count: reviewCount,
@@ -188,10 +193,11 @@ interface GenerateBucketParams {
    * 未提供时回落 round-robin `topics[i % topics.length]`（主考 / 非主考 / 无错题的复习桶）。
    */
   topicsPerSlot?: TopicId[];
+  seenSignatures?: Set<string>;
 }
 
 function generateBucket(params: GenerateBucketParams): Question[] {
-  const { topics, count, band, tier, topicsPerSlot } = params;
+  const { topics, count, band, tier, topicsPerSlot, seenSignatures } = params;
   if (count === 0 || topics.length === 0) return [];
 
   // 难度配额（§5.5 硬比例约束）
@@ -203,7 +209,19 @@ function generateBucket(params: GenerateBucketParams): Question[] {
       ? topicsPerSlot[i] ?? topics[i % topics.length]
       : topics[i % topics.length];
     const difficulty = difficulties[i];
-    out.push(generateQuestion(topic, difficulty));
+    const question = seenSignatures
+      ? generateUniqueQuestion({
+          generate: () => generateQuestion(topic, difficulty),
+          seen: seenSignatures,
+          context: {
+            sessionMode: 'rank-match',
+            topicId: topic,
+            difficulty,
+            subtypeTag: band,
+          },
+        })
+      : generateQuestion(topic, difficulty);
+    out.push(question);
   }
   return out;
 }

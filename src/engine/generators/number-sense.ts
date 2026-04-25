@@ -24,7 +24,7 @@ function shuffle<T>(arr: T[]): T[] {
   return out;
 }
 
-export function getSubtypeEntries(_difficulty: number): SubtypeDef[] {
+export function getSubtypeEntries(): SubtypeDef[] {
   return [
     { tag: 'estimate',      weight: 30 },
     { tag: 'round',         weight: 20 },
@@ -433,8 +433,8 @@ function generateCompareLow(difficulty: number, id: string): Question {
   };
 }
 
-/** 中档：两个表达式互比。形式 a×b ○ a×c（同 a 不同因子） */
-function generateCompareExpr(difficulty: number, id: string): Question {
+/** 基础 / 中档：两个表达式互比。形式 a×b ○ a×c（同 a 不同因子） */
+function generateCompareBasicExpr(difficulty: number, id: string): Question {
   // 生成 aStr, b, c，保证 b ≠ c
   const a = Number((randInt(21, 99) / 10).toFixed(1));
   const pattern = randInt(0, 2);
@@ -476,6 +476,92 @@ function generateCompareExpr(difficulty: number, id: string): Question {
     data: { kind: 'number-sense', subtype: 'compare', options: ['>', '<', '='] },
     solution: { answer, explanation },
     hints: ['先找两边相同的部分，再比较不同的部分'],
+    xpBase: 10 + (difficulty - 1) * 5,
+  };
+}
+
+/** 高档 d=7：二步结构 / 误导性 compare，不要求算出具体小数结果。 */
+function generateCompareAdvancedExpr(difficulty: number, id: string): Question {
+  const a = randInt(12, 48);
+  const templates: Array<{
+    leftExpr: string;
+    rightExpr: string;
+    answer: '>' | '<' | '=';
+    explanation: string;
+    hint: string;
+  }> = [
+    {
+      leftExpr: `${a} ÷ 0.25`,
+      rightExpr: `${a} × 4`,
+      answer: '=',
+      explanation: '等价变形：除以 0.25 等价于乘以 4，所以两边相等',
+      hint: '先把除以小数改写成等价乘法',
+    },
+    {
+      leftExpr: `${a} ÷ 0.25`,
+      rightExpr: `${a} × 4.1`,
+      answer: '<',
+      explanation: '等价变形：左边等价于 ×4，右边是 ×4.1，所以左边更小',
+      hint: '先识别 ×4 的等价结构，再比较倍率',
+    },
+    {
+      leftExpr: `${a} × 0.2`,
+      rightExpr: `${a} ÷ 4.8`,
+      answer: '<',
+      explanation: '等价变形：×0.2 等价于 ÷5；除以 5 比除以 4.8 得到的结果小',
+      hint: '把 0.2 看成 1/5，再比较除数大小',
+    },
+    {
+      leftExpr: `${a} ÷ 1.25 × 2.5`,
+      rightExpr: `${a}`,
+      answer: '>',
+      explanation: '整体倍率：÷1.25 等价于 ×0.8，再 ×2.5，整体倍率是 ×2',
+      hint: '把连续乘除合成一个整体倍率',
+    },
+    {
+      leftExpr: `${a} × 1.2 ÷ 0.6`,
+      rightExpr: `${a} × 2`,
+      answer: '=',
+      explanation: '整体倍率：×1.2 再 ÷0.6，整体倍率是 ×2，和右边相等',
+      hint: '先算倍率关系，不必算出具体得数',
+    },
+    {
+      leftExpr: `${a} × 0.75 ÷ 1.5`,
+      rightExpr: `${a}`,
+      answer: '<',
+      explanation: '整体倍率：×0.75 再 ÷1.5，整体倍率是 ×0.5，小于原数',
+      hint: '连续乘除先合并成一个倍率',
+    },
+    {
+      leftExpr: `${a} × 0.6 + ${a} × 0.4`,
+      rightExpr: `${a}`,
+      answer: '=',
+      explanation: '合并同类结构：0.6 个 a 加 0.4 个 a，合起来正好是 1 个 a',
+      hint: '把相同的数看成同类项，先合并倍率',
+    },
+    {
+      leftExpr: `${a} × 0.6 + ${a} × 0.5`,
+      rightExpr: `${a}`,
+      answer: '>',
+      explanation: '合并同类结构：0.6 个 a 加 0.5 个 a，合起来是 1.1 个 a',
+      hint: '先合并 0.6 和 0.5，再和 1 比',
+    },
+    {
+      leftExpr: `${a} × 0.6 + ${a} × 0.3`,
+      rightExpr: `${a}`,
+      answer: '<',
+      explanation: '合并同类结构：0.6 个 a 加 0.3 个 a，合起来只有 0.9 个 a',
+      hint: '相同因数先合并，不用算具体乘积',
+    },
+  ];
+  const selected = pick(templates);
+
+  return {
+    id, topicId: 'number-sense', type: 'multiple-choice', difficulty,
+    prompt: `不计算，比较大小: ${selected.leftExpr} ○ ${selected.rightExpr}`,
+    data: { kind: 'number-sense', subtype: 'compare', options: ['>', '<', '='] },
+    solution: { answer: selected.answer, explanation: selected.explanation },
+    hints: [selected.hint],
     xpBase: 10 + (difficulty - 1) * 5,
   };
 }
@@ -527,18 +613,30 @@ function generateCompareConcept(difficulty: number, id: string): Question {
 
   // 单选概念 + 反例
   const pool: Array<{ stmt: string; truth: '对' | '错'; explain: string }> = [
-    { stmt: '一个数乘以一个小数，积一定比原数小', truth: '错', explain: '反例：5 × 1.5 = 7.5，比 5 大。当小数 > 1 时积更大' },
-    { stmt: '一个数除以一个比 1 小的数，商一定比原数大', truth: '对', explain: '当除数 < 1 时商 > 被除数（除数 > 0）' },
-    { stmt: '两个小于 1 的正数相乘，积比它们都小', truth: '对', explain: '如 0.5 × 0.3 = 0.15 < 0.3 < 0.5' },
-    { stmt: '一个数乘以比 1 大的数，积比原数大', truth: '对', explain: '因为 b > 1 时 a × b > a（a > 0）' },
+    { stmt: '一个正数除以一个比 1 小的正数，商一定比原数大', truth: '对', explain: '规则：正数除以小于 1 的正数，相当于乘以大于 1 的数' },
+    { stmt: '两个小于 1 的正数相乘，积比这两个因数都小', truth: '对', explain: '规则：两个正因数都小于 1，乘积会继续缩小，例如 0.5 × 0.3 = 0.15' },
+    { stmt: '一个正数乘以比 1 大的数，积比原数大', truth: '对', explain: '规则：当乘数大于 1 且原数为正数时，积会变大' },
+    { stmt: '一个数乘以 0.1，相当于这个数缩小到十分之一', truth: '对', explain: '规则：×0.1 与 ÷10 等价，数位向右缩小一位' },
+    { stmt: '0 除以任何非零数都得 0', truth: '对', explain: '条件：除数必须非零；在这个条件下 0 平均分仍是 0' },
+    { stmt: '任何数乘以 0，积都是 0', truth: '对', explain: '规则：0 的乘法性质决定乘积为 0' },
+    { stmt: '任何数除以 1 都等于原数', truth: '对', explain: '规则：除以 1 不改变数的大小' },
+    { stmt: '较大的正数除以较小的正数，商一定大于 1', truth: '对', explain: '条件：两个数都为正且被除数更大，所以商大于 1' },
+    { stmt: '一个正数除以 0.1，相当于把这个数扩大到 10 倍', truth: '对', explain: '规则：÷0.1 与 ×10 等价' },
+    { stmt: '两个大于 1 的数相乘，积一定大于这两个因数', truth: '对', explain: '条件：两个因数都大于 1，互相放大，所以积更大' },
+    { stmt: '一个正数乘以 1，积等于原数', truth: '对', explain: '规则：1 是乘法恒等数，不改变原数' },
+    { stmt: '一个正数除以它自己，商是 1', truth: '对', explain: '条件：这个数必须是非零正数；同数相除得 1' },
+    { stmt: '一个数乘以一个小数，积一定比原数小', truth: '错', explain: '反例：5 × 1.5 = 7.5，比 5 大；小数也可能大于 1' },
     { stmt: '小数除以小数，商一定是小数', truth: '错', explain: '反例：0.6 ÷ 0.2 = 3，商是整数' },
-    { stmt: '一个数乘以 0.1，相当于这个数缩小到十分之一', truth: '对', explain: '× 0.1 = ÷ 10' },
-    { stmt: '所有大于 0 的数相除，商一定小于被除数', truth: '错', explain: '反例：除数 < 1 时商更大，如 6 ÷ 0.5 = 12' },
-    { stmt: '任何数乘以 0，积都是 0', truth: '对', explain: '乘法定义' },
-    { stmt: '一个数除以它自己，商是 1', truth: '错', explain: '反例：0 ÷ 0 没有意义。必须非零' },
-    { stmt: '两个大于 0 小于 1 的数相除，商一定大于 1', truth: '错', explain: '反例：0.3 ÷ 0.5 = 0.6 < 1' },
-    { stmt: '较大数除以较小数的商，一定大于 1', truth: '对', explain: '大 ÷ 小 > 1（正数）' },
-    { stmt: '小数乘以整数，积一定是小数', truth: '错', explain: '反例：0.2 × 5 = 1，整数' },
+    { stmt: '所有大于 0 的数相除，商一定小于被除数', truth: '错', explain: '反例：6 ÷ 0.5 = 12；除数小于 1 时商会变大' },
+    { stmt: '一个数除以它自己，商一定是 1', truth: '错', explain: '反例：0 ÷ 0 没有意义；必须补充非零条件' },
+    { stmt: '两个大于 0 小于 1 的数相除，商一定大于 1', truth: '错', explain: '反例：0.3 ÷ 0.5 = 0.6，小于 1' },
+    { stmt: '小数乘以整数，积一定是小数', truth: '错', explain: '反例：0.2 × 5 = 1，积可以是整数' },
+    { stmt: '两个正小数相加，和一定小于 1', truth: '错', explain: '反例：0.7 + 0.6 = 1.3；正小数相加可能超过 1' },
+    { stmt: '一个数除以比 1 大的数，商一定小于原数', truth: '错', explain: '反例：负数 -6 ÷ 2 = -3，-3 反而大于 -6；缺少正数条件' },
+    { stmt: '小数一定比整数小', truth: '错', explain: '反例：3.5 比整数 2 大；小数和整数不能只看名称比较' },
+    { stmt: '一个正数乘以 0.5，积一定比 1 小', truth: '错', explain: '反例：4 × 0.5 = 2；是否小于 1 还取决于原数大小' },
+    { stmt: '两个数的积为 0，说明两个数都一定是 0', truth: '错', explain: '反例：0 × 5 = 0；只需要至少一个因数为 0' },
+    { stmt: '一个数除以小于 1 的数，商一定变大', truth: '错', explain: '反例：0 ÷ 0.5 = 0，没有变大；缺少被除数为正数的条件' },
   ];
   const sel = pick(pool);
   return {
@@ -553,9 +651,10 @@ function generateCompareConcept(difficulty: number, id: string): Question {
 
 function generateCompare(difficulty: number, id: string): Question {
   if (difficulty >= 8) return generateCompareConcept(difficulty, id);
-  if (difficulty >= 6) return generateCompareExpr(difficulty, id);
+  if (difficulty >= 7) return generateCompareAdvancedExpr(difficulty, id);
+  if (difficulty >= 6) return generateCompareBasicExpr(difficulty, id);
   // 低档 (d=2~5)：d=2~3 走 generateCompareLow，d=4~5 走 generateCompareExpr（两表达式互比）
-  if (difficulty >= 4) return generateCompareExpr(difficulty, id);
+  if (difficulty >= 4) return generateCompareBasicExpr(difficulty, id);
   return generateCompareLow(difficulty, id);
 }
 
