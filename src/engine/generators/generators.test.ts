@@ -193,7 +193,7 @@ describe('Vertical Calc (竖式笔算)', () => {
   });
 
   describe('Hard (difficulty=7)', () => {
-    it('应包含 3位×2位 乘法 (numeric-input)', () => {
+    it('应包含 3位×2位 乘法（多位乘法竖式板）', () => {
       const qs = genN(generateVerticalCalc, 7, 200);
       const bigMuls = qs.filter(q => {
         if (q.data.operation !== '×') return false;
@@ -202,7 +202,11 @@ describe('Vertical Calc (竖式笔算)', () => {
       });
       expect(bigMuls.length).toBeGreaterThan(0);
       for (const q of bigMuls) {
-        expect(q.type).toBe('numeric-input');
+        expect(q.type).toBe('vertical-fill');
+        expect(q.data.multiplicationBoard).toMatchObject({
+          mode: 'integer',
+          operandInputMode: 'static',
+        });
       }
     });
 
@@ -216,7 +220,7 @@ describe('Vertical Calc (竖式笔算)', () => {
   describe('Demon (difficulty=10)', () => {
     it('乘法应为 3~4位×2位（整数版）', () => {
       const qs = genN(generateVerticalCalc, 10, 200);
-      const muls = qs.filter(q => q.data.operation === '×' && q.type === 'numeric-input' &&
+      const muls = qs.filter(q => q.data.operation === '×' && q.type === 'vertical-fill' &&
         Number.isInteger(q.data.operands[0]) && Number.isInteger(q.data.operands[1]));
       expect(muls.length).toBeGreaterThan(0);
       for (const q of muls) {
@@ -224,6 +228,10 @@ describe('Vertical Calc (竖式笔算)', () => {
         expect(a).toBeGreaterThanOrEqual(100);
         expect(b).toBeGreaterThanOrEqual(11);
         expect(b).toBeLessThanOrEqual(99);
+        expect(q.data.multiplicationBoard).toMatchObject({
+          mode: 'integer',
+          operandInputMode: 'static',
+        });
       }
     });
 
@@ -911,14 +919,38 @@ describe('Vertical Calc - Decimal Add/Sub (小数加减法)', () => {
 });
 
 describe('Vertical Calc - Decimal Mul (小数乘法)', () => {
-  it('中档应生成小数×整数乘法题', () => {
+  it('中档应生成小数×整数乘法竖式题', () => {
     const qs = genN(generateVerticalCalc, 7, 400);
     const decMul = qs.filter((q: any) =>
-      q.type === 'numeric-input' && q.prompt.includes('列竖式计算') &&
+      q.type === 'vertical-fill' && q.prompt.includes('列竖式计算') &&
       q.data.operation === '×' &&
       (q.data.operands[0] % 1 !== 0 || q.data.operands[1] % 1 !== 0)
     );
     expect(decMul.length).toBeGreaterThan(0);
+    for (const q of decMul) {
+      expect(q.data.multiplicationBoard).toMatchObject({
+        mode: 'decimal',
+        operandInputMode: 'blank',
+      });
+      expect(q.data.multiplicationBoard.decimalPlaces).toBeGreaterThan(0);
+      expect(q.data.trainingFields).toBeUndefined();
+    }
+  });
+
+  it('高档应生成小数×小数乘法竖式题', () => {
+    const qs = genN(generateVerticalCalc, 9, 400);
+    const decMul = qs.filter((q: any) =>
+      q.type === 'vertical-fill' &&
+      q.data.operation === '×' &&
+      q.data.multiplicationBoard?.mode === 'decimal' &&
+      q.data.operands[0] % 1 !== 0 &&
+      q.data.operands[1] % 1 !== 0
+    );
+    expect(decMul.length).toBeGreaterThan(0);
+    for (const q of decMul) {
+      expect(q.data.multiplicationBoard.operandInputMode).toBe('blank');
+      expect(q.data.trainingFields).toBeUndefined();
+    }
   });
 });
 
@@ -940,6 +972,20 @@ describe('Vertical Calc - Decimal Div (小数除法)', () => {
       q.data.operands[1] % 1 !== 0
     );
     expect(decDivDecDivisor.length).toBeGreaterThan(0);
+  });
+
+  it('高档 dec-div 不应残留隐藏 trainingFields（ISSUE-059）', () => {
+    const qs = genN(generateVerticalCalc, 9, 400);
+    const highDecDivs = qs.filter((q: any) =>
+      q.type === 'numeric-input' &&
+      q.data.operation === '÷' &&
+      q.data.operands[1] % 1 !== 0 &&
+      q.solution.steps?.some((step: string) => step.includes('除数是小数'))
+    );
+    expect(highDecDivs.length).toBeGreaterThan(0);
+    for (const q of highDecDivs) {
+      expect(q.data.trainingFields).toBeUndefined();
+    }
   });
 });
 
@@ -1009,7 +1055,11 @@ describe('Vertical Calc - Dispatcher Distribution (调度器分布)', () => {
 
   it('中档整数 vertical-fill 应明显下降（小数接管主流）', () => {
     const qs = genN(generateVerticalCalc, 7, 1000);
-    const intVf = qs.filter((q: any) => q.type === 'vertical-fill' && q.data.decimalPlaces == null);
+    const intVf = qs.filter((q: any) => {
+      if (q.type !== 'vertical-fill') return false;
+      if (q.data.multiplicationBoard?.mode === 'decimal') return false;
+      return q.data.decimalPlaces == null;
+    });
     expect(intVf.length / qs.length).toBeLessThan(0.25);
   });
 

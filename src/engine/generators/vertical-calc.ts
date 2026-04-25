@@ -3,6 +3,7 @@ import type { GeneratorParams, SubtypeEntry } from '../index';
 import { pickSubtype } from '../index';
 import type { SubtypeDef } from '@/types/gamification';
 import { formatNum } from './utils';
+import { placeDecimalPoint } from '../verticalMultiplication';
 
 // v2.1 规格：
 //   低档 (d≤5): 纯整数，禁止小数。
@@ -191,7 +192,7 @@ function longDivisionSolution(a: number, b: number): string[] {
   return steps;
 }
 
-/** Generate a numeric-input question for multi-digit multiplication */
+/** Generate a multi-row vertical-fill question for multi-digit multiplication */
 function generateMultiDigitMult(difficulty: number, id: string): Question {
   let a: number, b: number;
   if (difficulty <= 7) {
@@ -216,9 +217,19 @@ function generateMultiDigitMult(difficulty: number, id: string): Question {
   const steps = multiDigitMultSolution(a, b);
 
   return {
-    id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+    id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
     prompt: `用竖式计算: ${a} × ${b}`,
-    data: { kind: 'vertical-calc', operation: '×' as const, operands: [a, b], steps: [] },
+    data: {
+      kind: 'vertical-calc',
+      operation: '×' as const,
+      operands: [a, b],
+      steps: [],
+      multiplicationBoard: {
+        mode: 'integer',
+        integerOperands: [a, b],
+        operandInputMode: 'static',
+      },
+    },
     solution: { answer, steps, explanation: `${a} × ${b} = ${answer}` },
     hints: ['先用第二个数的个位乘第一个数，再用十位乘，最后把部分积相加'],
     xpBase: 10 + (difficulty - 1) * 5,
@@ -327,7 +338,7 @@ function generateDecimalAddSub(difficulty: number, id: string): Question {
   };
 }
 
-// ===== 小数乘法 (numeric-input) =====
+// ===== 小数乘法 (vertical-fill) =====
 // v2.1: 中档 = 小数×整数；高档 = 小数×小数（多位，避免可口算的简单题）
 function generateDecimalMul(difficulty: number, id: string): Question {
   if (difficulty <= 7) {
@@ -343,15 +354,22 @@ function generateDecimalMul(difficulty: number, id: string): Question {
     const answer = productScaled / factor;
     const expression = `${a.toFixed(dp)} × ${b}`;
     return {
-      id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+      id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
       prompt: `列竖式计算: ${expression}`,
       data: {
-        kind: 'vertical-calc', operation: '×', operands: [a, b], steps: [],
-        trainingFields: [
-          { label: `${a.toFixed(dp)} 有几位小数`, answer: String(dp) },
-          { label: `${b} 有几位小数`, answer: '0' },
-          { label: '积共有几位小数', answer: String(dp) },
-        ],
+        kind: 'vertical-calc',
+        operation: '×',
+        operands: [a, b],
+        steps: [],
+        multiplicationBoard: {
+          mode: 'decimal',
+          integerOperands: [aScaled, b],
+          operandInputMode: 'blank',
+          originalOperands: [a.toFixed(dp), String(b)],
+          operandDecimalPlaces: [dp, 0],
+          decimalPlaces: dp,
+          finalAnswer: placeDecimalPoint(String(productScaled), dp),
+        },
       },
       solution: {
         answer: formatNum(answer),
@@ -367,10 +385,10 @@ function generateDecimalMul(difficulty: number, id: string): Question {
   const pickNonTrivial = (): number => {
     for (let tries = 0; tries < 50; tries++) {
       const s = randInt(105, 999); // 1.05 ~ 9.99
-      const dp = s % 10 !== 0 ? 2 : 1;
-      const v = dp === 2 ? s / 100 : Math.round(s / 10) / 10;
+      if (s % 10 === 0) continue;
+      const v = s / 100;
       // 排除"简单数字"：末位为 0、5，整数部分为 0 的过简小数
-      if ((s * 10) % 25 === 0 && dp === 2) continue;
+      if (s % 25 === 0) continue;
       return v;
     }
     return 3.14;
@@ -382,10 +400,22 @@ function generateDecimalMul(difficulty: number, id: string): Question {
   const answer = (aS * bS) / 10000;
   const expression = `${a.toFixed(2)} × ${b.toFixed(2)}`;
   return {
-    id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+    id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
     prompt: `列竖式计算: ${expression}`,
     data: {
-      kind: 'vertical-calc', operation: '×', operands: [a, b], steps: [],
+      kind: 'vertical-calc',
+      operation: '×',
+      operands: [a, b],
+      steps: [],
+      multiplicationBoard: {
+        mode: 'decimal',
+        integerOperands: [aS, bS],
+        operandInputMode: 'blank',
+        originalOperands: [a.toFixed(2), b.toFixed(2)],
+        operandDecimalPlaces: [2, 2],
+        decimalPlaces: 4,
+        finalAnswer: placeDecimalPoint(String(aS * bS), 4),
+      },
     },
     solution: {
       answer: formatNum(answer),
@@ -466,11 +496,6 @@ function generateDecimalDiv(difficulty: number, id: string): Question {
     prompt: `列竖式计算: ${expression}`,
     data: {
       kind: 'vertical-calc', operation: '÷', operands: [dividend!, divisor], steps: [],
-      trainingFields: [
-        { label: `除数 ${formatNum(divisor)} 有几位小数`, answer: String(divisorDp!) },
-        { label: '除数变成', answer: String(shiftedDivisor) },
-        { label: '被除数变成', answer: String(shiftedDividend) },
-      ],
     },
     solution: {
       answer: formatNum(quotient!),

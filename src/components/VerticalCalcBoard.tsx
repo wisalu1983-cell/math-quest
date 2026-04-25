@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react';
 import type { VerticalCalcData } from '@/types';
+import MultiplicationVerticalBoard from './MultiplicationVerticalBoard';
 
 interface Props {
   data: VerticalCalcData;
@@ -17,6 +18,27 @@ interface ColumnExpected {
 type CellId = { type: 'carry' | 'digit'; col: number };
 
 export default function VerticalCalcBoard({ data, onComplete }: Props) {
+  if (data.multiplicationBoard) {
+    const boardKey = [
+      data.multiplicationBoard.mode,
+      data.multiplicationBoard.integerOperands.join('x'),
+      data.multiplicationBoard.operandInputMode,
+      data.multiplicationBoard.decimalPlaces ?? 0,
+    ].join(':');
+
+    return (
+      <MultiplicationVerticalBoard
+        key={boardKey}
+        data={data.multiplicationBoard}
+        onComplete={onComplete}
+      />
+    );
+  }
+
+  return <LegacyVerticalCalcBoard data={data} onComplete={onComplete} />;
+}
+
+function LegacyVerticalCalcBoard({ data, onComplete }: Props) {
   const { operation, operands, steps } = data;
   const dp = data.decimalPlaces ?? 0;
 

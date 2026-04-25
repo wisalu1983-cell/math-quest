@@ -85,6 +85,17 @@ export interface VerticalCalcData {
   steps: VerticalCalcStep[];
   decimalPlaces?: number;
   trainingFields?: TrainingField[];
+  multiplicationBoard?: MultiplicationBoardData;
+}
+
+export interface MultiplicationBoardData {
+  mode: 'integer' | 'decimal';
+  integerOperands: [number, number];
+  operandInputMode: 'static' | 'blank';
+  originalOperands?: [string, string];
+  operandDecimalPlaces?: [number, number];
+  decimalPlaces?: number;
+  finalAnswer?: string;
 }
 
 export interface VerticalCalcStep {

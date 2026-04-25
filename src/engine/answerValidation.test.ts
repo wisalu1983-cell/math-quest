@@ -108,6 +108,10 @@ describe('isNumericEqual（数值答案兼容）', () => {
     expect(isNumericEqual('3.50', 3.5)).toBe(true);
     expect(isNumericEqual('3.5', '3.50')).toBe(true);
   });
+  it('小数乘法最终答数允许 56 / 56.0 等价', () => {
+    expect(isNumericEqual('56', '56.0')).toBe(true);
+    expect(isNumericEqual('56.0', 56)).toBe(true);
+  });
   it('带空格', () => {
     expect(isNumericEqual('  42  ', 42)).toBe(true);
   });
