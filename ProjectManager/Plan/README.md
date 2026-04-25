@@ -34,13 +34,13 @@
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.4/README.md`](./v0.4/README.md) | 版本入口 | 🟡 Phase 2 方案已定，待实施 |
+| [`v0.4/README.md`](./v0.4/README.md) | 版本入口 | 🟡 Phase 2 方案已定待实施；Phase 3 预研已收口 |
 | [`v0.4/00-overview.md`](./v0.4/00-overview.md) | 背景、目标、阶段结构 | 🟡 已按 Phase 2 重排更新 |
 | [`v0.4/01-research-catalog.md`](./v0.4/01-research-catalog.md) | 预研 / Backlog / Issue / Spec 证据链 | 📋 已建立 |
 | [`v0.4/02-classification.md`](./v0.4/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
 | [`v0.4/03-phase-plan.md`](./v0.4/03-phase-plan.md) | Phase 1~5 总图与决策门 | 🟡 已按 A04/A06 降阶决策重排 |
 | [`v0.4/04-execution-discipline.md`](./v0.4/04-execution-discipline.md) | 本版本执行纪律、验收规则 | 📋 已建立 |
-| [`v0.4/phases/`](./v0.4/phases/) | Phase 1~5 范围 / 进入条件 / 收尾条件 | 🟡 已建立并重排 |
+| [`v0.4/phases/`](./v0.4/phases/) | Phase 1~5 范围 / 进入条件 / 收尾条件 | 🟡 已建立；Phase 3 预研已补充 |
 
 ## 跨版本工具性 Plan
 

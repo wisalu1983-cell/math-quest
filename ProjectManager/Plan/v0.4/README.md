@@ -31,6 +31,7 @@
 | Phase 2 样题模拟：A07 新地图完整跑一轮 | [`phases/2026-04-25-a07-新地图完整模拟题目清单.md`](./phases/2026-04-25-a07-新地图完整模拟题目清单.md) |
 | Phase 2 子计划：A04/A06 断联并入 A07 | [`subplans/2026-04-25-a04-a06-断联并入A07简便计算.md`](./subplans/2026-04-25-a04-a06-断联并入A07简便计算.md) |
 | Phase 3：题目质量与生成器诊断 | [`phases/phase-3.md`](./phases/phase-3.md) |
+| Phase 3 预研收口：题目质量与生成器诊断 | [`phases/phase-3-research.md`](./phases/phase-3-research.md) |
 | Phase 4：交互设计与教学引导 | [`phases/phase-4.md`](./phases/phase-4.md) |
 | Phase 5：Practice 工程质量 | [`phases/phase-5.md`](./phases/phase-5.md) |
 
@@ -49,4 +50,5 @@
 - ✅ Phase 1 乘法竖式子计划已完成：[`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md)
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
 - 🟡 Phase 2 方案已定：A04「运算律」/ A06「括号变换」在玩家体验层不再作为题型存在；相关能力迁入 A07「简便计算」低档知识点 lane，A04/A06 从新主链路断联；A07 进阶保留原 A07 子题型分配
-- 📋 下一步：实施 Phase 2；随后进入 Phase 3 题目质量与生成器诊断，并另行确认 `BL-005.2` 进位格三档规则、`Phase 5` 是否保留在 v0.4
+- ✅ Phase 3 预研已收口：当前代码抽样确认 A03 第四关无 `2位数 × 2位数` 桥接、A03 进阶 3★ 仍有小规模短除样本、重复题根因是有限模板池 + 无 session 去重；实施需等待 Phase 2 代码稳定后复跑抽样
+- 📋 下一步：实施 Phase 2；随后按 Phase 3 预研口径复跑诊断并创建实施子计划，另行确认 `BL-005.2` 进位格三档规则、`Phase 5` 是否保留在 v0.4
