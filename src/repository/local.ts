@@ -1,5 +1,5 @@
 // src/repository/local.ts
-import type { User, PracticeSession, TopicId, HistoryRecord } from '@/types';
+import type { User, PracticeSession, TopicId, HistoryRecord, Question } from '@/types';
 import type { DirtyKey, SyncState } from '@/sync/types';
 import type {
   GameProgress,
@@ -79,8 +79,9 @@ const KEYS = {
  *   - 迁移链中任何一步抛错 → 旧 gameProgress 落到 mq_backup_v{old}_{ts} 备份，当次启动走"新存档 + 告警"
  *   - 严禁用 clearAll() / 单独 removeItem(gameProgress) 作为"版本不一致"的兜底；clearAll 只能作为显式用户操作
  */
-const CURRENT_VERSION = 4;
+const CURRENT_VERSION = 5;
 const MAX_SESSIONS = 200;
+const HIDDEN_TOPIC_IDS = new Set<TopicId>(['operation-laws', 'bracket-ops']);
 
 /**
  * ISSUE-057（2026-04-17）闯关结构全面重构后的一次性存档迁移（策略 X）
@@ -167,6 +168,11 @@ export function migrateV3ToV4(gp: GameProgress): GameProgress {
   return gp;
 }
 
+/** v4 → v5：题型 IA 调整。保留旧 A04/A06 数据，运行时清理恢复中的隐藏题型段位赛。 */
+export function migrateV4ToV5(gp: GameProgress): GameProgress {
+  return gp;
+}
+
 /**
  * 迁移链登记表：MIGRATIONS[n] 把 v{n} 提升到 v{n+1}。
  * 新增版本时在此追加条目，配套新增 migrateV{n}ToV{n+1} 纯函数。
@@ -174,6 +180,7 @@ export function migrateV3ToV4(gp: GameProgress): GameProgress {
 const MIGRATIONS: Record<number, (gp: GameProgress) => GameProgress> = {
   2: migrateV2ToV3,
   3: migrateV3ToV4,
+  4: migrateV4ToV5,
 };
 
 /**
@@ -225,6 +232,71 @@ function normalizeRankMatchSession(raw: StoredRankMatchSession): RankMatchSessio
   } as RankMatchSession;
 }
 
+function hasHiddenTopic(topicId: TopicId | undefined): boolean {
+  return topicId !== undefined && HIDDEN_TOPIC_IDS.has(topicId);
+}
+
+function questionUsesHiddenTopic(question: Question | undefined): boolean {
+  if (!question) return false;
+  if (hasHiddenTopic(question.topicId)) return true;
+  return question.data.kind === 'operation-laws' || question.data.kind === 'bracket-ops';
+}
+
+function practiceSessionUsesHiddenTopic(session: PracticeSession): boolean {
+  if (hasHiddenTopic(session.topicId)) return true;
+  if (session.rankMatchMeta?.primaryTopics.some(hasHiddenTopic)) return true;
+  if (session.rankQuestionQueue?.some(questionUsesHiddenTopic)) return true;
+  return session.questions.some(attempt => questionUsesHiddenTopic(attempt.question));
+}
+
+function discardHiddenTopicRankMatchState(progress: GameProgress): GameProgress {
+  const rankSessionsRaw = read<Record<string, StoredRankMatchSession>>(KEYS.rankMatchSessions()) ?? {};
+  const practiceSessions = read<PracticeSession[]>(KEYS.sessions()) ?? [];
+  const rankSessions: Record<string, RankMatchSession> = {};
+  let rankSessionsChanged = false;
+  let shouldClearActiveSession = false;
+
+  for (const [id, raw] of Object.entries(rankSessionsRaw)) {
+    const session = normalizeRankMatchSession(raw);
+    const relatedPracticeSessions = practiceSessions.filter(ps =>
+      ps.sessionMode === 'rank-match'
+      && (
+        ps.rankMatchMeta?.rankSessionId === id
+        || session.games.some(g => g.practiceSessionId === ps.id)
+      ),
+    );
+    const containsHiddenTopic = relatedPracticeSessions.some(practiceSessionUsesHiddenTopic);
+    const resumable = session.status === 'active' || session.status === 'suspended';
+
+    if (containsHiddenTopic && resumable) {
+      rankSessions[id] = {
+        ...session,
+        status: 'cancelled',
+        cancelledAt: Date.now(),
+      };
+      rankSessionsChanged = true;
+      if (progress.rankProgress?.activeSessionId === id) {
+        shouldClearActiveSession = true;
+      }
+    } else {
+      rankSessions[id] = session;
+    }
+  }
+
+  if (rankSessionsChanged) {
+    write(KEYS.rankMatchSessions(), rankSessions);
+  }
+
+  if (!shouldClearActiveSession || !progress.rankProgress) return progress;
+  return {
+    ...progress,
+    rankProgress: {
+      ...progress.rankProgress,
+      activeSessionId: undefined,
+    },
+  };
+}
+
 export const repository = {
   /**
    * 启动时的版本探测 + 迁移。
@@ -253,7 +325,7 @@ export const repository = {
     }
 
     try {
-      const migrated = runMigrationChain(storedVersion, rawGp);
+      const migrated = discardHiddenTopicRankMatchState(runMigrationChain(storedVersion, rawGp));
       write(KEYS.gameProgress(), migrated);
       write(KEYS.version(), CURRENT_VERSION);
     } catch (e) {

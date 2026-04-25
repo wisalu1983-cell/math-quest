@@ -432,7 +432,7 @@ describe('Multi-Step (多步计算)', () => {
 
     it('高档应含错误诊断 MC（"哪步错了"）', () => {
       const qs = genN(generateMultiStep, 10, 200);
-      const diagnose = qs.filter(q => (q.data as any).subtype === 'error-diagnose');
+      const diagnose = qs.filter(q => (q.data as any).subtype === 'simplify-error-diagnose');
       expect(diagnose.length).toBeGreaterThan(0);
     });
 

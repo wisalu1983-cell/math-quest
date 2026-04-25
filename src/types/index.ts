@@ -10,6 +10,9 @@ export type TopicId =
   | 'bracket-ops'
   | 'equation-transpose';
 
+export type LegacyTopicId = Extract<TopicId, 'operation-laws' | 'bracket-ops'>;
+export type PlayerVisibleTopicId = Exclude<TopicId, LegacyTopicId>;
+
 export interface User {
   id: string;
   nickname: string;
@@ -134,8 +137,26 @@ export interface MultiStepData {
     | 'mid-pick-transform'
     | 'recognize-method'
     | 'recognize-multi'
-    | 'error-diagnose'
-    | 'hidden-factor-exec';
+    | 'simplify-error-diagnose'
+    | 'hidden-factor-exec'
+    | 'law-identify'
+    | 'law-structure-blank'
+    | 'law-reverse-blank'
+    | 'law-simple-judge'
+    | 'law-counter-example'
+    | 'law-easy-confuse'
+    | 'law-concept-reverse'
+    | 'law-compound-law'
+    | 'law-distributive-trap'
+    | 'law-error-diagnose'
+    | 'bracket-remove-plus'
+    | 'bracket-remove-minus'
+    | 'bracket-add'
+    | 'bracket-division-property'
+    | 'bracket-four-items-sign'
+    | 'bracket-error-diagnose';
+  /** A07 内部知识点，替代把旧 A04/A06 写成主 topicId/data.kind */
+  knowledgePoint?: 'operation-laws' | 'bracket-transform' | 'simplification';
   /** v2.2 新增：multi-blank 题型展示用的模板字符串（含 ___ 占位） */
   template?: string;
 }

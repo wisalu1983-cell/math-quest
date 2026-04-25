@@ -44,7 +44,7 @@ function rookieAdvance(): AdvanceProgress {
     'mental-arithmetic': 6,
     'number-sense':      6,
     'vertical-calc':     6,
-    'operation-laws':    6,
+    'multi-step':        6,
   });
 }
 

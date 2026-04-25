@@ -3,6 +3,8 @@ import type { GeneratorParams, SubtypeEntry } from '../index';
 import { pickSubtype } from '../index';
 import type { SubtypeDef } from '@/types/gamification';
 import { formatNum } from './utils';
+import { buildBracketKnowledgeEntries } from './multi-step/bracket-transform';
+import { buildLawKnowledgeEntries } from './multi-step/laws';
 
 // v2.1 重构：A07 简便计算"识别 + 执行"双能力
 //
@@ -16,6 +18,31 @@ import { formatNum } from './utils';
 // 兼容 campaign.ts 的 subtype tag：bracket-normal / bracket-hard / bracket-demon /
 //   extract-factor / decimal-two-step / decimal-multi-step / decimal-chain / simplify-subtract
 // 所有 tag 都被重新映射到"识别 + 执行"双能力模式。
+
+const A07_KNOWLEDGE_TAGS = new Set([
+  'law-identify',
+  'law-structure-blank',
+  'law-reverse-blank',
+  'law-simple-judge',
+  'law-counter-example',
+  'law-easy-confuse',
+  'law-concept-reverse',
+  'law-compound-law',
+  'law-distributive-trap',
+  'law-error-diagnose',
+  'bracket-remove-plus',
+  'bracket-remove-minus',
+  'bracket-add',
+  'bracket-division-property',
+  'bracket-four-items-sign',
+  'bracket-error-diagnose',
+] as const);
+
+type A07KnowledgeTag = (typeof A07_KNOWLEDGE_TAGS extends Set<infer T> ? T : never);
+
+export function usesA07KnowledgeEntries(subtypeFilter?: string[]): boolean {
+  return subtypeFilter?.some(tag => A07_KNOWLEDGE_TAGS.has(tag as A07KnowledgeTag)) ?? false;
+}
 
 export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
   if (difficulty <= 5) return [
@@ -349,7 +376,7 @@ function generateErrorDiagnoseHigh(difficulty: number, id: string): Question {
   return {
     id, topicId: 'multi-step', type: 'multiple-choice', difficulty,
     prompt: `下面是某同学的解题过程，哪一步错了？\n${steps.join('\n')}`,
-    data: { kind: 'multi-step', expression: `${a} × (${b} + ${c})`, steps: [], options, subtype: 'error-diagnose' },
+    data: { kind: 'multi-step', expression: `${a} × (${b} + ${c})`, steps: [], options, subtype: 'simplify-error-diagnose' },
     solution: {
       answer: options[0],
       explanation: `分配律：a × (b + c) = a × b + a × c。括号外的 ${a} 必须分别乘以括号里的每一项 ${b} 和 ${c}，不能漏乘 ${c}。正确 Step 1 应为 ${a}×${b} + ${a}×${c}。`,
@@ -448,6 +475,14 @@ export function generateMultiStep(params: GeneratorParams): Question {
     { tag: 'simplify-subtract',  weight: 0,  gen: () => dispatchHigh(difficulty, id) },
   ];
 
-  const entries = difficulty <= 5 ? low : difficulty <= 7 ? mid : high;
+  const baseEntries = difficulty <= 5 ? low : difficulty <= 7 ? mid : high;
+  const needsKnowledgeEntries = usesA07KnowledgeEntries(subtypeFilter);
+  const entries = needsKnowledgeEntries
+    ? [
+        ...baseEntries,
+        ...buildLawKnowledgeEntries(difficulty, id),
+        ...buildBracketKnowledgeEntries(difficulty, id),
+      ]
+    : baseEntries;
   return pickSubtype(entries, subtypeFilter);
 }
