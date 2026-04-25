@@ -8,7 +8,7 @@ source_tool: codex
 source_session: codex-desktop-current-thread
 source_timestamp_start: 2026-04-25T16:11:47.217+08:00
 source_timestamp_end: 2026-04-25T16:11:47.217+08:00
-seen_count: 1
+seen_count: 2
 first_seen: 2026-04-25
 last_seen: 2026-04-25
 ---
