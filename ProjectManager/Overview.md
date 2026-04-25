@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-25（v0.3 管理配套文档 00-04 已重建；账号同步 scoped QAleader 已补跑通过）
+> 最后更新：2026-04-25（v0.4 乘法竖式三步路线已确认）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,53 +28,61 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.3** | ✅ 已上线（Phase 1/2/3 完成，账号同步系统生效） | [Plan/v0.3/](Plan/v0.3/) |
-| 上一版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
+| **当前版本** | **v0.4** | 📋 前置准备完成；需求讨论中 | [Plan/v0.4/](Plan/v0.4/) |
+| 上一版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
+| 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
 | 更早版本 | v0.1 | ✅ 已发布（2026-04-19 收口，三层游戏化闭环完成） | [Plan/v0.1/](Plan/v0.1/) |
 
 > 版本命名见 [Plan/rules/phase-and-subplan-naming.md](Plan/rules/phase-and-subplan-naming.md)，版本生命周期规则见 [Plan/version-lifecycle.md](Plan/version-lifecycle.md)。本文件只呈现当前版本活跃信息；历史版本请进入对应 `Plan/vX.Y/` 目录。
 
 ---
 
-## 当前阶段（v0.3）
+## 当前阶段（v0.4）
 
-**阶段目标**：接入 Supabase 在线账号系统，实现跨设备数据同步。
+**阶段目标**：系统性修复题目体验问题，落地 4.25 真实用户反馈，并清理 v0.2 遗留技术债。
 
-**主线**：邮箱 Magic Link 登录 + 本地优先后台同步 + 多设备冲突确定性合并（3 Phase：基建+认证 → 同步引擎 → UI+验收）。
+**主线**：题目体验系统性修复（4 Phase：渲染与判定修复 → 题目质量与生成器诊断 → 交互设计与教学引导 → Practice 工程质量）。
 
 **当前状态**：
 
-- ✅ BL-001 已正式纳入 v0.3，版本入口与实施计划已落盘
-- ✅ 设计规格与实施计划完成，按 `implementation-plan.md` 执行中
-- ✅ Phase 1（基建 + 认证）完成：Supabase 客户端、AuthStore、LoginPage、v3→v4 迁移均就绪（commit `da17015`）
-- ✅ Phase 2（同步引擎）完成 2026-04-24：`src/sync/*` 四件套 + Repository `markDirty` 桥接 + silent 写；`npm test` 34 files / 582 tests 全绿，`npm run build` 通过（commit 链 `a9a1866` → `77217c9` → `07d6bc5` → `684d536`）
-- ✅ Phase 3（UI + 验收）已完成并上线：账号同步 UI、首次登录合并、账号隔离、段位赛联网门控、同步韧性与 4 条 RISK 均已闭环；真实 Supabase 8 个验收剧本通过，记录见 [`Plan/v0.3/phases/phase-3-acceptance.md`](Plan/v0.3/phases/phase-3-acceptance.md)
-- ✅ v0.3 账号同步 scoped QAleader 三层回归已于 2026-04-25 补跑通过：Code Review / 自动化 / 拟真人工 QA 均通过，记录见 [`../QA/runs/2026-04-25-v0.3-account-sync-regression/qa-summary.md`](../QA/runs/2026-04-25-v0.3-account-sync-regression/qa-summary.md)
-- ✅ v0.3 已发布到 GitHub Pages：主干 commit `f34dc38`，线上地址 [`https://wisalu1983-cell.github.io/math-quest/`](https://wisalu1983-cell.github.io/math-quest/)
-- ✅ v0.3 管理配套文档 `00-04` 已于 2026-04-25 按当前版本状态与历史 commit 证据事后重建，入口见 [`Plan/v0.3/README.md`](Plan/v0.3/README.md)
-- ✅ 改动范围与已收工的 v0.2 解耦：v0.3 聚焦 auth / sync / Supabase，不回头改 v0.2 的生成器、Tips、历史记录主线
+- ✅ v0.4 预研报告已完成，入口见 [`Reports/2026-04-25-v0.4-prereport.md`](Reports/2026-04-25-v0.4-prereport.md)
+- ✅ v0.4 版本管理包已建立：`README + 00-04 + phases/phase-1..4`
+- ✅ `BL-003` ~ `BL-008` 已纳入 v0.4 规划视图；`ISSUE-059` 已重新挂入当前版本 `ISSUE_LIST.md`
+- 📋 尚未开始代码实现；当前进入需求讨论和子项决策阶段
+- ✅ `BL-005.3` 乘法竖式统一方向已确认：多位整数乘法模块 → 小数乘法复用 → 小数点定位 / 答案等价
+- 📋 剩余待决策项：进位格三档规则、重复题目诊断策略、Phase 4 是否保留在 v0.4
 
 **入口**：
-- 设计规格：[`Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md`](Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md)
-- 实施计划：[`Plan/v0.3/implementation-plan.md`](Plan/v0.3/implementation-plan.md)
-- Phase 3 收口与真实 Supabase 验收：[`Plan/v0.3/phases/phase-3.md`](Plan/v0.3/phases/phase-3.md) · [`Plan/v0.3/phases/phase-3-acceptance.md`](Plan/v0.3/phases/phase-3-acceptance.md)
-- QAleader 补跑记录：[`../QA/runs/2026-04-25-v0.3-account-sync-regression/qa-summary.md`](../QA/runs/2026-04-25-v0.3-account-sync-regression/qa-summary.md)
-- Backlog 来源：BL-001（已纳入 v0.3）
 
-**下一步**：做 v0.3 版本级收口决策。若不追加 v0.3 功能，基于已重建的 `Plan/v0.3/00-overview.md` 快照切入下一版本规划；若线上观察到新问题，进入 `ISSUE_LIST.md` 或 `Backlog.md`。
+- 版本入口：[`Plan/v0.4/README.md`](Plan/v0.4/README.md)
+- 启动快照：[`Plan/v0.4/00-overview.md`](Plan/v0.4/00-overview.md)
+- 来源证据：[`Plan/v0.4/01-research-catalog.md`](Plan/v0.4/01-research-catalog.md)
+- Phase 总图：[`Plan/v0.4/03-phase-plan.md`](Plan/v0.4/03-phase-plan.md)
+- 当前开放 issue：[`ISSUE_LIST.md`](ISSUE_LIST.md)
+- Backlog 来源：[`Backlog.md`](Backlog.md)
+
+**下一步**：进入 v0.4 具体需求讨论，优先确认 `BL-005.2` 进位格三档规则；`BL-005.3` 开工前需落独立子计划。
 
 ---
 
-## 上一版本收口（v0.2）
+## 上一版本收口（v0.3）
 
-**收口结论**：v0.2 已于 2026-04-23 收工。
+**收口结论**：v0.3 已完成账号同步系统并上线。
 
 **收口事实**：
 
-- ✅ Phase 1~5 全部完成
-- ✅ `qa-leader` 三层全量 QA 已完成：Code Review / 自动化 / 拟真人工 QA 全部通过
-- ✅ 正式收口报告已归档：[`QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md`](../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)
-- ✅ 本轮遗留项已转入 Backlog：`BL-003` compare 概念题方法提示补证、`BL-004` Practice 答题页状态重置实现清理
+- ✅ Phase 1（基建 + 认证）、Phase 2（同步引擎）、Phase 3（UI + 验收）全部完成
+- ✅ 真实 Supabase 8 个验收剧本通过，记录见 [`Plan/v0.3/phases/phase-3-acceptance.md`](Plan/v0.3/phases/phase-3-acceptance.md)
+- ✅ v0.3 账号同步 scoped QAleader 三层回归已于 2026-04-25 补跑通过，记录见 [`../QA/runs/2026-04-25-v0.3-account-sync-regression/qa-summary.md`](../QA/runs/2026-04-25-v0.3-account-sync-regression/qa-summary.md)
+- ✅ v0.3 已发布到 GitHub Pages：主干 commit `f34dc38`，线上地址 [`https://wisalu1983-cell.github.io/math-quest/`](https://wisalu1983-cell.github.io/math-quest/)
+- ✅ v0.3 管理配套文档 `00-04` 已于 2026-04-25 重建，入口见 [`Plan/v0.3/README.md`](Plan/v0.3/README.md)
+
+---
+
+## 历史版本提示
+
+- v0.2 已于 2026-04-23 收工，正式收口报告见 [`QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md`](../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)
+- v0.1 已于 2026-04-19 收口，三层游戏化闭环完成
 
 ---
 
@@ -82,11 +90,11 @@
 
 ### 版本活跃入口
 
-- 当前版本根目录：[Plan/v0.3/](Plan/v0.3/)
-- 当前版本入口：[Plan/v0.3/README.md](Plan/v0.3/README.md)
-- 当前版本收口快照：[Plan/v0.3/00-overview.md](Plan/v0.3/00-overview.md)
-- 当前实施计划：[Plan/v0.3/implementation-plan.md](Plan/v0.3/implementation-plan.md)
-- 当前设计规格：[Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md](Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md)
+- 当前版本根目录：[Plan/v0.4/](Plan/v0.4/)
+- 当前版本入口：[Plan/v0.4/README.md](Plan/v0.4/README.md)
+- 当前版本启动快照：[Plan/v0.4/00-overview.md](Plan/v0.4/00-overview.md)
+- 当前版本来源证据：[Plan/v0.4/01-research-catalog.md](Plan/v0.4/01-research-catalog.md)
+- 当前版本 Phase 总图：[Plan/v0.4/03-phase-plan.md](Plan/v0.4/03-phase-plan.md)
 
 ### 全局管理入口
 
@@ -98,6 +106,7 @@
 
 ### 历史版本
 
+- v0.3 版本归档：[Plan/v0.3/](Plan/v0.3/)（[README](Plan/v0.3/README.md) · [收口快照](Plan/v0.3/00-overview.md) · [真实 Supabase 验收](Plan/v0.3/phases/phase-3-acceptance.md)）
 - v0.2 版本归档：[Plan/v0.2/](Plan/v0.2/)（[README](Plan/v0.2/README.md) · [收口快照](Plan/v0.2/00-overview.md) · [QA 总结](../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)）
 - v0.1 版本归档：[Plan/v0.1/](Plan/v0.1/)（[README](Plan/v0.1/README.md) · [收口快照](Plan/v0.1/00-overview.md) · [已关闭 issue](Plan/v0.1/issues-closed.md)）
 

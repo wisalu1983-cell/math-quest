@@ -26,7 +26,7 @@ alwaysApply: true
 
 新建 / 归档 / 废弃 Plan、Spec、Issue 的入口关系时执行一次。具体子项：
 
-- **版本收口**：抽取 `Overview.md` 快照到 `Plan/vX.Y/00-overview.md`；整体搬 `ISSUE_LIST.md` 本版本条目到 `Plan/vX.Y/issues-closed.md`；切换 `Overview.md` 顶部版本轴；更新 `Plan/README.md` 版本索引
+- **版本收口**：抽取 `Overview.md` 快照到 `Plan/vX.Y/00-overview.md`；整体搬 `ISSUE_LIST.md` 本版本条目到 `Plan/vX.Y/issues-closed.md`；处理 Backlog 收口归档（已落地 BL 移出活跃区，只留一行索引；延期 / 放弃分别回流或归档）；切换 `Overview.md` 顶部版本轴；更新 `Plan/README.md` 版本索引
 - **ISSUE 跨态迁移**：`ISSUE_LIST.md` ↔ `Backlog.md` 之间的延期（迁入 Backlog，状态标"候选/延期自 ISSUE-xxx"，ID 保留）或反向激活（从 Backlog 搬回 ISSUE_LIST，仍用原 ID）
 - **版本工作目录初始化**：新建 `Plan/vX.Y/` 目录 + 对应 `README.md` / `00-overview.md` / phases 骨架
 

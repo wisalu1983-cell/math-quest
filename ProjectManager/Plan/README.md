@@ -27,20 +27,19 @@
 4. **版本启动和收口必须读低频指南**：见 [`version-lifecycle.md`](./version-lifecycle.md) 和 [`templates/version-package-template.md`](./templates/version-package-template.md)。
 5. **低频长规则不写进本 README**：超过 10 行且非日常使用的规则放到 `rules/`、`templates/`、`Reports/` 或版本目录。
 
-## 当前版本（v0.3）
+## 当前版本（v0.4）
 
-> 主线：Supabase 在线账号与数据同步 · 入口 [`v0.3/README.md`](./v0.3/README.md)
+> 主线：题目体验系统性修复 · 入口 [`v0.4/README.md`](./v0.4/README.md)
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.3/README.md`](./v0.3/README.md) | 版本入口 | ✅ 已上线 |
-| [`v0.3/00-overview.md`](./v0.3/00-overview.md) | 背景、目标、阶段结构、收口事实 | ✅ 已重建 |
-| [`v0.3/01-source-catalog.md`](./v0.3/01-source-catalog.md) | 需求 / 规格 / commit / 验收证据链 | ✅ 已重建 |
-| [`v0.3/02-classification.md`](./v0.3/02-classification.md) | 分类、依赖、边界 | ✅ 已重建 |
-| [`v0.3/03-phase-plan.md`](./v0.3/03-phase-plan.md) | Phase 总图、时序、commit 链 | ✅ 已重建 |
-| [`v0.3/04-execution-discipline.md`](./v0.3/04-execution-discipline.md) | 本版本执行纪律、验收规则 | ✅ 已重建 |
-| [`v0.3/phases/`](./v0.3/phases/) | Phase 1/2/3 与 acceptance | ✅ 已完成 |
-| [`v0.3/implementation-plan.md`](./v0.3/implementation-plan.md) | 历史实施长文，按标题定点查阅 | 🗄️ 历史证据 |
+| [`v0.4/README.md`](./v0.4/README.md) | 版本入口 | 📋 需求讨论中 |
+| [`v0.4/00-overview.md`](./v0.4/00-overview.md) | 背景、目标、阶段结构 | 📋 启动快照已建立 |
+| [`v0.4/01-research-catalog.md`](./v0.4/01-research-catalog.md) | 预研 / Backlog / Issue / Spec 证据链 | 📋 已建立 |
+| [`v0.4/02-classification.md`](./v0.4/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
+| [`v0.4/03-phase-plan.md`](./v0.4/03-phase-plan.md) | Phase 1~4 总图与决策门 | 📋 已建立 |
+| [`v0.4/04-execution-discipline.md`](./v0.4/04-execution-discipline.md) | 本版本执行纪律、验收规则 | 📋 已建立 |
+| [`v0.4/phases/`](./v0.4/phases/) | Phase 1~4 范围 / 进入条件 / 收尾条件 | 📋 已建立 |
 
 ## 跨版本工具性 Plan
 
@@ -54,6 +53,7 @@
 
 | 版本 | 入口 | 摘要 |
 |---|---|---|
+| v0.3 | [`v0.3/README.md`](./v0.3/README.md) | Supabase 在线账号与数据同步；Phase 1/2/3 完成；真实 Supabase 验收通过；已上线 |
 | v0.2 | [`v0.2/README.md`](./v0.2/README.md) | 用户反馈驱动主线收口；Phase 1~5 完成；QAleader 三层 QA 完成 |
 | v0.1 | [`v0.1/README.md`](./v0.1/README.md) | 原型与三层游戏化闭环完成 |
 

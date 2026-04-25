@@ -77,12 +77,17 @@
 
 1. 更新 `00-overview.md` 为最终收口快照。
 2. 确认 `01-04` 与 `phases/` 记录能追溯需求、分类、阶段和执行纪律。
-3. 归档本版本关闭的 issue；延期候选进入 Backlog。
-4. 确认 QA 结论：若需要正式 QAleader，必须存在 `QA/runs/<date>-<scope>/qa-summary.md`。
-5. 更新 `Plan/vX.Y/README.md` 状态。
-6. 更新 `ProjectManager/Plan/README.md` 版本索引。
-7. 若版本轴切换，更新 `ProjectManager/Overview.md`。
-8. 涉及跨源写入、Plan / Spec / Issue 生命周期变化时运行 `pm-sync-check`。
+3. 归档本版本关闭的 issue；延期 issue 才进入 Backlog，并保留原 ISSUE ID。
+4. 处理 Backlog 生命周期：
+   - 已纳入本版本且已完成的 BL 条目，从 Backlog 活跃区移出，只在 `已落地归档` 保留一行索引。
+   - 未完成但仍要做的条目，回流为 `候选` 或 `延期至 vX.Y`，写清延期原因和下一判断点。
+   - 决定不做的条目，进入 `已放弃归档`，保留一行理由。
+   - 已由版本 Plan / Phase / subplan 完整覆盖的细节，不继续留在 Backlog 长文中。
+5. 确认 QA 结论：若需要正式 QAleader，必须存在 `QA/runs/<date>-<scope>/qa-summary.md`。
+6. 更新 `Plan/vX.Y/README.md` 状态。
+7. 更新 `ProjectManager/Plan/README.md` 版本索引。
+8. 若版本轴切换，更新 `ProjectManager/Overview.md`。
+9. 涉及跨源写入、Plan / Spec / Issue / Backlog 生命周期变化时运行 `pm-sync-check`。
 
 ## 渐进式披露约束
 

@@ -46,7 +46,7 @@ Do not copy lifecycle rules into the skill. `ProjectManager` remains the rule so
    - `ProjectManager/Plan/README.md`
    - `ProjectManager/Overview.md`
    - `ProjectManager/Specs/_index.md` if new specs were added
-   - `ProjectManager/ISSUE_LIST.md` / `ProjectManager/Backlog.md` if issue lifecycle changed
+   - `ProjectManager/ISSUE_LIST.md` / `ProjectManager/Backlog.md` if issue or backlog lifecycle changed
 7. Run:
    ```powershell
    npx tsx scripts/pm-sync-check.ts
