@@ -1,7 +1,7 @@
 # Phase 3：题目质量与生成器诊断
 
 > 所属：v0.4-3
-> 状态：✅ 已完成（T0-T5 实施与自动化验收通过）
+> 状态：✅ 已完成（T0-T5 实施、自动化验收、QAleader 三层 QA 通过）
 > 来源：`BL-005.4` / `BL-007` / `BL-008`
 > 预研：[`phase-3-research.md`](./phase-3-research.md)
 > 子计划：[`../subplans/2026-04-25-phase3-题目质量诊断与实施拆解.md`](../subplans/2026-04-25-phase3-题目质量诊断与实施拆解.md)
@@ -12,7 +12,7 @@
 
 在 A04/A06 断联并入 A07 后，再修复题目本身的质量问题：竖式难度要匹配进阶星级，非 A04/A06 的选项题要降低猜测概率，重复题目要先查清真实原因再处理。
 
-预研已收口，见 [`phase-3-research.md`](./phase-3-research.md)。Phase 2 题型 IA 已完成，Phase 3 已按同一口径复跑抽样并创建实施子计划；T0-T5 已完成实现和自动化验收。
+预研已收口，见 [`phase-3-research.md`](./phase-3-research.md)。Phase 2 题型 IA 已完成，Phase 3 已按同一口径复跑抽样并创建实施子计划；T0-T5 已完成实现、自动化验收和 QAleader 三层 QA。
 
 ## 范围
 
@@ -40,3 +40,4 @@
 - [x] A02 compare d=7/d=8 按 T4 开发文档完成质量优化；d=8 `对 / 错` 二选一保留但题池与 explanation 达标。
 - [x] 重复题目有明确结论：session 内完全重复已用 bounded retry 治理；结构重复和小模板池耗尽作为后续扩池观察，不挂开放 bug。
 - [x] `npm test -- --run` 和 `npm run build` 通过。
+- [x] QAleader 三层 QA 已补跑通过：用例设计、Code Review、自动化测试、拟真人工 QA 均 PASS；记录见 [`../../../../QA/runs/2026-04-25-v04-phase3-question-quality/qa-summary.md`](../../../../QA/runs/2026-04-25-v04-phase3-question-quality/qa-summary.md)。

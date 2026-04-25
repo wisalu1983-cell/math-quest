@@ -50,5 +50,5 @@
 - ✅ Phase 1 乘法竖式子计划已完成：[`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md)
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
 - ✅ Phase 2 已完成：A04「运算律」/ A06「括号变换」取消玩家独立入口并从新主链路断联；相关能力迁入 A07「简便计算」低档知识点 lane；A07 进阶保留原 A07 子题型分配；自动化、构建、浏览器拟真验收通过
-- ✅ Phase 3 已完成：A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布已落在验收带内；A03 进阶 3★ 短除候选降为 0；A02 compare d=7/d=8 质量优化完成；campaign / advance / rank-match session 内完全重复治理已接入 bounded retry
+- ✅ Phase 3 已完成：A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布已落在验收带内；A03 进阶 3★ 短除候选降为 0；A02 compare d=7/d=8 质量优化完成；campaign / advance / rank-match session 内完全重复治理已接入 bounded retry；QAleader 三层 QA 已补跑通过，记录见 [`../../../QA/runs/2026-04-25-v04-phase3-question-quality/qa-summary.md`](../../../QA/runs/2026-04-25-v04-phase3-question-quality/qa-summary.md)
 - 📋 下一步：确认 `BL-005.2` 进位格三档规则并启动 Phase 4；另行确认 `Phase 5` 是否保留在 v0.4
