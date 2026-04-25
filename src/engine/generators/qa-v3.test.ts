@@ -442,7 +442,7 @@ describe('Campaign 结构验证', () => {
       'operation-laws': 7,     // C1: S1-LA-L2(d=3) 删除，共减1关
       'decimal-ops': 12,       // 原 12，S3"综合"改为循环小数 + 反直觉性质
       'bracket-ops': 9,        // C1: S1-LA-L2(d=4) 删除，共减1关
-      'multi-step': 13,        // 原 14，S3"高阶综合"改为错误诊断 + 隐藏因数
+      'multi-step': 15,        // v0.4 Phase 2：S1 增为运算律/括号变换/基础简便三 lane
       'equation-transpose': 9, // 原 11，压 2 档后 S2/S3 合并为"双向移项与陷阱"
     };
     for (const [topicId, map] of Object.entries(CAMPAIGN_MAPS)) {
@@ -456,7 +456,7 @@ describe('Campaign 结构验证', () => {
     }
   });
 
-  it('A-24: 50条Lane难度单调不减 + S1首关≥2 + Boss=9', () => {
+  it('A-24: 51条Lane难度单调不减 + S1首关≥2 + Boss=9', () => {
     let totalLanes = 0;
     for (const [_, map] of Object.entries(CAMPAIGN_MAPS)) {
       for (const stage of map.stages) {
@@ -481,6 +481,6 @@ describe('Campaign 结构验证', () => {
         }
       }
     }
-    expect(totalLanes).toBe(50);
+    expect(totalLanes).toBe(51);
   });
 });

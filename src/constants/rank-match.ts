@@ -24,15 +24,13 @@ export const RANK_ENTRY_STARS: Record<ChallengeableTier, Partial<Record<TopicId,
     'mental-arithmetic':  1, // A01
     'number-sense':       1, // A02
     'vertical-calc':      1, // A03
-    'operation-laws':     1, // A04
+    'multi-step':         1, // A07，含运算律/括号变换低档知识点
   },
   pro: {
     'mental-arithmetic':  2,
     'number-sense':       2,
     'vertical-calc':      2,
-    'operation-laws':     2,
     'decimal-ops':        2, // A05
-    'bracket-ops':        2, // A06
     'multi-step':         2, // A07
     'equation-transpose': 2, // A08
   },
@@ -40,9 +38,7 @@ export const RANK_ENTRY_STARS: Record<ChallengeableTier, Partial<Record<TopicId,
     'mental-arithmetic':  2,
     'number-sense':       3,
     'vertical-calc':      3,
-    'operation-laws':     3,
     'decimal-ops':        4,
-    'bracket-ops':        4,
     'multi-step':         4,
     'equation-transpose': 3,
   },
@@ -50,9 +46,7 @@ export const RANK_ENTRY_STARS: Record<ChallengeableTier, Partial<Record<TopicId,
     'mental-arithmetic':  3, // A01 cap=3
     'number-sense':       5,
     'vertical-calc':      5,
-    'operation-laws':     3, // A04 cap=3
     'decimal-ops':        5,
-    'bracket-ops':        5,
     'multi-step':         5,
     'equation-transpose': 3, // A08 cap=3
   },
@@ -103,9 +97,9 @@ export const RANK_TIMER_MINUTES: Partial<Record<ChallengeableTier, number>> = {
  */
 export const RANK_NEW_CONTENT_POINTS: Record<ChallengeableTier, number> = {
   rookie: 4,
-  pro:    8,
-  expert: 6,
-  master: 5,
+  pro:    6,
+  expert: 4,
+  master: 3,
 };
 
 // ─── M2 抽题器数据表（Spec 2026-04-18 §5） ───
@@ -115,17 +109,16 @@ export const RANK_NEW_CONTENT_POINTS: Record<ChallengeableTier, number> = {
  * 顺序为 TopicId 书写顺序，供 §5.4 "确定性胜场编排" 使用。
  */
 export const RANK_TOPIC_RANGE: Record<ChallengeableTier, TopicId[]> = {
-  rookie: ['mental-arithmetic', 'number-sense', 'vertical-calc', 'operation-laws'],
+  rookie: ['mental-arithmetic', 'number-sense', 'vertical-calc', 'multi-step'],
   pro:    [
-    'mental-arithmetic', 'number-sense', 'vertical-calc', 'operation-laws',
-    'decimal-ops', 'bracket-ops', 'multi-step', 'equation-transpose',
+    'mental-arithmetic', 'number-sense', 'vertical-calc',
+    'decimal-ops', 'multi-step', 'equation-transpose',
   ],
   expert: [
-    'vertical-calc', 'operation-laws',
-    'decimal-ops', 'bracket-ops', 'multi-step', 'equation-transpose',
+    'vertical-calc', 'decimal-ops', 'multi-step', 'equation-transpose',
   ],
   master: [
-    'operation-laws', 'decimal-ops', 'bracket-ops', 'multi-step', 'equation-transpose',
+    'decimal-ops', 'multi-step', 'equation-transpose',
   ],
 };
 
@@ -154,22 +147,22 @@ export const RANK_REVIEW_TOPIC_RANGE: Record<ChallengeableTier, TopicId[]> = {
 export const RANK_PRIMARY_BY_WIN_SLOT: Record<ChallengeableTier, TopicId[][]> = {
   rookie: [
     ['mental-arithmetic', 'number-sense'],
-    ['vertical-calc',     'operation-laws'],
+    ['vertical-calc',     'multi-step'],
   ],
   pro: [
-    ['mental-arithmetic', 'number-sense', 'vertical-calc'],
-    ['operation-laws',    'decimal-ops',  'bracket-ops'],
-    ['multi-step',        'equation-transpose', 'mental-arithmetic'],
-  ],
-  expert: [
-    ['vertical-calc',     'operation-laws'],
-    ['decimal-ops',       'bracket-ops'],
+    ['mental-arithmetic', 'number-sense'],
+    ['vertical-calc',     'decimal-ops'],
     ['multi-step',        'equation-transpose'],
   ],
-  master: [
-    ['operation-laws',    'decimal-ops'],
-    ['bracket-ops',       'multi-step'],
+  expert: [
+    ['vertical-calc',     'decimal-ops'],
+    ['multi-step'],
     ['equation-transpose'],
+  ],
+  master: [
+    ['decimal-ops'],
+    ['equation-transpose'],
+    ['multi-step'],
     ['equation-transpose'],
   ],
 };

@@ -6,7 +6,7 @@ import { useUIStore } from '@/store';
 import { useRankMatchStore } from '@/store/rank-match';
 import { repository } from '@/repository/local';
 import { TIER_LABEL, TIER_ORDER } from '@/constants/rank-match';
-import { TOPICS } from '@/constants';
+import { getTopicDisplayName } from '@/constants';
 import RankBadge from '@/components/RankBadge';
 import type { TopicId } from '@/types';
 
@@ -148,7 +148,7 @@ export default function RankMatchResult() {
             <div className="text-[13px] font-black text-text mb-2">薄弱题型复盘</div>
             <div className="space-y-1.5">
               {weakTopics.map(({ topicId, wrongCount }) => {
-                const topicName = TOPICS.find(t => t.id === topicId)?.name ?? topicId;
+                const topicName = getTopicDisplayName(topicId);
                 return (
                   <div key={topicId} className="flex items-center justify-between">
                     <span className="text-[13px] font-semibold text-text">{topicName}</span>

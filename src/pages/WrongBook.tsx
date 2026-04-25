@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGameProgressStore, useUIStore } from '@/store';
-import { TOPICS } from '@/constants';
-import type { WrongQuestion } from '@/types';
+import { getTopicDisplayName, getTopicMeta } from '@/constants';
+import type { TopicId, WrongQuestion } from '@/types';
 import BottomNav from '@/components/BottomNav';
 import LoadingScreen from '@/components/LoadingScreen';
 import { TopicIcon } from '@/components/TopicIcon';
@@ -59,8 +59,8 @@ export default function WrongBook() {
         ) : (
           <div className="space-y-6">
             {Object.entries(grouped).map(([topicId, questions]) => {
-              const topic = TOPICS.find(t => t.id === topicId);
-              if (!topic) return null;
+              const legacyAwareTopicId = topicId as TopicId;
+              const topic = getTopicMeta(legacyAwareTopicId);
 
               const isExpanded = expandedTopics.has(topicId);
               const hasMore = questions.length > COLLAPSED_LIMIT;
@@ -73,7 +73,7 @@ export default function WrongBook() {
                     <div style={{ color: topic.color, width: 22, height: 22 }}>
                       <TopicIcon topicId={topic.id} size={22} />
                     </div>
-                    <span className="font-black text-sm">{topic.name}</span>
+                    <span className="font-black text-sm">{getTopicDisplayName(legacyAwareTopicId)}</span>
                     <span className="text-xs font-bold text-text-2">({questions.length} 题)</span>
                   </div>
 

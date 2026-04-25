@@ -2,7 +2,7 @@
 
 > 所属版本：v0.4
 > 创建：2026-04-25
-> 状态：🟡 Phase 1 已完成；Phase 2 题型信息架构方案已定，待实施
+> 状态：✅ Phase 1 / Phase 2 已完成；Phase 3 待开工
 > 设计规格：N/A（本版本先由预研报告和既有 Specs 约束驱动；具体子项开工前按需补设计 / 子计划）
 
 ---
@@ -47,5 +47,5 @@
 - ✅ Phase 1 已完成：[`phases/phase-1.md`](./phases/phase-1.md)
 - ✅ Phase 1 乘法竖式子计划已完成：[`subplans/2026-04-25-bl-005-multiplication-vertical-board.md`](./subplans/2026-04-25-bl-005-multiplication-vertical-board.md)
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
-- 🟡 Phase 2 方案已定：A04「运算律」/ A06「括号变换」取消玩家独立入口，降阶为 A07「简便计算」低档知识点 lane
-- 📋 下一步：实施 Phase 2；随后进入 Phase 3 题目质量与生成器诊断，并另行确认 `BL-005.2` 进位格三档规则、`Phase 5` 是否保留在 v0.4
+- ✅ Phase 2 已完成：A04「运算律」/ A06「括号变换」取消玩家独立入口，降阶为 A07「简便计算」低档知识点 lane；自动化、构建、浏览器拟真验收通过
+- 📋 下一步：进入 Phase 3 题目质量与生成器诊断，并另行确认 `BL-005.2` 进位格三档规则、`Phase 5` 是否保留在 v0.4

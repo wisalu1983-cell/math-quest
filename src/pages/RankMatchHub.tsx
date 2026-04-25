@@ -12,7 +12,7 @@ import {
   getTakeoverMinutesLeft,
 } from '@/engine/rank-match/takeover-policy';
 import { RANK_BEST_OF, RANK_WINS_TO_ADVANCE, TIER_LABEL, TIER_ORDER, type ChallengeableTier } from '@/constants/rank-match';
-import { TOPICS } from '@/constants';
+import { getTopicDisplayName } from '@/constants';
 import RankBadge from '@/components/RankBadge';
 import BottomNav from '@/components/BottomNav';
 import Dialog from '@/components/Dialog';
@@ -414,7 +414,7 @@ export default function RankMatchHub() {
                   {!unlocked && gaps.length > 0 && (
                     <div className="mt-1 flex flex-wrap gap-1">
                       {gaps.map(g => {
-                        const topicName = TOPICS.find(t => t.id === g.topicId)?.name ?? g.topicId;
+                        const topicName = getTopicDisplayName(g.topicId);
                         return (
                           <span key={g.topicId}
                                 className="text-[11px] font-bold px-1.5 py-0.5 rounded-full bg-warning-lt text-warning">

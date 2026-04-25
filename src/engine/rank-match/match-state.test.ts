@@ -37,15 +37,15 @@ function makeAdvance(map: Partial<Record<TopicId, number>>): AdvanceProgress {
 }
 
 /**
- * 新秀入场 = A01~A04 各 1★。
- * 参照 STAR_THRESHOLDS_3/5 的第一档 = 6 心即 1★（A01~A04 cap=3 用 STAR_THRESHOLDS_3=[6,18,38]）。
+ * 新秀入场 = A01/A02/A03/A07 各 1★（v0.4 Phase 2 隐藏 A04/A06）。
+ * 参照 STAR_THRESHOLDS_3/5 的第一档 = 6 心即 1★。
  */
 function rookieQualifyingAdvance(): AdvanceProgress {
   return makeAdvance({
     'mental-arithmetic': 6,
     'number-sense':      6,
     'vertical-calc':     6,
-    'operation-laws':    6,
+    'multi-step':        6,
   });
 }
 
@@ -56,7 +56,7 @@ describe('entry-gate · isTierUnlocked', () => {
     expect(isTierUnlocked('apprentice', {})).toBe(true);
   });
 
-  it('rookie：A01~A04 各 1★ 满足即 unlocked', () => {
+  it('rookie：A01/A02/A03/A07 各 1★ 满足即 unlocked', () => {
     expect(isTierUnlocked('rookie', rookieQualifyingAdvance())).toBe(true);
   });
 
@@ -70,7 +70,7 @@ describe('entry-gate · isTierUnlocked', () => {
     expect(isTierUnlocked('rookie', {})).toBe(false);
   });
 
-  it('pro：在仅满足新秀门槛时仍然 locked（需要 8 题型各 2★）', () => {
+  it('pro：在仅满足新秀门槛时仍然 locked（需要 6 个可见题型各 2★）', () => {
     expect(isTierUnlocked('pro', rookieQualifyingAdvance())).toBe(false);
   });
 });
@@ -91,10 +91,10 @@ describe('entry-gate · getTierGaps', () => {
 
   it('rookie 半达标：只列未满足题型', () => {
     const ap = rookieQualifyingAdvance();
-    ap['operation-laws']!.heartsAccumulated = 0;
+    ap['multi-step']!.heartsAccumulated = 0;
     const gaps = getTierGaps('rookie', ap);
     expect(gaps).toHaveLength(1);
-    expect(gaps[0].topicId).toBe('operation-laws');
+    expect(gaps[0].topicId).toBe('multi-step');
     expect(gaps[0].currentStars).toBe(0);
   });
 });

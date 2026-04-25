@@ -1,7 +1,7 @@
 // src/pages/Home.tsx
 import { useUserStore, useUIStore, useGameProgressStore } from '@/store';
 import { useRankMatchStore } from '@/store/rank-match';
-import { TOPICS } from '@/constants';
+import { TOPICS, getTopicDisplayName } from '@/constants';
 import { CAMPAIGN_MAPS } from '@/constants/campaign';
 import { getStars } from '@/engine/advance';
 import { TOPIC_STAR_CAP } from '@/constants/advance';
@@ -91,7 +91,7 @@ export default function Home() {
   } else if (nextChallengeableTier && !canChallenge) {
     rankCardTitle = `冲击 ${TIER_LABEL[nextChallengeableTier]}`;
     rankCardSub = challengeGaps.length > 0
-      ? `差 ${challengeGaps.map(g => `${TOPICS.find(t => t.id === g.topicId)?.name ?? g.topicId} ${g.currentStars}★/${g.requiredStars}★`).slice(0, 2).join('，')}`
+      ? `差 ${challengeGaps.map(g => `${getTopicDisplayName(g.topicId)} ${g.currentStars}★/${g.requiredStars}★`).slice(0, 2).join('，')}`
       : '继续进阶训练积累星级';
   } else {
     rankCardSub = `当前段位：${TIER_LABEL[currentTier]}`;

@@ -1,7 +1,7 @@
 // src/pages/SessionSummary.tsx
 import { useEffect, useRef, useState } from 'react';
 import { useUIStore, useGameProgressStore } from '@/store';
-import { TOPICS } from '@/constants';
+import { getTopicDisplayName } from '@/constants';
 import { TOPIC_STAR_CAP, STAR_THRESHOLDS_3, STAR_THRESHOLDS_5, ADVANCE_MAX_HEARTS } from '@/constants/advance';
 import { getStars, getStarProgress } from '@/engine/advance';
 import LoadingScreen from '@/components/LoadingScreen';
@@ -36,7 +36,7 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
   const gameProgress = useGameProgressStore(s => s.gameProgress);
   const cap          = TOPIC_STAR_CAP[topicId];
   const advProg      = gameProgress?.advanceProgress[topicId] ?? null;
-  const topic        = TOPICS.find(t => t.id === topicId);
+  const topicName    = getTopicDisplayName(topicId);
 
   const heartsAccAfter    = advProg?.heartsAccumulated ?? 0;
   const heartsAccBefore   = heartsAccAfter - heartsEarned;
@@ -200,7 +200,7 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
                 {bannerLeveled ? '升星啦！' : heartsEarned > 0 ? '练习完成！' : '白练一局，继续加油！'}
               </p>
               <p className="text-text-2 text-xs font-bold mt-0.5">
-                {topic?.name ?? '进阶训练'} · 进阶模式
+                {topicName} · 进阶模式
               </p>
             </div>
           </div>
@@ -316,7 +316,7 @@ export default function SessionSummary() {
 
   if (!lastSession) return <LoadingScreen />;
 
-  const topic        = TOPICS.find(t => t.id === lastSession.topicId);
+  const topicName    = getTopicDisplayName(lastSession.topicId);
   const correctCount = lastSession.questions.filter(q => q.correct).length;
   const totalCount   = lastSession.questions.length;
   const accuracy     = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
@@ -350,7 +350,7 @@ export default function SessionSummary() {
           <div className="text-5xl mb-3">{passed ? '🎉' : '😅'}</div>
           <h1 className="text-[24px] font-black">{passed ? '太棒了，通关！' : '没关系，再来一次！'}</h1>
           <p className="text-text-2 text-sm font-bold mt-1.5">
-            {topic?.name ?? '练习'} · 闯关模式
+            {topicName} · 闯关模式
           </p>
         </div>
 

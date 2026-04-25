@@ -1,4 +1,4 @@
-import { TOPICS } from '@/constants';
+import { TOPICS, getTopicDisplayName } from '@/constants';
 import { repository } from '@/repository/local';
 import { useUIStore, useUserStore } from '@/store';
 import type { HistoryQuestionRecord, HistoryRecord, TopicId } from '@/types';
@@ -82,7 +82,7 @@ function buildRandomHistoryRecord(
   recordIndex: number,
   now: number,
 ): HistoryRecord {
-  const topicName = TOPICS.find(topic => topic.id === topicId)?.name ?? topicId;
+  const topicName = getTopicDisplayName(topicId);
   const startedAt = now - randomInt((recordIndex + 2) * 60 * 60 * 1000, (recordIndex + 3) * 9 * 60 * 60 * 1000);
   const completed = result !== 'incomplete';
 

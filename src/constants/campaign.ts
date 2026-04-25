@@ -290,6 +290,7 @@ const verticalCalcMap: CampaignMap = {
 };
 
 // ─── A04 运算律（2 档） ───
+// Legacy：仅供存档迁移、旧历史数据和内部兼容使用；玩家主链路已断联。
 const operationLawsMap: CampaignMap = {
   topicId: 'operation-laws',
   stages: [
@@ -447,6 +448,7 @@ const decimalOpsMap: CampaignMap = {
 };
 
 // ─── A06 括号变换（3 档） ───
+// Legacy：仅供存档迁移、旧历史数据和内部兼容使用；玩家主链路已断联。
 const bracketOpsMap: CampaignMap = {
   topicId: 'bracket-ops',
   stages: [
@@ -537,25 +539,52 @@ const multiStepMap: CampaignMap = {
   stages: [
     {
       stageId: 'multi-step-S1',
-      stageLabel: '低档·基础简便',
+      stageLabel: '低档·前置知识与基础应用',
       isBoss: false,
       lanes: [
         {
           laneId: 'multi-step-S1-LA',
-          laneLabel: '连减凑整',
-          subtypeFilter: ['bracket-normal'],
+          laneLabel: '运算律',
+          subtypeFilter: [
+            'law-identify',
+            'law-simple-judge',
+            'law-structure-blank',
+            'law-reverse-blank',
+            'law-counter-example',
+            'law-concept-reverse',
+            'law-easy-confuse',
+            'law-compound-law',
+            'law-distributive-trap',
+            'law-error-diagnose',
+          ],
           levels: [
             { levelId: 'multi-step-S1-LA-L1', difficulty: 2, questionCount: 10 },
-            { levelId: 'multi-step-S1-LA-L2', difficulty: 3, questionCount: 12 },
+            { levelId: 'multi-step-S1-LA-L2', difficulty: 5, questionCount: 12 },
           ],
         },
         {
           laneId: 'multi-step-S1-LB',
-          laneLabel: '分配律凑整',
-          subtypeFilter: ['extract-factor'],
+          laneLabel: '括号变换',
+          subtypeFilter: [
+            'bracket-remove-plus',
+            'bracket-remove-minus',
+            'bracket-add',
+            'bracket-division-property',
+            'bracket-four-items-sign',
+            'bracket-error-diagnose',
+          ],
           levels: [
             { levelId: 'multi-step-S1-LB-L1', difficulty: 2, questionCount: 10 },
-            { levelId: 'multi-step-S1-LB-L2', difficulty: 3, questionCount: 12 },
+            { levelId: 'multi-step-S1-LB-L2', difficulty: 5, questionCount: 12 },
+          ],
+        },
+        {
+          laneId: 'multi-step-S1-LC',
+          laneLabel: '基础简便应用',
+          subtypeFilter: ['bracket-normal', 'extract-factor', 'decimal-two-step'],
+          levels: [
+            { levelId: 'multi-step-S1-LC-L1', difficulty: 2, questionCount: 10 },
+            { levelId: 'multi-step-S1-LC-L2', difficulty: 3, questionCount: 12 },
           ],
         },
       ],

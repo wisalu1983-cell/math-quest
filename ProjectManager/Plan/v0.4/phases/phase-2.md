@@ -1,7 +1,7 @@
 # Phase 2：A04/A06 降阶并入 A07
 
 > 所属：v0.4-2
-> 状态：🟡 方案已定，待实施
+> 状态：✅ 已完成（2026-04-25）
 > 来源：2026-04-25 题型 IA 决策 / `BL-006` / `BL-007` 局部
 > 子计划：[`../subplans/2026-04-25-a04-a06-downshift-to-a07.md`](../subplans/2026-04-25-a04-a06-downshift-to-a07.md)
 
@@ -42,10 +42,17 @@
 
 ## 收尾条件
 
-- Home / Campaign / Advance / Profile / WrongBook / Rank 相关入口均不再把 A04/A06 作为玩家独立题型展示
-- A07 低档能进入「运算律」「括号变换」lane，且覆盖原 A04/A06 全部子题型
-- 原 A07 低档基础应用子题型仍留在低档
-- 新生成的知识点题玩家归属为「简便计算」
-- 旧 A04/A06 历史数据不丢失，启动不清空存档
-- `npm test -- --run` 和 `npm run build` 通过
-- QAleader 三层 QA 完成；QA run 原始产物不入库，只在本 Phase / 子计划记录结论
+- [x] Home / Campaign / Advance / Profile / WrongBook / Rank 相关入口均不再把 A04/A06 作为玩家独立题型展示
+- [x] A07 低档能进入「运算律」「括号变换」lane，且覆盖原 A04/A06 全部子题型
+- [x] 原 A07 低档基础应用子题型仍留在低档
+- [x] 新生成的知识点题玩家归属为「简便计算」
+- [x] 旧 A04/A06 历史数据不丢失，启动不清空存档
+- [x] `npm test -- --run` 和 `npm run build` 通过
+- [x] QAleader 三层 QA 完成；QA run 原始产物不入库，只在本 Phase / 子计划记录结论
+
+## 验收结论（2026-04-25）
+
+- 自动化：Phase2 定向测试 5/5 files、27/27 tests 通过；采纳 review 后定向回归 3/3 files、120/120 tests 通过；全量 Vitest 48/48 files、672/672 tests 通过。
+- 构建：`npm run build` 通过。
+- 静态检查：新增 Phase2 文件 `eslint` 通过；仓库全量 `npm run lint` 仍有既有 lint 债（React hooks 规则、旧测试 `any` 等），不属于本 Phase 新增阻塞。
+- 浏览器拟真：本地 `http://127.0.0.1:5174/` 正式游戏流通过；首页展示 6 个玩家可见题型；A07「简便计算」地图展示「运算律 / 括号变换 / 基础简便应用」三条低档 lane；第一关可生成 A07 归属的运算律题，console error 为 0。

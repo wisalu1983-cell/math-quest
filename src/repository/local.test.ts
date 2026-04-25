@@ -161,15 +161,15 @@ describe('migrateCampaignIfNeeded（策略 X）', () => {
     expect(twice).toBe(once); // 引用相等 = 没触发迁移
   });
 
-  it('8 题型 getAllLevelIds 总数 = 85（C1档内梯度规范化后总关卡数）', () => {
+  it('8 题型 getAllLevelIds 总数 = 87（v0.4 Phase 2 A07 三 lane 后总关卡数）', () => {
     // 防回归：8 题型各自关卡数总和
-    // A01:9 + A02:15 + A03:11 + A04:7 + A05:12 + A06:9 + A07:13 + A08:9 = 85
-    // C1变更: A01减2(S1-LA-L2+S2-LA-L2), A03/A04/A06各减1
+    // A01:9 + A02:15 + A03:11 + A04:7 + A05:12 + A06:9 + A07:15 + A08:9 = 87
+    // v0.4 Phase 2: A07 S1 增为三条 lane，承接 A04/A06 低档知识点。
     let total = 0;
     for (const topicId of Object.keys(CAMPAIGN_MAPS)) {
       total += getAllLevelIds(topicId).length;
     }
-    expect(total).toBe(85);
+    expect(total).toBe(87);
   });
 });
 
@@ -218,7 +218,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
   it('全新用户（无任何 key）→ 写入当前版本号，不触发备份', () => {
     repository.init();
-    expect(localStorage.getItem('mq_version')).toBe('4');
+    expect(localStorage.getItem('mq_version')).toBe('5');
     const keys: string[] = [];
     for (let i = 0; i < (localStorage as unknown as { length: number }).length; i++) {
       const k = localStorage.key(i);
@@ -227,7 +227,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
     expect(keys.some(k => k.startsWith('mq_backup_'))).toBe(false);
   });
 
-  it('v2 存档 + 有 gameProgress → 自动迁移到 v4，rankProgress 补默认值', () => {
+  it('v2 存档 + 有 gameProgress → 自动迁移到 v5，rankProgress 补默认值', () => {
     const v2Gp: GameProgress = {
       userId: 'u1',
       campaignProgress: {},
@@ -241,14 +241,14 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
-    expect(localStorage.getItem('mq_version')).toBe('4');
+    expect(localStorage.getItem('mq_version')).toBe('5');
     const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
     expect(stored.rankProgress).toEqual({ currentTier: 'apprentice', history: [] });
     expect(stored.totalQuestionsAttempted).toBe(10); // 原数据保留
     expect(stored.totalQuestionsCorrect).toBe(8);
   });
 
-  it('v3 存档 + 有 gameProgress → 自动迁移到 v4，不改已有数据', () => {
+  it('v3 存档 + 有 gameProgress → 自动迁移到 v5，不改已有数据', () => {
     const v3Gp: GameProgress = {
       userId: 'u1',
       campaignProgress: {},
@@ -263,12 +263,12 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
-    expect(localStorage.getItem('mq_version')).toBe('4');
+    expect(localStorage.getItem('mq_version')).toBe('5');
     const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
     expect(stored.rankProgress).toEqual({ currentTier: 'rookie', history: [] });
   });
 
-  it('v4 存档 → noop（幂等）', () => {
+  it('v4 存档 → 自动迁移到 v5，不改已有数据', () => {
     const v4Gp: GameProgress = {
       userId: 'u1',
       campaignProgress: {},
@@ -284,7 +284,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
     repository.init();
 
     const stored = JSON.parse(localStorage.getItem('mq_game_progress') ?? '{}') as GameProgress;
-    expect(localStorage.getItem('mq_version')).toBe('4');
+    expect(localStorage.getItem('mq_version')).toBe('5');
     expect(stored.rankProgress).toEqual({ currentTier: 'rookie', history: [] });
   });
 
@@ -302,7 +302,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
     repository.init();
 
     // 版本更新到当前版本
-    expect(localStorage.getItem('mq_version')).toBe('4');
+    expect(localStorage.getItem('mq_version')).toBe('5');
 
     // 旧 gameProgress 落到备份 key
     const backupKeys: string[] = [];
@@ -327,7 +327,7 @@ describe('repository.init · 项目级存档升级原则（Spec §6.3）', () =>
 
     repository.init();
 
-    expect(localStorage.getItem('mq_version')).toBe('4');
+    expect(localStorage.getItem('mq_version')).toBe('5');
     expect(localStorage.getItem('mq_game_progress')).toBeNull();
     // 无备份生成
     const len = (localStorage as unknown as { length: number }).length;
@@ -598,7 +598,7 @@ describe('Storage Namespace（F3 · v0.2-1-1）', () => {
     localStorage.setItem('mq_version', '4');
     setStorageNamespace('dev');
     repository.init();
-    expect(localStorage.getItem('mq_dev_version')).toBe('4');
+    expect(localStorage.getItem('mq_dev_version')).toBe('5');
     expect(localStorage.getItem('mq_version')).toBe('4'); // main 侧不变
   });
 
