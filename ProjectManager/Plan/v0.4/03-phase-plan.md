@@ -3,56 +3,67 @@
 > 所属版本：v0.4
 > 所属主线：[README](./README.md)
 > 分类基础：[`02-classification.md`](./02-classification.md)
+> 最近调整：2026-04-25 根据 A04/A06 降阶并入 A07 的产品决策重排 Phase
 
 ---
 
-## 四个 Phase 一览
+## 五个 Phase 一览
 
 | Phase | 名称 | 主产出 | 启动条件 | 收尾条件 | 状态 |
 |---|---|---|---|---|---|
 | Phase 1 | 渲染与判定修复 | 颜色、答案兼容、乘法竖式统一、`ISSUE-059` | 读 A03 相关代码 / 规格；按已确认三步路线展开乘法竖式子计划 | 对应手工或自动验证通过；test/build 通过 | ✅ 已完成 |
-| Phase 2 | 题目质量与生成器诊断 | 难度修复、第四关多位乘法桥接、选项干扰项、重复题目结论 | 读生成器 / 难度 / 星级规格；确定诊断样本 | 抽样验证有记录；重复题目有 bug/设计结论；test/build 通过 | 📋 待开工 |
-| Phase 3 | 交互设计与教学引导 | 进位格三档规则、运算律 UX、compare tip 补证 | 确认进位格规则与运算律目标体验 | 用户视角走查 + 三档场景验证；compare tip 补证完成 | 📋 待开工 |
-| Phase 4 | Practice 工程质量 | 状态重置统一机制 | 确认保留在 v0.4；现有行为测试覆盖 | 重构前后行为等价；回归测试通过 | 📋 待确认 |
+| Phase 2 | A04/A06 降阶并入 A07 | 玩家题型入口收敛、A07 知识点 lane、保留原 A07 低档应用、存档/段位/进阶兼容 | 读 A04/A06/A07 规格、星级/段位规格、存档迁移原则 | A04/A06 不再玩家可见；A07 lane 覆盖原子题型；原 A07 低档应用不丢失；test/build/QA 通过 | 🟡 方案已定，待实施 |
+| Phase 3 | 题目质量与生成器诊断 | 竖式难度、第四关多位乘法桥接、选项干扰项、重复题目结论 | Phase 2 后题型 IA 稳定；读生成器 / 难度 / 星级规格；确定诊断样本 | 抽样验证有记录；重复题目有 bug/设计结论；test/build 通过 | 📋 待开工 |
+| Phase 4 | 交互设计与教学引导 | 进位格三档规则、compare tip 补证 | 确认进位格规则与 compare tip 验证样本 | 用户视角走查 + 三档场景验证；compare tip 补证完成 | 📋 待开工 |
+| Phase 5 | Practice 工程质量 | 状态重置统一机制 | 确认保留在 v0.4；现有行为测试覆盖 | 重构前后行为等价；回归测试通过 | 📋 待确认 |
 
 ## 建议时序
 
 ```text
-需求讨论
-  ├─ 决策 A：乘法竖式统一方向（已确认）
-  ├─ 决策 B：进位格三档规则
-  ├─ 决策 C：重复题目诊断方式
-  └─ 决策 D：Phase 4 是否保留
-
-Phase 1 -> Phase 2 -> Phase 3 -> Phase 4
+Phase 1 已完成
+  ↓
+Phase 2：先稳定题型信息架构
+  ↓
+Phase 3：在新 IA 上做题目质量与重复题诊断
+  ↓
+Phase 4：处理剩余教学交互规则
+  ↓
+Phase 5：工程质量收尾（可延期）
 ```
 
-Phase 1 已完成并通过 QAleader 三层 QA。Phase 2 牵涉生成器、关卡梯度和抽题去重，必须先读规格并跑样本；其中 A03 第四关已确认可少量加入 `2位数 × 2位数` 作为多位乘法桥接。Phase 3 包含教学反馈规则，必须在实现前先把预期体验说清楚。Phase 4 可作为 v0.4 末尾工程整理，也可在工作量超出时延期。
+Phase 2 必须排在题目质量诊断前面。原因是 A04/A06 是否作为独立题型，会直接影响选项题扩容样本、重复题诊断样本、段位赛题型范围和进阶入口。先诊断再改 IA，会让结论口径漂移。
 
 ## Phase 间依赖
 
 | 关系 | 性质 | 说明 |
 |---|---|---|
-| 需求讨论 → Phase 1 | 软硬混合 | 颜色 / 小数兼容 / `ISSUE-059` 可直接推进；乘法竖式统一方向已确认，但需要子计划固化模块边界 |
-| Phase 1 → Phase 2 | 软依赖 | Phase 2 不依赖 Phase 1 代码，但建议先消除低风险体验问题 |
-| Phase 2 → Phase 3 | 软依赖 | Phase 3 的进位格规则与竖式体验相关，最好在竖式难度诊断后定稿 |
-| Phase 3 → Phase 4 | 软依赖 | Phase 4 是工程质量，不影响题目体验主线；可并行或延期 |
+| Phase 1 → Phase 2 | 软依赖 | Phase 2 不依赖乘法竖式代码，但 v0.4 已先完成低风险修复 |
+| Phase 2 → Phase 3 | 硬依赖 | 题型 IA 稳定后才能定义重复题和选项干扰项的验收口径 |
+| Phase 3 → Phase 4 | 软依赖 | 进位格规则与 compare tip 可独立，但建议在生成器诊断后再做完整 QA |
+| Phase 4 → Phase 5 | 软依赖 | Phase 5 是工程质量，不影响题目体验主线；可延期到 v0.5 |
 
 ## 决策门
 
 | 决策 | 影响文件 | 未决时处理 |
 |---|---|---|
 | 乘法竖式三步路线 | `phases/phase-1.md` / 子计划 | 已完成；见 [`subplans/2026-04-25-bl-005-multiplication-vertical-board.md`](./subplans/2026-04-25-bl-005-multiplication-vertical-board.md) |
-| 进位格三档规则 | `phases/phase-3.md` / 可能的新 Spec | 不实现规则分层，只保留待设计 |
-| 重复题诊断策略 | `phases/phase-2.md` | 先做只读抽样脚本 / 手工复现清单 |
-| Phase 4 去留 | `phases/phase-4.md` | 标记为 v0.5 候选，不阻塞 v0.4 体验主线 |
+| A04/A06 题型 IA | `phases/phase-2.md` / 子计划 | 已确认：玩家入口取消，降阶为 A07 低档知识点 lane；原 A07 低档基础应用继续保留在低档 |
+| 旧 A04/A06 存档兼容 | `phases/phase-2.md` / 子计划 | 保留 internal / legacy topic，不清空历史数据；必要时走 v4→v5 迁移 |
+| 重复题诊断策略 | `phases/phase-3.md` | Phase 2 后做脚本抽样 / 场景复现 / 两者结合 |
+| 进位格三档规则 | `phases/phase-4.md` / 可能的新 Spec | 不实现规则分层，只保留待设计 |
+| Phase 5 去留 | `phases/phase-5.md` | 标记为 v0.5 候选，不阻塞 v0.4 体验主线 |
 
 ## 子计划说明
 
-当前只建立 Phase 级入口。任何具体子项进入实施前，按 [`../templates/plan-template.md`](../templates/plan-template.md) 在 `subplans/` 下创建独立子计划，尤其是：
+具体子项进入实施前，按 [`../templates/plan-template.md`](../templates/plan-template.md) 在 `subplans/` 下创建独立子计划。当前已有：
 
-- `BL-005.2` 进位格规则
-- `BL-005.3` 乘法竖式三步路线
-- `BL-007` 选项干扰项设计
+- [`subplans/2026-04-25-bl-005-multiplication-vertical-board.md`](./subplans/2026-04-25-bl-005-multiplication-vertical-board.md)：Phase 1 乘法竖式
+- [`subplans/2026-04-25-a04-a06-downshift-to-a07.md`](./subplans/2026-04-25-a04-a06-downshift-to-a07.md)：Phase 2 A04/A06 降阶并入 A07
+
+后续待展开：
+
+- `BL-005.4` 竖式难度与第四关桥接
+- `BL-007` 其他题型选项干扰项设计
 - `BL-008` 重复题目诊断
+- `BL-005.2` 进位格规则
 - `BL-004` Practice 状态重置

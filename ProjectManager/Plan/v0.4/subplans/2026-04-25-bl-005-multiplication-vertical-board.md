@@ -18,7 +18,7 @@
 | `ProjectManager/Specs/2026-04-09-a03-block-b-design.md` | 旧规格把小数乘法做成 `numeric-input + trainingFields`，并明确“不包含乘法部分积的多行竖式展示”；本计划在 v0.4 Phase 1 中覆盖这部分旧边界。 |
 | `ProjectManager/Specs/2026-04-14-ui-redesign-spec.md` | 遵守阳光版 v5：暖白背景、白卡片、橙色主操作、绿色成功态、文字最小 11px、题目 UI 不突破现有答题卡片约束。 |
 | `ProjectManager/ISSUE_LIST.md` | `ISSUE-059`：`dec-div` 高档不应残留隐藏 `trainingFields`，修复后需有关闭证据。 |
-| `ProjectManager/Backlog.md` | `BL-005.1`、`BL-005.3`、`BL-005.5` 是本计划来源；`BL-005.2` 进位格三档规则留在 Phase 3，不混入本计划。 |
+| `ProjectManager/Backlog.md` | `BL-005.1`、`BL-005.3`、`BL-005.5` 是本计划来源；`BL-005.2` 进位格三档规则留在 Phase 4，不混入本计划。 |
 
 ### 跨系统维度清单
 
@@ -44,9 +44,9 @@
 
 ### 非目标
 
-- 不实现 `BL-005.2` 进位格三档规则；该规则仍归 Phase 3。
+- 不实现 `BL-005.2` 进位格三档规则；该规则仍归 Phase 4。
 - 不重做长除法逐步试商竖式。
-- 不调整 A03 难度分布和 “360÷3 出现在 3 星” 的问题；该项归 Phase 2。
+- 不调整 A03 难度分布和 “360÷3 出现在 3 星” 的问题；该项归 Phase 3。
 - 不把小数乘法拆成新的 topic 或新的全局题型。
 
 ## 三、已确认交互设计
