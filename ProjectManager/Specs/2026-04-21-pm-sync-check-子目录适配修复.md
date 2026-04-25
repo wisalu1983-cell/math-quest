@@ -12,8 +12,8 @@
 
 `pm-sync-check` 是项目管理文档的静态一致性校验脚本（L1 层），在 2026-04-17 首次落地。2026-04-20 项目管理体系引入了两条新规则：
 
-1. **功能设计文档子目录规则**（Plan/README.md §功能设计文档子目录规则）：新 Spec 按功能收进 `Specs/<feature-slug>/` 子目录
-2. **子计划 Plan 文件位置规则**（Plan/README.md §子计划 Plan 文件位置规则）：Plan 头部引用 Spec 时可用相对 `Specs/` 的路径（如 `dev-tool-panel/2026-04-20-research-findings.md`）
+1. **功能设计文档子目录规则**（`Plan/rules/document-ownership.md`）：新 Spec 按功能收进 `Specs/<feature-slug>/` 子目录
+2. **子计划 Plan 文件位置规则**（`Plan/rules/document-ownership.md`）：Plan 头部引用 Spec 时可用相对 `Specs/` 的路径（如 `dev-tool-panel/2026-04-20-research-findings.md`）
 
 脚本的多处逻辑仍按"Specs/ 下全部扁平"的旧假设编写，导致：
 - 子目录里的 Spec 文件不被扫描（漏报）
@@ -124,8 +124,8 @@ else if (name.includes('/') && !name.startsWith('.')) {
 **位置**：新函数 `checkIssueIdExclusive()`，在 `main()` 中 `checkIssueStatusConsistency()` 之后调用
 
 **规则来源**：
-- Plan/README.md §Backlog vs ISSUE_LIST 边界："同一条目不同时在两边"
-- ISSUE_LIST.md §操作规范 第 4 点："同一条目不同时在两边"
+- `Plan/rules/pm-write-routing.md` §ISSUE / Backlog 边界："同一条目不同时在两边"
+- `ISSUE_LIST.md` §操作规范 第 4 点："同一条目不同时在两边"
 
 **逻辑**：
 1. 从 `ISSUE_LIST.md` 提取所有 `### ISSUE-XXX` 的 ID 集合
@@ -208,4 +208,5 @@ function checkIssueIdExclusive() {
 | `ProjectManager/Specs/_index.md` | Check 1 的校验对象 |
 | `ProjectManager/ISSUE_LIST.md` | Check 3/6 的校验对象 |
 | `ProjectManager/Backlog.md` | Check 6 的校验对象 |
-| `ProjectManager/Plan/README.md` | 规则来源（§子目录规则 / §Backlog 边界） |
+| `ProjectManager/Plan/rules/document-ownership.md` | 规则来源（Spec / Plan 文档归属） |
+| `ProjectManager/Plan/rules/pm-write-routing.md` | 规则来源（Backlog / ISSUE_LIST 边界） |

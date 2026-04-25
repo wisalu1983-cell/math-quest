@@ -32,7 +32,7 @@
 | 上一版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
 | 更早版本 | v0.1 | ✅ 已发布（2026-04-19 收口，三层游戏化闭环完成） | [Plan/v0.1/](Plan/v0.1/) |
 
-> 版本命名与归档规则见 [Plan/README.md](Plan/README.md) §版本归档规则。本文件只呈现当前版本活跃信息；历史版本请进入对应 `Plan/vX.Y/` 目录。
+> 版本命名见 [Plan/rules/phase-and-subplan-naming.md](Plan/rules/phase-and-subplan-naming.md)，版本生命周期规则见 [Plan/version-lifecycle.md](Plan/version-lifecycle.md)。本文件只呈现当前版本活跃信息；历史版本请进入对应 `Plan/vX.Y/` 目录。
 
 ---
 
@@ -92,7 +92,7 @@
 
 - 开放问题权威源：[ISSUE_LIST.md](ISSUE_LIST.md)
 - 未激活候选 / 延期条目：[Backlog.md](Backlog.md)
-- 计划索引 / 模板 / 版本归档规则：[Plan/README.md](Plan/README.md)
+- 计划索引 / 规则入口 / 模板入口：[Plan/README.md](Plan/README.md)
 - 规格导航总索引：[Specs/_index.md](Specs/_index.md)
 - 复盘 / 历史机制记录：[Reports/](Reports/)
 

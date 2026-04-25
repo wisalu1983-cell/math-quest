@@ -1,361 +1,68 @@
 # 计划目录
 
-> 所有项目管理文档统一存放于 `ProjectManager/` 下：
-> - `Plan/` — 实施计划
-> - `Specs/` — 设计规格（计划的前置设计文档）
-> - `Reports/` — 调研/审视报告
-> - `ISSUE_LIST.md` — 待解决问题清单
-> - `Overview.md` — 活跃控制面（项目背景 / 当前阶段 / 当前状态 / 下一步 / 权威入口）
->
-> QA 体系自 2026-04-21 起独立收口到仓库根目录 [`../QA/`](../QA/)，其中 `runs/` 存正式 QA 结果，`scripts/` 存可复用 QA 脚本。
+> 角色：Plan 索引与规则入口，不承载项目当前状态总览。
+> 高频读取：找当前版本入口、确认写入路由、确认 Plan / Spec / 子计划放哪里。
+> 当前状态请先读：[`../Overview.md`](../Overview.md)。
+> 低频规则采用渐进式披露，按下表进入，不默认通读。
 
 ---
 
-## 计划维护规则
+## 高频速查
 
-本文件是**索引与模板入口**，不是项目当前状态总览。想看“现在在干什么”，请先读 [`../Overview.md`](../Overview.md)。
-
-## 常用速查
-
-只想确认某一条规则时，**直接定位对应小节，不默认通读全文**：
-
-| 想确认什么 | 去看哪一节 |
+| 想确认什么 | 读取入口 |
 |---|---|
-| Phase / 子计划怎么命名 | `## Phase 与子计划命名规则` |
-| 子计划 Plan 放哪里 | `## 子计划 Plan 文件位置规则` |
-| 功能设计文档放 `Specs` 哪个目录 | `## 功能设计文档子目录规则` |
-| 新 Plan 头部和必备章节怎么写 | `## Plan 文件模板` |
-| 版本目录、收口、归档怎么处理 | `## 版本归档规则` |
-| 开新版本 / 版本过程管理动作（低频） | [`version-lifecycle.md`](./version-lifecycle.md) |
+| 当前项目状态 / 下一步 | [`../Overview.md`](../Overview.md) |
+| PM 写入路由 / pm-sync-check 何时跑 | [`rules/pm-write-routing.md`](./rules/pm-write-routing.md) |
+| Phase / 子计划 ID 怎么命名 | [`rules/phase-and-subplan-naming.md`](./rules/phase-and-subplan-naming.md) |
+| Spec / Plan / Report / QA 分别放哪里 | [`rules/document-ownership.md`](./rules/document-ownership.md) |
+| 新建普通 Plan 模板 | [`templates/plan-template.md`](./templates/plan-template.md) |
+| 开新版本 / 版本过程 / 版本收口 | [`version-lifecycle.md`](./version-lifecycle.md) |
+| 新版本管理包模板 | [`templates/version-package-template.md`](./templates/version-package-template.md) |
 
-后续统一遵守以下最小规则：
+## 最小常用规则
 
-1. **先改权威源，再改主管**  
-   信息变化时，先改对应的 Plan / Spec / Issue / Report；只有当变化影响活跃视图时，才回写 `Overview.md`。
+1. **先改权威源，再改主管**：Plan / Spec / Issue / QA / Report 先更新；影响当前状态时再回写 `Overview.md`。
+2. **索引只在生命周期变化时更新**：新建、归档、废弃、改名、入口关系变化时更新本文件或 `_index.md`。
+3. **新 Plan 开工前先扫规格索引**：从 [`../Specs/_index.md`](../Specs/_index.md) 找相关生效规格。
+4. **版本启动和收口必须读低频指南**：见 [`version-lifecycle.md`](./version-lifecycle.md) 和 [`templates/version-package-template.md`](./templates/version-package-template.md)。
+5. **低频长规则不写进本 README**：超过 10 行且非日常使用的规则放到 `rules/`、`templates/`、`Reports/` 或版本目录。
 
-2. **Plan 持有执行事实，不持有项目总览**  
-   活跃计划只写范围、里程碑、阻塞、证据和当前决策结果；项目背景、当前阶段状态、下一步统一由 `Overview.md` 汇总。
+## 当前版本（v0.3）
 
-3. **索引只在生命周期变化时更新**  
-   `Plan/README.md` 和 `Specs/_index.md` 只在新建、归档、生效状态变化、文件改名、入口关系变化时更新；日常里程碑推进不要求同步本索引。
+> 主线：Supabase 在线账号与数据同步 · 入口 [`v0.3/README.md`](./v0.3/README.md)
 
-4. **关闭事项退出活跃视图**  
-   issue / plan / 路线一旦关闭或废弃，应从活跃视图移出；`Overview.md` 只保留结果性结论，详细过程留在对应 Plan 或 Report。
+| 文件 | 用途 | 状态 |
+|---|---|---|
+| [`v0.3/README.md`](./v0.3/README.md) | 版本入口 | ✅ 已上线 |
+| [`v0.3/00-overview.md`](./v0.3/00-overview.md) | 背景、目标、阶段结构、收口事实 | ✅ 已重建 |
+| [`v0.3/01-source-catalog.md`](./v0.3/01-source-catalog.md) | 需求 / 规格 / commit / 验收证据链 | ✅ 已重建 |
+| [`v0.3/02-classification.md`](./v0.3/02-classification.md) | 分类、依赖、边界 | ✅ 已重建 |
+| [`v0.3/03-phase-plan.md`](./v0.3/03-phase-plan.md) | Phase 总图、时序、commit 链 | ✅ 已重建 |
+| [`v0.3/04-execution-discipline.md`](./v0.3/04-execution-discipline.md) | 本版本执行纪律、验收规则 | ✅ 已重建 |
+| [`v0.3/phases/`](./v0.3/phases/) | Phase 1/2/3 与 acceptance | ✅ 已完成 |
+| [`v0.3/implementation-plan.md`](./v0.3/implementation-plan.md) | 历史实施长文，按标题定点查阅 | 🗄️ 历史证据 |
 
-5. **新 Plan 开工前先扫 `Specs/_index.md`**  
-   新计划启动前，先按维度扫描 [`../Specs/_index.md`](../Specs/_index.md) 中的生效规格，再把真正相关的硬约束写进 Plan 头部。
+## 跨版本工具性 Plan
 
-6. **`pm-sync-check` 只在关键节点运行**  
-   仅在以下场景运行 `npx tsx scripts/pm-sync-check.ts`：
-   - 同一轮改了 2 个及以上权威源 / 索引源
-   - 准备关闭一个里程碑或声明某块完成
-   - 新建 / 归档 / 废弃 Plan、Spec、Issue 的入口关系
-   
-   纯诊断、只读分析、纯 `Overview.md` 精简、纯历史阅读，不默认 pre-flight。
-
-### 变更路由短表
-
-| 发生什么 | 先更新哪里 | 什么时候再回写 `Overview.md` |
-|------|------|------|
-| 活跃计划里程碑推进 / 范围调整 | 对应 `Plan/*.md` | 当前主线 / 当前状态 / 下一步变化时 |
-| 新发现问题 / 关闭问题 | `ISSUE_LIST.md` | 影响活跃视图时 |
-| 新建设计规格 / 规格状态变化 | 对应 `Specs/*.md` + `Specs/_index.md` | 当前阶段入口或生效约束变化时 |
-| 新建 / 归档计划、报告 | `Plan/README.md` | 当前权威入口变化时 |
-| 历史复盘 / 机制说明 / 重排归档 | `Reports/` | 默认不回写；除非活跃结论也变了 |
-
-一句话：**先改左列的权威源，再判断主管是否需要同步结果。**
-
----
-
-## Phase 与子计划命名规则（2026-04-20 生效）
-
-从 v0.2 起强制使用**数字序号**命名 Phase 与子计划，**不再使用希腊字母**。
-
-### 命名格式
-
-| 层级 | 正式 ID | 上下文内简写 | 文件位置 |
-|---|---|---|---|
-| Phase 级 | `vX.Y-P` | `Phase P` | `Plan/vX.Y/phases/phase-P.md` |
-| 子计划级 | `vX.Y-P-N` | `P-N` | `Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md`（2026-04-20 起；详见 §子计划 Plan 文件位置规则）|
-
-**示例**：
-
-- v0.2 的第 1 个 Phase → 正式 `v0.2-1`，在 v0.2 文档内简写为 `Phase 1`
-- v0.2 第 1 个 Phase 的第 1 个子计划 → 正式 `v0.2-1-1`，在 v0.2 文档内简写为 `1-1`
-- 跨版本引用 / Issue / Backlog / Reports 中必须用**正式 ID**，以避免歧义
-
-### 使用规则
-
-1. **Phase 文件内部**：可用简写 `Phase N` / `N-M`，已隐式绑定版本号
-2. **跨上下文引用**：必须用完整 ID `vX.Y-N` / `vX.Y-N-M`（如 `ISSUE_LIST.md`、`Backlog.md`、`Reports/*.md`、跨版本 Plan）
-3. **子计划文件位置与命名**：2026-04-20 起，子计划 Plan 落 `Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md`；在文件头部"父计划"字段标注正式 ID。历史遗留的 `Plan/YYYY-MM-DD-*.md`（2026-04-20 之前）不做回溯迁移
-4. **Phase 文件**：统一 `Plan/vX.Y/phases/phase-N.md`
-5. **新 Phase 子项登记到 ISSUE / Backlog 时**：用正式 ID 做来源引用（例：`来源：v0.2-4-1（A3 总则）`）
-
-### 历史兼容（仅作查旧文档用）
-
-以下映射表仅用于对照 2026-04-20 **之前**文档中的旧称呼：
-
-| 旧（希腊字母） | 新（数字） |
+| 文件 | 用途 |
 |---|---|
-| Phase α | Phase 1 |
-| Phase β | Phase 2 |
-| Phase γ | Phase 3 |
-| Phase δ | Phase 4 |
-| Phase ε | Phase 5 |
+| [`version-lifecycle.md`](./version-lifecycle.md) | 开新版本、版本过程、版本收口低频指南 |
+| [`2026-04-17-pm-document-sync-mechanism.md`](./2026-04-17-pm-document-sync-mechanism.md) | pm-sync-check 机制历史设计 |
+| [`2026-04-19-pm-token-efficiency-optimization.md`](./2026-04-19-pm-token-efficiency-optimization.md) | PM token 轻量化历史方案 |
 
-**新文档一律用新命名。旧归档文档不做回溯改写，在查阅时按本表对照即可。**
+## 历史版本
 
----
-
-## 工具性子计划范围规则（2026-04-20 生效）
-
-测试工具 / 调试面板 / 造数脚本等"工具性子计划"的覆盖范围，**严格限定在本次开工时已存在的功能**上。
-
-### 核心规定
-
-1. **不为"尚未实现的功能"提前建工具**——即使该功能在同一主线的后续 Phase 里
-2. **新功能开工时，把它所需的工具能力作为该功能子计划的一部分一并做掉**
-3. **工具本身要预留扩展入口**（如插件式注册、面板分组结构），但不预先实现具体扩展项
-4. **例外**：若某工具能力本身就是"验证功能已做好"的必备条件，视为该功能子计划的子任务，不走本规则
-
-### 判定清单（启动工具性子计划时自检）
-
-- [ ] 逐项检查工具清单里的每一条能力，它所对应的**产品功能是否已在仓库里运行**
-- [ ] 对尚未实现的功能，把工具需求**登记到该功能的未来子计划**（Issue / Backlog 里挂链接）
-- [ ] 工具面板预留扩展位，但标注"待 XX 子计划开工时填入"
-
-### 出处与典型场景
-
-- 出处：2026-04-20 用户对 `v0.2-1-1`（F3 开发者工具栏，即测试状态一键注入面板）范围的澄清
-- 典型：F3（开发者工具栏）在 2026-04-20 开工时不为 `5-1`（F2 历史记录，当时尚未实现）预造样本数据；等到 `5-1` 开工时，再把"批量造历史记录样本"作为 `5-1` 的一部分挂到 F3 面板
-
----
-
-## 功能设计文档子目录规则（2026-04-20 生效）
-
-从 2026-04-20 起，**每个功能相关的设计文档**统一收纳到 `Specs/` 下的一个**功能子目录**里。
-
-### 核心规定
-
-1. **一个功能 → 一个子目录**：命名用 **kebab-case 语义名**（例：`Specs/dev-tool-panel/`、`Specs/history-records/`、`Specs/tips-library/`），**不绑反馈代号**（如 F3/F2），因反馈代号是特定版本主线里的临时标签
-2. **子目录内文件**：仍用 `YYYY-MM-DD-<topic>.md` 命名，按需可以同时存在多个文件（调研报告、规格草稿、方案稿、决策复盘等同一功能下的全量文档都进此目录）
-3. **旧扁平文档不迁移**：2026-04-20 **之前**已在 `Specs/` 根下的扁平 Spec 保留原位置；新规则只约束**从今以后**新建的功能
-4. **跨功能共用的规格**：仍放在 `Specs/` 根下的扁平位置（例：`2026-04-14-difficulty-standard.md` 这类全局约束），不强制塞进某个功能子目录
-5. **索引书写**：`Specs/_index.md` 里的条目用**相对 `Specs/` 的相对路径**——老条目纯文件名即可，新条目写 `<feature-slug>/<YYYY-MM-DD-xxx>.md`
-
-### 判定清单
-
-新建 Spec / 调研 / 方案文件时：
-
-- [ ] 该文档是**某个具体功能**的专属设计材料？→ 放进对应功能子目录
-- [ ] 是**跨功能共用**的全局约束？→ 保留在 `Specs/` 根
-- [ ] 文件名是 `YYYY-MM-DD-<topic>.md` 格式？
-- [ ] 已在 `Specs/_index.md` 对应维度下登记（路径相对 `Specs/` 根）？
-
-### 与既有索引规则的兼容性
-
-`Specs/_index.md` 既有三条维护规则（"新增必登记/废弃交叉引用/修改同步摘要"）**不约束路径格式**——老条目（纯文件名 = 扁平）与新条目（`<feature-slug>/<filename>` = 子目录）可以共存于同一索引。已在 `_index.md` 加一节"路径兼容规则"作为书写约定。
-
-### 出处
-
-2026-04-20 用户在 `v0.2-1-1`（F3 开发者工具栏）调研阶段对"调研结果存到该功能对应的设计文档目录里"的澄清。
-
----
-
-## 子计划 Plan 文件位置规则（2026-04-20 生效）
-
-从 2026-04-20 起，**子计划 Plan 文件**的位置遵循 `Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md`。
-
-### 核心规定
-
-1. **位置**：`Plan/vX.Y/subplans/` 下**扁平放**，**不再开功能子目录**——Plan 侧通常"一功能一版本一份文件"，不需要为聚合多文档而建子目录
-2. **文件名**：`YYYY-MM-DD-<feature-slug>.md`，其中 `<feature-slug>` 与 Specs 侧功能子目录名一致（例：`dev-tool-panel`、`history-records`）——通过**文件名里的 slug** 与 Specs 侧双胞胎关联，不靠路径结构对称
-3. **同功能多份 Plan**（罕见，如 P0/P1 阶段拆、紧急回滚单独留档）：用文件名后缀区分（例：`2026-04-20-dev-tool-panel-p0.md` / `2026-04-22-dev-tool-panel-p1.md`），仍扁平在 `subplans/` 下
-4. **旧位置**：2026-04-20 **之前**落在 `Plan/YYYY-MM-DD-*.md` 的历史 Plan 保留原位置，不回溯迁移
-
-### 为什么 Plan 侧和 Specs 侧组织维度不同
-
-| 维度 | Specs（设计资产）| Plan（实施动作）|
+| 版本 | 入口 | 摘要 |
 |---|---|---|
-| 生命周期 | 跨版本长寿 | 绑定版本短寿 |
-| 同功能材料数 | 多（调研 / 规格 / 方案 / 复盘）| 通常一份 |
-| 组织维度 | 功能维度为主，版本是属性 | 版本维度为主，功能是属性 |
-| 目录结构 | `Specs/<feature>/` | `Plan/vX.Y/subplans/` |
+| v0.2 | [`v0.2/README.md`](./v0.2/README.md) | 用户反馈驱动主线收口；Phase 1~5 完成；QAleader 三层 QA 完成 |
+| v0.1 | [`v0.1/README.md`](./v0.1/README.md) | 原型与三层游戏化闭环完成 |
 
-Plan 侧不与 Specs 侧镜像对称。Plan 文件的"功能归属"通过**文件名 slug** 和**文件头部 `设计规格：` 字段**交叉引用表达，不通过路径结构对称。
+## 跨版本资产
 
-### Agent 查询约定
-
-- **回顾某版本的所有子计划** → 遍历 `Plan/vX.Y/subplans/**`
-- **回顾某功能的所有设计材料** → 遍历 `Specs/<feature>/**`
-- **查找某功能在特定版本的实施计划** → 在 `Plan/vX.Y/subplans/` 下按文件名 `<feature-slug>` 搜
-
-### 出处
-
-2026-04-20 用户对 `v0.2-1-1`（F3 开发者工具栏）子计划 Plan 位置的澄清；前置讨论：方案 D.4。
-
----
-
-## 版本归档规则（2026-04-20 生效）
-
-项目以版本为单位管理迭代。每个版本的活跃工作、收口快照、已关闭 issue 都收纳在对应版本目录内。
-
-### 核心规定
-
-1. **版本命名**：`vX.Y`（例：`v0.1` / `v0.2`）。`X` 升级用于大的架构 / 功能闭环升级；`Y` 升级用于当前 X 框架内的迭代。不强制对齐 semver，也不强制挂 git tag。
-2. **版本工作目录**：每个版本在 `Plan/` 下建一个 `vX.Y/` 子目录；该版本所有主计划、子计划、phase 文件、版本级 overview、已关闭 issue 归档都放在里面。
-3. **跨版本资产不按版本分**：`Specs/`、`Reports/`、`QA/`、`human-verification-bank-v2.md` 仍在原位，按需从版本目录里用相对路径引用。
-4. **跨版本工具性 Plan**：项管体系本身演进 / 工具机制类的 Plan（不属于任何产品版本），保留在 `Plan/` 根目录，用"所属版本：跨版本工具性"标注。
-5. **新建 Plan 必填"所属版本"字段**：见下方 Plan 文件模板。
-6. **`00-overview.md` 是收口快照，不是活跃文档**：版本进行中，`00-overview.md` 只保留规划时写定的静态上下文（背景、目标、阶段结构），不承担进度追踪。版本的活跃状态由 `vX.Y/README.md` 头部 `状态：` 字段（版本级）和全局 `Overview.md`（项目级）负责。版本收口时，`Overview.md` 的当前状态抽取写入 `00-overview.md`，成为该版本的永久历史记录。
-
-### 活跃视图 vs 归档视图
-
-| 文件 | 活跃视图只写什么 | 归档去向 |
-|---|---|---|
-| `Overview.md` | 当前版本的项目概览 / 状态 / 下一步 | 版本收口时抽取为 `Plan/vX.Y/00-overview.md` 快照 |
-| `ISSUE_LIST.md` | **当前版本开放**（未关闭）的 issue | 已关闭 → `Plan/vX.Y/issues-closed.md`；未关闭但延期 → `Backlog.md` |
-| `Plan/README.md` 索引 | 当前版本详细 Plan 表 + 历史版本入口链接 | 历史版本 Plan 详表下沉到 `Plan/vX.Y/README.md` |
-| `Backlog.md` | 未激活的需求 / 想法 / 延期候选 | 激活时条目在某版本里展开为正式 Plan；放弃时标注放弃 |
-
-### Backlog vs ISSUE_LIST 边界
-
-- **`ISSUE_LIST.md`**：已知的具体 bug / 欠账 / 实现问题；生命周期 open → closed
-- **`Backlog.md`**：未激活的需求 / 想法 / 方向 / 延期候选；生命周期 候选 → 纳入某版本 / 放弃
-- 同一条目不同时在两边：bug 进 ISSUE；需求 / 候选进 Backlog
-
-### ISSUE ID 规则
-
-- ID **跨版本连续**，搬到哪里 ID 都不变
-- 从 `ISSUE_LIST` 迁到 `Backlog`（延期）：ID 保留，状态标"候选（延期自 ISSUE-xxx）"
-- 从 `Backlog` 重新激活进 `ISSUE_LIST`：用原 ID
-- 新开 issue：从当前最大 ID 续编
-
-### 版本收口动作清单
-
-一个版本完工、准备切到下一版本时按以下步骤：
-
-1. **快照 Overview**：把 `Overview.md` 当前状态详细内容抽取，写入 `Plan/vX.Y/00-overview.md`（该版本收口快照）
-2. **归档 ISSUE**：把 `ISSUE_LIST.md` 里本版本已关闭的 issue 搬到 `Plan/vX.Y/issues-closed.md`；未关闭且决定延期的迁入 `Backlog.md`
-3. **切版本轴**：`Overview.md` 顶部"当前版本 / 上一版本"字段切换
-4. **更新索引**：`Plan/README.md` 顶部版本索引把收口版本标注"已发布"；当前版本切到新版本
-5. **变更日志**（可选）：规则层面调整才留 `Reports/YYYY-MM-DD-*-changelog.md`；纯版本切换无需留
-
----
-
-## Plan 文件模板（2026-04-20 更新，在 2026-04-17 基础上追加"所属版本"字段）
-
-所有**新建**的 Plan 文件头部必须包含以下栏目：
-
-```markdown
-# 〈计划名〉
-
-> 创建：YYYY-MM-DD  
-> 所属版本：vX.Y（或"跨版本工具性"）  
-> 父计划：〈如有〉  
-> 设计规格：〈对应 Specs/*.md〉  
-> 状态：⬜ 待排期 / 🟡 进行中 / ✅ 完成
-
----
-
-## 一、背景
-
-### 前置相关规格（开工前必读）
-
-> 📑 规格索引：`ProjectManager/Specs/_index.md`
-
-| 规格 | 本计划从中继承的硬约束 |
-|------|--------------------|
-| 〈规格路径〉 | 〈关键断言摘要〉 |
-| ... | ... |
-
-### 跨系统维度清单
-
-本计划会改动以下跨系统维度（session 交接时按此清单扫兄弟规格）：
-
-- [ ] 难度档位 / 题型梯度数
-- [ ] 星级 / 进阶 / 段位数值
-- [ ] 关卡结构 / campaign.ts
-- [ ] UI 组件 / 卡片尺寸
-- [ ] 答题形式 / 验证逻辑
-- [ ] 其他：〈具体列出〉
-
-### 工作脉络
-
-...
-```
-
----
-
-## 版本索引
-
-| 版本 | 状态 | 入口 |
-|---|---|---|
-| **v0.3** | ✅ 已上线（2026-04-24；Phase 1/2/3 完成） | [v0.3/](./v0.3/) |
-| v0.2 | ✅ 已收工（2026-04-23；三层 QA 完成） | [v0.2/](./v0.2/) |
-| v0.1 | ✅ 已发布（2026-04-19 收口） | [v0.1/](./v0.1/) |
-
-历史版本 Plan 的详细表格下沉至对应 `Plan/vX.Y/README.md`。本页索引只列版本入口与当前版本详表。
-
----
-
-## 当前版本（v0.3）Plan 详表
-
-> 主线：Supabase 在线账号与数据同步 · 见 [v0.3/README.md](./v0.3/README.md)
-
-| 文件 | 内容 | 状态 |
-|---|---|---|
-| [v0.3/README.md](./v0.3/README.md) | 主线 README（版本入口） | ✅ 已上线（2026-04-24；账号同步系统生效） |
-| [v0.3/00-overview.md](./v0.3/00-overview.md) | 版本背景、目标、阶段结构、收口事实 | ✅ 已重建（2026-04-25） |
-| [v0.3/01-source-catalog.md](./v0.3/01-source-catalog.md) | 需求 / 规格 / 实施 / 验收证据链 | ✅ 已重建（2026-04-25） |
-| [v0.3/02-classification.md](./v0.3/02-classification.md) | 功能分类、依赖关系、边界 | ✅ 已重建（2026-04-25） |
-| [v0.3/03-phase-plan.md](./v0.3/03-phase-plan.md) | Phase 1~3 总图、时序、commit 链 | ✅ 已重建（2026-04-25） |
-| [v0.3/04-execution-discipline.md](./v0.3/04-execution-discipline.md) | 执行纪律、数据保护规则、验收规则 | ✅ 已重建（2026-04-25） |
-| [v0.3/implementation-plan.md](./v0.3/implementation-plan.md) | 实施计划（Task / 文件清单 / 验收） | ✅ 设计完成 |
-| [v0.3/phases/phase-1.md](./v0.3/phases/phase-1.md) | Phase 1 · 基建 + 认证 | ✅ 已完成（2026-04-24） |
-| [v0.3/phases/phase-2.md](./v0.3/phases/phase-2.md) | Phase 2 · 同步引擎 | ✅ 已完成（2026-04-24） |
-| [v0.3/phases/phase-3.md](./v0.3/phases/phase-3.md) | Phase 3 · UI + 验收 | ✅ 已完成并上线（2026-04-24） |
-
----
-
-## 跨版本工具性 Plan（`Plan/` 根目录）
-
-项管体系本身演进 / 工具机制类的 Plan，不属于任何产品版本。
-
-| 文件 | 内容 | 状态 |
-|---|---|---|
-| [2026-04-17-pm-document-sync-mechanism.md](./2026-04-17-pm-document-sync-mechanism.md) | 历史机制方案：文档同步机制首次设计、L1+L2 落地与回溯验证背景 | ✅ 历史记录 |
-| [2026-04-19-pm-token-efficiency-optimization.md](./2026-04-19-pm-token-efficiency-optimization.md) | 项目管理文档体系轻量化优化方案 | ✅ 完成 |
-
----
-
-## 历史版本归档入口
-
-- **v0.2**：[v0.2/README.md](./v0.2/README.md) — 用户反馈驱动主线收口（Phase 1~5 完成，2026-04-23 收工）
-  - 收口快照：[v0.2/00-overview.md](./v0.2/00-overview.md)
-  - QA 总结：[`../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md`](../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)
-- **v0.1**：[v0.1/README.md](./v0.1/README.md) — 原型，三层游戏化闭环完成（Phase 1/2/3），2026-04-19 收口
-  - 收口快照：[v0.1/00-overview.md](./v0.1/00-overview.md)
-  - 已关闭 issue：[v0.1/issues-closed.md](./v0.1/issues-closed.md)
-
----
-
-## 跨版本资产（不按版本分）
-
-### 设计规格（`../Specs/`）
-
-> 📑 **总索引**：[`Specs/_index.md`](../Specs/_index.md) —— 按维度分类的规格矩阵，新 Plan 开工前必读。详细 Specs 列表不在本页展开。
-
-### 审视报告（`../Reports/`）
-
-> 📑 见 [`../Reports/`](../Reports/) 目录，按日期归档。
-
-### QA 产物（`../QA/`）
-
-> 📑 见 [`../QA/`](../QA/) 目录。
-
-## 说明
-
-- 当前阶段目标、当前主线、当前状态、下一步，统一看 [`../Overview.md`](../Overview.md)。
-- 本文件只保留计划索引、模板入口和归档入口；不再复写项目活跃状态。
+| 类型 | 入口 |
+|---|---|
+| 设计规格 | [`../Specs/_index.md`](../Specs/_index.md) |
+| 开放问题 | [`../ISSUE_LIST.md`](../ISSUE_LIST.md) |
+| Backlog | [`../Backlog.md`](../Backlog.md) |
+| 报告 / 复盘 | [`../Reports/`](../Reports/) |
+| QA 产物 | [`../../QA/`](../../QA/) |

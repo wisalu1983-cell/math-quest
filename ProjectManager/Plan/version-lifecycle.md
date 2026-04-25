@@ -4,6 +4,8 @@
 > 维护位置：`ProjectManager/Plan/version-lifecycle.md`
 > 触发场景：开新版本、版本过程中重排管理结构、版本收口 / 切版本轴
 > 设计原则：低频规则采用渐进式披露；日常会话不默认阅读本文件，需要处理版本生命周期时再进入。
+> 必用模板：[`templates/version-package-template.md`](./templates/version-package-template.md)
+> 执行 skill：`.agents/skills/version-lifecycle-manager/SKILL.md`
 
 ---
 
@@ -26,6 +28,7 @@
 
 当 Backlog / Issue / 版本决策正式激活为新版本 `vX.Y` 时，创建 `ProjectManager/Plan/vX.Y/`，并完成以下动作：
 
+0. 先读取并套用 [`templates/version-package-template.md`](./templates/version-package-template.md)。这是新版本管理包的强制模板；不能只参考旧版本目录印象手写。
 1. 创建 `README.md`：只做版本入口、状态、导航，不承载详细正文。
 2. 创建 `00-overview.md`：启动时写静态规划快照；收口时更新为最终收口快照。不要等收口时才第一次创建。
 3. 创建 `01-*.md`：按来源性质命名。反馈主线可用 `01-feedback-catalog.md`；规格 / commit / 验收证据主线可用 `01-source-catalog.md`。
@@ -36,6 +39,7 @@
 8. `subplans/` 默认延迟创建：只有具体 Phase / 子项启动时才建实施级 Plan。
 9. 更新 `ProjectManager/Plan/README.md` 的版本索引，只放入口和状态，不复制本文件规则正文。
 10. 若新版本成为当前版本，再更新 `ProjectManager/Overview.md` 的版本轴、当前阶段和入口。
+11. 运行 `npx tsx scripts/pm-sync-check.ts`，确认入口关系没有漂移。
 
 若某个文件不适用，不能静默省略；必须在 `README.md` 的导航或说明中标注 `N/A` 及原因。
 
@@ -64,6 +68,8 @@
 - **Plan 与 Specs 不镜像目录结构**：二者通过文件名 slug、Plan 头部 `设计规格：` 字段和索引互相指向。
 - **Reports 侧放复盘 / 机制说明**：不属于某个具体功能规格，也不是实施计划的材料，放 `ProjectManager/Reports/`。
 - **QA 侧放正式测试产物**：正式 QA 结果放仓库根 `QA/runs/`；可复用脚本放 `QA/scripts/` 或对应测试目录。
+
+详细规则见 [`rules/document-ownership.md`](./rules/document-ownership.md)。本节只保留版本生命周期所需摘要。
 
 ## 版本收口动作
 

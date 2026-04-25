@@ -3,7 +3,7 @@
 > 所属版本：v0.2  
 > 所属主线：[README](./README.md)
 > 分类基础：[`02-classification.md`](./02-classification.md)
-> 命名规则：`Plan/README.md` §Phase 与子计划命名规则（2026-04-20 生效）
+> 命名规则：[`../rules/phase-and-subplan-naming.md`](../rules/phase-and-subplan-naming.md)
 
 ---
 

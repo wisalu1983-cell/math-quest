@@ -24,6 +24,12 @@
 
 ---
 
+## 版本生命周期路由
+
+当用户要求开新版本、版本收口、切版本轴、检查或补齐 `Plan/vX.Y` 管理包、处理 `00-04` 版本管理文档缺失时，激活 `.agents/skills/version-lifecycle-manager/SKILL.md`。
+
+---
+
 ## 非显然约束
 
 - **路由**：`react-router-dom` 已安装但禁用，页面路由统一用 `useUIStore.currentPage`
@@ -43,6 +49,7 @@
 | Issue 细节 | `ProjectManager/ISSUE_LIST.md` |
 | 计划索引 / 规格导航 | `ProjectManager/Plan/README.md` · `ProjectManager/Specs/_index.md` |
 | pm-sync-check 触发规则 | `.cursor/rules/pm-sync-check.mdc` |
+| 版本生命周期管理 | `.agents/skills/version-lifecycle-manager/SKILL.md` |
 | 生成器规格 / 难度档位 / 子题型 | `ProjectManager/Specs/2026-04-17-generator-redesign-v2.md` |
 | QA 流程规范 / 产物 | `QA/qa-leader-canonical.md` · `ProjectManager/QA/` |
 | 真题参考库 | `reference-bank/README.md` |

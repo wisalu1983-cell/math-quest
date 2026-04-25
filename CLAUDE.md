@@ -41,6 +41,12 @@
 
 ---
 
+## 版本生命周期路由
+
+当用户要求开新版本、版本收口、切版本轴、检查或补齐 `Plan/vX.Y` 管理包、处理 `00-04` 版本管理文档缺失时，激活 `.claude/skills/version-lifecycle-manager/SKILL.md`。该 skill 的 canonical source 在 `.agents/skills/version-lifecycle-manager/SKILL.md`，不要维护复制版流程。
+
+---
+
 ## QA 路由
 
 当用户明确要求以下任务时：
@@ -96,6 +102,7 @@
 | 计划索引 / 规格导航 | `ProjectManager/Plan/README.md` · `ProjectManager/Specs/_index.md` |
 | pm-sync-check 触发规则 | `.cursor/rules/pm-sync-check.mdc` |
 | 开发文档流 | `.claude/skills/dev-doc-flow/SKILL.md` |
+| 版本生命周期管理 | `.claude/skills/version-lifecycle-manager/SKILL.md` |
 | 生成器规格 / 难度档位 / 子题型 | `ProjectManager/Specs/2026-04-17-generator-redesign-v2.md` |
 | QA 根目录 | `QA/README.md` |
 | QA 流程规范 | `QA/qa-leader-canonical.md` |

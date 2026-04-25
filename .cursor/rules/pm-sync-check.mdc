@@ -54,7 +54,7 @@ npx tsx scripts/pm-sync-check.ts
 
 ## 完整规则与设计背景
 
-见 `ProjectManager/Plan/README.md` 的计划维护规则、`ProjectManager/Plan/2026-04-17-pm-document-sync-mechanism.md`（历史机制方案）与 `ProjectManager/Plan/2026-04-19-pm-token-efficiency-optimization.md`。
+见 `ProjectManager/Plan/rules/pm-write-routing.md`、`ProjectManager/Plan/2026-04-17-pm-document-sync-mechanism.md`（历史机制方案）与 `ProjectManager/Plan/2026-04-19-pm-token-efficiency-optimization.md`。
 
 脚本本身覆盖 6 项检查：`_index.md` 完整性 / Specs 版本号一致 / ISSUE 状态一致（启发式）/ Plan→Spec 引用存在 / TOPIC_STAR_CAP ↔ human-bank 档数一致。
 

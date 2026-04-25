@@ -28,7 +28,7 @@
 
 本目录的 5 份综述文件（00~04 + `phases/`）采用**渐进式披露**。下列内容等到对应时点才在独立文件中展开：
 
-- **具体子计划（实施级）**：对应 Phase 启动时在 [`subplans/`](./subplans/) 下建独立 `YYYY-MM-DD-<feature-slug>.md`，头部按 [`../README.md`](../README.md) §Plan 文件模板 + §子计划 Plan 文件位置规则 要求
+- **具体子计划（实施级）**：对应 Phase 启动时在 [`subplans/`](./subplans/) 下建独立 `YYYY-MM-DD-<feature-slug>.md`，头部按 [`../templates/plan-template.md`](../templates/plan-template.md) + [`../rules/document-ownership.md`](../rules/document-ownership.md) 要求
 - **生成器 / UI / 数值等已有规格**：仍在 `ProjectManager/Specs/`，按需引用
 - **Issue 追踪**：仍在 `ProjectManager/ISSUE_LIST.md`
 - **当前项目主线状态**：仍以 `ProjectManager/Overview.md` 为准（本主线启动时才切换）

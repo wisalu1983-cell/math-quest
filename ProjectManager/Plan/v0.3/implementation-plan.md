@@ -1,5 +1,7 @@
 # v0.3 Supabase 在线账号与数据同步 · 实施计划
 
+> 读取提示：本文件是 1491 行历史实施长文，只在追溯 Phase 1/2 具体代码方案或早期任务时按标题定点读取；查 v0.3 当前状态请读 [`README.md`](./README.md)，查 Phase 3 以 [`phases/phase-3.md`](./phases/phase-3.md) 和 Specs 分文档为准。
+>
 > **⚠️ Phase 3 部分已作废（2026-04-24）。** 本文件的 Task 1.x / 2.x（Phase 1 / Phase 2）继续作为历史实施记录有效；**Task 3.x（Phase 3）草案以下面 5 份开发文档为准，不得按本文件 Phase 3 小节实施**：
 >
 > - [`Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md`](../../Specs/v03-supabase-account-sync/2026-04-24-phase3-00-index.md)

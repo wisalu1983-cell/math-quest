@@ -31,7 +31,7 @@
 
 ## 阶段结构（5 个 Phase）
 
-> 命名规则见 `Plan/README.md` §Phase 与子计划命名规则（2026-04-20 生效）。正式 ID 格式 `v0.2-P` / `v0.2-P-N`，本文件内一律用简写 `Phase P` / `P-N`。
+> 命名规则见 [`../rules/phase-and-subplan-naming.md`](../rules/phase-and-subplan-naming.md)。正式 ID 格式 `v0.2-P` / `v0.2-P-N`，本文件内一律用简写 `Phase P` / `P-N`。
 
 | Phase | 名称 | 一句话 |
 |---|---|---|
@@ -60,7 +60,7 @@
 | 动作 | 何时 | 何处 |
 |---|---|---|
 | 每个 Phase 的子计划落盘 | Phase 启动时 | `Plan/v0.2/subplans/YYYY-MM-DD-<feature-slug>.md`（独立文件，不挤进本目录）|
-| 子计划头部按 Plan 文件模板 | 每次新建 | `Plan/README.md` §Plan 文件模板（2026-04-17 生效）|
+| 子计划头部按 Plan 文件模板 | 每次新建 | [`../templates/plan-template.md`](../templates/plan-template.md) |
 | 索引入口 `Plan/README.md` 更新 | `v0.2-1-1` 启动时 | 加一行指向本目录 |
 | 主线切换 `Overview.md` | `v0.2-1-1` 启动时 | 当前主线字段切换 |
 | 新发现问题登记 | 任何时候 | `ISSUE_LIST.md` |

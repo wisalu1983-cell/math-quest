@@ -28,13 +28,13 @@
 |---|---|
 | v0.1 期间 ISSUE-001~064 完整关闭记录 | [`Plan/v0.1/issues-closed.md`](Plan/v0.1/issues-closed.md) |
 | v0.1 延期未处理的 issue / 候选项 | [`Backlog.md`](Backlog.md) |
-| 项目管理规则 / 模板 / 版本归档规则 | [`Plan/README.md`](Plan/README.md) |
+| 项目管理规则 / 模板 / 版本生命周期规则 | [`Plan/README.md`](Plan/README.md) |
 
 ---
 
 ## 操作规范（简化提醒）
 
-> 完整规则见 `Plan/README.md` 版本归档规则。
+> 完整流转规则见 [`Plan/rules/pm-write-routing.md`](Plan/rules/pm-write-routing.md)；版本收口规则见 [`Plan/version-lifecycle.md`](Plan/version-lifecycle.md)。
 
 1. **新开 issue**：从当前最大 ID 续编（跨版本连续，目前下一个新 ID 从 `ISSUE-065` 起）。写明 P0/P1/P2、所属版本、类别（bug / 实现一致性 / a11y / UI / 等）
 2. **关闭 issue**：在本文件内标注关闭并保留关闭证据链；版本收口时由本文件整体搬至 `Plan/vX.Y/issues-closed.md`

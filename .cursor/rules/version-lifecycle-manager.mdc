@@ -1,0 +1,19 @@
+---
+description: "MathQuest 版本生命周期任务路由：开新版本、版本收口、切版本轴、补齐 Plan/vX.Y 管理包、检查 00-04 缺失时，读取 version-lifecycle-manager skill。"
+alwaysApply: false
+---
+
+# version-lifecycle-manager 路由
+
+触发场景：
+
+- 开新版本 / 新建版本
+- 版本收口 / 切版本轴
+- 检查或补齐 `ProjectManager/Plan/vX.Y/`
+- `README + 00 + 01 + 02 + 03 + 04 + phases` 缺失
+
+读取：
+
+`E:/Projects/MathQuest/.agents/skills/version-lifecycle-manager/SKILL.md`
+
+本规则只是 Cursor 路由入口；不要在这里复制完整流程。
