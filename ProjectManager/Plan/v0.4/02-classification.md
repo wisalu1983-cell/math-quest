@@ -3,7 +3,7 @@
 > 所属版本：v0.4
 > 所属主线：[README](./README.md)
 > 来源目录：[`01-research-catalog.md`](./01-research-catalog.md)
-> 最近调整：2026-04-25 新增“题型信息架构”分类，A04/A06 降阶并入 A07
+> 最近调整：2026-04-25 新增“题型信息架构”分类，A04/A06 断联并入 A07
 
 ---
 
@@ -24,7 +24,7 @@
 | 子项 | 范围 | 依赖 |
 |---|---|---|
 | B1 | 玩家主界面取消 A04「运算律」和 A06「括号变换」独立大题型 | Home / Campaign / Advance / Profile / Rank |
-| B2 | A04/A06 降阶为 A07「简便计算」低档知识点 lane，同时保留原 A07 低档基础应用 lane | `campaign.ts` / `multi-step` generator / 原 A04/A06 generator |
+| B2 | A04/A06 断联并入，相关能力迁入 A07「简便计算」低档知识点 lane，同时保留原 A07 低档基础应用 lane | `campaign.ts` / `multi-step` generator |
 | B3 | 旧 A04/A06 存档、错题、历史、段位/进阶兼容 | Repository migration / rank-match / sync |
 | B4 | 运算律 lane UX 收口 | `BL-006` 槽位误导 + 操作说明 |
 
@@ -60,7 +60,7 @@ Phase 1：低风险修复
 
 Phase 2：题型信息架构
   ├─ B1 玩家入口取消 A04/A06
-  ├─ B2 A04/A06 并入 A07 知识点 lane
+  ├─ B2 A04/A06 断联并入，能力并入 A07 知识点 lane
   ├─ B3 存档 / 错题 / 进阶 / 段位兼容
   └─ B4 运算律 lane UX 收口
 
@@ -79,7 +79,7 @@ Phase 5：工程质量
 
 ## 关键边界
 
-1. **A04/A06 取消的是玩家入口，不是能力训练**：原子题型全部保留，作为 A07 低档知识点 lane 的来源。
+1. **A04/A06 取消的是题型身份，不是能力训练**：原子题型能力迁入 A07，作为 A07 自有低档知识点 lane。
 2. **原 A07 低档应用不能丢**：`bracket-normal` / `extract-factor` 是从前置知识走向简便计算应用的第一步，应继续留在低档。
 3. **先稳定 IA，再做重复题诊断**：`BL-008` 的样本和题型范围依赖 Phase 2 后的新题型结构。
 4. **A04/A06 相关 UX 随迁移收口**：`BL-006` 不再单独作为后续 Phase 的独立 A04 UX 工作。
@@ -91,7 +91,7 @@ Phase 5：工程质量
 
 | 不做什么 | 原因 |
 |---|---|
-| 物理删除 `operation-laws` / `bracket-ops` 生成器 | 本 Phase 先复用为 internal source，降低迁移风险 |
+| 让 A07 特例调用 `operation-laws` / `bracket-ops` topic generator | A07 应直接拥有被合并能力；旧 topic id 只做 legacy 数据兼容 |
 | 清空或丢弃旧 A04/A06 存档 | 违反项目级存档迁移原则 |
 | 段位赛晋级动画 | `BL-002` 无新用户反馈触发，延期到 v0.5 或后续版本 |
 | 大范围视觉改版 | v0.4 聚焦题目体验，UI 改动继承既有阳光版 v5 |

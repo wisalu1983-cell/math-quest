@@ -1,0 +1,11 @@
+---
+description: PM and development documents use Chinese-readable filenames
+alwaysApply: true
+---
+
+# PM 文档中文文件名
+
+- 版本计划、子计划、开发文档、讨论样题等面向协作阅读的文档，文件名在日期后优先使用中文可读主题。
+- 专用术语、TopicId、Phase / BL / ISSUE 编号等代号可保留原文。
+- 固定版本骨架文件除外：`README.md`、`00-overview.md`、`01-*.md`、`02-classification.md`、`03-phase-plan.md`、`04-execution-discipline.md`、`phases/phase-N.md`。
+- 推荐格式：`YYYY-MM-DD-<代号>-<中文可读主题>.md`，例如 `2026-04-25-a04-a06-降阶并入A07简便计算.md`。

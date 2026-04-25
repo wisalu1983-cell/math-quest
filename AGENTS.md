@@ -1,63 +1,28 @@
 # math-quest AGENTS.md
 
-## Session 启动
+## Codex 轻入口
 
-1. 读 `ProjectManager/Overview.md`：背景、当前阶段、主线、状态、下一步
-2. 需要细节时，沿 `Overview.md` 入口进入对应权威文档，不默认通读 ProjectManager
-3. `pm-sync-check` 仅在跨源写入、里程碑收尾、Plan/Spec/Issue 生命周期变化时跑；纯诊断/只读豁免（详见 `.cursor/rules/pm-sync-check.mdc`）
-
----
-
-## PM 写入规则
-
-**顺序：先改权威源，再按需改 Overview。**
-
-| 发生什么 | 更新哪里 |
-|---------|---------|
-| 完成/调整活跃计划行为 | `Plan/*.md`；影响主线/状态/下一步时再改 `Overview.md` |
-| 发现新问题 | `ISSUE_LIST.md`；影响活跃视图时再改 `Overview.md` |
-| 关闭 Issue | `ISSUE_LIST.md` 标记；仅历史项不改 `Overview.md` |
-| 规格新建/状态变化 | `Specs/*.md` + `Specs/_index.md`；影响阶段入口时再改 `Overview.md` |
-| 新建/归档实施计划 | `Plan/README.md`；影响活跃入口时再改 `Overview.md` |
-| 新建 QA 产物 | `QA/<date>-<tag>/`，在对应 Plan 或 Report 引用 |
-| 历史复盘/机制说明 | `Reports/`，不默认回写 `Overview.md` |
+1. 本项目级规则以 `CLAUDE.md` 为主入口；本文件只记录 Codex / Agent 环境适配，不维护 PM、QA、版本生命周期的复制版流程。
+2. Session 启动先读 `CLAUDE.md` 的高频必读层，再读 `ProjectManager/Overview.md`；需要细节时按 `CLAUDE.md` 的低频任务索引进入。
+3. 工具差异按当前 Codex 环境等价执行；若 `CLAUDE.md`、skill、实际工具能力冲突，先提醒用户决策。
 
 ---
 
-## 版本生命周期路由
+## Codex 执行适配
 
-当用户要求开新版本、版本收口、切版本轴、检查或补齐 `Plan/vX.Y` 管理包、处理 `00-04` 版本管理文档缺失时，激活 `.agents/skills/version-lifecycle-manager/SKILL.md`。
-
----
-
-## 非显然约束
-
-- **路由**：`react-router-dom` 已安装但禁用，页面路由统一用 `useUIStore.currentPage`
-- **Store**：拆两文件——`src/store/index.ts`（`useUserStore`/`useSessionStore`/`useUIStore`）+ `src/store/gamification.ts`（`useGameProgressStore`）；`useProgressStore` 是废弃旧名，不存在
-- **空壳**：`src/pages/TopicSelect.tsx` 已被 `CampaignMap` 替代，不要加逻辑
-- **废弃字段**：`User.grade`、`Question.xpBase`，新代码不要依赖
-- **生成器**：纯函数签名 `{ difficulty, id?, subtypeFilter? } → Question`，不引入副作用；子题型过滤走 `CampaignLane.subtypeFilter` + `pickSubtype()`（会重新归一化权重）
-- **存档版本升级**（项目级原则，Phase 3 M1 起永久生效）：`repository.init` 遇到旧版本号**禁止 `clearAll()`**，必须走 `migrateV{n}ToV{n+1}` 串行迁移链；迁移链任一步抛错时，存档落到 `mq_backup_v{old}_{ts}` 备份后提示用户，而不是悄悄擦除。`clearAll` 只能作为显式用户动作（"清空存档"按钮）保留。详见 `ProjectManager/Specs/2026-04-18-rank-match-phase3-implementation-spec.md` §6.3
+- 实现类任务默认按 `CLAUDE.md` 使用仓库根 `.worktrees/`；只读诊断、纯 QA、纯文档可跳过。
+- `CLAUDE.md` 提到 `.claude/skills/*` 时，若 Codex 可用的同名 skill 位于 `.agents/skills/*`，优先使用 `.agents` 版本；不要维护两份流程。
+- 版本生命周期 canonical skill：`.agents/skills/version-lifecycle-manager/SKILL.md`。
+- QA 编排 canonical 入口：`.agents/skills/qa-leader/SKILL.md`；规范源见 `QA/qa-leader-canonical.md`。
 
 ---
 
-## 扩展索引
+## 快速索引
 
 | 想了解 | 去哪里 |
 |---|---|
+| 高频项目规则 / 低频任务索引 | `CLAUDE.md` |
 | 当前主线 / 状态 / 下一步 | `ProjectManager/Overview.md` |
-| Issue 细节 | `ProjectManager/ISSUE_LIST.md` |
+| PM 写入路由 | `ProjectManager/Plan/rules/pm-write-routing.md` |
 | 计划索引 / 规格导航 | `ProjectManager/Plan/README.md` · `ProjectManager/Specs/_index.md` |
-| pm-sync-check 触发规则 | `.cursor/rules/pm-sync-check.mdc` |
-| 版本生命周期管理 | `.agents/skills/version-lifecycle-manager/SKILL.md` |
-| 生成器规格 / 难度档位 / 子题型 | `ProjectManager/Specs/2026-04-17-generator-redesign-v2.md` |
-| QA 流程规范 / 产物 | `QA/qa-leader-canonical.md` · `ProjectManager/QA/` |
-| 真题参考库 | `reference-bank/README.md` |
-ALWAYS 遵守本项目 `CLAUDE.md` 中的项目级规则与要求；工具差异项按当前环境等价执行，冲突时先提醒用户决策。
-
-## Worktree 默认
-
-- 实现类任务默认在仓库根 `.worktrees/` 下创建 git worktree
-- 当前分支为 `master` / `main` 时，不再单独询问目录位置；默认直接使用 `.worktrees/`
-- 只读诊断、纯 QA、纯文档可跳过；用户明确要求直接在当前工作树修改时，以用户要求为准
-- 在 worktree 内执行计划或开发文档前，必须确认计划引用的 `ProjectManager / Specs / Reports / subplans / QA` 文档也存在于当前 worktree；缺失时先同步文档，或明确声明以主工作区文档为 source of truth，并在收尾记录差异
+| QA 流程与产物 | `QA/qa-leader-canonical.md` · `QA/` |

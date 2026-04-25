@@ -13,7 +13,7 @@
 规则：
 
 1. 一个功能一个子目录，命名用 kebab-case 语义名，如 `dev-tool-panel`、`history-records`、`tips-library`。
-2. 子目录内文件仍用 `YYYY-MM-DD-<topic>.md`。
+2. 子目录内文件仍用 `YYYY-MM-DD-<中文可读主题>.md`；专用术语、TopicId、代号可保留原文。
 3. 调研报告、规格草稿、方案稿、决策复盘等同一功能下材料都进该功能目录。
 4. 跨功能共用规格仍放 `Specs/` 根目录。
 5. `Specs/_index.md` 使用相对 `Specs/` 的路径；老扁平文档和新子目录文档可以共存。
@@ -22,12 +22,12 @@
 
 从 2026-04-20 起，子计划 Plan 文件放：
 
-`ProjectManager/Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md`
+`ProjectManager/Plan/vX.Y/subplans/YYYY-MM-DD-<代号>-<中文可读主题>.md`
 
 规则：
 
 1. `subplans/` 下扁平放，不为每个功能再开目录。
-2. 文件名里的 `<feature-slug>` 与 Specs 侧功能目录名一致。
+2. 文件名在日期后优先使用中文可读主题；专用术语、TopicId、Phase / BL / ISSUE 编号等代号可保留原文。
 3. Plan 头部 `设计规格：` 字段指向对应 Specs 文件。
 4. 同功能多份 Plan 用文件名后缀区分，如 `-p0` / `-p1`。
 
@@ -40,7 +40,7 @@
 | 组织维度 | 功能为主 | 版本为主 |
 | 目录结构 | `Specs/<feature-slug>/` | `Plan/vX.Y/subplans/` |
 
-二者通过文件名 slug、Plan 头部 `设计规格：` 字段和索引互相指向，不靠目录镜像。
+二者通过 Plan 头部 `设计规格：` 字段、索引和文档标题互相指向，不靠目录镜像；Plan 文件名不要求与 Specs 功能目录英文 slug 完全一致。
 
 ## 工具性子计划范围
 

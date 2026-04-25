@@ -3,7 +3,7 @@
 > 所属版本：v0.4
 > 所属主线：[README](./README.md)
 > 分类基础：[`02-classification.md`](./02-classification.md)
-> 最近调整：2026-04-25 根据 A04/A06 降阶并入 A07 的产品决策重排 Phase
+> 最近调整：2026-04-25 根据 A04/A06 断联并入 A07 的产品决策重排 Phase
 
 ---
 
@@ -12,7 +12,7 @@
 | Phase | 名称 | 主产出 | 启动条件 | 收尾条件 | 状态 |
 |---|---|---|---|---|---|
 | Phase 1 | 渲染与判定修复 | 颜色、答案兼容、乘法竖式统一、`ISSUE-059` | 读 A03 相关代码 / 规格；按已确认三步路线展开乘法竖式子计划 | 对应手工或自动验证通过；test/build 通过 | ✅ 已完成 |
-| Phase 2 | A04/A06 降阶并入 A07 | 玩家题型入口收敛、A07 知识点 lane、保留原 A07 低档应用、存档/段位/进阶兼容 | 读 A04/A06/A07 规格、星级/段位规格、存档迁移原则 | A04/A06 不再玩家可见；A07 lane 覆盖原子题型；原 A07 低档应用不丢失；test/build/QA 通过 | 🟡 方案已定，待实施 |
+| Phase 2 | A04/A06 断联并入 A07 | 玩家题型入口收敛、A07 知识点 lane、保留原 A07 低档应用、存档/段位/进阶兼容 | 读 A04/A06/A07 规格、星级/段位规格、存档迁移原则 | A04/A06 不再玩家可见；A07 lane 覆盖原子题型；原 A07 低档应用不丢失；test/build/QA 通过 | 🟡 方案已定，待实施 |
 | Phase 3 | 题目质量与生成器诊断 | 竖式难度、第四关多位乘法桥接、选项干扰项、重复题目结论 | Phase 2 后题型 IA 稳定；读生成器 / 难度 / 星级规格；确定诊断样本 | 抽样验证有记录；重复题目有 bug/设计结论；test/build 通过 | 📋 待开工 |
 | Phase 4 | 交互设计与教学引导 | 进位格三档规则、compare tip 补证 | 确认进位格规则与 compare tip 验证样本 | 用户视角走查 + 三档场景验证；compare tip 补证完成 | 📋 待开工 |
 | Phase 5 | Practice 工程质量 | 状态重置统一机制 | 确认保留在 v0.4；现有行为测试覆盖 | 重构前后行为等价；回归测试通过 | 📋 待确认 |
@@ -31,7 +31,7 @@ Phase 4：处理剩余教学交互规则
 Phase 5：工程质量收尾（可延期）
 ```
 
-Phase 2 必须排在题目质量诊断前面。原因是 A04/A06 是否作为独立题型，会直接影响选项题扩容样本、重复题诊断样本、段位赛题型范围和进阶入口。先诊断再改 IA，会让结论口径漂移。
+Phase 2 必须排在题目质量诊断前面。原因是 A04/A06 是否作为独立题型，会直接影响选项题扩容样本、重复题诊断样本、段位赛入场条件 / 题型范围和进阶入口。先诊断再改 IA，会让结论口径漂移。
 
 ## Phase 间依赖
 
@@ -46,9 +46,9 @@ Phase 2 必须排在题目质量诊断前面。原因是 A04/A06 是否作为独
 
 | 决策 | 影响文件 | 未决时处理 |
 |---|---|---|
-| 乘法竖式三步路线 | `phases/phase-1.md` / 子计划 | 已完成；见 [`subplans/2026-04-25-bl-005-multiplication-vertical-board.md`](./subplans/2026-04-25-bl-005-multiplication-vertical-board.md) |
-| A04/A06 题型 IA | `phases/phase-2.md` / 子计划 | 已确认：玩家入口取消，降阶为 A07 低档知识点 lane；原 A07 低档基础应用继续保留在低档 |
-| 旧 A04/A06 存档兼容 | `phases/phase-2.md` / 子计划 | 保留 internal / legacy topic，不清空历史数据；必要时走 v4→v5 迁移 |
+| 乘法竖式三步路线 | `phases/phase-1.md` / 子计划 | 已完成；见 [`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md) |
+| A04/A06 题型 IA | `phases/phase-2.md` / 子计划 | 已确认：玩家入口取消，A07 直接拥有运算律 / 括号变换低档知识点 lane；原 A07 低档基础应用继续保留在低档 |
+| 旧 A04/A06 存档兼容 | `phases/phase-2.md` / 子计划 | 保留 legacy 数据，不清空历史数据；旧进度不折算到 A07；旧错题/历史不参与新段位复习；必要时走 v4→v5 迁移 |
 | 重复题诊断策略 | `phases/phase-3.md` | Phase 2 后做脚本抽样 / 场景复现 / 两者结合 |
 | 进位格三档规则 | `phases/phase-4.md` / 可能的新 Spec | 不实现规则分层，只保留待设计 |
 | Phase 5 去留 | `phases/phase-5.md` | 标记为 v0.5 候选，不阻塞 v0.4 体验主线 |
@@ -57,8 +57,8 @@ Phase 2 必须排在题目质量诊断前面。原因是 A04/A06 是否作为独
 
 具体子项进入实施前，按 [`../templates/plan-template.md`](../templates/plan-template.md) 在 `subplans/` 下创建独立子计划。当前已有：
 
-- [`subplans/2026-04-25-bl-005-multiplication-vertical-board.md`](./subplans/2026-04-25-bl-005-multiplication-vertical-board.md)：Phase 1 乘法竖式
-- [`subplans/2026-04-25-a04-a06-downshift-to-a07.md`](./subplans/2026-04-25-a04-a06-downshift-to-a07.md)：Phase 2 A04/A06 降阶并入 A07
+- [`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md)：Phase 1 乘法竖式
+- [`subplans/2026-04-25-a04-a06-断联并入A07简便计算.md`](./subplans/2026-04-25-a04-a06-断联并入A07简便计算.md)：Phase 2 A04/A06 断联并入 A07
 
 后续待展开：
 

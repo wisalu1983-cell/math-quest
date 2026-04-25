@@ -26,9 +26,10 @@
 | Phase 1~4 总图、时序、进入 / 收尾条件 | [`03-phase-plan.md`](./03-phase-plan.md) |
 | 执行纪律、验收、PM 回写规则 | [`04-execution-discipline.md`](./04-execution-discipline.md) |
 | Phase 1：渲染与判定修复 | [`phases/phase-1.md`](./phases/phase-1.md) |
-| Phase 1 子计划：乘法竖式与修复 | [`subplans/2026-04-25-bl-005-multiplication-vertical-board.md`](./subplans/2026-04-25-bl-005-multiplication-vertical-board.md) |
-| Phase 2：A04/A06 降阶并入 A07 | [`phases/phase-2.md`](./phases/phase-2.md) |
-| Phase 2 子计划：A04/A06 降阶并入 A07 | [`subplans/2026-04-25-a04-a06-downshift-to-a07.md`](./subplans/2026-04-25-a04-a06-downshift-to-a07.md) |
+| Phase 1 子计划：乘法竖式与修复 | [`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md) |
+| Phase 2：A04/A06 断联并入 A07 | [`phases/phase-2.md`](./phases/phase-2.md) |
+| Phase 2 样题模拟：A07 新地图完整跑一轮 | [`phases/2026-04-25-a07-新地图完整模拟题目清单.md`](./phases/2026-04-25-a07-新地图完整模拟题目清单.md) |
+| Phase 2 子计划：A04/A06 断联并入 A07 | [`subplans/2026-04-25-a04-a06-断联并入A07简便计算.md`](./subplans/2026-04-25-a04-a06-断联并入A07简便计算.md) |
 | Phase 3：题目质量与生成器诊断 | [`phases/phase-3.md`](./phases/phase-3.md) |
 | Phase 4：交互设计与教学引导 | [`phases/phase-4.md`](./phases/phase-4.md) |
 | Phase 5：Practice 工程质量 | [`phases/phase-5.md`](./phases/phase-5.md) |
@@ -45,7 +46,7 @@
 - ✅ `BL-003` ~ `BL-008` 已纳入 v0.4 规划视图；`ISSUE-059` 已重新挂入当前版本 issue 视图
 - ✅ `BL-005.3` 乘法竖式统一方向已确认：多位整数乘法模块 → 小数乘法复用 → 小数点定位 / 答案等价
 - ✅ Phase 1 已完成：[`phases/phase-1.md`](./phases/phase-1.md)
-- ✅ Phase 1 乘法竖式子计划已完成：[`subplans/2026-04-25-bl-005-multiplication-vertical-board.md`](./subplans/2026-04-25-bl-005-multiplication-vertical-board.md)
+- ✅ Phase 1 乘法竖式子计划已完成：[`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md)
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
-- 🟡 Phase 2 方案已定：A04「运算律」/ A06「括号变换」取消玩家独立入口，降阶为 A07「简便计算」低档知识点 lane
+- 🟡 Phase 2 方案已定：A04「运算律」/ A06「括号变换」在玩家体验层不再作为题型存在；相关能力迁入 A07「简便计算」低档知识点 lane，A04/A06 从新主链路断联；A07 进阶保留原 A07 子题型分配
 - 📋 下一步：实施 Phase 2；随后进入 Phase 3 题目质量与生成器诊断，并另行确认 `BL-005.2` 进位格三档规则、`Phase 5` 是否保留在 v0.4

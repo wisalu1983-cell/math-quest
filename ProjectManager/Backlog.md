@@ -76,7 +76,7 @@
 - **背景**：运算律填数字题（如 `29×14–29×3 = 29×(___–___)`），填写槽位显示"1"和"2"作为序号，用户误认为是答案；且无任何操作说明文字告知应如何填写
 - **类别**：体验 / UX
 - **状态**：**已纳入 v0.4**（Phase 2：随 A07「运算律」知识点 lane 收口）
-- **关联 Plan**：[`Plan/v0.4/phases/phase-2.md`](Plan/v0.4/phases/phase-2.md) · [`Plan/v0.4/subplans/2026-04-25-a04-a06-downshift-to-a07.md`](Plan/v0.4/subplans/2026-04-25-a04-a06-downshift-to-a07.md)
+- **关联 Plan**：[`Plan/v0.4/phases/phase-2.md`](Plan/v0.4/phases/phase-2.md) · [`Plan/v0.4/subplans/2026-04-25-a04-a06-降阶并入A07简便计算.md`](Plan/v0.4/subplans/2026-04-25-a04-a06-降阶并入A07简便计算.md)
 - **子项**：
   1. 填写框内的"1""2"槽位序号视觉上与数字答案混淆，需去除或改为中性占位符
   2. 题干缺少操作说明，用户不知道该点击、拖拽还是直接输入

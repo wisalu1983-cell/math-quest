@@ -50,8 +50,8 @@
 | 发生什么 | 写入位置 |
 |---|---|
 | Phase 范围 / 进入条件 / 收尾条件变化 | `Plan/vX.Y/03-phase-plan.md` 或对应 `phases/phase-N.md` |
-| 具体功能实施计划启动 | `Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md` |
-| 功能设计 / 调研 / 方案变化 | `Specs/<feature-slug>/YYYY-MM-DD-<topic>.md`；跨功能规格留在 `Specs/` 根 |
+| 具体功能实施计划启动 | `Plan/vX.Y/subplans/YYYY-MM-DD-<代号>-<中文可读主题>.md` |
+| 功能设计 / 调研 / 方案变化 | `Specs/<feature-slug>/YYYY-MM-DD-<中文可读主题>.md`；跨功能规格留在 `Specs/` 根 |
 | 发现或关闭具体问题 | `ISSUE_LIST.md`；若延期为候选，迁入 `Backlog.md` |
 | QA run 生成 | `QA/runs/<date>-<scope>/`，并在对应 Plan / Phase / Summary 中引用 |
 | 历史复盘 / 机制说明 | `Reports/YYYY-MM-DD-<topic>.md` |
@@ -64,8 +64,8 @@
 当前项目已确认的归属规则如下：
 
 - **Specs 侧按功能聚合**：某个具体功能的设计、调研、方案、决策材料放到 `ProjectManager/Specs/<feature-slug>/`。
-- **Plan 侧按版本聚合**：实施动作绑定版本，放到 `ProjectManager/Plan/vX.Y/subplans/YYYY-MM-DD-<feature-slug>.md`。
-- **Plan 与 Specs 不镜像目录结构**：二者通过文件名 slug、Plan 头部 `设计规格：` 字段和索引互相指向。
+- **Plan 侧按版本聚合**：实施动作绑定版本，放到 `ProjectManager/Plan/vX.Y/subplans/YYYY-MM-DD-<代号>-<中文可读主题>.md`。
+- **Plan 与 Specs 不镜像目录结构**：二者通过 Plan 头部 `设计规格：` 字段、索引和文档标题互相指向；Plan / 开发文档文件名优先中文可读，不要求复刻 Specs 英文 slug。
 - **Reports 侧放复盘 / 机制说明**：不属于某个具体功能规格，也不是实施计划的材料，放 `ProjectManager/Reports/`。
 - **QA 侧放正式测试产物**：正式 QA 结果放仓库根 `QA/runs/`；可复用脚本放 `QA/scripts/` 或对应测试目录。
 

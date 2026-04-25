@@ -25,7 +25,8 @@
 2. **索引只在生命周期变化时更新**：新建、归档、废弃、改名、入口关系变化时更新本文件或 `_index.md`。
 3. **新 Plan 开工前先扫规格索引**：从 [`../Specs/_index.md`](../Specs/_index.md) 找相关生效规格。
 4. **版本启动和收口必须读低频指南**：见 [`version-lifecycle.md`](./version-lifecycle.md) 和 [`templates/version-package-template.md`](./templates/version-package-template.md)。
-5. **低频长规则不写进本 README**：超过 10 行且非日常使用的规则放到 `rules/`、`templates/`、`Reports/` 或版本目录。
+5. **协作文档文件名用中文可读主题**：版本计划、子计划、开发文档、讨论样题等文件名在日期后优先写中文；专用术语和代号可保留原文，固定版本骨架除外。
+6. **低频长规则不写进本 README**：超过 10 行且非日常使用的规则放到 `rules/`、`templates/`、`Reports/` 或版本目录。
 
 ## 当前版本（v0.4）
 
