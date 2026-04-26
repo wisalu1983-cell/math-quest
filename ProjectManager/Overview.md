@@ -46,7 +46,7 @@
 **当前状态**：
 
 - ✅ v0.4 预研报告已完成，入口见 [`Reports/2026-04-25-v0.4-prereport.md`](Reports/2026-04-25-v0.4-prereport.md)
-- ✅ v0.4 版本管理包已建立：`README + 00-04 + phases/phase-1..4`
+- ✅ v0.4 版本管理包已建立：`README + 00-04 + phases/phase-1..5`
 - ✅ `BL-003` ~ `BL-008` 已纳入 v0.4 规划视图
 - ✅ Phase 1 已完成：多位整数乘法竖式、小数乘法复用、小数答案等价、竖式可读性、`ISSUE-059` 修复
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划

@@ -23,7 +23,7 @@
 | 版本背景、目标、阶段结构 | [`00-overview.md`](./00-overview.md) |
 | 预研报告、Backlog、Issue、规格约束 | [`01-research-catalog.md`](./01-research-catalog.md) |
 | 功能分类、依赖关系、范围边界 | [`02-classification.md`](./02-classification.md) |
-| Phase 1~4 总图、时序、进入 / 收尾条件 | [`03-phase-plan.md`](./03-phase-plan.md) |
+| Phase 1~5 总图、时序、进入 / 收尾条件 | [`03-phase-plan.md`](./03-phase-plan.md) |
 | 执行纪律、验收、PM 回写规则 | [`04-execution-discipline.md`](./04-execution-discipline.md) |
 | Phase 1：渲染与判定修复 | [`phases/phase-1.md`](./phases/phase-1.md) |
 | Phase 1 子计划：乘法竖式与修复 | [`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md) |
@@ -39,14 +39,14 @@
 
 ## N/A / 延迟创建说明
 
-- `subplans/`：已创建并完成 Phase 1 乘法竖式子计划；后续具体子计划在某个 Phase / 子项通过需求讨论并准备开工时，再按 [`../templates/plan-template.md`](../templates/plan-template.md) 落盘。
+- `subplans/`：已按 Phase 1~5 实施过程逐步创建并完成对应子计划；后续若版本收口前仍有补充项，再按 [`../templates/plan-template.md`](../templates/plan-template.md) 落盘。
 - 新设计规格：开发期不提前改写 current spec；Phase 4 收口已按 Living Spec 制度回写 `ProjectManager/Specs/a03-vertical-calc/current.md`。
 
 ## 当前状态
 
 - ✅ v0.4 预研报告已完成：[`../../Reports/2026-04-25-v0.4-prereport.md`](../../Reports/2026-04-25-v0.4-prereport.md)
 - ✅ 版本管理包 `00-04 + phases/` 已按生命周期模板建立
-- ✅ `BL-003` ~ `BL-008` 已纳入 v0.4 规划视图；`ISSUE-059` 已重新挂入当前版本 issue 视图
+- ✅ `BL-003` ~ `BL-008` 已纳入 v0.4 规划视图；`ISSUE-059` 已在 Phase 1 关闭，当前版本开放 issue 数为 0
 - ✅ `BL-005.3` 乘法竖式统一方向已确认：多位整数乘法模块 → 小数乘法复用 → 小数点定位 / 答案等价
 - ✅ Phase 1 已完成：[`phases/phase-1.md`](./phases/phase-1.md)
 - ✅ Phase 1 乘法竖式子计划已完成：[`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md)
