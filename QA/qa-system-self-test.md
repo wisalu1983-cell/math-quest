@@ -1,8 +1,10 @@
 # QA 体系自测用例
 
-**目的**：验证 QA Leader 编排器及其依赖的全局 skill 在 Cursor 和 Claude Code 两个环境下都正确安装、可发现、可触发、内容一致。
+**目的**：验证 QA Leader 编排器及其依赖的全局 skill 在 Cursor、Claude Code 和 Codex 环境下都正确安装、可发现、可触发、内容一致。
 
 **执行时机**：QA 体系首次部署后，或执行 `sync-qa-skills.ps1` 后，或修改任何 skill 内容后。
+
+> 2026-04-26 更新：Codex 适配件 `.agents/skills/qa-leader/SKILL.md` 已纳入自检；正式 QA 产物入库规则也需要随 `.gitignore` 一起检查。下方 2026-04-16 执行结果为历史结果，制度升级后需按新增项重跑。
 
 ---
 
@@ -21,6 +23,8 @@
 | S-07 | Claude Code 适配件存在 | 检查 `math-quest/.claude/skills/qa-leader/SKILL.md` | 文件存在，含 YAML frontmatter（name: qa-leader） | — | P0 | 自动化 |
 | S-08 | Manifest 已注册 | 检查 `~/.cursor/skills/_manifest.json` | 含 `local/agent-as-user-qa` 和 `local/visual-screenshot-qa` 条目 | — | P0 | 自动化 |
 | S-09 | 同步脚本存在 | 检查 `math-quest/QA/sync-qa-skills.ps1` | 文件存在，可被 PowerShell 解析无语法错误 | — | P1 | 自动化 |
+| S-10 | Codex 适配件存在 | 检查 `math-quest/.agents/skills/qa-leader/SKILL.md` | 文件存在，含 YAML frontmatter（name: qa-leader） | — | P0 | 自动化 |
+| S-11 | 专业测试用例模板存在 | 检查 `math-quest/QA/templates/test-cases-professional-template.md` | 文件存在，含 Risk / Technique / Oracle / Coverage Matrix | — | P0 | 自动化 |
 
 ---
 
@@ -35,6 +39,8 @@
 | C-03 | Cursor 适配件含规范源核心内容 | 对比 `.cursor/rules/qa-leader.mdc` 与 `QA/qa-leader-canonical.md` | 适配件包含规范源中的所有章节标题（步骤 0 / 第一层 / 第二层 / 第三层 / 缺陷流转 / 产出物 / 执行编排） | — | P0 | 自动化 |
 | C-04 | Claude Code 适配件含规范源核心内容 | 对比 `.claude/skills/qa-leader/SKILL.md` 与 `QA/qa-leader-canonical.md` | 同 C-03 | — | P0 | 自动化 |
 | C-05 | 两个适配件核心内容一致 | 对比 `.cursor/rules/qa-leader.mdc` 与 `.claude/skills/qa-leader/SKILL.md` 的正文部分（去掉 frontmatter） | 正文部分内容相同 | — | P1 | 自动化 |
+| C-06 | Codex 适配件含规范源核心内容 | 对比 `.agents/skills/qa-leader/SKILL.md` 与 `QA/qa-leader-canonical.md` | 同 C-03 | — | P0 | 自动化 |
+| C-07 | 三个适配件核心内容一致 | 对比 `.cursor` / `.claude` / `.agents` 适配件正文部分（去掉 frontmatter 和环境注释） | 正文部分内容相同 | — | P1 | 自动化 |
 
 ---
 
@@ -49,6 +55,20 @@
 | F-03 | Cursor 适配件 frontmatter 合规 | 解析 `.mdc` 文件头 | 含 `description`（非空）和 `alwaysApply`（布尔值） | — | P0 | 自动化 |
 | F-04 | Claude Code 适配件 frontmatter 合规 | 解析 SKILL.md 头 | 含 `name: qa-leader` 和非空 `description` | — | P0 | 自动化 |
 | F-05 | 触发词覆盖核心场景 | 检查两个 skill 和 QA Leader 的 description/触发词 | agent-as-user-qa 含"拟真"或"体验测试"；visual-screenshot-qa 含"视觉"或"设计稿"；QA Leader 含"QA" | — | P1 | 自动化 |
+| F-06 | Codex 适配件 frontmatter 合规 | 解析 `.agents/skills/qa-leader/SKILL.md` 文件头 | 含 `name: qa-leader` 和非空 `description` | — | P0 | 自动化 |
+
+---
+
+## 模块 G — Git 归档规则（自动化）
+
+> 设计意图：正式 QA 结论与测试生产资料可入库，过程大产物继续忽略。
+
+| ID | 用例名称 | 操作 | 预期结果 | 预期体验 | 优先级 | 验证方式 |
+|----|---------|------|---------|---------|--------|---------|
+| G-01 | QA Markdown run 可入库 | `git check-ignore QA/runs/sample/test-cases-v1.md` | 不被忽略 | 正式测试用例能同步给团队审阅 | P0 | 自动化 |
+| G-02 | QA 正式脚本可入库 | `git check-ignore QA/runs/sample/full-regression.mjs` | 不被忽略 | 可复用测试工具能进入版本库 | P1 | 自动化 |
+| G-03 | QA 截图 artifacts 被忽略 | `git check-ignore QA/runs/sample/artifacts/evidence.png` | 被 `.gitignore` 忽略 | 大体积过程证据不会污染仓库 | P0 | 自动化 |
+| G-04 | QA raw JSON 被忽略 | `git check-ignore QA/runs/sample/artifacts/raw-results.json` | 被 `.gitignore` 忽略 | 临时过程输出不会误入库 | P0 | 自动化 |
 
 ---
 

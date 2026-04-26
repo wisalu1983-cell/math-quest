@@ -19,10 +19,31 @@ dist-ssr
 test-results/
 test-screenshots/
 
-# QA process artifacts and reports
+# QA process artifacts and formal reports
 QA/artifacts/
 QA/b2-screenshots/
-QA/runs/
+
+# Formal QA production material under QA/runs may be committed.
+# Heavy process artifacts remain ignored by default.
+QA/runs/**
+!QA/runs/
+!QA/runs/**/
+!QA/runs/**/*.md
+!QA/runs/**/*.mjs
+!QA/runs/**/*.js
+!QA/runs/**/*.ts
+!QA/runs/**/*.py
+QA/runs/**/artifacts/
+QA/runs/**/manual-artifacts/
+QA/runs/**/playwright-report/
+QA/runs/**/test-results/
+QA/runs/**/*.png
+QA/runs/**/*.jpg
+QA/runs/**/*.jpeg
+QA/runs/**/*.webm
+QA/runs/**/*.zip
+QA/runs/**/*.json
+QA/runs/**/raw-results.*
 
 # Python cache
 __pycache__/
