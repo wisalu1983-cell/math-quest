@@ -30,6 +30,27 @@ function buildTrainingQuestion(): Question {
   };
 }
 
+function buildVerticalQuestion(): Question {
+  return {
+    id: 'q-vertical-process',
+    topicId: 'vertical-calc',
+    type: 'vertical-fill',
+    difficulty: 5,
+    prompt: '用竖式计算: 999 + 888',
+    data: {
+      kind: 'vertical-calc',
+      operation: '+',
+      operands: [999, 888],
+      steps: [],
+    },
+    solution: {
+      answer: 1887,
+      explanation: '999 + 888 = 1887',
+    },
+    hints: [],
+  };
+}
+
 function buildSession(): PracticeSession {
   return {
     id: 's-training',
@@ -58,6 +79,22 @@ function primeSession(question: Question): void {
     lastAnswerCorrect: false,
     pendingWrongQuestions: [],
     lastTrainingFieldMistakes: [],
+    lastProcessWarning: null,
+    lastFailureReason: null,
+  });
+}
+
+function primeGameProgress(): void {
+  (useGameProgressStore.setState as unknown as (partial: Record<string, unknown>) => void)({
+    gameProgress: {
+      userId: 'u-training',
+      campaignProgress: {},
+      advanceProgress: {},
+      rankProgress: { currentTier: 'apprentice', history: [] },
+      wrongQuestions: [],
+      totalQuestionsAttempted: 0,
+      totalQuestionsCorrect: 0,
+    },
   });
 }
 
@@ -123,5 +160,45 @@ describe('useSessionStore.submitAnswer training feedback', () => {
 
     expect(result.correct).toBe(true);
     expect(state.lastTrainingFieldMistakes).toEqual([]);
+  });
+});
+
+describe('useSessionStore.submitAnswer vertical process failure', () => {
+  beforeEach(() => {
+    primeGameProgress();
+    primeSession(buildVerticalQuestion());
+  });
+
+  it('低档竖式答案正确但过程格错误时按错误记录，并把 failureReason 传到错题链路', () => {
+    const result = useSessionStore.getState().submitAnswer('1887', {
+      failureReason: 'vertical-process',
+    });
+
+    const state = useSessionStore.getState();
+    expect(result.correct).toBe(false);
+    expect(state.hearts).toBe(2);
+    expect(state.session?.questions[0]).toMatchObject({
+      correct: false,
+      failureReason: 'vertical-process',
+    });
+    expect(state.lastFailureReason).toBe('vertical-process');
+    expect(state.pendingWrongQuestions[0]).toMatchObject({
+      wrongAnswer: '1887',
+      failureReason: 'vertical-process',
+    });
+  });
+
+  it('中档竖式过程格 warning 只保留在当前反馈状态，不进入错题链路', () => {
+    const result = useSessionStore.getState().submitAnswer('1887', {
+      processWarning: 'vertical-process-warning',
+    });
+
+    const state = useSessionStore.getState();
+    expect(result.correct).toBe(true);
+    expect(state.hearts).toBe(3);
+    expect(state.lastProcessWarning).toBe('vertical-process-warning');
+    expect(state.lastFailureReason).toBeNull();
+    expect(state.session?.questions[0].failureReason).toBeUndefined();
+    expect(state.pendingWrongQuestions).toHaveLength(0);
   });
 });

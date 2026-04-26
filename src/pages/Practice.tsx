@@ -19,7 +19,7 @@ function promptFontSize(prompt: string): number {
 import LoadingScreen from '@/components/LoadingScreen';
 import ConfettiEffect from '@/components/ConfettiEffect';
 import MathText from '@/components/MathText';
-import type { VerticalCalcData, TrainingField } from '@/types';
+import type { VerticalCalcCompletePayload, VerticalCalcData, TrainingField } from '@/types';
 import {
   getPracticeFeedbackAnnouncement,
 } from '@/utils/ui-accessibility';
@@ -30,6 +30,7 @@ export default function Practice() {
   const {
     currentQuestion, currentIndex, totalQuestions,
     hearts, showFeedback, lastAnswerCorrect, lastTrainingFieldMistakes,
+    lastProcessWarning, lastFailureReason,
     submitAnswer, nextQuestion, endSession, abandonSession,
     session,
     startRankMatchGame,
@@ -211,9 +212,26 @@ export default function Practice() {
     return () => window.removeEventListener('keydown', onKey);
   }, [showFeedback, handleNext, handleSubmit, isVerticalCalc]);
 
-  const handleVerticalComplete = (correct: boolean) => {
+  const handleVerticalComplete = (result: boolean | VerticalCalcCompletePayload) => {
     if (!currentQuestion) return;
-    submitAnswer(correct ? String(currentQuestion.solution.answer) : '竖式计算有误');
+    if (typeof result === 'boolean') {
+      submitAnswer(result ? String(currentQuestion.solution.answer) : '竖式计算有误');
+      return;
+    }
+
+    if (result.result === 'failWrongAnswer' || result.result === 'failProcess') {
+      submitAnswer(result.answer || '竖式计算有误', { failureReason: result.failureReason });
+      return;
+    }
+
+    if (result.result === 'passWithProcessWarning') {
+      submitAnswer(result.answer || String(currentQuestion.solution.answer), {
+        processWarning: result.warningReason,
+      });
+      return;
+    }
+
+    submitAnswer(result.answer || String(currentQuestion.solution.answer));
   };
 
   const handleSuspendRankMatch = () => {
@@ -371,6 +389,7 @@ return (
                 <div className="mt-6">
                   <VerticalCalcBoard
                     data={currentQuestion.data as VerticalCalcData}
+                    difficulty={currentQuestion.difficulty}
                     onComplete={handleVerticalComplete}
                   />
                 </div>
@@ -603,6 +622,14 @@ return (
               </div>
             )}
 
+            {!lastAnswerCorrect && lastFailureReason === 'vertical-process' && (
+              <div className="mb-3 rounded-xl border-2 border-warning bg-warning-lt px-4 py-3">
+                <p className="text-sm font-black" style={{ color: '#7A5C00' }}>
+                  未通过原因：进位/退位格填写错误
+                </p>
+              </div>
+            )}
+
             {lastAnswerCorrect && (
               <div className="mb-3">
                 <span className="text-sm text-success font-bold">
@@ -611,6 +638,14 @@ return (
                 {currentQuestion.solution.explanation && (
                   <p className="text-xs text-text-2 mt-1">{currentQuestion.solution.explanation}</p>
                 )}
+              </div>
+            )}
+
+            {lastAnswerCorrect && lastProcessWarning === 'vertical-process-warning' && (
+              <div className="mb-3 rounded-xl border-2 border-warning bg-warning-lt px-4 py-3">
+                <p className="text-sm font-black" style={{ color: '#7A5C00' }}>
+                  进位/退位过程有误，但本题答案正确，已通过
+                </p>
               </div>
             )}
 

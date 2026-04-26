@@ -12,6 +12,8 @@
 > 所属版本：vX.Y（或“跨版本工具性”）
 > 父计划：〈如有，使用正式 ID，如 v0.4-1 / v0.4-1-1〉
 > 设计规格：〈对应 Specs/*.md；无则写 N/A 并说明原因〉
+> 功能 current spec：〈Specs/<feature-slug>/current.md；无长期功能归属则写 N/A〉
+> Spec impact：update-at-phase-close / none / deferred（开发期不直接回写 current spec）
 > 状态：⬜ 待排期 / 🟡 进行中 / ✅ 完成 / 🗄️ 归档
 
 ---
@@ -25,6 +27,14 @@
 | 规格 | 本计划继承的硬约束 |
 |---|---|
 | 〈规格路径〉 | 〈关键断言摘要〉 |
+
+### Current spec 影响评估
+
+| 项 | 结论 |
+|---|---|
+| 是否改变长期功能行为 / 数据契约 / QA 口径 | 是 / 否 |
+| 预计回写位置 | `ProjectManager/Specs/<feature-slug>/current.md` / N/A |
+| 待 phase 验收后回写的要点 | 〈开发期只列待回写，不提前修改 current spec〉 |
 
 ### 跨系统维度清单
 
@@ -65,3 +75,5 @@
 - 影响当前状态 / 下一步时：回写 `ProjectManager/Overview.md`
 - 新增 / 关闭 issue 时：更新 `ProjectManager/ISSUE_LIST.md`
 - 新增 QA run 时：在本计划或对应 Phase 引用 `QA/runs/<date>-<scope>/`
+- `Spec impact=update-at-phase-close` 时：仅在 phase 验收确认并准备合并 / 收口时回写功能 `current.md`，并同步考虑 `ProjectManager/Specs/_index.md`
+- `Spec impact=none/deferred` 时：在本节写明原因或下一处理点

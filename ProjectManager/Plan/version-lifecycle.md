@@ -51,7 +51,7 @@
 |---|---|
 | Phase 范围 / 进入条件 / 收尾条件变化 | `Plan/vX.Y/03-phase-plan.md` 或对应 `phases/phase-N.md` |
 | 具体功能实施计划启动 | `Plan/vX.Y/subplans/YYYY-MM-DD-<代号>-<中文可读主题>.md` |
-| 功能设计 / 调研 / 方案变化 | `Specs/<feature-slug>/YYYY-MM-DD-<中文可读主题>.md`；跨功能规格留在 `Specs/` 根 |
+| 功能设计 / 调研 / 方案变化 | 开发期写 `Plan/vX.Y/subplans/` 或 `Specs/<feature-slug>/YYYY-MM-DD-<中文可读主题>.md`；长期当前状态只在 phase 验收确认后回写 `Specs/<feature-slug>/current.md` |
 | 发现或关闭具体问题 | `ISSUE_LIST.md`；若延期为候选，迁入 `Backlog.md` |
 | QA run 生成 | `QA/runs/<date>-<scope>/`，并在对应 Plan / Phase / Summary 中引用 |
 | 历史复盘 / 机制说明 | `Reports/YYYY-MM-DD-<topic>.md` |
@@ -64,6 +64,7 @@
 当前项目已确认的归属规则如下：
 
 - **Specs 侧按功能聚合**：某个具体功能的设计、调研、方案、决策材料放到 `ProjectManager/Specs/<feature-slug>/`。
+- **Current Spec 侧承载当前权威状态**：`ProjectManager/Specs/<feature-slug>/current.md` 只在相关 phase 验收确认、准备合并 / 收口时回写；开发期只在 subplan 标 `Spec impact` 和待回写要点。
 - **Plan 侧按版本聚合**：实施动作绑定版本，放到 `ProjectManager/Plan/vX.Y/subplans/YYYY-MM-DD-<代号>-<中文可读主题>.md`。
 - **Plan 与 Specs 不镜像目录结构**：二者通过 Plan 头部 `设计规格：` 字段、索引和文档标题互相指向；Plan / 开发文档文件名优先中文可读，不要求复刻 Specs 英文 slug。
 - **Reports 侧放复盘 / 机制说明**：不属于某个具体功能规格，也不是实施计划的材料，放 `ProjectManager/Reports/`。
@@ -78,16 +79,20 @@
 1. 更新 `00-overview.md` 为最终收口快照。
 2. 确认 `01-04` 与 `phases/` 记录能追溯需求、分类、阶段和执行纪律。
 3. 归档本版本关闭的 issue；延期 issue 才进入 Backlog，并保留原 ISSUE ID。
-4. 处理 Backlog 生命周期：
+4. 处理各 phase / subplan 的 `Spec impact`：
+   - `update-at-phase-close`：确认 phase 验收已通过，再回写对应功能 `current.md`。
+   - `none`：确认原因已写明。
+   - `deferred`：确认下一处理点已写明，不能静默遗留。
+5. 处理 Backlog 生命周期：
    - 已纳入本版本且已完成的 BL 条目，从 Backlog 活跃区移出，只在 `已落地归档` 保留一行索引。
    - 未完成但仍要做的条目，回流为 `候选` 或 `延期至 vX.Y`，写清延期原因和下一判断点。
    - 决定不做的条目，进入 `已放弃归档`，保留一行理由。
    - 已由版本 Plan / Phase / subplan 完整覆盖的细节，不继续留在 Backlog 长文中。
-5. 确认 QA 结论：若需要正式 QAleader，必须存在 `QA/runs/<date>-<scope>/qa-summary.md`。
-6. 更新 `Plan/vX.Y/README.md` 状态。
-7. 更新 `ProjectManager/Plan/README.md` 版本索引。
-8. 若版本轴切换，更新 `ProjectManager/Overview.md`。
-9. 涉及跨源写入、Plan / Spec / Issue / Backlog 生命周期变化时运行 `pm-sync-check`。
+6. 确认 QA 结论：若需要正式 QAleader，必须存在 `QA/runs/<date>-<scope>/qa-summary.md`。
+7. 更新 `Plan/vX.Y/README.md` 状态。
+8. 更新 `ProjectManager/Plan/README.md` 版本索引。
+9. 若版本轴切换，更新 `ProjectManager/Overview.md`。
+10. 涉及跨源写入、Plan / Spec / Issue / Backlog 生命周期变化时运行 `pm-sync-check`。
 
 ## 渐进式披露约束
 

@@ -1,23 +1,31 @@
-import { useState, useRef, useEffect, useMemo } from 'react';
-import type { VerticalCalcData } from '@/types';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { VerticalCalcCompletePayload, VerticalCalcData } from '@/types';
+import {
+  buildVerticalCalcPolicyColumns,
+  canSubmitVerticalCalc,
+  classifyVerticalCalcResult,
+  getNextFocus,
+  getVisibleProcessColumns,
+  isCellComplete,
+} from '@/engine/vertical-calc-policy';
+import type {
+  VerticalCalcCellId,
+  VerticalCalcOperation,
+  VerticalCalcResult,
+  VerticalCalcValues,
+  VerticalCalcWrongCell,
+} from '@/engine/vertical-calc-policy';
 import MultiplicationVerticalBoard from './MultiplicationVerticalBoard';
 
 interface Props {
   data: VerticalCalcData;
-  onComplete: (correct: boolean) => void;
+  difficulty: number;
+  onComplete: (result: boolean | VerticalCalcCompletePayload) => void;
 }
 
-interface ColumnExpected {
-  digit: number;
-  carry: number; // 0 = no carry expected
-  carryMandatory: boolean;
-  digitHint: string;
-  carryHint: string;
-}
+type CellResult = 'correct' | 'wrong';
 
-type CellId = { type: 'carry' | 'digit'; col: number };
-
-export default function VerticalCalcBoard({ data, onComplete }: Props) {
+export default function VerticalCalcBoard({ data, difficulty, onComplete }: Props) {
   if (data.multiplicationBoard) {
     const boardKey = [
       data.multiplicationBoard.mode,
@@ -35,241 +43,83 @@ export default function VerticalCalcBoard({ data, onComplete }: Props) {
     );
   }
 
-  return <LegacyVerticalCalcBoard data={data} onComplete={onComplete} />;
+  const legacyKey = [
+    difficulty,
+    data.operation,
+    data.operands.join(':'),
+    data.decimalPlaces ?? 0,
+    data.steps.map(step => `${step.stepType}:${step.column}:${step.expectedDigit}`).join('|'),
+  ].join(':');
+
+  return (
+    <LegacyVerticalCalcBoard
+      key={legacyKey}
+      data={data}
+      difficulty={difficulty}
+      onComplete={onComplete}
+    />
+  );
 }
 
-function LegacyVerticalCalcBoard({ data, onComplete }: Props) {
+function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
   const { operation, operands, steps } = data;
   const dp = data.decimalPlaces ?? 0;
+  const op = operation as VerticalCalcOperation;
 
-  // Build expected values per column
-  const columns = useMemo(() => {
-    const map: Record<number, ColumnExpected> = {};
-    let maxCol = 0;
-    for (const step of steps) {
-      const col = step.column;
-      if (!map[col]) map[col] = { digit: 0, carry: 0, carryMandatory: false, digitHint: '', carryHint: '' };
-      if (step.stepType === 'digit') {
-        map[col].digit = step.expectedDigit;
-        map[col].digitHint = step.hint;
-      } else {
-        map[col].carry = step.expectedDigit;
-        map[col].carryMandatory = !step.skippable;
-        map[col].carryHint = step.hint;
-      }
-      if (col > maxCol) maxCol = col;
-    }
-    const result: ColumnExpected[] = [];
-    for (let c = 0; c <= maxCol; c++) {
-      result.push(map[c] ?? { digit: 0, carry: 0, carryMandatory: false, digitHint: '', carryHint: '' });
-    }
-    return result;
-  }, [steps]);
-
+  const columns = useMemo(() => buildVerticalCalcPolicyColumns(steps), [steps]);
   const totalCols = columns.length;
+  const showProcessRow = getVisibleProcessColumns({ difficulty, columns }).length > 0;
 
   const a = operands[0];
   const b = operands[1];
   const aDigits = String(a).split('').map(Number);
   const bDigits = String(b).split('').map(Number);
-  // 从 steps 推算答案位数，避免浮点运算精度问题（如 0.1+0.2=0.30000...）
   const answerDigitCount = columns.length;
   const gridCols = Math.max(aDigits.length, bDigits.length, answerDigitCount) + 1 + (dp > 0 ? 1 : 0);
-
-  // The decimal point visual column position (render column index, or -1 if no dp)
-  // gridCols includes: 1 operator col + digit cols + (dp > 0 ? 1 dot col : 0)
-  // The dot sits between the dp-th and (dp-1)-th digit from the right
-  // In render terms (left-to-right): dotRenderCol = gridCols - 1 - dp
   const dotRenderCol = dp > 0 ? gridCols - 1 - dp : -1;
+  const totalDigitCols = gridCols - 1 - (dp > 0 ? 1 : 0);
 
-  // Convert render column index to step column index (right-to-left, 0 = units)
-  const renderToStepCol = (renderCol: number): number => {
-    if (renderCol === 0) return -1; // operator column
-    if (renderCol === dotRenderCol) return -1; // dot column
-    let digitIdx = renderCol - 1; // subtract operator column
-    if (dp > 0 && renderCol > dotRenderCol) {
-      digitIdx -= 1; // subtract dot column
+  const highestAnswerCol = useMemo(() => {
+    for (let c = totalCols - 1; c >= 0; c--) {
+      if (columns[c].answerExpected !== 0) return c;
     }
-    // Convert from left-to-right render index to right-to-left step column
-    const totalDigitCols = gridCols - 1 - (dp > 0 ? 1 : 0);
-    return totalDigitCols - 1 - digitIdx;
-  };
+    return 0;
+  }, [columns, totalCols]);
 
-  // Initial active cell: first mandatory cell
-  const initialCell = useMemo((): CellId => {
-    if (columns[0]?.carryMandatory) return { type: 'carry', col: 0 };
-    return { type: 'digit', col: 0 };
-  }, [columns]);
-
-  // State: user-filled values. undefined = empty. Carry values can be negative (borrow)
-  const [carryValues, setCarryValues] = useState<Record<number, number | undefined>>({});
-  const [digitValues, setDigitValues] = useState<Record<number, number | undefined>>({});
-  const [activeCell, setActiveCell] = useState<CellId | null>(initialCell);
-  const [pendingMinus, setPendingMinus] = useState(false); // user pressed minus, waiting for digit
-  const [cellResults, setCellResults] = useState<Record<string, 'correct' | 'wrong'>>({});
-  const [corrections, setCorrections] = useState<Record<string, number>>({}); // key -> correct value to show
+  const initialCell = useMemo<VerticalCalcCellId>(() => ({ kind: 'answer', col: 0 }), []);
+  const [processValues, setProcessValues] = useState<Record<number, string | undefined>>({});
+  const [answerValues, setAnswerValues] = useState<Record<number, string | undefined>>({});
+  const [activeCell, setActiveCell] = useState<VerticalCalcCellId | null>(initialCell);
+  const [cellResults, setCellResults] = useState<Record<string, CellResult>>({});
+  const [corrections, setCorrections] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
+  const [pendingCompletion, setPendingCompletion] = useState<VerticalCalcCompletePayload | null>(null);
+  const [submitWarning, setSubmitWarning] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (inputRef.current && !completed) inputRef.current.focus({ preventScroll: true });
   }, [activeCell, completed]);
 
-  const cellKey = (type: string, col: number) => `${type}-${col}`;
+  const values: VerticalCalcValues = useMemo(() => ({
+    answers: answerValues,
+    processes: processValues,
+  }), [answerValues, processValues]);
 
-  const handleCellClick = (cell: CellId) => {
-    if (completed) return;
-    setActiveCell(cell);
-    setPendingMinus(false);
-    inputRef.current?.focus({ preventScroll: true });
+  const renderToStepCol = (renderCol: number): number => {
+    if (renderCol === 0) return -1;
+    if (renderCol === dotRenderCol) return -1;
+    let digitIdx = renderCol - 1;
+    if (dp > 0 && renderCol > dotRenderCol) {
+      digitIdx -= 1;
+    }
+    return totalDigitCols - 1 - digitIdx;
   };
 
-  // Find the next mandatory empty cell after `from`, considering current filled state
-  const findNextMandatory = (from: CellId, newCarries: Record<number, number | undefined>, newDigits: Record<number, number | undefined>): CellId | null => {
-    // Build ordered list of mandatory cells starting after `from`
-    // Order: col0 carry, col0 digit, col1 carry, col1 digit, ...
-    const all: CellId[] = [];
-    for (let c = 0; c < totalCols; c++) {
-      if (columns[c].carryMandatory) {
-        all.push({ type: 'carry', col: c });
-      }
-      all.push({ type: 'digit', col: c });
-    }
+  const cellKey = (cell: VerticalCalcCellId) => `${cell.kind}-${cell.col}`;
 
-    // Find index of `from` in the list
-    const fromIdx = all.findIndex(cell => cell.type === from.type && cell.col === from.col);
-
-    // Search forward from the next position, wrapping is not needed - just go forward
-    for (let i = fromIdx + 1; i < all.length; i++) {
-      const cell = all[i];
-      const isEmpty = cell.type === 'carry'
-        ? newCarries[cell.col] === undefined
-        : newDigits[cell.col] === undefined;
-      if (isEmpty) return cell;
-    }
-    return null; // all mandatory cells filled
-  };
-
-  const handleInput = (value: string) => {
-    if (completed || !activeCell) return;
-
-    // Handle minus key: only meaningful for carry cells
-    if (value === '-') {
-      if (activeCell.type === 'carry') {
-        setPendingMinus(true);
-      }
-      return;
-    }
-
-    const digit = parseInt(value);
-    if (isNaN(digit) || digit < 0 || digit > 9) return;
-
-    let newCarries = carryValues;
-    let newDigits = digitValues;
-
-    if (activeCell.type === 'carry') {
-      const finalValue = pendingMinus ? -digit : digit;
-      setPendingMinus(false);
-      newCarries = { ...carryValues, [activeCell.col]: finalValue };
-      setCarryValues(newCarries);
-    } else {
-      setPendingMinus(false);
-      newDigits = { ...digitValues, [activeCell.col]: digit };
-      setDigitValues(newDigits);
-    }
-
-    // Auto-advance to next mandatory empty cell
-    const next = findNextMandatory(activeCell, newCarries, newDigits);
-    if (next) setActiveCell(next);
-  };
-
-  const handleClear = () => {
-    if (completed || !activeCell) return;
-    if (activeCell.type === 'carry') {
-      setCarryValues(prev => { const n = { ...prev }; delete n[activeCell.col]; return n; });
-    } else {
-      setDigitValues(prev => { const n = { ...prev }; delete n[activeCell.col]; return n; });
-    }
-  };
-
-  // Find the highest column that has a non-zero expected digit
-  const highestNonZeroCol = useMemo(() => {
-    for (let c = totalCols - 1; c >= 0; c--) {
-      if (columns[c].digit !== 0) return c;
-    }
-    return 0;
-  }, [columns, totalCols]);
-
-  const handleSubmit = () => {
-    if (completed) return;
-    const results: Record<string, 'correct' | 'wrong'> = {};
-    const corrects: Record<string, number> = {};
-    let allCorrect = true;
-
-    for (let col = 0; col < totalCols; col++) {
-      const expected = columns[col];
-
-      // Check digit
-      const userDigit = digitValues[col];
-      // Unfilled high-position zeros are OK (e.g. answer 10, user doesn't need to fill leading 0s)
-      if (userDigit === undefined && expected.digit === 0 && col > highestNonZeroCol) {
-        // Leading zero left blank — correct
-        results[cellKey('digit', col)] = 'correct';
-      } else if (userDigit === expected.digit) {
-        results[cellKey('digit', col)] = 'correct';
-      } else {
-        results[cellKey('digit', col)] = 'wrong';
-        corrects[cellKey('digit', col)] = expected.digit;
-        allCorrect = false;
-      }
-
-      // Check carry
-      const userCarry = carryValues[col];
-      if (expected.carry !== 0) {
-        if (expected.carryMandatory) {
-          if (userCarry === expected.carry) {
-            results[cellKey('carry', col)] = 'correct';
-          } else {
-            results[cellKey('carry', col)] = 'wrong';
-            corrects[cellKey('carry', col)] = expected.carry;
-            allCorrect = false;
-          }
-        } else {
-          if (userCarry === undefined) {
-            // optional, left empty - fine
-          } else if (userCarry === expected.carry) {
-            results[cellKey('carry', col)] = 'correct';
-          } else {
-            results[cellKey('carry', col)] = 'wrong';
-            corrects[cellKey('carry', col)] = expected.carry;
-            allCorrect = false;
-          }
-        }
-      } else {
-        if (userCarry !== undefined && userCarry !== 0) {
-          results[cellKey('carry', col)] = 'wrong';
-          corrects[cellKey('carry', col)] = 0;
-          allCorrect = false;
-        } else if (userCarry !== undefined) {
-          results[cellKey('carry', col)] = 'correct';
-        }
-      }
-    }
-
-    setCellResults(results);
-    setCorrections(corrects);
-    setCompleted(true);
-    setActiveCell(null);
-    onComplete(allCorrect);
-  };
-
-  // ─── Rendering ───
-  // Total digit columns (excludes operator col and dot col)
-  const totalDigitCols = gridCols - 1 - (dp > 0 ? 1 : 0);
-
-  // padDigits returns an array of length totalDigitCols (no dot slot)
   const padDigits = (digits: number[]) => {
-    const padded = new Array(totalDigitCols).fill(undefined);
+    const padded = new Array<number | undefined>(totalDigitCols).fill(undefined);
     for (let i = 0; i < digits.length; i++) {
       padded[totalDigitCols - 1 - i] = digits[digits.length - 1 - i];
     }
@@ -279,51 +129,234 @@ function LegacyVerticalCalcBoard({ data, onComplete }: Props) {
   const paddedA = padDigits(aDigits);
   const paddedB = padDigits(bDigits);
 
-  const renderCarryCell = (gridCol: number) => {
-    // Dot column: render invisible spacer
+  const answerCellsComplete = useMemo(() => {
+    for (let c = 0; c <= highestAnswerCol; c++) {
+      if (!isCellComplete({ operation: op, cellKind: 'answer', value: answerValues[c] })) {
+        return false;
+      }
+    }
+    return true;
+  }, [answerValues, highestAnswerCol, op]);
+
+  const submitState = useMemo(() => canSubmitVerticalCalc({
+    difficulty,
+    columns,
+    values,
+    operation: op,
+  }), [columns, difficulty, op, values]);
+
+  const showMissingProcessWarning =
+    answerCellsComplete &&
+    submitState.reason === 'missing-process' &&
+    !completed;
+
+  const getAnswerString = (nextAnswers = answerValues): string => {
+    const digits = [];
+    for (let c = highestAnswerCol; c >= 0; c--) {
+      digits.push(nextAnswers[c] ?? '0');
+    }
+    let raw = digits.join('').replace(/^0+(?=\d)/, '');
+    if (raw.length === 0) raw = '0';
+    if (dp <= 0) return raw;
+
+    raw = raw.padStart(dp + 1, '0');
+    const integerPart = raw.slice(0, -dp).replace(/^0+(?=\d)/, '') || '0';
+    const decimalPart = raw.slice(-dp);
+    return `${integerPart}.${decimalPart}`;
+  };
+
+  const focusAfterInput = (
+    currentCell: VerticalCalcCellId,
+    nextValues: VerticalCalcValues,
+    action?: 'input' | 'enter' | 'tab',
+  ) => {
+    const next = getNextFocus({
+      operation: op,
+      difficulty,
+      columns,
+      currentCell,
+      values: nextValues,
+      action,
+    });
+    if (next) setActiveCell(next);
+  };
+
+  const handleCellClick = (cell: VerticalCalcCellId) => {
+    if (completed) return;
+    setActiveCell(cell);
+    setSubmitWarning(false);
+    inputRef.current?.focus({ preventScroll: true });
+  };
+
+  const handleInput = (value: string) => {
+    if (completed || !activeCell) return;
+    setSubmitWarning(false);
+
+    if (value === '-') {
+      if (activeCell.kind === 'process' && op === '-') {
+        const nextProcesses = { ...processValues, [activeCell.col]: '-' };
+        setProcessValues(nextProcesses);
+      }
+      return;
+    }
+
+    if (!/^[0-9]$/.test(value)) return;
+
+    if (activeCell.kind === 'answer') {
+      const nextAnswers = { ...answerValues, [activeCell.col]: value };
+      setAnswerValues(nextAnswers);
+      focusAfterInput(activeCell, { answers: nextAnswers, processes: processValues }, 'input');
+      return;
+    }
+
+    const previous = processValues[activeCell.col] ?? '';
+    const nextValue = op === '-' && previous === '-' && value === '1'
+      ? '-1'
+      : value;
+    if (!isCellComplete({ operation: op, cellKind: 'process', value: nextValue })) {
+      return;
+    }
+
+    const nextProcesses = { ...processValues, [activeCell.col]: nextValue };
+    setProcessValues(nextProcesses);
+    focusAfterInput(activeCell, { answers: answerValues, processes: nextProcesses }, 'input');
+  };
+
+  const handleClear = () => {
+    if (completed || !activeCell) return;
+    setSubmitWarning(false);
+    if (activeCell.kind === 'process') {
+      setProcessValues(prev => {
+        const next = { ...prev };
+        delete next[activeCell.col];
+        return next;
+      });
+    } else {
+      setAnswerValues(prev => {
+        const next = { ...prev };
+        delete next[activeCell.col];
+        return next;
+      });
+    }
+  };
+
+  const handleMoveKey = (action: 'enter' | 'tab') => {
+    if (completed || !activeCell) return;
+    const next = getNextFocus({
+      operation: op,
+      difficulty,
+      columns,
+      currentCell: activeCell,
+      values,
+      action,
+    });
+    if (next) {
+      setActiveCell(next);
+      setSubmitWarning(false);
+      return;
+    }
+
+    if (answerCellsComplete) {
+      handleSubmit();
+    }
+  };
+
+  const setWrongCells = (wrongCells: VerticalCalcWrongCell[]) => {
+    const nextResults: Record<string, CellResult> = {};
+    const nextCorrections: Record<string, string> = {};
+    for (const cell of wrongCells) {
+      const key = cellKey(cell);
+      nextResults[key] = 'wrong';
+      nextCorrections[key] = String(cell.expected);
+    }
+    setCellResults(nextResults);
+    setCorrections(nextCorrections);
+  };
+
+  const payloadFromResult = (result: VerticalCalcResult): VerticalCalcCompletePayload => {
+    const answer = getAnswerString();
+    if (result.result === 'failWrongAnswer') {
+      return { result: 'failWrongAnswer', answer, failureReason: 'wrong-answer' };
+    }
+    if (result.result === 'failProcess') {
+      return { result: 'failProcess', answer, failureReason: 'vertical-process' };
+    }
+    if (result.result === 'passWithProcessWarning') {
+      return { result: 'passWithProcessWarning', answer, warningReason: 'vertical-process-warning' };
+    }
+    return { result: 'pass', answer };
+  };
+
+  function handleSubmit() {
+    if (completed) return;
+
+    const currentSubmitState = canSubmitVerticalCalc({
+      difficulty,
+      columns,
+      values,
+      operation: op,
+    });
+    if (!currentSubmitState.canSubmit) {
+      setSubmitWarning(currentSubmitState.reason === 'missing-process');
+      return;
+    }
+
+    const result = classifyVerticalCalcResult({ difficulty, columns, values });
+    const payload = payloadFromResult(result);
+
+    if (result.result === 'failWrongAnswer' || result.result === 'failProcess') {
+      setWrongCells(result.wrongCells);
+      setCompleted(true);
+      setPendingCompletion(payload);
+      setActiveCell(null);
+      return;
+    }
+
+    onComplete(payload);
+  }
+
+  const handleContinue = () => {
+    if (pendingCompletion) onComplete(pendingCompletion);
+  };
+
+  const renderProcessCell = (gridCol: number) => {
     if (gridCol === dotRenderCol) {
-      return <div key={gridCol} className="w-10 h-10 sm:w-12 sm:h-12" />;
+      return <div key={gridCol} className="h-10 w-10 sm:h-12 sm:w-12" />;
     }
 
     const logCol = renderToStepCol(gridCol);
     if (logCol < 0 || logCol >= totalCols) {
-      return <div key={gridCol} className="w-10 h-10 sm:w-12 sm:h-12" />;
+      return <div key={gridCol} className="h-10 w-10 sm:h-12 sm:w-12" />;
     }
 
-    const val = carryValues[logCol];
-    const isActive = activeCell?.type === 'carry' && activeCell.col === logCol && !completed;
-    const result = cellResults[cellKey('carry', logCol)];
-    const isMandatory = columns[logCol]?.carryMandatory;
+    const cell: VerticalCalcCellId = { kind: 'process', col: logCol };
+    const value = processValues[logCol];
+    const isActive = activeCell?.kind === 'process' && activeCell.col === logCol && !completed;
+    const result = cellResults[cellKey(cell)];
 
-    let cls = 'w-10 h-10 sm:w-12 sm:h-12 flex items-center justify-center text-sm font-bold rounded-lg transition-all cursor-pointer ';
-    if (result === 'correct') {
-      cls += 'border-2 border-success bg-success/10 text-success ';
-    } else if (result === 'wrong') {
-      cls += 'border-2 border-danger bg-danger/10 text-danger animate-shake ';
+    let cls = 'flex h-10 w-10 cursor-pointer items-center justify-center rounded-lg border-2 text-sm font-bold transition-all sm:h-12 sm:w-12 ';
+    if (result === 'wrong') {
+      cls += 'border-danger bg-danger-lt text-danger animate-shake ';
     } else if (isActive) {
-      cls += 'border-2 border-secondary bg-secondary/10 text-secondary ring-2 ring-secondary/30 ';
-    } else if (val !== undefined) {
-      cls += 'border-2 border-accent/50 bg-accent/5 text-accent ';
+      cls += 'border-secondary bg-secondary/10 text-secondary ring-2 ring-secondary/30 ';
+    } else if (value !== undefined && value !== '') {
+      cls += 'border-accent/50 bg-accent/5 text-accent ';
     } else {
-      cls += `border-2 border-dashed ${isMandatory ? 'border-border/60 hover:border-secondary/50' : 'border-border/30 hover:border-border/50'} `;
+      cls += 'border-dashed border-border/40 bg-bg text-text-3 hover:border-border ';
     }
 
-    let displayContent: string | number = '';
-    if (result === 'wrong' && corrections[cellKey('carry', logCol)] !== undefined) {
-      displayContent = corrections[cellKey('carry', logCol)];
-    } else if (val !== undefined) {
-      displayContent = val;
-    }
+    const displayContent = result === 'wrong' && corrections[cellKey(cell)] !== undefined
+      ? corrections[cellKey(cell)]
+      : value ?? '';
 
     return (
-      <div key={gridCol} className={cls} onClick={() => handleCellClick({ type: 'carry', col: logCol })}>
-        {displayContent !== '' ? displayContent : pendingMinus && isActive ? '-' : ''}
+      <div key={gridCol} className={cls} onClick={() => handleCellClick(cell)}>
+        {displayContent}
       </div>
     );
   };
 
-  const renderDigitCell = (gridCol: number) => {
-    // Dot column: render red decimal point (non-interactive)
+  const renderAnswerCell = (gridCol: number) => {
     if (gridCol === dotRenderCol) {
       return (
         <div
@@ -341,170 +374,161 @@ function LegacyVerticalCalcBoard({ data, onComplete }: Props) {
       return <div key={gridCol} className="digit-cell digit-cell-empty" />;
     }
 
-    const val = digitValues[logCol];
-    const isActive = activeCell?.type === 'digit' && activeCell.col === logCol && !completed;
-    const result = cellResults[cellKey('digit', logCol)];
+    const cell: VerticalCalcCellId = { kind: 'answer', col: logCol };
+    const value = answerValues[logCol];
+    const isActive = activeCell?.kind === 'answer' && activeCell.col === logCol && !completed;
+    const result = cellResults[cellKey(cell)];
 
     let cls = 'digit-cell cursor-pointer ';
-    if (result === 'correct') {
-      cls += 'digit-cell-correct ';
-    } else if (result === 'wrong') {
+    if (result === 'wrong') {
       cls += 'digit-cell-wrong ';
+    } else if (result === 'correct') {
+      cls += 'digit-cell-correct ';
     } else if (isActive) {
       cls += 'digit-cell-active ';
-    } else if (val !== undefined) {
+    } else if (value !== undefined && value !== '') {
       cls += 'digit-cell-filled ';
     } else {
       cls += 'digit-cell-empty hover:border-border ';
     }
 
+    const displayContent = result === 'wrong' && corrections[cellKey(cell)] !== undefined
+      ? corrections[cellKey(cell)]
+      : value ?? '';
+
     return (
-      <div key={gridCol} className={cls} onClick={() => handleCellClick({ type: 'digit', col: logCol })}>
-        {result === 'wrong' && corrections[cellKey('digit', logCol)] !== undefined
-          ? corrections[cellKey('digit', logCol)]
-          : val !== undefined ? val : ''}
+      <div key={gridCol} className={cls} onClick={() => handleCellClick(cell)}>
+        {displayContent}
       </div>
     );
   };
 
-  // Can submit: all columns up to highestNonZeroCol must be filled
-  const canSubmit = useMemo(() => {
-    for (let c = 0; c <= highestNonZeroCol; c++) {
-      if (digitValues[c] === undefined) return false;
-    }
-    return true;
-  }, [digitValues, highestNonZeroCol]);
+  const renderOperandRow = (digits: Array<number | undefined>, prefix = '') => (
+    <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
+      {Array.from({ length: gridCols }).map((_, i) => {
+        if (i === 0) {
+          return <div key={i} className="digit-cell digit-cell-empty text-secondary font-bold">{prefix}</div>;
+        }
+        if (i === dotRenderCol) {
+          return (
+            <div
+              key={i}
+              className="digit-cell flex items-end justify-center pb-1"
+              style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}
+            >
+              .
+            </div>
+          );
+        }
+        const stepCol = renderToStepCol(i);
+        const digitIdx = totalDigitCols - 1 - stepCol;
+        const d = digits[digitIdx];
+        return <div key={i} className="digit-cell digit-cell-empty">{d !== undefined ? d : ''}</div>;
+      })}
+    </div>
+  );
 
-  // 进位/退位提示：存在辅助格且用户尚未填入任何进位值时显示
-  const hasCarryCells = columns.some(col => col.carryMandatory);
-  const hasAnyCarryFilled = Object.keys(carryValues).length > 0;
-  const showCarryHint = hasCarryCells && !hasAnyCarryFilled && !completed;
+  const hasWrongCells = Object.values(cellResults).some(result => result === 'wrong');
+  const localFailureMessage =
+    pendingCompletion?.result === 'failProcess'
+      ? '未通过：进位/退位格填写错误'
+      : '答案有误，红色格子已显示正确答案';
 
   return (
-    <div className="flex flex-col items-center gap-3 mb-6">
+    <div className="mb-6 flex flex-col items-center gap-3">
       <input
         ref={inputRef}
         type="text"
         inputMode="text"
-        className="opacity-0 absolute w-0 h-0"
+        className="absolute h-0 w-0 opacity-0"
         style={{ scrollMargin: 0 }}
         value=""
-        onKeyDown={e => {
-          if (e.key === 'Backspace' || e.key === 'Delete') {
-            e.preventDefault();
+        onKeyDown={event => {
+          if (event.key === 'Backspace' || event.key === 'Delete') {
+            event.preventDefault();
+            event.stopPropagation();
             handleClear();
-          } else if (e.key === '-') {
-            e.preventDefault();
+          } else if (event.key === '-') {
+            event.preventDefault();
+            event.stopPropagation();
             handleInput('-');
-          } else if (e.key >= '0' && e.key <= '9') {
-            e.preventDefault();
-            handleInput(e.key);
+          } else if (event.key >= '0' && event.key <= '9') {
+            event.preventDefault();
+            event.stopPropagation();
+            handleInput(event.key);
+          } else if (event.key === 'Enter') {
+            event.preventDefault();
+            event.stopPropagation();
+            handleMoveKey('enter');
+          } else if (event.key === 'Tab') {
+            event.preventDefault();
+            event.stopPropagation();
+            handleMoveKey('tab');
           }
         }}
-        onChange={() => {}}
+        onChange={event => {
+          const next = event.currentTarget.value.slice(-1);
+          if (next) handleInput(next);
+        }}
         autoFocus
       />
 
-      <div className="card p-4 inline-block">
-        {showCarryHint && (
-          <div className="text-[11px] text-text-2 text-center mb-2 animate-pulse font-bold">
-            💡 上方小格用于记录退位/进位
+      <div className="card inline-block p-4">
+        {showProcessRow && (
+          <div className="mb-1 grid gap-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
+            {Array.from({ length: gridCols }).map((_, i) => renderProcessCell(i))}
           </div>
         )}
-        {/* Carry row */}
-        <div className="grid gap-1 mb-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
-          {Array.from({ length: gridCols }).map((_, i) => renderCarryCell(i))}
+
+        {renderOperandRow(paddedA)}
+
+        <div className="mt-1">
+          {renderOperandRow(paddedB, operation)}
         </div>
 
-        {/* First operand */}
+        <div className="my-2 border-b-2 border-text" />
+
         <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
-          {Array.from({ length: gridCols }).map((_, i) => {
-            if (i === 0) {
-              // Operator column — empty for first operand
-              return <div key={i} className="digit-cell digit-cell-empty" />;
-            }
-            if (i === dotRenderCol) {
-              // Decimal point column
-              return (
-                <div key={i} className="digit-cell flex items-end justify-center pb-1"
-                  style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}>
-                  .
-                </div>
-              );
-            }
-            // Digit column: map render col back to paddedA index
-            const stepCol = renderToStepCol(i);
-            const digitIdx = totalDigitCols - 1 - stepCol;
-            const d = paddedA[digitIdx];
-            return <div key={i} className="digit-cell digit-cell-empty">{d !== undefined ? d : ''}</div>;
-          })}
-        </div>
-
-        {/* Operator + second operand */}
-        <div className="grid gap-1 mt-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
-          {Array.from({ length: gridCols }).map((_, i) => {
-            if (i === 0) {
-              // Operator column
-              return <div key={i} className="digit-cell digit-cell-empty text-secondary font-bold">{operation}</div>;
-            }
-            if (i === dotRenderCol) {
-              // Decimal point column
-              return (
-                <div key={i} className="digit-cell flex items-end justify-center pb-1"
-                  style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}>
-                  .
-                </div>
-              );
-            }
-            // Digit column
-            const stepCol = renderToStepCol(i);
-            const digitIdx = totalDigitCols - 1 - stepCol;
-            const d = paddedB[digitIdx];
-            return <div key={i} className="digit-cell digit-cell-empty">{d !== undefined ? d : ''}</div>;
-          })}
-        </div>
-
-        {/* Divider */}
-        <div className="border-b-2 border-text my-2" />
-
-        {/* Result row */}
-        <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
-          {Array.from({ length: gridCols }).map((_, i) => renderDigitCell(i))}
+          {Array.from({ length: gridCols }).map((_, i) => renderAnswerCell(i))}
         </div>
       </div>
 
-      {/* Validation error message */}
-      {completed && Object.values(cellResults).some(r => r === 'wrong') && (
-        <div className="text-sm text-danger font-bold">答案有误，红色格子已显示正确答案</div>
-      )}
-
-      {/* Completed correctly */}
-      {completed && Object.values(cellResults).every(r => r === 'correct') && (
-        <div className="text-success font-bold text-lg animate-pulse-grow">
-          全部正确！
+      {(showMissingProcessWarning || submitWarning) && (
+        <div className="w-full rounded-xl border-2 border-warning bg-warning-lt px-4 py-3 text-center text-sm font-black" style={{ color: '#7A5C00' }}>
+          请把非 0 的进位/退位格填完整，再提交
         </div>
       )}
 
-      {/* Action buttons — only show before submission */}
-      {!completed && (
-        <div className="flex gap-3 mt-1">
+      {completed && hasWrongCells && (
+        <div className="w-full rounded-xl border-2 border-danger bg-danger-lt px-4 py-3 text-center text-sm font-black text-danger">
+          {localFailureMessage}
+        </div>
+      )}
+
+      {!completed ? (
+        <div className="mt-1 flex gap-3">
           <button
             onClick={handleClear}
-            className="btn-secondary text-sm py-2 px-4"
+            className="btn-secondary px-4 py-2 text-sm"
           >
             清除
           </button>
           <button
             onClick={handleSubmit}
-            className={`text-sm font-bold py-2 px-6 rounded-2xl transition-all
-              ${canSubmit
+            className={`rounded-2xl px-6 py-2 text-sm font-bold transition-all ${
+              answerCellsComplete
                 ? 'btn-primary'
-                : 'bg-card-2 text-text-2 border-2 border-border cursor-not-allowed'}`}
-            disabled={!canSubmit}
+                : 'cursor-not-allowed border-2 border-border bg-card-2 text-text-2'
+            }`}
+            disabled={!answerCellsComplete}
           >
             提交
           </button>
         </div>
+      ) : (
+        <button className="btn-flat mt-1 w-full max-w-xs" onClick={handleContinue}>
+          继续
+        </button>
       )}
     </div>
   );

@@ -4,8 +4,10 @@
 > 所属版本：v0.4
 > 父计划：v0.4-4
 > 设计规格：`ProjectManager/Specs/2026-04-17-generator-redesign-v2.md`（v2.2）、`ProjectManager/Specs/2026-04-16-generator-difficulty-tiering-spec.md`（v1.0）、`ProjectManager/Specs/2026-04-09-a03-block-b-design.md`、`ProjectManager/Specs/2026-04-14-ui-redesign-spec.md`
+> 功能 current spec：`ProjectManager/Specs/a03-vertical-calc/current.md`
+> Spec impact：`update-at-phase-close`（`BL-005.2` A03 竖式过程格策略已回写）；`none`（`BL-003` compare tip 仅补证）
 > 历史计划参考：`ProjectManager/Plan/v0.2/subplans/2026-04-22-4-4-method-tips.md`
-> 状态：🟡 开发结果最终验收中（验收结论待回写）
+> 状态：✅ 已实施并通过 QAleader 验收（2026-04-26）
 
 ---
 
@@ -16,7 +18,7 @@
 - `BL-005.2`：A03 竖式笔算进位/退位格按难度分层的显示、跳格、提交、判定、反馈、错题本规则。
 - `BL-003`：A02 compare 概念题方法提示补证。
 
-本计划是版本-phase 任务，主文档落在 `ProjectManager/Plan/v0.4/subplans/`。本轮不新增跨版本正式 Spec；若实施后发现规则需要长期复用，再提升到 `ProjectManager/Specs/`。
+本计划是版本-phase 任务，主文档落在 `ProjectManager/Plan/v0.4/subplans/`。开发期不提前改写 current spec；Phase 4 验收通过后，`BL-005.2` 已按 Living Spec 制度回写到 `ProjectManager/Specs/a03-vertical-calc/current.md`。`BL-003` compare tip 本轮只补证既有行为，不改变 current spec。
 
 ### 前置相关规格
 
@@ -30,6 +32,14 @@
 | `ProjectManager/Plan/v0.2/subplans/2026-04-22-4-4-method-tips.md` | `compare` tip 触发条件为 `topicId=number-sense`、`subtype=compare`、`d<=8`、题型为 multi-select 或题干含“判断正误”；文案为“遇到‘一定’，先找反例”。 |
 | `QA/runs/2026-04-22-4-tips-ui-qa/qa-result.md` | T04 曾在 `S3-LB-L2 d=8` 通过 compare tip 浏览器验收；但 `Backlog.md` 引用的 2026-04-23 收口补证路径当前工作区不存在，本 Phase 必须重新补证。 |
 | `ProjectManager/Backlog.md` | `BL-005.2` 与 `BL-003` 均已纳入 v0.4 Phase 4；`BL-005.2` 的旧描述“简单难度答对即通过”已被本轮用户决策覆盖，以本文为准。 |
+
+### Current spec 影响评估
+
+| 项 | 结论 |
+|---|---|
+| 是否改变长期功能行为 / 数据契约 / QA 口径 | 是。`BL-005.2` 改变 A03 `vertical-fill` 过程格显示、跳格、提交拦截、结果分类、错题原因与 QA 口径；`BL-003` 只补证 compare tip 可达性，不改变长期行为。 |
+| 预计回写位置 | `ProjectManager/Specs/a03-vertical-calc/current.md` |
+| 已在 phase 验收后回写的要点 | 低档 / 中档 / 高档过程格策略；`VerticalCalcCompletePayload`；`failureReason='vertical-process'` 与 `processWarning='vertical-process-warning'`；可选持久化字段不 bump `CURRENT_VERSION`；相关代码与 QA 证据。 |
 
 ### 跨系统维度清单
 
@@ -56,7 +66,7 @@
 
 - 不重做 `MultiplicationVerticalBoard` 的多行部分积交互。
 - 不改 A03 生成器分布、题目数量、关卡结构。
-- 不新增跨版本正式 Spec。
+- 开发期不提前新增目标态 Spec；验收收口后只回写已确认的 A03 current spec。
 - 不把中档过程格错误写入错题本、历史原因、统计或段位复习权重。
 - 不在答题过程中给任何答案格或过程格即时正确/错误提示。
 
@@ -90,7 +100,8 @@
 
 | 场景 | 规则 |
 |---|---|
-| 低档默认跳格 | 按计算步骤纳入过程格。例：`999+888` 填完个位答案后，自动聚焦十位进位格；填完十位进位格后，自动聚焦十位答案格。 |
+| 低档默认跳格 | 按计算步骤纳入过程格。例：`999+888` 填完个位答案后，自动聚焦十位进位格；填完十位进位格后，再聚焦十位答案格。 |
+| 低档主动填写过程格 | 用户主动选中过程格并填完整后，自动聚焦同列答案格；若同列答案格已完成，则继续找下一个未完成答案格。 |
 | 低档 0 过程格 | 不自动跳过。用户可填 `0`，也可手动跳到下一个格子。 |
 | 低档手动跳过方式 | 移动端触摸下一个格子；桌面端鼠标点击、`Enter`、`Tab`。`Enter` / `Tab` 只允许跳过当前期望值为 0 的过程格，或移动已填完整的当前格。 |
 | 中档默认跳格 | 填完答案格后，默认找下一个答案格，不自动进入过程格。 |
@@ -130,7 +141,7 @@
 | `operation` | 四种运算符之一：加、减、乘、除 | 本期只对 `+` / `-` / 单行 `×` 的过程格判定生效；`÷` 无过程格策略变更。 |
 | `difficulty` | `number` | 映射为 `low` / `mid` / `high`。 |
 | `columns` | 每列包含 `answerExpected`、`processExpected`、`hasProcessSlot` | `processExpected=0` 必须保留，不能因为是 0 而丢失。 |
-| `stepOrder` | `VerticalCalcStep[]` 派生的有序 work item | 非 0 过程格顺序以 generator steps 为准；低档 0 过程格按同列过程格位置插入。 |
+| `stepOrder` | `VerticalCalcStep[]` 派生的有序 work item | 标准列由 generator steps 派生；缺失的 0 过程格由策略层按列补齐。低档默认焦点顺序为“当前答案格 → 下一列过程格 → 下一列答案格”，中档/高档默认焦点顺序只包含答案格；主动选中过程格时再按同列答案格回流。 |
 | `values` | `{ answers: Record<number,string>; processes: Record<number,string> }` | 空字符串 / `undefined` 表示未填；不得把空值提前归一成 0。 |
 | `activeCell` | `CellId` 或 `null` | `CellId` 取 `{ kind:'answer' }` 或 `{ kind:'process' }` 并带列号。 |
 | `action` | `inputDigit` / `inputMinus` / `clear` / `clickCell` / `enter` / `tab` / `submit` | 策略层必须能判断动作是否触发跳格或提交拦截。 |
@@ -166,19 +177,19 @@
 
 | Task | 内容 | 状态 | 证据 |
 |---|---|---|---|
-| T1 | 策略层单测先行：覆盖显示、必填、填写完整、跳格、提交拦截、结果分类 | ⬜ | `src/engine/vertical-calc-policy.test.ts` |
-| T2 | 实现 `vertical-calc-policy` 纯函数层 | ⬜ | `src/engine/vertical-calc-policy.ts` |
-| T3 | `VerticalCalcBoard` 接入策略层，移除组件内散落的低/中/高过程格判定 | ⬜ | `src/components/VerticalCalcBoard.tsx` |
-| T4 | Practice / store 接入竖式提交 payload，支持 `failProcess` 与 `passWithProcessWarning` | ⬜ | `src/pages/Practice.tsx`、`src/store/index.ts`、相关 store 测试 |
-| T5 | 错题本展示低档过程失败原因；补可选持久化字段与同步合并测试 | ⬜ | `src/types/index.ts`、`src/pages/WrongBook.tsx`、`src/sync/merge.test.ts` |
-| T6 | compare tip 补证：复核触发测试并补浏览器/脚本证据 | ⬜ | `src/utils/method-tips.test.ts`、`QA/runs/<date>-v04-phase4-compare-tip/` |
-| T7 | QAleader 三层验收：单测、build、桌面/移动端拟真走查 | ⬜ | QA summary 回写本计划与 Phase 4 |
+| T1 | 策略层单测先行：覆盖显示、必填、填写完整、跳格、提交拦截、结果分类 | ✅ | `src/engine/vertical-calc-policy.test.ts` |
+| T2 | 实现 `vertical-calc-policy` 纯函数层 | ✅ | `src/engine/vertical-calc-policy.ts` |
+| T3 | `VerticalCalcBoard` 接入策略层，移除组件内散落的低/中/高过程格判定 | ✅ | `src/components/VerticalCalcBoard.tsx` |
+| T4 | Practice / store 接入竖式提交 payload，支持 `failProcess` 与 `passWithProcessWarning` | ✅ | `src/pages/Practice.tsx`、`src/store/index.ts`、`src/store/index.test.ts` |
+| T5 | 错题本展示低档过程失败原因；补可选持久化字段与同步合并测试 | ✅ | `src/types/index.ts`、`src/pages/WrongBook.tsx`、`src/sync/merge.test.ts` |
+| T6 | compare tip 补证：复核触发测试并补浏览器/脚本证据 | ✅ | `src/utils/method-tips.test.ts`、`QA/runs/2026-04-26-v04-phase4-carry-policy/phase4-result.md` |
+| T7 | QAleader 三层验收：单测、build、桌面/移动端拟真走查 | ✅ | `QA/runs/2026-04-26-v04-phase4-carry-policy/phase4-result.md` |
 
 ### T1 测试要求
 
 必须先写失败测试，至少覆盖：
 
-- 低档 `999+888`：填完个位答案后，下一焦点是十位进位格；十位进位格填 `1` 后，下一焦点是十位答案格。
+- 低档 `999+888`：填完个位答案后，下一焦点是十位进位格；主动选中 / 自动到达十位进位格并填 `1` 后，下一焦点是十位答案格。
 - 低档无进位列：期望值为 0 的过程格可见，默认不会被自动跳过；按 `Enter` / `Tab` 可跳到下一格。
 - 低档非 0 过程格未填：答案格全填也 `canSubmit=false`，`submitBlockReason='missing-process'`。
 - 低档答案正确但过程格错：`submitResult='failProcess'`，`feedbackReason='vertical-process'`。
@@ -246,16 +257,19 @@ interface WrongQuestion {
 
 ### 自动化验收
 
-- [ ] `npm test -- src/engine/vertical-calc-policy.test.ts`
-- [ ] `npm test -- src/store/index.test.ts src/sync/merge.test.ts src/utils/method-tips.test.ts`
-- [ ] `npm test -- --run`
-- [ ] `npm run build`
+- [x] `npm test -- src/engine/vertical-calc-policy.test.ts`
+- [x] `npm test -- src/store/index.test.ts src/sync/merge.test.ts src/utils/method-tips.test.ts`
+- [x] `npm test -- --run`
+- [x] `npm run build`
+- [x] `npx playwright test QA/e2e/phase4-carry-focus.spec.ts`：固定 `999+888` 复测低档 / 中档焦点差异。
+- [x] `npx eslint src/engine/vertical-calc-policy.ts src/engine/vertical-calc-policy.test.ts QA/e2e/phase4-carry-focus.spec.ts`
+- [ ] `npm run lint`：当前失败于既有全局 lint 债（146 errors / 1 warning）；本轮改动文件 scoped lint 通过。
 
 ### 手工 / 拟真验收
 
 | 场景 | 必须验证 |
 |---|---|
-| 低档加法 `999+888` | 过程格显示；填完个位答案后跳十位进位格；非 0 进位格未填不能提交；填错后未通过、扣心、进错题本。 |
+| 低档加法 `999+888` | 过程格显示；填完个位答案后跳十位进位格；填完进位格后跳十位答案格；非 0 进位格未填不能提交；填错后未通过、扣心、进错题本。 |
 | 低档无进位加法 | 0 过程格显示；留空可提交；可通过 `Enter` / `Tab` 或点击跳过。 |
 | 低档减法退位 | `-` 不跳格；`-1` 才跳格；非 0 退位格未填不能提交。 |
 | 低档乘法进位 | 过程格允许 `0-8`；非 0 进位格错时 `failProcess`。 |

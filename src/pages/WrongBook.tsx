@@ -86,6 +86,11 @@ export default function WrongBook() {
                           <span className="text-danger">你的答案：{wq.wrongAnswer}</span>
                           <span className="text-success">正确：{String(wq.question.solution.answer)}</span>
                         </div>
+                        {wq.failureReason === 'vertical-process' && (
+                          <div className="mt-2 rounded-xl border border-warning/40 bg-warning-lt px-3 py-2 text-xs font-black" style={{ color: '#7A5C00' }}>
+                            未通过原因：进位/退位格填写错误
+                          </div>
+                        )}
                         {wq.question.solution.explanation && (
                           <div className="text-xs text-text-2 mt-1.5 leading-relaxed">
                             {wq.question.solution.explanation}

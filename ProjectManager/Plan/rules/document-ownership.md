@@ -2,7 +2,7 @@
 
 > 所属版本：跨版本工具性
 > 读取场景：新建 Spec / Plan / Report / QA 产物，或判断文档该放哪里时
-> 高频摘要：Specs 按功能聚合；Plan 按版本聚合；Reports 放复盘；QA 放正式测试产物；低频长规则用链接披露。
+> 高频摘要：Specs 按功能聚合并用 `current.md` 承载功能当前权威状态；Plan 按版本聚合；Reports 放复盘；QA 放正式测试产物；低频长规则用链接披露。
 
 ---
 
@@ -13,10 +13,22 @@
 规则：
 
 1. 一个功能一个子目录，命名用 kebab-case 语义名，如 `dev-tool-panel`、`history-records`、`tips-library`。
-2. 子目录内文件仍用 `YYYY-MM-DD-<中文可读主题>.md`；专用术语、TopicId、代号可保留原文。
-3. 调研报告、规格草稿、方案稿、决策复盘等同一功能下材料都进该功能目录。
+2. `current.md` 是该功能的**当前权威状态**，只写已经验收确认并准备合并 / 已合并的长期生效行为。
+3. 子目录内其他文件仍用 `YYYY-MM-DD-<中文可读主题>.md`；它们记录调研、方案、决策复盘和版本变更过程，不单独代表当前权威状态。
 4. 跨功能共用规格仍放 `Specs/` 根目录。
-5. `Specs/_index.md` 使用相对 `Specs/` 的路径；老扁平文档和新子目录文档可以共存。
+5. `Specs/_index.md` 使用相对 `Specs/` 的路径；老扁平文档、新子目录文档和 `current.md` 可以共存。
+
+## Current Spec 回写门槛
+
+`current.md` 代表“现在产品 / 工程实际上承诺什么”，不代表“正在尝试什么”。因此：
+
+1. **开发期不回写**：功能还在开发、联调或验收中时，不提前修改 `current.md`。
+2. **验收确认后回写**：只有相关功能已经通过 phase 验收、准备合并 / phase 收口时，才把已确认变化写入 `current.md`。
+3. **开发文档先留痕**：开发期在 subplan 头部写 `Spec impact`，标明本变更是否预计影响 `current.md`，并列出待回写要点。
+4. **无长期行为变化可跳过**：纯诊断、一次性脚本、仅修测试或不改变功能承诺的内部实现调整，可标 `Spec impact: none` 并说明原因。
+5. **延期必须显式说明**：若验收已过但暂不回写 `current.md`，必须在 phase / subplan 写 `deferred` 原因和下一次处理点。
+
+Durable change 判定：只要改变用户可见行为、数据 / 存档 / 同步契约、长期 QA 口径、公开配置入口、跨版本复用规则或模块边界，就视为需要 current spec 影响评估。
 
 ## 子计划 Plan 归属
 
@@ -28,8 +40,9 @@
 
 1. `subplans/` 下扁平放，不为每个功能再开目录。
 2. 文件名在日期后优先使用中文可读主题；专用术语、TopicId、Phase / BL / ISSUE 编号等代号可保留原文。
-3. Plan 头部 `设计规格：` 字段指向对应 Specs 文件。
-4. 同功能多份 Plan 用文件名后缀区分，如 `-p0` / `-p1`。
+3. Plan 头部 `设计规格：` 字段指向本次实施依赖的 Specs 文件；`功能 current spec：` 指向功能当前权威页。
+4. Plan 头部 `Spec impact：` 必须显式写 `update-at-phase-close` / `none` / `deferred`，不要让长期规格影响隐含在正文里。
+5. 同功能多份 Plan 用文件名后缀区分，如 `-p0` / `-p1`。
 
 ## 为什么 Specs 和 Plan 不镜像
 
@@ -38,7 +51,9 @@
 | 生命周期 | 跨版本长寿 | 绑定版本短寿 |
 | 同功能材料数 | 多份 | 通常一份 |
 | 组织维度 | 功能为主 | 版本为主 |
-| 目录结构 | `Specs/<feature-slug>/` | `Plan/vX.Y/subplans/` |
+| 目录结构 | `Specs/<feature-slug>/current.md` + dated docs | `Plan/vX.Y/subplans/` |
+| 当前权威 | `current.md` | 不承载长期当前状态 |
+| 回写时机 | phase 验收确认并准备合并 / 收口时 | 开发期记录待回写影响 |
 
 二者通过 Plan 头部 `设计规格：` 字段、索引和文档标题互相指向，不靠目录镜像；Plan 文件名不要求与 Specs 功能目录英文 slug 完全一致。
 

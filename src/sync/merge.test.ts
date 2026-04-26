@@ -282,6 +282,15 @@ describe('mergeWrongQuestions', () => {
     expect(result[0].wrongAt).toBe(159);
     expect(result.at(-1)?.wrongAt).toBe(20);
   });
+
+  it('保留低档竖式过程格失败原因', () => {
+    const wrong = {
+      ...makeWrongQuestion('vertical-process', 100),
+      failureReason: 'vertical-process' as const,
+    };
+
+    expect(mergeWrongQuestions([wrong], [])).toEqual([wrong]);
+  });
 });
 
 describe('mergeGameProgress', () => {

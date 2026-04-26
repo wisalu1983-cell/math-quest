@@ -123,6 +123,15 @@ export interface TrainingFieldMistake {
   expectedValue: string;
 }
 
+export type PracticeFailureReason = 'wrong-answer' | 'vertical-process';
+export type PracticeProcessWarning = 'vertical-process-warning';
+
+export type VerticalCalcCompletePayload =
+  | { result: 'pass'; answer: string }
+  | { result: 'failWrongAnswer'; answer: string; failureReason: 'wrong-answer' }
+  | { result: 'failProcess'; answer: string; failureReason: 'vertical-process' }
+  | { result: 'passWithProcessWarning'; answer: string; warningReason: 'vertical-process-warning' };
+
 export interface MultiStepData {
   kind: 'multi-step';
   expression: string;
@@ -239,6 +248,7 @@ export interface QuestionAttempt {
   question: Question;
   userAnswer: string;
   correct: boolean;
+  failureReason?: PracticeFailureReason;
   timeMs: number;
   hintsUsed: number;
   attemptedAt: number;
@@ -251,6 +261,7 @@ export interface HistoryQuestionRecord {
   userAnswer: string;
   correctAnswer: string;
   correct: boolean;
+  failureReason?: PracticeFailureReason;
   timeMs: number;
 }
 
@@ -314,6 +325,7 @@ export interface WrongQuestion {
   question: Question;
   wrongAnswer: string;
   wrongAt: number;
+  failureReason?: PracticeFailureReason;
   reviewedAt?: number;
   reviewCorrect?: boolean;
 }

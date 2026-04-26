@@ -16,6 +16,7 @@
 | Phase / 子计划 ID 怎么命名 | [`rules/phase-and-subplan-naming.md`](./rules/phase-and-subplan-naming.md) |
 | Spec / Plan / Report / QA 分别放哪里 | [`rules/document-ownership.md`](./rules/document-ownership.md) |
 | 新建普通 Plan 模板 | [`templates/plan-template.md`](./templates/plan-template.md) |
+| 新建 / 回写功能 current spec 模板 | [`templates/current-spec-template.md`](./templates/current-spec-template.md) |
 | 开新版本 / 版本过程 / 版本收口 | [`version-lifecycle.md`](./version-lifecycle.md) |
 | 新版本管理包模板 | [`templates/version-package-template.md`](./templates/version-package-template.md) |
 
@@ -34,13 +35,13 @@
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.4/README.md`](./v0.4/README.md) | 版本入口 | ✅ Phase 1 / Phase 2 / Phase 3 已完成；Phase 4 最终验收中；Phase 5 工程方案已定 |
+| [`v0.4/README.md`](./v0.4/README.md) | 版本入口 | ✅ Phase 1 / Phase 2 / Phase 3 / Phase 4 已完成；Phase 5 工程方案已定 |
 | [`v0.4/00-overview.md`](./v0.4/00-overview.md) | 背景、目标、阶段结构 | 🟡 已按 Phase 2 重排更新 |
 | [`v0.4/01-research-catalog.md`](./v0.4/01-research-catalog.md) | 预研 / Backlog / Issue / Spec 证据链 | 📋 已建立 |
 | [`v0.4/02-classification.md`](./v0.4/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
 | [`v0.4/03-phase-plan.md`](./v0.4/03-phase-plan.md) | Phase 1~5 总图与决策门 | ✅ Phase 2 已完成回写 |
 | [`v0.4/04-execution-discipline.md`](./v0.4/04-execution-discipline.md) | 本版本执行纪律、验收规则 | 📋 已建立 |
-| [`v0.4/phases/`](./v0.4/phases/) | Phase 1~5 范围 / 进入条件 / 收尾条件 | 🟡 Phase 4 最终验收中；Phase 5 工程方案已定 |
+| [`v0.4/phases/`](./v0.4/phases/) | Phase 1~5 范围 / 进入条件 / 收尾条件 | ✅ Phase 4 已收口；Phase 5 工程方案已定 |
 
 ## 跨版本工具性 Plan
 

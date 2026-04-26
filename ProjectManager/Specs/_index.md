@@ -1,6 +1,6 @@
 # Specs 规格矩阵（_index）
 
-> 版本：v1.10 | 创建：2026-04-17 | 上次修订：2026-04-24（维度 E 更新 v0.3 Supabase 账号同步规格状态与 Phase 3 开发文档入口）
+> 版本：v1.12 | 创建：2026-04-17 | 上次修订：2026-04-26（新增 Dev Tool Panel current spec 试点入口；新增 A03 竖式过程格 current spec）
 > 用途：**新计划启动前的必查清单**——按讨论维度定位已有规格，避免漏检历史约束。
 > 读取提示：启动新 Plan 时先读“使用方法”和相关维度；不要默认通读全部规格摘要。维护规则只在新增 / 修改 Spec 时读取。
 
@@ -32,6 +32,7 @@
 | `2026-04-14-difficulty-standard.md` | **生效** | `difficulty=5` 的锚点定义：上海五年级小学毕业生正常考试应做对 |
 | `2026-04-08-generator-improvements.md` | **生效（部分落地）** | 基于 280 道真题校准的生成器盲区清单 |
 | `2026-04-08-reference-bank-extraction-design.md` | 生效 | 真题库提取方法和覆盖策略 |
+| `a03-vertical-calc/current.md` | **生效（current spec；v0.4 Phase 4 已回写）** | A03 `vertical-fill` 当前权威行为：低档非 0 过程格必填且过程错不通过；中档答案对即通过且只给当前题过程提示；高档不显示过程格；过程失败原因字段可选、不 bump 存档版本 |
 | `2026-04-09-a03-block-b-design.md` | **生效（已落地）** | A03 VerticalCalcBoard 组件设计 |
 | `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 2026-04-18 二次重排后 A03+ 不进入代码实施；设计规格文件保留以备未来重启时参考；本阶段任何改动都**不得**再引用其作为生效规格 |
 | `2026-04-22-审题原则总则.md` | **生效** | A3 审题原则总则：审题步骤定义（A/B/B'/C/D）、双机制设计原则、适用题型矩阵；作为 4-2/4-3/4-4 设计依据 |
@@ -63,8 +64,9 @@
 |------|------|---------|
 | `2026-04-14-ui-redesign-spec.md` | **生效**（阳光版 v5 已批准） | 全产品视觉语言 + 组件规范；字号下限 11px；关卡卡片固定 96px |
 | `2026-04-18-rank-match-phase3-implementation-spec.md` | **生效（实施级；2026-04-18 落盘）** | Phase 3 段位赛 UI 信息架构：新增 `/rank-match` / `/rank-match/session` / `/rank-match/game-result` / `/rank-match/match-result` 四个页面；Home 段位赛入口需独立卡片化（替代现有"进阶训练"里的占位文案）；段位徽标色需作为 token 进入 `globals.css`，不允许在组件里写死 |
+| `a03-vertical-calc/current.md` | **生效（current spec；v0.4 Phase 4 已回写）** | A03 竖式板过程格显示 / 跳格 / 本地复盘 / 统一结果 UI 的当前行为入口 |
 | `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 过程格错误提示 UI 方案本阶段不落地；文件保留以备未来重启时参考 |
-| `dev-tool-panel/2026-04-20-research-findings.md` | **进行中**（仅调研；规格未定） | `v0.2-1-1` 开发者工具栏的第 2 步调研事实清单；第 3 步方案设计尚未落盘 |
+| `dev-tool-panel/current.md` | **生效（已实施；current spec 试点）** | Dev Tool Panel 当前 UI 入口为 DEV / 显式 dev 构建下的右下 FAB + 右侧抽屉；纯净生产版不得显示入口或包含 dev-tool chunk |
 
 **本维度的跨系统硬约束**：
 - 任何新增 UI 组件 / 页面必须遵守阳光版 v5 的色彩、字号、间距约定
@@ -74,6 +76,7 @@
 
 | Spec | 状态 | 关键断言 |
 |------|------|---------|
+| `dev-tool-panel/current.md` | **生效（已实施；current spec 试点）** | F3 是开发 / 测试状态注入工具；`mq_` / `mq_dev_` namespace 隔离；注入项经 `_registry.ts` 声明式注册；纯净版 `npm run build` 不含 F3，`build:with-dev-tool` 产出 `/math-quest/dev/` |
 | `2026-04-21-pm-sync-check-子目录适配修复.md` | **待实施** | pm-sync-check 脚本 4 处修复：Specs 子目录扫描覆盖（Check 1a/2）、Plan→Spec 引用解析（Check 4）、Backlog↔ISSUE_LIST ID 互斥（新 Check 6） |
 
 ### 维度 E：在线服务 / 账号 / 同步
@@ -102,7 +105,7 @@
 | 修改关卡结构 / campaign.ts | A 的档位主规格 + **B 全部** + C 的关卡卡片视觉 |
 | 修改星级/进阶/段位逻辑 | **B 全部** |
 | 新增答题形式 / Practice 页面改造 | A 的题型规格 + C 全部 |
-| 调整现有题型的过程格/反馈判定 | A 的 `2026-04-18-a03-block-b-plus-design.md` + B 的进阶/通过语义约束 + C 的反馈面板表现规范 |
+| 调整现有题型的过程格/反馈判定 | A 的 `a03-vertical-calc/current.md` + B 的进阶/通过语义约束 + C 的反馈面板表现规范 |
 | 真题库扩充 | A 的 `generator-improvements` + `reference-bank-extraction-design` |
 | 跨题型难度系统改动 | A + B 全部（高风险区） |
 | QA 流程 / 报告 / Issue 分流改动 | 执行约束见 `qa-methodology` skill（`E:/Projects/QALeader`） |
@@ -122,7 +125,7 @@
 配合 [`Plan/rules/document-ownership.md`](../Plan/rules/document-ownership.md) 的功能设计文档归属规则，本索引的条目路径书写约定如下：
 
 - **老条目（2026-04-20 之前扁平放在 `Specs/` 根）**：继续写纯文件名（= 相对 `Specs/` 的相对路径），**不做回溯迁移**。例：`2026-04-17-generator-redesign-v2.md`
-- **新条目（2026-04-20 之后按功能子目录归档）**：写 `<feature-slug>/<YYYY-MM-DD-xxx>.md`（同样是相对 `Specs/` 的相对路径）。例：`dev-tool-panel/2026-04-20-research-findings.md`
+- **新条目（2026-04-20 之后按功能子目录归档）**：写 `<feature-slug>/<YYYY-MM-DD-xxx>.md` 或 `<feature-slug>/current.md`（同样是相对 `Specs/` 的相对路径）。例：`dev-tool-panel/current.md`
 - **跨功能共用规格**（如全局难度标准、全产品视觉语言）：仍保留在 `Specs/` 根，沿用扁平写法
 
 本文件的三条维护规则对两种路径同时生效，不区分新老。

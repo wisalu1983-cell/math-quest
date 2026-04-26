@@ -24,6 +24,7 @@ description: Use when math-quest 项目中需要撰写新功能、优化、bugfi
 - 若任务已明确属于某个 `vX.Y / phase-N`，优先走“版本-phase 阅读路径”
 - 若任务尚未挂靠版本 / phase，再退回全局入口：`ProjectManager/Overview.md` → `ProjectManager/Plan/README.md` → `ProjectManager/Specs/_index.md`
 - A / B / C 只是**写作结构标签**，不是独立资产类型；若任务属于某个版本的某个 phase，默认主文档仍是对应 `subplan`
+- 若任务改变长期功能行为、数据契约、QA 口径或跨版本约束，必须做 `current spec` 影响评估；开发期只标待回写，phase 验收确认并准备合并 / 收口时才回写 `Specs/<feature-slug>/current.md`
 
 ## 版本-phase 阅读路径
 
@@ -51,6 +52,8 @@ description: Use when math-quest 项目中需要撰写新功能、优化、bugfi
 - 只有以下情况才拆去别处：
   - 长期生效、跨版本复用的设计约束 → `Specs/`
   - 纯诊断、纯调研、纯复盘 → `Reports/`
+- 如果该功能已有 `ProjectManager/Specs/<feature-slug>/current.md`，subplan 头部必须写 `功能 current spec：...`
+- 如果该功能暂无 `current.md`，但本次是已验收功能的 phase 收口 / 合并前回写，可以创建 `current.md`；如果仍在开发或验收中，只在 subplan 写 `Spec impact`，不要提前创建或改写 current spec
 - 文档落点、命名、功能子目录、`subplans` 位置，一律沿用 `ProjectManager/Plan/README.md`
 - 本 skill 不复写 `math-quest` 现有管理规则，只负责补开发文档的写作流程与模板
 - QA 方案、测试执行、回归报告统一交给 `qa-leader`
@@ -75,9 +78,10 @@ description: Use when math-quest 项目中需要撰写新功能、优化、bugfi
 
 版本-phase task 的主文档若落在 `subplans/`，至少要满足 `Plan 文件模板` 的以下部分：
 
-- 头部：`创建 / 所属版本 / 父计划 / 设计规格 / 状态`
+- 头部：`创建 / 所属版本 / 父计划 / 设计规格 / 功能 current spec / Spec impact / 状态`
 - `前置相关规格（开工前必读）`
 - `跨系统维度清单`
+- `Current spec 影响评估`
 - `工作脉络`
 
 如果该 task 同时承担开发文档作用，再在正文中套用下方 A / B / C 的写作结构。
@@ -94,6 +98,24 @@ description: Use when math-quest 项目中需要撰写新功能、优化、bugfi
 - 测试与 QA 映射：每个架构决策至少要对应单测、集成测试、构建检查或拟真人工 QA 中的一类验收。
 
 这道门用于区分“需求设计已经澄清”和“开发文档已经可执行”。如果缺少其中任一维度，文档只能标“待架构补丁”，不能标“正式完整”。
+
+### Living Spec 决策门
+
+写 subplan 或开发文档时，必须显式回答：
+
+1. 是否改变长期功能行为 / 数据契约 / QA 口径 / 跨版本约束？
+2. 对应功能 current spec 是哪个 `Specs/<feature-slug>/current.md`？
+3. 如果预计影响 current spec，本 phase 验收通过后要回写哪些要点？
+
+`Spec impact` 取值：
+
+| 值 | 使用场景 |
+|---|---|
+| `update-at-phase-close` | 本变更若验收通过，将改变长期功能当前状态；开发期只列待回写要点 |
+| `none` | 纯诊断、一次性脚本、测试补强或内部实现调整，不改变长期功能承诺 |
+| `deferred` | 已知需要回写但本 phase 不处理，必须写清原因和下一处理点 |
+
+硬规则：功能还在开发、联调或验收中时，不回写 `current.md`。只有 phase 验收确认并准备合并 / 收口时，才把已确认变化写入 `current.md`，并同步考虑 `Specs/_index.md`。
 
 ## 第四步：选择文档类型
 
@@ -155,13 +177,26 @@ description: Use when math-quest 项目中需要撰写新功能、优化、bugfi
 - 信息不足时先标缺口，不编造设计结论
 - 若文档会影响当前主线、当前状态、下一步，再按现有规则回写 `Overview.md`
 - 若新建了 `Specs/` 文档，需同步考虑 `ProjectManager/Specs/_index.md`
+- 若新建或回写 `Specs/<feature-slug>/current.md`，必须在正文列出来源：对应 version subplan、验收 / QA 证据、关键代码入口；不能把未验收方案写成当前事实
 - 若版本包状态、全局状态或现有规则彼此冲突，必须先提醒用户决策
 
 ## 第六步：与现有项目机制对齐
 
 - 版本-phase task 默认让 `subplan` 同时承担“实施计划 + 开发文档”职责，不默认拆成两份
+- `current.md` 不替代 subplan；它只在 phase 验收确认后吸收已发布 / 待合并的当前状态
 - 需要测试方案或回归执行时，转给 `qa-leader`
 - 需要状态同步时，遵守 `CLAUDE.md` 和 `pm-sync-check.mdc`
+
+## 第七步：Phase 收口 / 合并前回写 current spec
+
+当本次任务是 phase 收口、版本收口或合并前整理，并且 subplan 标了 `Spec impact=update-at-phase-close`：
+
+1. 先确认验收状态：phase 文档、subplan 状态、QA 证据或用户确认必须已完成。
+2. 读取对应功能已有 `current.md`；没有则按 `ProjectManager/Plan/rules/document-ownership.md` 创建。
+3. 只写“当前已确认状态”，不要搬运开发过程、备选方案或失败尝试。
+4. 在 `current.md` 的来源段链接 version subplan、dated design docs、QA / 验收记录和关键代码入口。
+5. 更新 `ProjectManager/Specs/_index.md` 中该功能的当前入口和关键断言。
+6. 若发现 subplan 里仍有未验收项，把它留在 subplan / Backlog，不写入 current spec。
 
 ## 快速判断
 

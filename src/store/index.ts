@@ -9,6 +9,8 @@ import type {
   WrongQuestion,
   TrainingField,
   TrainingFieldMistake,
+  PracticeFailureReason,
+  PracticeProcessWarning,
   HistoryRecord,
   HistoryResult,
 } from '@/types';
@@ -39,11 +41,14 @@ import { startNextGame as rankStartNextGame } from '@/engine/rank-match/match-st
 
 interface SubmitAnswerOptions {
   trainingValues?: string[];
+  failureReason?: PracticeFailureReason;
+  processWarning?: PracticeProcessWarning;
 }
 
 interface SubmitAnswerResult {
   correct: boolean;
   trainingFieldMistakes: TrainingFieldMistake[];
+  processWarning: PracticeProcessWarning | null;
 }
 
 function getTrainingFields(question: Question): TrainingField[] {
@@ -90,6 +95,7 @@ function rebuildPendingWrongQuestions(session: PracticeSession): WrongQuestion[]
       question: attempt.question,
       wrongAnswer: attempt.userAnswer,
       wrongAt: attempt.attemptedAt,
+      ...(attempt.failureReason ? { failureReason: attempt.failureReason } : {}),
     }));
 }
 
@@ -116,6 +122,7 @@ function buildHistoryRecord(session: PracticeSession): HistoryRecord {
       userAnswer: attempt.userAnswer,
       correctAnswer: String(attempt.question.solution.answer),
       correct: attempt.correct,
+      failureReason: attempt.failureReason,
       timeMs: attempt.timeMs,
     })),
   };
@@ -151,6 +158,8 @@ interface SessionStore {
   showFeedback: boolean;
   lastAnswerCorrect: boolean;
   lastTrainingFieldMistakes: TrainingFieldMistake[];
+  lastProcessWarning: PracticeProcessWarning | null;
+  lastFailureReason: PracticeFailureReason | null;
   pendingWrongQuestions: WrongQuestion[];
   /** 段位赛预生成题序（由 startRankMatchGame 填充，nextQuestion 按 currentIndex 取） */
   rankQuestionQueue: Question[];
@@ -202,6 +211,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   showFeedback: false,
   lastAnswerCorrect: false,
   lastTrainingFieldMistakes: [],
+  lastProcessWarning: null,
+  lastFailureReason: null,
   pendingWrongQuestions: [],
   rankQuestionQueue: [],
   sessionDuplicateSignatures: new Set<string>(),
@@ -235,6 +246,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       hearts: CAMPAIGN_MAX_HEARTS,
       showFeedback: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
       pendingWrongQuestions: [],
       sessionDuplicateSignatures: new Set<string>(),
     });
@@ -317,6 +330,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       hearts: CAMPAIGN_MAX_HEARTS,
       showFeedback: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: questions,
       sessionDuplicateSignatures: new Set<string>(),
@@ -415,6 +430,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastAnswerCorrect: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
       pendingWrongQuestions: restoredPendingWrongQuestions,
       rankQuestionQueue: stored.rankQuestionQueue,
       sessionDuplicateSignatures: new Set<string>(),
@@ -453,6 +470,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       hearts: CAMPAIGN_MAX_HEARTS,
       showFeedback: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
       pendingWrongQuestions: [],
       sessionDuplicateSignatures: new Set<string>(),
     });
@@ -503,13 +522,15 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       questionStartTime: Date.now(),
       showFeedback: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
     });
   },
 
   submitAnswer: (answer, options) => {
     const { currentQuestion, questionStartTime, session, currentIndex, hearts } = get();
     if (!currentQuestion || !session) {
-      return { correct: false, trainingFieldMistakes: [] };
+      return { correct: false, trainingFieldMistakes: [], processWarning: null };
     }
 
     const timeMs = Date.now() - questionStartTime;
@@ -566,15 +587,23 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       correct = isNumericEqual(answer, correctAnswer);
     }
 
+    if (options?.failureReason) {
+      correct = false;
+    } else if (options?.processWarning) {
+      correct = true;
+    }
+
     const trainingFieldMistakes = correct
       ? collectTrainingFieldMistakes(currentQuestion, options?.trainingValues)
       : [];
+    const processWarning = correct ? options?.processWarning ?? null : null;
 
     const attempt: QuestionAttempt = {
       questionId: currentQuestion.id,
       question: currentQuestion,
       userAnswer: answer,
       correct,
+      ...(options?.failureReason ? { failureReason: options.failureReason } : {}),
       timeMs,
       hintsUsed: 0,
       attemptedAt: Date.now(),
@@ -601,6 +630,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: true,
       lastAnswerCorrect: correct,
       lastTrainingFieldMistakes: trainingFieldMistakes,
+      lastProcessWarning: processWarning,
+      lastFailureReason: correct ? null : options?.failureReason ?? null,
       currentIndex: currentIndex + 1,
     });
 
@@ -609,11 +640,12 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         question: currentQuestion,
         wrongAnswer: answer,
         wrongAt: Date.now(),
+        ...(options?.failureReason ? { failureReason: options.failureReason } : {}),
       };
       set(s => ({ pendingWrongQuestions: [...s.pendingWrongQuestions, wq] }));
     }
 
-    return { correct, trainingFieldMistakes };
+    return { correct, trainingFieldMistakes, processWarning };
   },
 
   endSession: () => {
@@ -665,6 +697,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       currentQuestion: null,
       showFeedback: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
       sessionDuplicateSignatures: new Set<string>(),
@@ -693,6 +727,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastAnswerCorrect: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
       sessionDuplicateSignatures: new Set<string>(),
@@ -728,6 +764,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastAnswerCorrect: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
       sessionDuplicateSignatures: new Set<string>(),
@@ -766,6 +804,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       showFeedback: false,
       lastAnswerCorrect: false,
       lastTrainingFieldMistakes: [],
+      lastProcessWarning: null,
+      lastFailureReason: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
       sessionDuplicateSignatures: new Set<string>(),
