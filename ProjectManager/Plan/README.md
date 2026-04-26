@@ -35,13 +35,13 @@
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.4/README.md`](./v0.4/README.md) | 版本入口 | ✅ Phase 1 / Phase 2 / Phase 3 / Phase 4 已完成；Phase 5 工程方案已定 |
+| [`v0.4/README.md`](./v0.4/README.md) | 版本入口 | ✅ Phase 1 / Phase 2 / Phase 3 / Phase 4 / Phase 5 已完成；待版本收口 |
 | [`v0.4/00-overview.md`](./v0.4/00-overview.md) | 背景、目标、阶段结构 | 🟡 已按 Phase 2 重排更新 |
 | [`v0.4/01-research-catalog.md`](./v0.4/01-research-catalog.md) | 预研 / Backlog / Issue / Spec 证据链 | 📋 已建立 |
 | [`v0.4/02-classification.md`](./v0.4/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
 | [`v0.4/03-phase-plan.md`](./v0.4/03-phase-plan.md) | Phase 1~5 总图与决策门 | ✅ Phase 2 已完成回写 |
 | [`v0.4/04-execution-discipline.md`](./v0.4/04-execution-discipline.md) | 本版本执行纪律、验收规则 | 📋 已建立 |
-| [`v0.4/phases/`](./v0.4/phases/) | Phase 1~5 范围 / 进入条件 / 收尾条件 | ✅ Phase 4 已收口；Phase 5 工程方案已定 |
+| [`v0.4/phases/`](./v0.4/phases/) | Phase 1~5 范围 / 进入条件 / 收尾条件 | ✅ Phase 1~5 已完成；待版本收口 |
 
 ## 跨版本工具性 Plan
 
