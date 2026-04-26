@@ -3,7 +3,7 @@
 > 所属版本：v0.4
 > 所属主线：[README](./README.md)
 > 分类基础：[`02-classification.md`](./02-classification.md)
-> 最近调整：2026-04-26 Phase 5 已完成开发与 QA；v0.4 待版本收口
+> 最近调整：2026-04-26 v0.4 已完成 release gate、Backlog / Issue / Living Spec 收口并发布
 
 ---
 
@@ -67,4 +67,4 @@ Phase 2 必须排在题目质量诊断前面。原因是 A04/A06 是否作为独
 - [`subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](./subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md)：Phase 4 进位/退位格三档规则与 compare tip 补证开发文档
 - [`subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](./subplans/2026-04-26-phase5-Practice状态重置启动准备.md)：Phase 5 Practice 状态重置实施与 QA 记录
 
-后续待展开：无；v0.4 进入版本收口准备。
+后续待展开：无；v0.4 已发布，后续维护从 `Overview.md` 和新版本计划进入。

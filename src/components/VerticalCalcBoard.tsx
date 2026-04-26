@@ -403,30 +403,41 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
     );
   };
 
-  const renderOperandRow = (digits: Array<number | undefined>, prefix = '') => (
-    <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
-      {Array.from({ length: gridCols }).map((_, i) => {
-        if (i === 0) {
-          return <div key={i} className="digit-cell digit-cell-empty text-secondary font-bold">{prefix}</div>;
-        }
-        if (i === dotRenderCol) {
+  const renderOperandRow = (digits: Array<number | undefined>, prefix = '') => {
+    const knownOperandCellClass = 'digit-cell border-border-2 bg-bg text-text';
+
+    return (
+      <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}>
+        {Array.from({ length: gridCols }).map((_, i) => {
+          if (i === 0) {
+            const prefixClass = prefix
+              ? `${knownOperandCellClass} font-bold`
+              : 'digit-cell digit-cell-empty';
+            return <div key={i} className={prefixClass}>{prefix}</div>;
+          }
+          if (i === dotRenderCol) {
+            return (
+              <div
+                key={i}
+                className="digit-cell flex items-end justify-center pb-1"
+                style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}
+              >
+                .
+              </div>
+            );
+          }
+          const stepCol = renderToStepCol(i);
+          const digitIdx = totalDigitCols - 1 - stepCol;
+          const d = digits[digitIdx];
           return (
-            <div
-              key={i}
-              className="digit-cell flex items-end justify-center pb-1"
-              style={{ color: 'var(--color-danger)', fontWeight: 'bold', fontSize: '1.5rem', border: 'none' }}
-            >
-              .
+            <div key={i} className={d !== undefined ? knownOperandCellClass : 'digit-cell digit-cell-empty'}>
+              {d !== undefined ? d : ''}
             </div>
           );
-        }
-        const stepCol = renderToStepCol(i);
-        const digitIdx = totalDigitCols - 1 - stepCol;
-        const d = digits[digitIdx];
-        return <div key={i} className="digit-cell digit-cell-empty">{d !== undefined ? d : ''}</div>;
-      })}
-    </div>
-  );
+        })}
+      </div>
+    );
+  };
 
   const hasWrongCells = Object.values(cellResults).some(result => result === 'wrong');
   const localFailureMessage =

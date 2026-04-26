@@ -2,7 +2,7 @@
 
 > 所属版本：v0.4
 > 创建：2026-04-25
-> 状态：✅ Phase 1 / Phase 2 / Phase 3 / Phase 4 / Phase 5 已完成
+> 状态：✅ 已发布（2026-04-26）；Phase 1 / Phase 2 / Phase 3 / Phase 4 / Phase 5 与 release gate 均已完成
 > 设计规格：N/A（本版本先由预研报告和既有 Specs 约束驱动；具体子项开工前按需补设计 / 子计划）
 
 ---
@@ -36,6 +36,7 @@
 | Phase 4 子计划：进位/退位格规则与 compare tip 补证 | [`subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](./subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md) |
 | Phase 5：Practice 工程质量 | [`phases/phase-5.md`](./phases/phase-5.md) |
 | Phase 5 启动准备：Practice 状态重置 | [`subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](./subplans/2026-04-26-phase5-Practice状态重置启动准备.md) |
+| v0.4 已关闭 issue | [`issues-closed.md`](./issues-closed.md) |
 
 ## N/A / 延迟创建说明
 
@@ -45,8 +46,8 @@
 ## 当前状态
 
 - ✅ v0.4 预研报告已完成：[`../../Reports/2026-04-25-v0.4-prereport.md`](../../Reports/2026-04-25-v0.4-prereport.md)
-- ✅ 版本管理包 `00-04 + phases/` 已按生命周期模板建立
-- ✅ `BL-003` ~ `BL-008` 已纳入 v0.4 规划视图；`ISSUE-059` 已在 Phase 1 关闭，当前版本开放 issue 数为 0
+- ✅ 版本管理包 `00-04 + phases/` 已按生命周期模板建立并完成收口回写
+- ✅ `BL-003` ~ `BL-008` 已纳入并随 v0.4 收口归档；`ISSUE-059`、`ISSUE-065` 已归档到 [`issues-closed.md`](./issues-closed.md)，当前开放 issue 数为 0
 - ✅ `BL-005.3` 乘法竖式统一方向已确认：多位整数乘法模块 → 小数乘法复用 → 小数点定位 / 答案等价
 - ✅ Phase 1 已完成：[`phases/phase-1.md`](./phases/phase-1.md)
 - ✅ Phase 1 乘法竖式子计划已完成：[`subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md`](./subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md)
@@ -55,4 +56,6 @@
 - ✅ Phase 3 已完成：A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布已落在验收带内；A03 进阶 3★ 短除候选降为 0；A02 compare d=7/d=8 质量优化完成；campaign / advance / rank-match session 内完全重复治理已接入 bounded retry；QAleader v2 已按风险驱动、规格追踪、统计抽样与拟真人工 oracle 补强并通过，记录见 [`../../../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md`](../../../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md)
 - ✅ Phase 4 已完成：进位/退位格三档规则采用策略判定器方案，compare tip 补证通过，A03 current spec 已回写。入口：[`subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](./subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md) · [`../../Specs/a03-vertical-calc/current.md`](../../Specs/a03-vertical-calc/current.md)
 - ✅ Phase 5 已完成：`BL-004` Practice 状态重置采用纯初始化函数 + reducer + `usePracticeInputState()` hook 落地；TDD、全量 test/build、Playwright 与 QAleader 三层 QA 通过，记录见 [`../../../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`](../../../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md)
-- 📋 下一步：按 v0.4 版本收口规则处理 Backlog 活跃条目归档，并验收 Living Spec 制度正式试行结果
+- ✅ Release Gate：[`../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md) 结论 PASS（补测后）
+- ✅ Living Spec 试行验收：[`../../Reports/2026-04-26-current-spec文档流试点工作结果报告.md`](../../Reports/2026-04-26-current-spec文档流试点工作结果报告.md) 结论通过
+- ✅ 发布：已交付到 GitHub Pages，线上地址 [`https://wisalu1983-cell.github.io/math-quest/`](https://wisalu1983-cell.github.io/math-quest/)

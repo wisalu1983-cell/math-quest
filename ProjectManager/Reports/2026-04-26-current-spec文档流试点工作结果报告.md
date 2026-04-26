@@ -140,3 +140,17 @@
 | Phase 收口 | Phase 4、v0.4 README / Phase 总图 / Overview 已从“最终验收中”更新为“已完成” |
 
 正式试行初步结论：通过。`Spec impact` 字段在收口时迫使 durable change 显式分流，`current.md` 没有在开发期提前污染，并在 Phase 4 结束时完成权威状态回写。
+
+## 12. v0.4 发布前最终验收
+
+v0.4 release gate 发现 `ISSUE-065` 后，Living Spec 制度完成了一次真实补测压力验证：
+
+| 检查项 | 验收结果 |
+|---|---|
+| durable change 识别 | `ISSUE-065` 修复不是单次截图修补，而是 A03 legacy single-line `VerticalCalcBoard` 的长期视觉可读性契约变化 |
+| current spec 回写 | `ProjectManager/Specs/a03-vertical-calc/current.md` 已新增“单行竖式已知操作数 / 运算符必须高对比，空白对齐格保留浅色占位” |
+| 索引同步 | `ProjectManager/Specs/_index.md` 已把 A03 current spec 摘要更新为 v0.4 发布态 |
+| QA 证据链 | `QA/runs/2026-04-26-v04-release-gate/visual-result.md` 与 `qa-summary.md` 已记录 `X-002` 补测通过 |
+| pm-sync-check | v0.4 收口前复跑通过 |
+
+正式试行最终结论：**通过**。本制度在 v0.4 中同时覆盖了“计划内 durable change”（Phase 4 过程格策略）和“release gate 发现的补丁型 durable change”（`ISSUE-065` 高对比约束），可作为后续版本的正式文档流规则继续执行。

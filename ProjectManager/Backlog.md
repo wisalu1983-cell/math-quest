@@ -1,6 +1,6 @@
 # Backlog（未激活需求 / 想法 / 延期候选）
 
-> 最后更新：2026-04-26（v0.4 Phase 1-5 已完成；BL-003 / BL-004 / BL-005.2 待 v0.4 版本收口时归档）
+> 最后更新：2026-04-26（v0.4 已发布；BL-003 ~ BL-008 已落地归档）
 > 角色：**未激活的需求 / 想法 / 方向 / 延期候选**集中地。只有被正式纳入某个版本之后，条目才会展开为正式 Plan；已纳入当前版本但尚未收口的条目可暂存在本文件作为来源索引，版本收口时必须归档或回流。
 >
 > **与 `ISSUE_LIST.md` 的边界**：
@@ -28,79 +28,6 @@
 - **背景**：段位赛晋级时机的动画表现未做完整设计与实现。v0.1 收口时按用户决策**不入 ISSUE_LIST**，等 Phase 3 上线后按真实用户反馈评估
 - **类别**：体验 / UI 动效
 - **状态**：候选（等真实反馈触发；v0.2 主线如有相关用户反馈可提升为 ISSUE 处理）
-
-### BL-003 · compare 概念题方法提示补证
-
-- **来源**：v0.2 收口 QA（2026-04-23）
-- **背景**：v0.2 为数感“判断正误 / 找反例”题增加了方法提示，但收口时自动化专项对目标高档 compare 场景连续抽样 25 题，证据链还没有完全打实。当前主流程、人工体验和其余 Tip 场景都正常；遗留风险集中在“这句教学提示是否稳定落到孩子面前”仍需补证
-- **类别**：体验 / 教学引导
-- **状态**：**已纳入 v0.4**（Phase 4 已完成：compare tip 补证通过；待 v0.4 版本收口时归档）
-- **关联证据**：[`QA/runs/2026-04-23-v0.2-full-regression/delta-result.md`](../QA/runs/2026-04-23-v0.2-full-regression/delta-result.md)
-- **关联 Plan**：[`Plan/v0.4/README.md`](Plan/v0.4/README.md) · [`Plan/v0.4/phases/phase-4.md`](Plan/v0.4/phases/phase-4.md)
-- **关联子计划**：[`Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md)
-- **建议动作**：单独补一条 compare tip 可达性验证，放宽脚本文案匹配口径并复核触发条件
-
-### BL-004 · Practice 答题页状态重置实现清理
-
-- **来源**：v0.2 收口 Code Review（2026-04-23）
-- **背景**：当前答题页在切到下一题时，会手动重置多份输入状态。用户现在看不出明显问题，但继续往这页叠功能时，更容易带来切题闪动、焦点错位或维护成本上升
-- **类别**：工程质量 / 技术债
-- **状态**：**已纳入 v0.4**（Phase 5 已完成：Practice 状态重置统一机制已落地；待 v0.4 版本收口时归档）
-- **关联证据**：[`QA/runs/2026-04-23-v0.2-full-regression/code-review-result.md`](../QA/runs/2026-04-23-v0.2-full-regression/code-review-result.md)
-- **关联 Plan**：[`Plan/v0.4/README.md`](Plan/v0.4/README.md) · [`Plan/v0.4/phases/phase-5.md`](Plan/v0.4/phases/phase-5.md)
-- **关联子计划**：[`Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md)
-- **定位**：[src/pages/Practice.tsx:58](../src/pages/Practice.tsx#L58)
-- **落地证据**：[`QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`](../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md)
-
-### BL-005 · 竖式笔算体验问题集（4.25 用户反馈）
-
-- **来源**：2026-04-25 真实用户反馈
-- **背景**：用户在竖式笔算模块发现 5 个体验问题，涵盖可读性、判定逻辑、交互一致性、题目难度匹配和答案兼容性
-- **类别**：体验 / 题目质量
-- **状态**：**已纳入 v0.4**（Phase 1 + Phase 3 + Phase 4 已完成；待 v0.4 版本收口时归档）
-- **关联 Plan**：[`Plan/v0.4/README.md`](Plan/v0.4/README.md)
-- **子项**：
-  1. **颜色可读性**：竖式中数字与符号用浅灰色渲染，对比度不足，看不清
-  2. **进位格判定逻辑**：进位/退位格需按难度分层；最终口径见 Phase 4 子计划
-  3. **乘法竖式交互不统一**：同为乘法竖式题，有时直接填答案，有时用 UI 控件操作，用户体验割裂
-  4. **题目难度不匹配**：360÷3 这类心算级题目出现在进阶 3 星竖式中，难度过低
-  5. **小数答案兼容性**：11.2×5 结果为 56，末尾小数点"56.0"非必填，"56"写法应判为正确
-- **v0.4 需求讨论补记（2026-04-25）**：
-  - `BL-005.3` 不再按“直接填答案 vs UI 控件”二选一处理，已确认采用迭代路线：
-    1. 先做多位整数乘法竖式模块
-    2. 再让小数乘法复用整数乘法模块
-    3. 最后加强小数点定位训练与答案等价判定
-  - 设计判断：小数乘法标准流程是“整数乘法竖式子步骤 + 小数点定位步骤”，因此不单独造一套小数乘法竖式板
-  - `BL-005.4` 补充决策：不做“第四关局部插题”补丁；在 A03 竖式笔算生成器 `difficulty=4-5` 的 `int-mul` 分支加入低比例 `2位数 × 2位数` 乘法，抽样期望 15%，验收允许 10%-20%。第四关因使用 `difficulty=4` 会自然继承该分布。题目范围为 `12-99 × 12-99`，排除整十口算型，允许高进位，复用 Phase 1 的 `multiplicationBoard`，纳入 v0.4 Phase 3 题目质量与生成器诊断，不回开 Phase 1
-  - `BL-005.2` Phase 4 最终决策（2026-04-26）：采用策略判定器方案。低档显示过程格，默认跳格按计算步骤进入下一列进位/退位格，非 0 过程格必填且答案对但过程错仍未通过、扣心、进错题本；低档 0 过程格显示但可留空，留空等同 0。中档显示可选过程格，答案正确即通过，过程格错误只在统一结果判定 UI 给当前题提示，不在竖式板提示，不进错题本 / 历史 / 统计。高档不显示过程格。关联子计划：[`Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md)；当前权威状态：[`Specs/a03-vertical-calc/current.md`](Specs/a03-vertical-calc/current.md)
-
-### BL-006 · 运算律填数字题 UX 问题（4.25 用户反馈）
-
-- **来源**：2026-04-25 真实用户反馈（含截图）
-- **背景**：运算律填数字题（如 `29×14–29×3 = 29×(___–___)`），填写槽位显示"1"和"2"作为序号，用户误认为是答案；且无任何操作说明文字告知应如何填写
-- **类别**：体验 / UX
-- **状态**：**已纳入 v0.4**（Phase 2：随 A07「运算律」知识点 lane 收口）
-- **关联 Plan**：[`Plan/v0.4/phases/phase-2.md`](Plan/v0.4/phases/phase-2.md) · [`Plan/v0.4/subplans/2026-04-25-a04-a06-降阶并入A07简便计算.md`](Plan/v0.4/subplans/2026-04-25-a04-a06-降阶并入A07简便计算.md)
-- **子项**：
-  1. 填写框内的"1""2"槽位序号视觉上与数字答案混淆，需去除或改为中性占位符
-  2. 题干缺少操作说明，用户不知道该点击、拖拽还是直接输入
-
-### BL-007 · 选项题干扰项不足（4.25 用户反馈）
-
-- **来源**：2026-04-25 真实用户反馈（含截图）
-- **背景**：多个题型（如判断除法结合律、判断运算律是否成立）仅提供 2 个互斥选项，本质是判断题，50% 概率猜对，教学价值低
-- **类别**：题目设计 / 体验
-- **状态**：**已纳入 v0.4**（Phase 2 局部 + Phase 3）
-- **关联 Plan**：[`Plan/v0.4/phases/phase-2.md`](Plan/v0.4/phases/phase-2.md) · [`Plan/v0.4/phases/phase-3.md`](Plan/v0.4/phases/phase-3.md)
-- **建议**：增加至 3~4 个选项，加入概念混淆型干扰项（如"结果一样但不满足结合律"）
-
-### BL-008 · 闯关题目重复问题（4.25 用户反馈）
-
-- **来源**：2026-04-25 真实用户反馈
-- **背景**：用户在多个题型闯关中遭遇重复题目。需排查各模式（闯关/进阶/段位赛）各题型的去重逻辑是否实际生效
-- **类别**：bug 候选 / 生成器质量
-- **状态**：**已纳入 v0.4**（Phase 3：需先代码复核确认是 bug 还是设计缺口）
-- **关联 Plan**：[`Plan/v0.4/phases/phase-3.md`](Plan/v0.4/phases/phase-3.md)
 
 ---
 
@@ -151,6 +78,12 @@
 ## 已落地归档
 
 - **BL-001 · 本地用户数据存档 / 账号系统前置数据模型**：已落地 v0.3（2026-04-24），扩大为 Supabase 在线账号与数据同步主线。入口：[`Plan/v0.3/README.md`](Plan/v0.3/README.md)
+- **BL-003 · compare 概念题方法提示补证**：已落地 v0.4（2026-04-26），Phase 4 用可控题对象与浏览器证据补齐 compare tip 可达性。入口：[`Plan/v0.4/phases/phase-4.md`](Plan/v0.4/phases/phase-4.md) · [`QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../QA/runs/2026-04-26-v04-release-gate/qa-summary.md)
+- **BL-004 · Practice 答题页状态重置实现清理**：已落地 v0.4（2026-04-26），统一为 `usePracticeInputState()`，换题 reset 与首输入聚焦通过回归。入口：[`Plan/v0.4/phases/phase-5.md`](Plan/v0.4/phases/phase-5.md) · [`QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`](../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md)
+- **BL-005 · 竖式笔算体验问题集**：已落地 v0.4（2026-04-26），覆盖竖式颜色、乘法竖式、小数答案等价、难度分布、进位/退位格三档规则；release gate 补测关闭 `ISSUE-065`。入口：[`Plan/v0.4/README.md`](Plan/v0.4/README.md) · [`Specs/a03-vertical-calc/current.md`](Specs/a03-vertical-calc/current.md)
+- **BL-006 · 运算律填数字题 UX 问题**：已落地 v0.4（2026-04-26），随 A04/A06 玩家入口断联并迁入 A07 知识点 lane 收口。入口：[`Plan/v0.4/phases/phase-2.md`](Plan/v0.4/phases/phase-2.md)
+- **BL-007 · 选项题干扰项不足**：已落地 v0.4（2026-04-26），A04/A06 相关题随 Phase 2 收敛，A02 compare 质量在 Phase 3 优化并通过专项验证。入口：[`Plan/v0.4/phases/phase-2.md`](Plan/v0.4/phases/phase-2.md) · [`Plan/v0.4/phases/phase-3.md`](Plan/v0.4/phases/phase-3.md)
+- **BL-008 · 闯关题目重复问题**：已落地 v0.4（2026-04-26），完成 campaign / advance / rank-match session 内完全重复治理。入口：[`Plan/v0.4/phases/phase-3.md`](Plan/v0.4/phases/phase-3.md) · [`QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../QA/runs/2026-04-26-v04-release-gate/qa-summary.md)
 
 ## 已放弃归档
 

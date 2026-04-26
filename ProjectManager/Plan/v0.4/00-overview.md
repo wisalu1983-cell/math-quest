@@ -1,9 +1,9 @@
-# v0.4 启动规划快照
+# v0.4 收口快照
 
 > 所属版本：v0.4
 > 创建：2026-04-25
 > 所属主线：[README](./README.md)
-> 本文件角色：v0.4 启动时的静态规划快照；收口时更新为最终收口快照。
+> 本文件角色：v0.4 最终收口快照，记录版本结束时的范围、结果、证据和发布状态。
 
 ---
 
@@ -41,15 +41,18 @@ v0.4 的主题是 **题目体验系统性修复**。
 | Phase 4 | 交互设计与教学引导 | 进位/退位格三档规则、compare tip 补证 | ✅ 已完成 |
 | Phase 5 | Practice 工程质量 | 答题页状态重置统一机制 | ✅ 已完成 |
 
-## 当前事实
+## 收口事实
 
 - `ProjectManager/Plan/v0.4/` 已建立为当前版本控制面
-- 当前版本开放 issue 数为 0；`ISSUE-059` 已在 Phase 1 关闭
-- Backlog 条目 `BL-003` ~ `BL-008` 已纳入 v0.4 规划视图
+- 当前版本开放 issue 数为 0；`ISSUE-059` 与 `ISSUE-065` 已归档到 [`issues-closed.md`](./issues-closed.md)
+- Backlog 条目 `BL-003` ~ `BL-008` 已从活跃区移入 `Backlog.md` 的已落地归档
 - Phase 1 已完成；Phase 2 已完成开发、自动化测试、构建和浏览器拟真验收
 - Phase 3 已完成：见 [`phases/phase-3.md`](./phases/phase-3.md)；A03 乘法分布、A03 除法样本池、A02 compare 质量和 session 内完全重复治理均已通过自动化验收
 - Phase 4 已完成：进位/退位格三档规则采用策略判定器方案，compare tip 补证通过，A03 current spec 已回写到 [`../../Specs/a03-vertical-calc/current.md`](../../Specs/a03-vertical-calc/current.md)
 - Phase 5 已完成：见 [`subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](./subplans/2026-04-26-phase5-Practice状态重置启动准备.md)；Practice 状态重置统一机制已落地并通过 QAleader 三层验证
+- L3 Release Gate 已通过（补测后）：[`../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md)
+- Living Spec 正式试行已验收通过：[`../../Reports/2026-04-26-current-spec文档流试点工作结果报告.md`](../../Reports/2026-04-26-current-spec文档流试点工作结果报告.md)
+- v0.4 已发布到 GitHub Pages：[`https://wisalu1983-cell.github.io/math-quest/`](https://wisalu1983-cell.github.io/math-quest/)
 
 ## 范围边界
 
@@ -60,11 +63,30 @@ v0.4 的主题是 **题目体验系统性修复**。
 - `BL-007` 选项题干扰项不足
 - `BL-008` 闯关题目重复诊断
 - `BL-003` compare 概念题方法提示补证
-- `BL-004` Practice 答题页状态重置实现清理（已落地；待 v0.4 版本收口时归档）
+- `BL-004` Practice 答题页状态重置实现清理
 - `ISSUE-059` `dec-div` 高档残留隐藏 `trainingFields`
+- `ISSUE-065` 单行竖式已知操作数低对比 release gate 缺陷
 
 不纳入 v0.4：
 
 - `BL-002` 段位赛晋级动画，延期至后续版本等待真实反馈触发
 - 新增账号 / 同步能力，除非修复项引入新持久化字段
 - 大范围 UI 重设计，所有题目 UI 改动继承阳光版 v5 约束
+
+## 发布门禁
+
+| Gate | 结果 | 证据 |
+|---|---|---|
+| 全量 Vitest | PASS | `npm test`：55 files / 713 tests passed |
+| 生产构建 | PASS | `npm run build` 通过，仅既有 Vite chunk warning |
+| Playwright E2E | PASS | `npx playwright test` 通过；包含 `ISSUE-065` 新增回归 |
+| v0.4 Release Gate | PASS | [`QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md) |
+| PM 一致性 | PASS | `npx tsx scripts/pm-sync-check.ts` 全绿 |
+| 版本包结构 | PASS | `.agents/skills/version-lifecycle-manager/scripts/check-version-package.ps1 -Version v0.4` OK |
+
+## 后续入口
+
+- 历史关闭 issue：[`issues-closed.md`](./issues-closed.md)
+- Backlog 已落地归档：[`../../Backlog.md`](../../Backlog.md)
+- A03 当前权威规格：[`../../Specs/a03-vertical-calc/current.md`](../../Specs/a03-vertical-calc/current.md)
+- v0.4 release gate QA：[`../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md)

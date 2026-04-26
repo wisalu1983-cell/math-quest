@@ -303,4 +303,4 @@ interface WrongQuestion {
 - 实施完成后回写 `ProjectManager/Plan/v0.4/phases/phase-4.md`。
 - 若新增 QA run，回写本计划与 Phase 4；原始 QA run 是否入库按 QAleader 规则执行。
 - 若 Phase 4 全部完成，更新 `ProjectManager/Plan/v0.4/README.md`、`ProjectManager/Plan/v0.4/03-phase-plan.md` 和 `ProjectManager/Overview.md`。
-- `BL-003`、`BL-005.2` 在 v0.4 收口时从 `Backlog.md` 活跃区移入归档。
+- `BL-003`、`BL-005.2` 已在 v0.4 收口时从 `Backlog.md` 活跃区移入已落地归档。

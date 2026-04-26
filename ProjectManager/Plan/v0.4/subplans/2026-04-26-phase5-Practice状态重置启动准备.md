@@ -253,7 +253,7 @@ npm test -- src/pages/practice-input-state.test.ts
 
 - 已回写：`ProjectManager/Plan/v0.4/phases/phase-5.md`、`ProjectManager/Plan/v0.4/README.md`、`ProjectManager/Plan/v0.4/03-phase-plan.md`、`ProjectManager/Overview.md`、`ProjectManager/Backlog.md`。
 - QA 记录：`QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`。
-- `BL-004` 已落地，待 v0.4 版本正式收口时从 Backlog 活跃区移入归档。
+- `BL-004` 已落地，并已在 v0.4 版本正式收口时从 Backlog 活跃区移入已落地归档。
 - Current spec 检查：不需要回写。现有 `dev-tool-panel/current.md`、`a03-vertical-calc/current.md` 均不受 Phase 5 影响；本次只收敛 Practice 页内部输入态实现边界，不新增长期产品 / 数据契约。
 
 ## 九、实施与 QA 结果
