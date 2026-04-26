@@ -25,6 +25,7 @@ import {
 } from '@/utils/ui-accessibility';
 import { getMethodTip } from '@/utils/method-tips';
 import { shouldAutoSuspendRankMatch } from '@/engine/rank-match/auto-suspend';
+import { usePracticeInputState } from './practice-input-state';
 
 export default function Practice() {
   const {
@@ -42,36 +43,32 @@ export default function Practice() {
   const isAdvance = session?.sessionMode === 'advance';
   const isRankMatch = session?.sessionMode === 'rank-match';
 
-  const [answer, setAnswer] = useState('');
-  const [remainderInput, setRemainderInput] = useState('');
-  const [selectedOption, setSelectedOption] = useState<string | null>(null);
-  const [selectedOptions, setSelectedOptions] = useState<string[]>([]);
-  const [blankValues, setBlankValues] = useState<string[]>([]);
-  const [trainingComplete, setTrainingComplete] = useState(false);
-  const [trainingValues, setTrainingValues] = useState<string[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const {
+    state: answerState,
+    inputRef,
+    setAnswer,
+    setRemainderInput,
+    selectOption: setSelectedOption,
+    toggleSelectedOption,
+    setBlankValue,
+    setTrainingComplete,
+    setTrainingValues,
+  } = usePracticeInputState(currentQuestion);
+  const {
+    answer,
+    remainderInput,
+    selectedOption,
+    selectedOptions,
+    blankValues,
+    trainingComplete,
+    trainingValues,
+  } = answerState;
   const [shakeWrong, setShakeWrong] = useState(false);
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
   const sessionEndedRef = useRef(false);
   const allowUnmountAutoSuspendRef = useRef(false);
-
-  // Reset state when question changes
-  useEffect(() => {
-    setAnswer('');
-    setRemainderInput('');
-    setSelectedOption(null);
-    setSelectedOptions([]);
-    setTrainingComplete(false);
-    setTrainingValues([]);
-    if (currentQuestion?.type === 'multi-blank' && currentQuestion.solution.blanks) {
-      setBlankValues(Array(currentQuestion.solution.blanks.length).fill(''));
-    } else {
-      setBlankValues([]);
-    }
-    if (inputRef.current) inputRef.current.focus();
-  }, [currentQuestion?.id, currentQuestion?.type, currentQuestion?.solution.blanks]);
 
   useEffect(() => {
     if (session?.sessionMode === 'rank-match') {
@@ -424,11 +421,7 @@ return (
                     return (
                       <button
                         key={opt}
-                        onClick={() =>
-                          setSelectedOptions(prev =>
-                            checked ? prev.filter(l => l !== letter) : [...prev, letter]
-                          )
-                        }
+                        onClick={() => toggleSelectedOption(letter)}
                         aria-pressed={checked}
                         className={`p-4 rounded-xl border-2 text-left font-medium transition-all flex items-center gap-3
                           ${checked
@@ -538,11 +531,7 @@ return (
                       type="text"
                       inputMode="decimal"
                       value={blankValues[idx] ?? ''}
-                      onChange={e => {
-                        const next = [...blankValues];
-                        next[idx] = e.target.value;
-                        setBlankValues(next);
-                      }}
+                      onChange={e => setBlankValue(idx, e.target.value)}
                       aria-label={`第 ${idx + 1} 空`}
                       placeholder={`${idx + 1}`}
                       className="w-20 text-center text-xl font-bold bg-card-2 border-2 border-border

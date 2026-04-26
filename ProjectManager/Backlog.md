@@ -1,6 +1,6 @@
 # Backlog（未激活需求 / 想法 / 延期候选）
 
-> 最后更新：2026-04-26（v0.4 Phase 4 已收口；BL-003 / BL-005.2 待 v0.4 版本收口时归档）
+> 最后更新：2026-04-26（v0.4 Phase 1-5 已完成；BL-003 / BL-004 / BL-005.2 待 v0.4 版本收口时归档）
 > 角色：**未激活的需求 / 想法 / 方向 / 延期候选**集中地。只有被正式纳入某个版本之后，条目才会展开为正式 Plan；已纳入当前版本但尚未收口的条目可暂存在本文件作为来源索引，版本收口时必须归档或回流。
 >
 > **与 `ISSUE_LIST.md` 的边界**：
@@ -45,11 +45,12 @@
 - **来源**：v0.2 收口 Code Review（2026-04-23）
 - **背景**：当前答题页在切到下一题时，会手动重置多份输入状态。用户现在看不出明显问题，但继续往这页叠功能时，更容易带来切题闪动、焦点错位或维护成本上升
 - **类别**：工程质量 / 技术债
-- **状态**：**已纳入 v0.4**（Phase 5：工程方案已定；Phase 4 已收口后可进入代码实施闸门）
+- **状态**：**已纳入 v0.4**（Phase 5 已完成：Practice 状态重置统一机制已落地；待 v0.4 版本收口时归档）
 - **关联证据**：[`QA/runs/2026-04-23-v0.2-full-regression/code-review-result.md`](../QA/runs/2026-04-23-v0.2-full-regression/code-review-result.md)
 - **关联 Plan**：[`Plan/v0.4/README.md`](Plan/v0.4/README.md) · [`Plan/v0.4/phases/phase-5.md`](Plan/v0.4/phases/phase-5.md)
 - **关联子计划**：[`Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md)
 - **定位**：[src/pages/Practice.tsx:58](../src/pages/Practice.tsx#L58)
+- **落地证据**：[`QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`](../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md)
 
 ### BL-005 · 竖式笔算体验问题集（4.25 用户反馈）
 

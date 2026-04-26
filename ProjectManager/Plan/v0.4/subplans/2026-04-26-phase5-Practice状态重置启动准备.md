@@ -4,7 +4,8 @@
 > 所属版本：v0.4
 > 父计划：v0.4-5
 > 设计规格：N/A（工程质量重构，不新增跨版本产品规格；继承下方规格与证据约束）
-> 状态：🟡 工程方案已定，Phase 4 已收口后可进入实施闸门（尚未进入代码实施）
+> Spec impact：none（不改变用户可见行为、题型判定、UI 视觉、存档 / 同步契约；当前无 Practice 专属 current spec 需要回写）
+> 状态：✅ 已完成开发与 QA（TDD + QAleader 三层验证通过）
 
 ---
 
@@ -12,7 +13,7 @@
 
 本计划承接 `BL-004`：Practice 答题页在切换下一题时手动重置多份输入状态。当前没有明确用户可见 bug，但该实现继续承载多题型、训练格、段位赛恢复和后续交互时，维护风险会上升。
 
-本轮用户同步：Phase 4 已完成收口。Phase 5 已完成启动准备，代码实施可按本文闸门推进；实施前仍需先补行为基线测试，避免和刚合入的 Phase 4 反馈 / 提交流程互相踩同一页。
+本轮用户同步：Phase 4 已完成收口。Phase 5 已按本文闸门完成 TDD 实施、浏览器等价验证和 QAleader 三层 QA；未改变 Phase 4 反馈 / 提交流程。
 
 ### 前置相关规格 / 证据
 
@@ -22,7 +23,7 @@
 | `ProjectManager/Specs/2026-04-14-ui-redesign-spec.md` | 答题页保持阳光版 v5：无底部导航、反馈状态机、成功 / 失败面板、移动端可读性。本 Phase 不改视觉语言。 |
 | `ProjectManager/Specs/v03-supabase-account-sync/2026-04-23-v03-supabase-账号与同步系统.md` | Repository 接口不变；Zustand stores 不感知同步存在。Phase 5 不新增云端字段，不触发存档版本升级。 |
 | `ProjectManager/Backlog.md#BL-004` | `BL-004` 已纳入 v0.4 Phase 5；定位为工程质量 / 技术债，必须行为等价。 |
-| `src/pages/Practice.tsx` | 当前本地输入态集中在 `answer`、`remainderInput`、`selectedOption`、`selectedOptions`、`blankValues`、`trainingComplete`、`trainingValues`；第 60-74 行 effect 按题目变化逐项清空并执行聚焦。 |
+| `src/pages/Practice.tsx` | 原本地输入态集中在 `answer`、`remainderInput`、`selectedOption`、`selectedOptions`、`blankValues`、`trainingComplete`、`trainingValues`；原换题 effect 按题目变化逐项清空并执行聚焦。Phase 5 已替换为 `usePracticeInputState(currentQuestion)`。 |
 | `src/store/index.ts` | `submitAnswer()` 负责提交、反馈、扣心、错题和 session 记录；`nextQuestion()` 负责换题和清 store 反馈。Phase 5 不改变这些业务语义。 |
 
 ### 跨系统维度清单
@@ -74,7 +75,7 @@
 2. 用纯函数 `createInitialPracticeAnswerState(question)` 根据当前题目生成初始输入态。
 3. 同文件导出 `usePracticeInputState(question)`，在 hook 内部封装 reducer、换题 reset effect 和聚焦副作用。
 4. `Practice.tsx` 只消费 hook 返回的 `state`、`inputRef` 和 setter facade，不直接裸用 reducer。
-5. 当 `currentQuestion.id` 改变时，只触发 hook 内部一次 reset effect，替代当前第 60-74 行的多 setter 清空和 `inputRef.current.focus()`。
+5. 当 `currentQuestion` 变化时，只触发 hook 内部一次 reset effect，替代原多 setter 清空和 `inputRef.current.focus()`。
 
 这个方案只收敛 Practice 页内部 UI 暂态，不改变 `useSessionStore`、题目生成器、判题逻辑、错题本、历史记录或同步数据结构。
 
@@ -91,11 +92,10 @@ const {
   setBlankValue,
   setTrainingComplete,
   setTrainingValues,
-  resetForQuestion,
 } = usePracticeInputState(currentQuestion);
 ```
 
-`Practice.tsx` 的渲染层继续以“读值 + 调 setter”的方式工作；区别只是值和 setter 统一来自 hook，而不是分散的多个 `useState`。
+`Practice.tsx` 的渲染层继续以“读值 + 调 setter”的方式工作；区别只是值和 setter 统一来自 hook，而不是分散的多个 `useState`。`resetForQuestion` 保持为 hook 内部实现细节，不暴露给页面消费。
 
 ### 4.2 目标状态模型
 
@@ -139,7 +139,7 @@ interface PracticeAnswerState {
 |---|---|---|
 | 纯函数 | `createInitialPracticeAnswerState(question)` | 根据题目派生初始输入态；无 React、无 DOM。 |
 | reducer | `practiceAnswerReducer(state, action)` | 处理输入态动作；无业务提交、无 DOM。 |
-| hook | `usePracticeInputState(question)` | 封装 `useReducer`、`currentQuestion.id` reset effect、`inputRef` 和 focus 副作用，并返回 setter facade。 |
+| hook | `usePracticeInputState(question)` | 封装 `useReducer`、换题 reset effect、`inputRef` 和 focus 副作用，并返回 setter facade。 |
 
 reducer action 集：
 
@@ -185,13 +185,13 @@ focus 归属：
 | Task | 内容 | 状态 | 证据 |
 |---|---|---|---|
 | T0 | 启动准备：梳理来源、边界、状态盘点、方案定稿和验收门 | ✅ | 本文档 |
-| T1 | RED：为 `createInitialPracticeAnswerState()` 写失败测试，覆盖普通输入、余数输入、单选、多选、多空、训练格 | ⬜ | `src/pages/practice-input-state.test.ts` |
-| T2 | GREEN：实现 `PracticeAnswerState` 与 `createInitialPracticeAnswerState(question)` 纯函数 | ⬜ | `src/pages/practice-input-state.ts` |
-| T3 | RED：为 reducer 写输入态动作测试，覆盖 reset、set、toggle、blank、training values | ⬜ | `src/pages/practice-input-state.test.ts` |
-| T4 | GREEN：实现 reducer / action，并保持测试通过 | ⬜ | `src/pages/practice-input-state.ts` |
-| T5 | 实现 `usePracticeInputState(question)` hook，并接入 `Practice.tsx`：替代第 60-74 行多 setter effect，所有 UI 读写改走 hook 返回的 state / setter facade | ⬜ | `src/pages/practice-input-state.ts`、`src/pages/Practice.tsx` |
-| T6 | 增补浏览器等价走查：至少覆盖换题后输入清空、训练格重置、多空长度重建、换题后首输入聚焦、退出弹窗不受影响 | ⬜ | `QA/e2e/v04-phase5-practice-reset.spec.ts` 或 QA run |
-| T7 | 全量验证与 PM 回写 | ⬜ | `npm test -- --run`、`npm run build`、Phase 5 / Overview 回写 |
+| T1 | RED：为 `createInitialPracticeAnswerState()` 写失败测试，覆盖普通输入、余数输入、单选、多选、多空、训练格 | ✅ | `src/pages/practice-input-state.test.ts` |
+| T2 | GREEN：实现 `PracticeAnswerState` 与 `createInitialPracticeAnswerState(question)` 纯函数 | ✅ | `src/pages/practice-input-state.ts` |
+| T3 | RED：为 reducer 写输入态动作测试，覆盖 reset、set、toggle、blank、training values | ✅ | `src/pages/practice-input-state.test.ts` |
+| T4 | GREEN：实现 reducer / action，并保持测试通过 | ✅ | `src/pages/practice-input-state.ts` |
+| T5 | 实现 `usePracticeInputState(question)` hook，并接入 `Practice.tsx`：替代原多 setter effect，所有 UI 读写改走 hook 返回的 state / setter facade | ✅ | `src/pages/practice-input-state.ts`、`src/pages/Practice.tsx` |
+| T6 | 增补浏览器等价走查：覆盖换题后输入清空、多空长度重建、换题后首输入聚焦、退出弹窗不受影响 | ✅ | `QA/e2e/phase5-practice-input-reset.spec.ts`、`QA/runs/2026-04-26-v04-phase5-practice-reset/` |
+| T7 | 全量验证与 PM 回写 | ✅ | `npm test`、`npm run build`、`npx playwright test`、Phase 5 / Overview 回写 |
 
 ### T1 测试要求
 
@@ -234,23 +234,31 @@ npm test -- src/pages/practice-input-state.test.ts
 
 ## 六、启动 / 实施闸门
 
-进入代码实施前需要同时满足：
+实施前闸门已满足：
 
-- Phase 4 已完成收口；实施前先复核 `Practice.tsx` 的 Phase 4 反馈 / 提交流程，避免状态重构改变行为。
-- T1 行为基线测试先行，至少先出现能约束新初始化函数的红 / 绿路径。
-
-若实施前发现 Practice 仍需补 Phase 4 回归补丁，Phase 5 应等补丁合入后再重新盘点第 60-74 行附近状态。
+- ✅ Phase 4 已完成收口；实施前已复核 `Practice.tsx` 的 Phase 4 反馈 / 提交流程。
+- ✅ T1 行为基线测试先行，并按 TDD 红 / 绿路径约束初始化函数与 reducer。
+- ✅ 未发现需要先补的 Phase 4 回归补丁。
 
 ## 七、验收
 
-- [ ] `npm test -- src/pages/practice-input-state.test.ts`
-- [ ] `npm test -- --run`
-- [ ] `npm run build`
-- [ ] 若新增 E2E：`npx playwright test QA/e2e/v04-phase5-practice-reset.spec.ts`
-- [ ] 用户视角确认：切到下一题时，上一题输入不残留；提交反馈页不被提前清空；退出 / 段位赛中断弹窗不受影响。
+- [x] `npm test -- src/pages/practice-input-state.test.ts`：1 file / 11 tests passed
+- [x] `npm test`：55 files / 713 tests passed
+- [x] `npm run build`：TypeScript + Vite build 通过，仅既有 chunk size warning
+- [x] `npx playwright test QA/e2e/phase5-practice-input-reset.spec.ts`：3 tests passed
+- [x] `npx playwright test`：8 tests passed
+- [x] 用户视角确认：切到下一题时，上一题输入不残留；提交反馈页不被提前清空；退出弹窗不受影响。
 
 ## 八、回写
 
-- 启动准备已回写：`ProjectManager/Plan/v0.4/phases/phase-5.md`、`ProjectManager/Plan/v0.4/README.md`、`ProjectManager/Plan/v0.4/03-phase-plan.md`、`ProjectManager/Overview.md`。
-- 若进入实施并完成：回写本计划、Phase 5、v0.4 README / Phase 总图 / Overview，并在 v0.4 收口时处理 `BL-004` Backlog 归档。
-- 若延期到 v0.5：在 Phase 5 与 Backlog 标明“启动准备完成，代码实施延期”，并在 v0.4 收口说明原因。
+- 已回写：`ProjectManager/Plan/v0.4/phases/phase-5.md`、`ProjectManager/Plan/v0.4/README.md`、`ProjectManager/Plan/v0.4/03-phase-plan.md`、`ProjectManager/Overview.md`、`ProjectManager/Backlog.md`。
+- QA 记录：`QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`。
+- `BL-004` 已落地，待 v0.4 版本正式收口时从 Backlog 活跃区移入归档。
+- Current spec 检查：不需要回写。现有 `dev-tool-panel/current.md`、`a03-vertical-calc/current.md` 均不受 Phase 5 影响；本次只收敛 Practice 页内部输入态实现边界，不新增长期产品 / 数据契约。
+
+## 九、实施与 QA 结果
+
+- 实现：新增 `src/pages/practice-input-state.ts`，将 Practice 输入态初始化、reducer、reset effect 与 focus 副作用统一封装进 `usePracticeInputState(currentQuestion)`。
+- 接入：`Practice.tsx` 不再保留 7 个分散输入态 `useState` 与原换题 reset/focus effect；渲染和提交仍按原题型语义读取输入值。
+- 测试：新增 `src/pages/practice-input-state.test.ts` 和 `QA/e2e/phase5-practice-input-reset.spec.ts`。
+- QA：QAleader 三层验证通过，未发现新 ISSUE；完整记录见 `QA/runs/2026-04-26-v04-phase5-practice-reset/`。
