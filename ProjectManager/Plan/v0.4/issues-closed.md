@@ -37,3 +37,21 @@
   - `npx playwright test QA/e2e/phase4-carry-focus.spec.ts`：2 passed
   - `npm test`：55 files / 713 tests passed
   - `npm run build`：通过，仅 Vite chunk warning
+
+### ISSUE-066 · 竖式板输入双入口导致 0 跨格重复消费（P1 · bug / 体验）
+
+- **状态**：✅ 已修复（2026-04-26，v0.4 hotfix）
+- **来源**：v0.4 发布后真实用户反馈：任意格子填 `0` 后，自动跳转到下一个格子时，下一个格子也会自动填上 `0`；退位格要求填 `-1` 造成用户反复尝试填 `1`。
+- **类别**：bug / 输入机制 / 体验
+- **归位**：[`subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md`](subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md)
+- **问题摘要**：`VerticalCalcBoard` legacy single-line board 的 hidden input 同时由 `onKeyDown` 与 `onChange` 消费字符，部分输入环境中同一 `0` 会先写当前格并触发跳格，再写入跳转后的下一格。
+- **修复摘要**：hidden input 改为单一字符输入入口：`onInput` 唯一消费数字、`-`、软键盘与粘贴；`onKeyDown` 只处理 `Backspace` / `Delete` / `Enter` / `Tab` 控制键。减法退位过程格支持输入 `1` 表示“退 1”，内部保存 `-1`，显示为 `退1`；软键盘删除清当前活动格。
+- **关闭证据**：
+  - 新增回归：`QA/e2e/issue-066-vertical-single-input.spec.ts`
+  - `npx playwright test QA/e2e/issue-066-vertical-single-input.spec.ts`：3 passed
+  - `npm test -- src/engine/vertical-calc-policy.test.ts`：12 passed
+  - `npx playwright test QA/e2e/phase4-carry-focus.spec.ts`：2 passed
+  - `npx eslint src/components/VerticalCalcBoard.tsx QA/e2e/issue-066-vertical-single-input.spec.ts`：通过
+  - `npm test -- --run`：55 files / 713 tests passed
+  - `npx playwright test`：12 passed
+  - `npm run build`：通过，仅 Vite chunk warning

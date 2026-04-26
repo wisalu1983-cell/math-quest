@@ -4,7 +4,7 @@
 > 当前状态：已实施并作为 A03 竖式笔算当前权威行为生效
 > 首次建立：2026-04-26
 > 最近确认：2026-04-26
-> 最近来源：`ProjectManager/Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`、`QA/runs/2026-04-26-v04-release-gate/qa-summary.md`、当前代码入口
+> 最近来源：`ProjectManager/Plan/v0.4/subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md`、`QA/runs/2026-04-26-v04-hotfix-vertical-input/qa-summary.md`、当前代码入口
 
 ---
 
@@ -17,6 +17,7 @@
 - 高档 `difficulty>=8` 不显示进位 / 退位过程格，只填写答案格。
 - 新增错题原因字段均为可选字段，不触发存档版本升级；同步合并必须保留低档过程失败原因。
 - 单行竖式中的已知操作数与运算符必须使用高对比正文色；只有空白对齐格可使用浅色占位样式。
+- 单行竖式输入必须只有一个字符消费入口：hidden input 的 `onInput` 负责数字、`-`、软键盘与粘贴，`onKeyDown` 只处理 `Backspace` / `Delete` / `Enter` / `Tab` 控制键。
 
 ## 2. 当前行为
 
@@ -40,8 +41,11 @@
 
 - 答案格完整条件是单个数字 `0-9`。
 - 加法过程格完整条件是 `0` 或 `1`。
-- 减法过程格完整条件是 `0` 或 `-1`；单独 `-` 不完整，不能触发自动跳格。
+- 减法过程格完整条件是 `0` 或 `-1`；单独 `-` 不完整，不能触发自动跳格。用户在退位格输入 `1` 时，UI 语义解释为“退 1”，内部保存为 `-1`，格内显示为 `退1`。
 - 乘法过程格完整条件是 `0-8`。
+- hidden input 使用非受控 DOM 值；每次 `onInput` 消费或拒绝输入后都清空 DOM value，避免同一字符残留或跨格重复消费。
+- 粘贴 / 组合输入若一次产生多个字符，竖式板拒绝整段输入并清空 hidden input，继续要求逐格填写。
+- 软键盘删除事件 `inputType='deleteContentBackward'` / `deleteContentForward` 清空当前活动格；硬键盘 `Backspace` / `Delete` 保持相同清空语义。
 - 低档默认焦点顺序按计算步骤进入过程格，例如 `999+888` 填完个位答案后聚焦十位进位格，进位格填完后聚焦十位答案格。
 - 低档 0 过程格不自动跳过；用户可填 `0`，也可点击 / 触摸 / `Enter` / `Tab` 跳到下一格。
 - 中档默认只沿答案格跳转；用户主动选中过程格并填完整后，回到同列答案格。
@@ -83,6 +87,8 @@
 | 难度规格 | `ProjectManager/Specs/2026-04-16-generator-difficulty-tiering-spec.md` | 低 / 中 / 高三档认知边界 |
 | 生成器规格 | `ProjectManager/Specs/2026-04-17-generator-redesign-v2.md` | A03 仍为 3 档题型 |
 | QA / 验收 | `QA/runs/2026-04-26-v04-phase4-carry-policy/phase4-result.md` | Code Review、自动化、Playwright、拟真人工结论 |
+| v0.4 hotfix | `ProjectManager/Plan/v0.4/subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md` | `ISSUE-066` 根因、单一输入入口方案、联动检查和验收记录 |
+| Hotfix QA | `QA/runs/2026-04-26-v04-hotfix-vertical-input/qa-summary.md` | `ISSUE-066` 红绿回归、全量 Playwright、全量单测和 build 证据 |
 | Release Gate QA | `QA/runs/2026-04-26-v04-release-gate/qa-summary.md`、`QA/runs/2026-04-26-v04-release-gate/visual-result.md` | `ISSUE-065` 单行竖式高对比回归补测通过 |
 | 策略代码 | `src/engine/vertical-calc-policy.ts`、`src/engine/vertical-calc-policy.test.ts` | 三档策略、跳格、提交、结果分类 |
 | UI / Store | `src/components/VerticalCalcBoard.tsx`、`src/pages/Practice.tsx`、`src/pages/WrongBook.tsx`、`src/store/index.ts` | 竖式板接入、统一反馈、错题原因链路 |
@@ -96,3 +102,4 @@
 | 2026-04-25 | `ProjectManager/Plan/v0.4/subplans/2026-04-25-bl-005-乘法竖式与Phase1修复.md` | 多位整数乘法竖式与小数答案兼容在 v0.4 Phase 1 落地 |
 | 2026-04-26 | `ProjectManager/Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md` | Phase 4 验收后建立本 current spec，吸收低 / 中 / 高过程格策略、反馈与可选数据契约 |
 | 2026-04-26 | `QA/runs/2026-04-26-v04-release-gate/visual-result.md` | release gate 补测关闭 `ISSUE-065`，补充单行竖式已知操作数 / 运算符高对比当前承诺 |
+| 2026-04-26 | `ProjectManager/Plan/v0.4/subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md` | v0.4 hotfix 关闭 `ISSUE-066`：单行竖式 hidden input 改为单一字符输入入口；退位格支持 `1 -> -1` 语义输入并显示 `退1`；软键盘删除清当前格 |

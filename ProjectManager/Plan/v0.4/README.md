@@ -2,7 +2,7 @@
 
 > 所属版本：v0.4
 > 创建：2026-04-25
-> 状态：✅ 已发布（2026-04-26）；Phase 1 / Phase 2 / Phase 3 / Phase 4 / Phase 5 与 release gate 均已完成
+> 状态：✅ 已发布（2026-04-26）；Phase 1 / Phase 2 / Phase 3 / Phase 4 / Phase 5、release gate 与 `ISSUE-066` hotfix 均已完成
 > 设计规格：N/A（本版本先由预研报告和既有 Specs 约束驱动；具体子项开工前按需补设计 / 子计划）
 
 ---
@@ -36,6 +36,7 @@
 | Phase 4 子计划：进位/退位格规则与 compare tip 补证 | [`subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](./subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md) |
 | Phase 5：Practice 工程质量 | [`phases/phase-5.md`](./phases/phase-5.md) |
 | Phase 5 启动准备：Practice 状态重置 | [`subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](./subplans/2026-04-26-phase5-Practice状态重置启动准备.md) |
+| v0.4 hotfix：ISSUE-066 竖式输入单入口与退位语义 | [`subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md`](./subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md) |
 | v0.4 已关闭 issue | [`issues-closed.md`](./issues-closed.md) |
 
 ## N/A / 延迟创建说明
@@ -58,4 +59,5 @@
 - ✅ Phase 5 已完成：`BL-004` Practice 状态重置采用纯初始化函数 + reducer + `usePracticeInputState()` hook 落地；TDD、全量 test/build、Playwright 与 QAleader 三层 QA 通过，记录见 [`../../../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`](../../../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md)
 - ✅ Release Gate：[`../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../../../QA/runs/2026-04-26-v04-release-gate/qa-summary.md) 结论 PASS（补测后）
 - ✅ Living Spec 试行验收：[`../../Reports/2026-04-26-current-spec文档流试点工作结果报告.md`](../../Reports/2026-04-26-current-spec文档流试点工作结果报告.md) 结论通过
+- ✅ v0.4 hotfix：`ISSUE-066` 竖式板输入双入口导致 `0` 跨格重复消费、退位格输入心智不清已修复；输入层改为单一字符入口，退位格支持 `1 -> 退1` 语义输入。入口见 [`subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md`](./subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md)，QA 见 [`../../../QA/runs/2026-04-26-v04-hotfix-vertical-input/qa-summary.md`](../../../QA/runs/2026-04-26-v04-hotfix-vertical-input/qa-summary.md)
 - ✅ 发布：已交付到 GitHub Pages，线上地址 [`https://wisalu1983-cell.github.io/math-quest/`](https://wisalu1983-cell.github.io/math-quest/)

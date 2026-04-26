@@ -1,6 +1,6 @@
 # ISSUE_LIST — 当前版本开放问题
 
-> 最后更新：2026-04-26（v0.4 已发布；开放 issue 为 0）
+> 最后更新：2026-04-26（v0.4 hotfix 后；开放 issue 为 0）
 > 当前版本：**v0.4**（题目体验系统性修复 —— 见 `Plan/v0.4/`）
 > 本文件角色：**只列当前版本开放的 issue**（待修 bug / 欠账 / 实现问题）。历史关闭项走版本归档，未激活需求走 Backlog。
 
@@ -24,7 +24,7 @@
 
 ## 本轮关闭问题
 
-v0.4 已收口；本版本关闭问题已归档到 [`Plan/v0.4/issues-closed.md`](Plan/v0.4/issues-closed.md)。
+v0.4 已收口；本版本关闭问题已归档到 [`Plan/v0.4/issues-closed.md`](Plan/v0.4/issues-closed.md)。`ISSUE-066` 已作为 v0.4 hotfix 关闭并追加归档。
 
 ---
 
@@ -42,7 +42,7 @@ v0.4 已收口；本版本关闭问题已归档到 [`Plan/v0.4/issues-closed.md`
 
 > 完整流转规则见 [`Plan/rules/pm-write-routing.md`](Plan/rules/pm-write-routing.md)；版本收口规则见 [`Plan/version-lifecycle.md`](Plan/version-lifecycle.md)。
 
-1. **新开 issue**：从当前最大 ID 续编（跨版本连续，目前下一个新 ID 从 `ISSUE-066` 起）。写明 P0/P1/P2、所属版本、类别（bug / 实现一致性 / a11y / UI / 等）
+1. **新开 issue**：从当前最大 ID 续编（跨版本连续，目前下一个新 ID 从 `ISSUE-067` 起）。写明 P0/P1/P2、所属版本、类别（bug / 实现一致性 / a11y / UI / 等）
 2. **关闭 issue**：在本文件内标注关闭并保留关闭证据链；版本收口时由本文件整体搬至 `Plan/vX.Y/issues-closed.md`
 3. **延期 issue**：迁入 `Backlog.md`，原 ID 保留；激活时搬回本文件，仍用原 ID
 4. **同一条目不同时在两边**：bug 进本文件；未激活需求 / 想法进 Backlog

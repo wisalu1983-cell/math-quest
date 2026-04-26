@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import type { VerticalCalcCompletePayload, VerticalCalcData } from '@/types';
 import {
   buildVerticalCalcPolicyColumns,
@@ -188,7 +189,7 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
     inputRef.current?.focus({ preventScroll: true });
   };
 
-  const handleInput = (value: string) => {
+  const commitCellInput = (value: string) => {
     if (completed || !activeCell) return;
     setSubmitWarning(false);
 
@@ -209,10 +210,7 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
       return;
     }
 
-    const previous = processValues[activeCell.col] ?? '';
-    const nextValue = op === '-' && previous === '-' && value === '1'
-      ? '-1'
-      : value;
+    const nextValue = op === '-' && value === '1' ? '-1' : value;
     if (!isCellComplete({ operation: op, cellKind: 'process', value: nextValue })) {
       return;
     }
@@ -220,6 +218,32 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
     const nextProcesses = { ...processValues, [activeCell.col]: nextValue };
     setProcessValues(nextProcesses);
     focusAfterInput(activeCell, { answers: answerValues, processes: nextProcesses }, 'input');
+  };
+
+  const clearHiddenInput = () => {
+    if (inputRef.current) {
+      inputRef.current.value = '';
+    }
+  };
+
+  const handleTextInput = (event: FormEvent<HTMLInputElement>) => {
+    const element = event.currentTarget;
+    const nativeEvent = event.nativeEvent as InputEvent;
+
+    if (
+      nativeEvent.inputType === 'deleteContentBackward' ||
+      nativeEvent.inputType === 'deleteContentForward'
+    ) {
+      handleClear();
+      element.value = '';
+      return;
+    }
+
+    const nextValue = nativeEvent.data ?? element.value;
+    if (nextValue.length === 1) {
+      commitCellInput(nextValue);
+    }
+    element.value = '';
   };
 
   const handleClear = () => {
@@ -319,6 +343,11 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
     if (pendingCompletion) onComplete(pendingCompletion);
   };
 
+  const formatCellDisplay = (value: string | undefined) => {
+    if (op === '-' && value === '-1') return '退1';
+    return value ?? '';
+  };
+
   const renderProcessCell = (gridCol: number) => {
     if (gridCol === dotRenderCol) {
       return <div key={gridCol} className="h-10 w-10 sm:h-12 sm:w-12" />;
@@ -346,8 +375,8 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
     }
 
     const displayContent = result === 'wrong' && corrections[cellKey(cell)] !== undefined
-      ? corrections[cellKey(cell)]
-      : value ?? '';
+      ? formatCellDisplay(corrections[cellKey(cell)])
+      : formatCellDisplay(value);
 
     return (
       <div key={gridCol} className={cls} onClick={() => handleCellClick(cell)}>
@@ -453,20 +482,12 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
         inputMode="text"
         className="absolute h-0 w-0 opacity-0"
         style={{ scrollMargin: 0 }}
-        value=""
         onKeyDown={event => {
           if (event.key === 'Backspace' || event.key === 'Delete') {
             event.preventDefault();
             event.stopPropagation();
             handleClear();
-          } else if (event.key === '-') {
-            event.preventDefault();
-            event.stopPropagation();
-            handleInput('-');
-          } else if (event.key >= '0' && event.key <= '9') {
-            event.preventDefault();
-            event.stopPropagation();
-            handleInput(event.key);
+            clearHiddenInput();
           } else if (event.key === 'Enter') {
             event.preventDefault();
             event.stopPropagation();
@@ -477,10 +498,7 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
             handleMoveKey('tab');
           }
         }}
-        onChange={event => {
-          const next = event.currentTarget.value.slice(-1);
-          if (next) handleInput(next);
-        }}
+        onInput={handleTextInput}
         autoFocus
       />
 

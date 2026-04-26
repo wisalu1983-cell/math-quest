@@ -52,10 +52,11 @@
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
 - ✅ Phase 2 已完成：A04「运算律」/ A06「括号变换」取消玩家独立入口并从新主链路断联；相关能力迁入 A07「简便计算」低档知识点 lane；`npm test -- --run` 48/48 files、672/672 tests 通过，`npm run build` 通过，浏览器拟真验收通过
 - ✅ Phase 3 已完成：题目质量与生成器诊断入口见 [`Plan/v0.4/phases/phase-3.md`](Plan/v0.4/phases/phase-3.md)；A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布达标，A03 进阶 3★ 短除候选降为 0，A02 compare 质量优化完成，session 内完全重复治理已覆盖 campaign / advance / rank-match；QAleader v2 已按风险驱动、规格追踪、统计抽样与拟真人工 oracle 补强并通过，记录见 [`../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md`](../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md)
-- ✅ 当前版本开放 issue 数为 0；`ISSUE-065` 单行竖式已知操作数低对比已修复并通过视觉补测
+- ✅ 当前版本开放 issue 数为 0；`ISSUE-065` 单行竖式已知操作数低对比已修复并通过视觉补测；`ISSUE-066` 竖式输入双入口导致 `0` 跨格重复消费与退位格输入心智不清已通过 v0.4 hotfix 修复
 - ✅ Phase 4 已完成：进位/退位格三档规则采用策略判定器方案；低档默认跳格纳入进位/退位格且过程错不通过并进入错题本，中档只在统一结果 UI 给当前题过程提示，高档不显示过程格；compare tip 已用可控题对象与 dev hook 浏览器补证通过；A03 current spec 已回写。入口见 [`Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md) · [`Specs/a03-vertical-calc/current.md`](Specs/a03-vertical-calc/current.md)
 - ✅ Phase 5 已完成：`BL-004` Practice 状态重置采用纯初始化函数 + reducer + `usePracticeInputState()` hook 落地；换题 reset 与首输入聚焦已收敛进 hook，TDD、全量 test/build、Playwright 与 QAleader 三层 QA 通过。入口见 [`Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md) · [`../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`](../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md)
 - ✅ v0.4 Release Gate 已通过（补测后），入口见 [`../QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../QA/runs/2026-04-26-v04-release-gate/qa-summary.md)
+- ✅ v0.4 hotfix 已完成：竖式板输入改为单一字符入口，退位格支持 `1 -> 退1` 语义输入；QA 见 [`../QA/runs/2026-04-26-v04-hotfix-vertical-input/qa-summary.md`](../QA/runs/2026-04-26-v04-hotfix-vertical-input/qa-summary.md)
 - ✅ Living Spec 正式试行验收通过，入口见 [`Reports/2026-04-26-current-spec文档流试点工作结果报告.md`](Reports/2026-04-26-current-spec文档流试点工作结果报告.md)
 - ✅ v0.4 已发布到 GitHub Pages：[`https://wisalu1983-cell.github.io/math-quest/`](https://wisalu1983-cell.github.io/math-quest/)
 
