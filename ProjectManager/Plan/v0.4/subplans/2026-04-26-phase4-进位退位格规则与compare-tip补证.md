@@ -5,7 +5,7 @@
 > 父计划：v0.4-4
 > 设计规格：`ProjectManager/Specs/2026-04-17-generator-redesign-v2.md`（v2.2）、`ProjectManager/Specs/2026-04-16-generator-difficulty-tiering-spec.md`（v1.0）、`ProjectManager/Specs/2026-04-09-a03-block-b-design.md`、`ProjectManager/Specs/2026-04-14-ui-redesign-spec.md`
 > 历史计划参考：`ProjectManager/Plan/v0.2/subplans/2026-04-22-4-4-method-tips.md`
-> 状态：🟡 设计已确认，待实施
+> 状态：🟡 开发结果最终验收中（验收结论待回写）
 
 ---
 

@@ -32,7 +32,7 @@
 | `BL-008` 重复题目诊断 | Phase 3 |
 | `BL-005.2` 进位格三档规则 | Phase 4 |
 | `BL-003` compare tip 补证 | Phase 4 |
-| Practice 状态重置 | Phase 5 / 待确认 |
+| Practice 状态重置 | Phase 5 / 工程方案已定 |
 
 ## 进入条件
 

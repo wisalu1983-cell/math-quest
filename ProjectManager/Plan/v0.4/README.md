@@ -2,7 +2,7 @@
 
 > 所属版本：v0.4
 > 创建：2026-04-25
-> 状态：✅ Phase 1 / Phase 2 / Phase 3 已完成；Phase 4 设计已确认，待实施
+> 状态：✅ Phase 1 / Phase 2 / Phase 3 已完成；Phase 4 最终验收中；Phase 5 工程方案已定
 > 设计规格：N/A（本版本先由预研报告和既有 Specs 约束驱动；具体子项开工前按需补设计 / 子计划）
 
 ---
@@ -35,6 +35,7 @@
 | Phase 4：交互设计与教学引导 | [`phases/phase-4.md`](./phases/phase-4.md) |
 | Phase 4 子计划：进位/退位格规则与 compare tip 补证 | [`subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](./subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md) |
 | Phase 5：Practice 工程质量 | [`phases/phase-5.md`](./phases/phase-5.md) |
+| Phase 5 启动准备：Practice 状态重置 | [`subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](./subplans/2026-04-26-phase5-Practice状态重置启动准备.md) |
 
 ## N/A / 延迟创建说明
 
@@ -52,5 +53,6 @@
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
 - ✅ Phase 2 已完成：A04「运算律」/ A06「括号变换」取消玩家独立入口并从新主链路断联；相关能力迁入 A07「简便计算」低档知识点 lane；A07 进阶保留原 A07 子题型分配；自动化、构建、浏览器拟真验收通过
 - ✅ Phase 3 已完成：A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布已落在验收带内；A03 进阶 3★ 短除候选降为 0；A02 compare d=7/d=8 质量优化完成；campaign / advance / rank-match session 内完全重复治理已接入 bounded retry；QAleader v2 已按风险驱动、规格追踪、统计抽样与拟真人工 oracle 补强并通过，记录见 [`../../../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md`](../../../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md)
-- 🟡 Phase 4 设计已确认：[`subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](./subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md)
-- 📋 下一步：按 Phase 4 子计划实施 `BL-005.2` 进位/退位格三档规则与 `BL-003` compare tip 补证；另行确认 `Phase 5` 是否保留在 v0.4
+- 🟡 Phase 4 开发结果正在最终验收（2026-04-26 本轮同步；验收结论待 Phase 4 / QA 文档回写）：[`subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](./subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md)
+- 🟡 Phase 5 工程方案已定：`BL-004` Practice 状态重置采用纯初始化函数 + reducer / hook；代码实施闸门待 Phase 4 验收稳定
+- 📋 下一步：收敛 Phase 4 最终验收结论；并行准备 Phase 5 行为基线测试与统一状态重置方案

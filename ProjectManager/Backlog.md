@@ -45,9 +45,10 @@
 - **来源**：v0.2 收口 Code Review（2026-04-23）
 - **背景**：当前答题页在切到下一题时，会手动重置多份输入状态。用户现在看不出明显问题，但继续往这页叠功能时，更容易带来切题闪动、焦点错位或维护成本上升
 - **类别**：工程质量 / 技术债
-- **状态**：**已纳入 v0.4**（Phase 5：时机待需求讨论确认）
+- **状态**：**已纳入 v0.4**（Phase 5：工程方案已定；代码实施闸门待 Phase 4 验收稳定）
 - **关联证据**：[`QA/runs/2026-04-23-v0.2-full-regression/code-review-result.md`](../QA/runs/2026-04-23-v0.2-full-regression/code-review-result.md)
 - **关联 Plan**：[`Plan/v0.4/README.md`](Plan/v0.4/README.md) · [`Plan/v0.4/phases/phase-5.md`](Plan/v0.4/phases/phase-5.md)
+- **关联子计划**：[`Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md)
 - **定位**：[src/pages/Practice.tsx:58](../src/pages/Practice.tsx#L58)
 
 ### BL-005 · 竖式笔算体验问题集（4.25 用户反馈）
