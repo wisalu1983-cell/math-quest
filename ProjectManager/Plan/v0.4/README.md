@@ -54,5 +54,5 @@
 - ✅ Phase 2 已完成：A04「运算律」/ A06「括号变换」取消玩家独立入口并从新主链路断联；相关能力迁入 A07「简便计算」低档知识点 lane；A07 进阶保留原 A07 子题型分配；自动化、构建、浏览器拟真验收通过
 - ✅ Phase 3 已完成：A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布已落在验收带内；A03 进阶 3★ 短除候选降为 0；A02 compare d=7/d=8 质量优化完成；campaign / advance / rank-match session 内完全重复治理已接入 bounded retry；QAleader v2 已按风险驱动、规格追踪、统计抽样与拟真人工 oracle 补强并通过，记录见 [`../../../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md`](../../../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md)
 - ✅ Phase 4 已完成：进位/退位格三档规则采用策略判定器方案，compare tip 补证通过，A03 current spec 已回写。入口：[`subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](./subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md) · [`../../Specs/a03-vertical-calc/current.md`](../../Specs/a03-vertical-calc/current.md)
-- 🟡 Phase 5 工程方案已定：`BL-004` Practice 状态重置采用纯初始化函数 + reducer / hook；Phase 4 已收口后可进入代码实施闸门
+- 🟡 Phase 5 工程方案已定：`BL-004` Practice 状态重置采用纯初始化函数 + reducer + `usePracticeInputState()` hook；Phase 4 已收口后可进入代码实施闸门
 - 📋 下一步：推进 Phase 5 行为基线测试与统一状态重置方案实施，并验收 Living Spec 制度正式试行结果

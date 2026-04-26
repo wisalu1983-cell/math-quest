@@ -54,7 +54,7 @@
 - ✅ Phase 3 已完成：题目质量与生成器诊断入口见 [`Plan/v0.4/phases/phase-3.md`](Plan/v0.4/phases/phase-3.md)；A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布达标，A03 进阶 3★ 短除候选降为 0，A02 compare 质量优化完成，session 内完全重复治理已覆盖 campaign / advance / rank-match；QAleader v2 已按风险驱动、规格追踪、统计抽样与拟真人工 oracle 补强并通过，记录见 [`../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md`](../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md)
 - ✅ 当前版本开放 issue 数为 0
 - ✅ Phase 4 已完成：进位/退位格三档规则采用策略判定器方案；低档默认跳格纳入进位/退位格且过程错不通过并进入错题本，中档只在统一结果 UI 给当前题过程提示，高档不显示过程格；compare tip 已用可控题对象与 dev hook 浏览器补证通过；A03 current spec 已回写。入口见 [`Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md) · [`Specs/a03-vertical-calc/current.md`](Specs/a03-vertical-calc/current.md)
-- 🟡 Phase 5 工程方案已定：`BL-004` Practice 状态重置采用纯初始化函数 + reducer / hook，先补 TDD 行为基线，再替换 `Practice.tsx` 多 setter reset；Phase 4 已收口后可进入代码实施闸门。入口见 [`Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md)
+- 🟡 Phase 5 工程方案已定：`BL-004` Practice 状态重置采用纯初始化函数 + reducer + `usePracticeInputState()` hook，先补 TDD 行为基线，再替换 `Practice.tsx` 多 setter reset，并把换题聚焦收敛进 hook；Phase 4 已收口后可进入代码实施闸门。入口见 [`Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md)
 
 **入口**：
 
