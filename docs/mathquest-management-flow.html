@@ -1,0 +1,971 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>math-quest 项目管理与版本开发流程图</title>
+  <style>
+    :root {
+      --bg: #fff8f3;
+      --paper: #ffffff;
+      --ink: #181818;
+      --muted: #68605a;
+      --line: #ead9ce;
+      --soft: #fff0eb;
+      --orange: #ff6b35;
+      --orange-dark: #b8441c;
+      --green: #2f9f61;
+      --blue: #2172b8;
+      --purple: #7b43a6;
+      --yellow: #b28700;
+      --red: #c94f52;
+      --shadow: 0 16px 40px rgba(78, 45, 24, .10);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      background:
+        linear-gradient(90deg, rgba(234, 217, 206, .32) 1px, transparent 1px),
+        linear-gradient(0deg, rgba(234, 217, 206, .32) 1px, transparent 1px),
+        var(--bg);
+      background-size: 32px 32px;
+      color: var(--ink);
+      font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", sans-serif;
+      line-height: 1.65;
+    }
+
+    a {
+      color: inherit;
+      text-decoration-thickness: 1px;
+      text-underline-offset: 4px;
+    }
+
+    .shell {
+      width: min(1240px, calc(100vw - 32px));
+      margin: 0 auto;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-bottom: 1px solid var(--line);
+      background: rgba(255, 248, 243, .92);
+      backdrop-filter: blur(14px);
+    }
+
+    .topbar-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      min-height: 62px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 900;
+      letter-spacing: 0;
+    }
+
+    .mark {
+      width: 34px;
+      height: 34px;
+      border: 2px solid var(--ink);
+      border-radius: var(--radius);
+      background:
+        linear-gradient(135deg, var(--orange) 0 48%, transparent 49%),
+        linear-gradient(315deg, #ffd43b 0 44%, #ffffff 45%);
+      box-shadow: 4px 4px 0 var(--ink);
+    }
+
+    .nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .nav a {
+      padding: 6px 9px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      text-decoration: none;
+    }
+
+    .nav a:hover {
+      border-color: var(--line);
+      background: var(--paper);
+      color: var(--ink);
+    }
+
+    header {
+      padding: 42px 0 22px;
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 14px;
+      color: var(--orange-dark);
+      font-size: 13px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+    }
+
+    .eyebrow::before {
+      content: "";
+      width: 32px;
+      height: 3px;
+      background: var(--orange);
+    }
+
+    h1 {
+      max-width: 980px;
+      margin: 0;
+      font-size: clamp(34px, 6vw, 76px);
+      line-height: .98;
+      letter-spacing: 0;
+    }
+
+    .lede {
+      max-width: 860px;
+      margin: 20px 0 0;
+      color: var(--muted);
+      font-size: 18px;
+    }
+
+    .status-strip {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin: 30px 0 0;
+    }
+
+    .status-item {
+      min-height: 112px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .86);
+      box-shadow: 0 6px 18px rgba(78, 45, 24, .06);
+    }
+
+    .status-item b {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: var(--muted);
+    }
+
+    .status-item span {
+      display: block;
+      font-size: 18px;
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    section {
+      padding: 44px 0;
+      border-top: 1px solid rgba(234, 217, 206, .7);
+    }
+
+    .section-head {
+      display: grid;
+      grid-template-columns: minmax(220px, 340px) minmax(0, 1fr);
+      gap: 34px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: clamp(26px, 3vw, 42px);
+      line-height: 1.08;
+      letter-spacing: 0;
+    }
+
+    .section-head p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 16px;
+    }
+
+    .diagram-frame {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .88);
+      box-shadow: var(--shadow);
+    }
+
+    svg {
+      display: block;
+      min-width: 1040px;
+      width: 100%;
+      height: auto;
+    }
+
+    .node-title {
+      font-size: 18px;
+      font-weight: 900;
+      fill: var(--ink);
+    }
+
+    .node-text {
+      font-size: 13px;
+      fill: #4d4742;
+    }
+
+    .node-small {
+      font-size: 12px;
+      fill: #655d56;
+    }
+
+    .svg-label {
+      font-size: 12px;
+      font-weight: 800;
+      fill: #6b5143;
+    }
+
+    .on-dark-title {
+      fill: #fff9f4;
+    }
+
+    .on-dark-text {
+      fill: #fff0eb;
+    }
+
+    .on-dark-small {
+      fill: #ead9ce;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 12px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, .74);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--orange);
+    }
+
+    .dot.green { background: var(--green); }
+    .dot.blue { background: var(--blue); }
+    .dot.purple { background: var(--purple); }
+    .dot.yellow { background: #ffd43b; border: 1px solid #c99a00; }
+    .dot.red { background: var(--red); }
+
+    .system-flow {
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .88);
+      box-shadow: var(--shadow);
+    }
+
+    .flow-row {
+      display: grid;
+      grid-template-columns: 142px minmax(0, 1fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .flow-label {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 8px;
+      min-height: 108px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #26201c;
+      color: #fff9f4;
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    .flow-label span {
+      width: fit-content;
+      padding: 2px 7px;
+      border-radius: 999px;
+      background: var(--orange);
+      color: #3d1400;
+      font-size: 12px;
+    }
+
+    .flow-content {
+      display: grid;
+      gap: 12px;
+      min-height: 108px;
+    }
+
+    .flow-content.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .flow-content.three {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .flow-content.four {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+
+    .flow-card {
+      min-height: 108px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-left: 6px solid var(--orange);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(78, 45, 24, .06);
+    }
+
+    .flow-card.dark {
+      border-color: #181818;
+      border-left-color: var(--orange);
+      background: #26201c;
+      color: #fff9f4;
+    }
+
+    .flow-card.blue { border-left-color: var(--blue); background: #f0f7ff; }
+    .flow-card.green { border-left-color: var(--green); background: #ecfaf1; }
+    .flow-card.purple { border-left-color: var(--purple); background: #f5f1ff; }
+    .flow-card.yellow { border-left-color: #d7a900; background: #fffbe8; }
+    .flow-card.red { border-left-color: var(--red); background: #fff1f1; }
+
+    .flow-card h3 {
+      margin: 0 0 6px;
+      font-size: 18px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .flow-card p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .flow-card.dark p {
+      color: #ead9ce;
+    }
+
+    .flow-card strong {
+      color: var(--ink);
+      font-weight: 900;
+    }
+
+    .flow-arrow {
+      position: relative;
+      height: 44px;
+      margin-left: 160px;
+    }
+
+    .flow-arrow::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 50%;
+      width: 2px;
+      height: 32px;
+      background: #8d7567;
+    }
+
+    .flow-arrow::after {
+      content: "";
+      position: absolute;
+      top: 31px;
+      left: calc(50% - 6px);
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+      border-top: 9px solid #8d7567;
+    }
+
+    .flow-arrow span {
+      position: absolute;
+      top: 7px;
+      left: calc(50% + 14px);
+      max-width: 380px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+
+    .matrix {
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .9);
+      box-shadow: var(--shadow);
+    }
+
+    table {
+      width: 100%;
+      min-width: 900px;
+      border-collapse: collapse;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #26201c;
+      color: #fff9f4;
+      font-size: 13px;
+      letter-spacing: .04em;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    td:first-child {
+      font-weight: 900;
+      color: var(--ink);
+    }
+
+    .callout {
+      display: grid;
+      grid-template-columns: 10px minmax(0, 1fr);
+      gap: 14px;
+      margin-top: 20px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: #fff;
+      box-shadow: 0 8px 20px rgba(78, 45, 24, .06);
+    }
+
+    .callout::before {
+      content: "";
+      border-radius: 999px;
+      background: var(--orange);
+    }
+
+    .callout strong {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 15px;
+    }
+
+    .callout p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .sources {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 18px;
+      font-size: 13px;
+    }
+
+    .sources a {
+      padding: 7px 9px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: rgba(255, 255, 255, .82);
+      text-decoration: none;
+    }
+
+    footer {
+      padding: 28px 0 46px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    @media (max-width: 820px) {
+      .topbar {
+        position: static;
+      }
+
+      .topbar-inner,
+      .section-head {
+        display: block;
+      }
+
+      .nav {
+        margin-top: 12px;
+      }
+
+      .status-strip {
+        grid-template-columns: 1fr;
+      }
+
+      .system-flow {
+        padding: 14px;
+      }
+
+      .flow-row,
+      .flow-content.two,
+      .flow-content.three,
+      .flow-content.four {
+        grid-template-columns: 1fr;
+      }
+
+      .flow-label,
+      .flow-card {
+        min-height: auto;
+      }
+
+      .flow-arrow {
+        margin-left: 0;
+      }
+
+      .flow-arrow span {
+        left: calc(50% + 10px);
+        white-space: normal;
+      }
+
+      header {
+        padding-top: 30px;
+      }
+
+      .lede {
+        font-size: 16px;
+      }
+
+      svg {
+        min-width: 980px;
+      }
+    }
+
+    @media print {
+      .topbar {
+        position: static;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      section {
+        break-inside: avoid;
+      }
+
+      .diagram-frame,
+      .matrix,
+      .status-item,
+      .callout {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="shell topbar-inner">
+      <div class="brand">
+        <span class="mark" aria-hidden="true"></span>
+        <span>math-quest 管理流程图</span>
+      </div>
+      <nav class="nav" aria-label="页面导航">
+        <a href="#system">项目管理体系</a>
+        <a href="#version">版本开发流程</a>
+        <a href="#matrix">速查矩阵</a>
+        <a href="#sources">依据文档</a>
+      </nav>
+    </div>
+  </div>
+
+  <header class="shell">
+    <p class="eyebrow">Project Control Map</p>
+    <h1>math-quest 项目管理体系与版本开发流程</h1>
+    <p class="lede">这页只解释管理材料如何流转，不改变产品功能、版本轴或任何 PM 权威源。当前项目以 `Overview.md` 作为活跃控制面，其他文档按职责分流：Plan 管执行，Specs 管长期承诺，ISSUE_LIST 管具体问题，Backlog 管候选方向，QA 管正式验证结论。</p>
+
+    <div class="status-strip" aria-label="当前项目状态摘要">
+      <div class="status-item">
+        <b>产品</b>
+        <span>上海五年级数学游戏化练习</span>
+      </div>
+      <div class="status-item">
+        <b>当前范围</b>
+        <span>A01-A08 数与运算</span>
+      </div>
+      <div class="status-item">
+        <b>当前版本轴</b>
+        <span>v0.4 已发布</span>
+      </div>
+      <div class="status-item">
+        <b>下一步</b>
+        <span>等待 v0.5 决策</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="system">
+      <div class="shell">
+        <div class="section-head">
+          <h2>项目管理体系图</h2>
+          <p>读项目时先进入 `CLAUDE.md` 与 `ProjectManager/Overview.md`；写项目时先改各自权威源，只有影响当前状态、主线或下一步时再回写 `Overview.md`。</p>
+        </div>
+
+        <div class="system-flow" role="img" aria-label="math-quest 项目管理体系图，采用从上到下的单向流程展示">
+          <div class="flow-row">
+            <div class="flow-label"><span>01</span>会话入口</div>
+            <div class="flow-content two">
+              <article class="flow-card dark">
+                <h3>CLAUDE.md / AGENTS.md</h3>
+                <p>先读高频项目规则、执行适配和低频索引。它回答“本次该从哪里开始”。</p>
+              </article>
+              <article class="flow-card">
+                <h3>ProjectManager/Overview.md</h3>
+                <p>活跃控制面：只保留背景、当前版本轴、当前状态、下一步和入口链接。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>先确认当前上下文，再决定读哪个权威源</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>02</span>路由判断</div>
+            <div class="flow-content three">
+              <article class="flow-card">
+                <h3>Plan/README.md</h3>
+                <p>计划索引、规则入口、模板入口。生命周期变化时才更新索引。</p>
+              </article>
+              <article class="flow-card">
+                <h3>pm-write-routing.md</h3>
+                <p>规定“先改权威源，再按影响回写 Overview.md”。</p>
+              </article>
+              <article class="flow-card">
+                <h3>document-ownership.md</h3>
+                <p>判断 Plan、Specs、Reports、QA 分别该承载什么。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>按问题性质进入对应权威源</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>03</span>权威源层</div>
+            <div class="flow-content four">
+              <article class="flow-card">
+                <h3>Plan/vX.Y/</h3>
+                <p><strong>版本执行事实。</strong> README、00-04、phases、subplans 记录范围、阶段、证据和执行纪律。</p>
+              </article>
+              <article class="flow-card blue">
+                <h3>Specs/</h3>
+                <p><strong>长期功能承诺。</strong> `_index.md` 是新计划必查清单，`current.md` 只写验收后的行为。</p>
+              </article>
+              <article class="flow-card yellow">
+                <h3>ISSUE_LIST.md</h3>
+                <p><strong>具体 bug / 欠账。</strong> 生命周期是 open → closed，关闭项进版本归档。</p>
+              </article>
+              <article class="flow-card purple">
+                <h3>Backlog.md</h3>
+                <p><strong>候选需求 / 方向。</strong> 候选 → 纳入版本 → 落地 / 延期 / 放弃。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>实施或决策完成后，进入验证和沉淀</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>04</span>验证沉淀</div>
+            <div class="flow-content three">
+              <article class="flow-card green">
+                <h3>QA/runs/</h3>
+                <p>正式 QA 结论入库；按风险选择 L1 / L2 / L3，release gate 使用 L3。</p>
+              </article>
+              <article class="flow-card">
+                <h3>Reports/</h3>
+                <p>复盘、机制说明、试点结果。默认不回写，除非产生新的活跃结论。</p>
+              </article>
+              <article class="flow-card red">
+                <h3>归档与同步门</h3>
+                <p>版本启动、版本收口、多源生命周期变化时，按规则触发 `pm-sync-check`。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>最后只做一次状态判断，不画回环线</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>05</span>回写判断</div>
+            <div class="flow-content">
+              <article class="flow-card dark">
+                <h3>回到 Overview.md 的唯一条件</h3>
+                <p>只有当改动影响当前主线、当前状态、下一步或权威入口时，才回写 `ProjectManager/Overview.md`。否则信息留在对应权威源里。</p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend" aria-label="图例">
+          <span><i class="dot"></i>当前控制面</span>
+          <span><i class="dot blue"></i>长期规格</span>
+          <span><i class="dot green"></i>QA 结论</span>
+          <span><i class="dot purple"></i>候选需求</span>
+          <span><i class="dot yellow"></i>具体问题</span>
+          <span><i class="dot red"></i>生命周期同步门</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="version">
+      <div class="shell">
+        <div class="section-head">
+          <h2>版本开发流程图</h2>
+          <p>正式产品版本从需求或缺陷被选中开始，先建立版本计划目录，再拆成阶段和具体任务推进。括号里保留 math-quest 的内部文件名，方便回到仓库定位。</p>
+        </div>
+
+        <div class="system-flow" role="img" aria-label="math-quest 版本开发流程图，采用从上到下的单向流程展示">
+          <div class="flow-row">
+            <div class="flow-label"><span>01</span>激活来源</div>
+            <div class="flow-content three">
+              <article class="flow-card purple">
+                <h3>需求池（Backlog）</h3>
+                <p>记录还没排进版本的需求、想法和延期项。只有被选进某个版本后，才进入正式开发。</p>
+              </article>
+              <article class="flow-card yellow">
+                <h3>缺陷清单（Issue）</h3>
+                <p>记录明确的 bug、技术欠账或实现问题。进入版本后保留原编号和复现证据。</p>
+              </article>
+              <article class="flow-card">
+                <h3>真实用户反馈</h3>
+                <p>先整理来源、用户痛点和期望改善，再决定是否纳入下一个版本。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>决策进入某个正式产品版本</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>02</span>版本启动</div>
+            <div class="flow-content two">
+              <article class="flow-card">
+                <h3>建立版本计划目录（Plan/vX.Y）</h3>
+                <p>为这个版本放一套固定文档：入口、目标快照、来源证据、范围分类、阶段计划和执行规则。</p>
+              </article>
+              <article class="flow-card blue">
+                <h3>核对长期规则（Specs/_index）</h3>
+                <p>检查已有功能规则、体验约束和数据约定，把本版本必须遵守的内容写进计划。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>建立阶段结构和实施入口</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>03</span>阶段推进</div>
+            <div class="flow-content three">
+              <article class="flow-card">
+                <h3>阶段总图（Phase Plan）</h3>
+                <p>把版本拆成几个阶段，说明先后顺序、依赖关系、开始条件和完成标准。</p>
+              </article>
+              <article class="flow-card">
+                <h3>具体任务计划（subplan）</h3>
+                <p>单个功能或修复开工前，先写清预期效果、调研证据、方案和验收方式。</p>
+              </article>
+              <article class="flow-card">
+                <h3>独立开发环境（worktree）</h3>
+                <p>涉及代码实现时，通常在独立工作区开发，避免影响主工作区里的其他改动。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>每个阶段按风险选择验证深度</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>04</span>验证与规格</div>
+            <div class="flow-content three">
+              <article class="flow-card green">
+                <h3>基础验证</h3>
+                <p>根据改动范围运行单元测试、构建检查、浏览器走查或人工体验检查。</p>
+              </article>
+              <article class="flow-card green">
+                <h3>分层 QA（QAleader）</h3>
+                <p>普通功能做标准测试；高风险模块加深测试；版本发布前做完整回归和发布门禁。</p>
+              </article>
+              <article class="flow-card blue">
+                <h3>规格影响判断</h3>
+                <p>判断这次改动是否改变长期规则：需要更新、没有影响，或等验收后再确认。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>版本完成后统一收束生命周期</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>05</span>版本收口</div>
+            <div class="flow-content three">
+              <article class="flow-card red">
+                <h3>整理需求和缺陷状态</h3>
+                <p>已完成的需求和缺陷进入归档；没做完但仍值得做的，回到需求池或标为延期。</p>
+              </article>
+              <article class="flow-card red">
+                <h3>更新版本入口</h3>
+                <p>把版本目标、完成事实、遗留风险和最终状态写回版本入口文档。</p>
+              </article>
+              <article class="flow-card red">
+                <h3>同步总览和索引</h3>
+                <p>更新计划索引；如果当前版本或下一步变了，再更新项目总览并运行文档一致性检查。</p>
+              </article>
+            </div>
+          </div>
+
+          <div class="flow-arrow"><span>进入下一轮候选评估</span></div>
+
+          <div class="flow-row">
+            <div class="flow-label"><span>06</span>当前落点</div>
+            <div class="flow-content">
+              <article class="flow-card dark">
+                <h3>v0.4 已发布，开放 issue 为 0</h3>
+                <p>后续新需求会先进入需求池或来自真实用户反馈；被选中后，再作为 `v0.5` 重新进入上面的版本启动流程。</p>
+              </article>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout">
+          <div>
+            <strong>介绍材料例外</strong>
+            <p>本 HTML 是流程介绍材料，不属于产品版本内容。它不需要创建版本计划目录、不需要具体任务计划、不需要做规格影响判断，也不默认运行文档一致性检查。</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="matrix">
+      <div class="shell">
+        <div class="section-head">
+          <h2>速查矩阵</h2>
+          <p>遇到不同问题时，先找对应的事实源，再判断是否需要更新项目总览或索引。</p>
+        </div>
+
+        <div class="matrix">
+          <table>
+            <thead>
+              <tr>
+                <th>场景</th>
+                <th>先读 / 先改</th>
+                <th>主要职责</th>
+                <th>何时更新项目总览</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>查看当前项目状态</td>
+                <td><a href="../ProjectManager/Overview.md">ProjectManager/Overview.md</a></td>
+                <td>项目背景、当前版本轴、当前状态、下一步、权威入口。</td>
+                <td>它本身就是控制面；不承载详细执行过程。</td>
+              </tr>
+              <tr>
+                <td>开新版本 / 版本收口</td>
+                <td><a href="../ProjectManager/Plan/version-lifecycle.md">Plan/version-lifecycle.md</a> + 版本包模板</td>
+                <td>创建或收束版本计划目录，维护入口、目标快照、阶段计划、具体任务计划和归档。</td>
+                <td>版本轴、当前阶段、当前状态或下一步变化时。</td>
+              </tr>
+              <tr>
+                <td>启动具体任务</td>
+                <td><a href="../ProjectManager/Specs/_index.md">Specs/_index.md</a> + 相关版本计划</td>
+                <td>先核对已生效的长期规则，把本次必须遵守的约束写进任务计划。</td>
+                <td>实施结果改变活跃主线、状态或入口时。</td>
+              </tr>
+              <tr>
+                <td>修改长期功能承诺</td>
+                <td><a href="../ProjectManager/Specs/_index.md">Specs/_index.md</a> 与功能当前规则页</td>
+                <td>功能当前规则页只写已经验收确认的长期行为；开发中的设想先留在任务计划里。</td>
+                <td>当前阶段入口或生效约束变化时。</td>
+              </tr>
+              <tr>
+                <td>处理 bug / 欠账</td>
+                <td><a href="../ProjectManager/ISSUE_LIST.md">ISSUE_LIST.md</a></td>
+                <td>具体问题从“待处理”流转到“已关闭”；关闭项在版本收口进入归档。</td>
+                <td>影响当前主线、阻塞状态或下一步时。</td>
+              </tr>
+              <tr>
+                <td>处理候选需求</td>
+                <td><a href="../ProjectManager/Backlog.md">Backlog.md</a></td>
+                <td>需求从“候选”流转到“纳入版本 / 已落地 / 延期 / 放弃”。</td>
+                <td>候选被正式纳入、延期或影响版本决策时。</td>
+              </tr>
+              <tr>
+                <td>正式 QA / Release Gate</td>
+                <td><a href="../QA/qa-leader-canonical.md">QA/qa-leader-canonical.md</a> + `QA/runs/`</td>
+                <td>按风险决定测试深度，记录自动化测试、人工体验检查、视觉检查和发布门禁结论。</td>
+                <td>QA 结论影响版本状态、阻塞项或发布判断时。</td>
+              </tr>
+              <tr>
+                <td>复盘 / 机制说明</td>
+                <td><a href="../ProjectManager/Reports/">Reports/</a></td>
+                <td>保留历史机制、复盘、试点结果；默认不干扰活跃视图。</td>
+                <td>只有复盘产生新的活跃结论或入口变化时。</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section id="sources">
+      <div class="shell">
+        <div class="section-head">
+          <h2>依据文档</h2>
+          <p>本页依据当前仓库文档整理，日期口径为 2026-04-27；其中 v0.4 状态来自 2026-04-26 发布后的 `Overview.md` 和版本目录。</p>
+        </div>
+        <div class="sources">
+          <a href="../CLAUDE.md">CLAUDE.md</a>
+          <a href="../AGENTS.md">AGENTS.md</a>
+          <a href="../ProjectManager/Overview.md">ProjectManager/Overview.md</a>
+          <a href="../ProjectManager/Plan/README.md">Plan/README.md</a>
+          <a href="../ProjectManager/Plan/version-lifecycle.md">Plan/version-lifecycle.md</a>
+          <a href="../ProjectManager/Plan/rules/pm-write-routing.md">pm-write-routing.md</a>
+          <a href="../ProjectManager/Plan/rules/document-ownership.md">document-ownership.md</a>
+          <a href="../ProjectManager/Specs/_index.md">Specs/_index.md</a>
+          <a href="../ProjectManager/ISSUE_LIST.md">ISSUE_LIST.md</a>
+          <a href="../ProjectManager/Backlog.md">Backlog.md</a>
+          <a href="../QA/qa-leader-canonical.md">QA canonical</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="shell">
+    <p>本页面是项目流程介绍材料。若未来要把它纳入正式项目管理资产，再按用户确认的归属规则决定是否进入 Plan、Reports 或其他目录。</p>
+  </footer>
+</body>
+</html>
