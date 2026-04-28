@@ -34,6 +34,20 @@ function isTwoDigitByTwoDigit(question: Question): boolean {
   return digitCount(a) === 2 && digitCount(b) === 2;
 }
 
+function isTwoDigitByOneDigitMultiplication(question: Question): boolean {
+  if (question.data.kind !== 'vertical-calc') return false;
+  if (question.data.operation !== '×') return false;
+  const [a, b] = question.data.operands;
+  return digitCount(a) === 2 && digitCount(b) === 1;
+}
+
+function isThreeDigitByOneDigitMultiplication(question: Question): boolean {
+  if (question.data.kind !== 'vertical-calc') return false;
+  if (question.data.operation !== '×') return false;
+  const [a, b] = question.data.operands;
+  return digitCount(a) === 3 && digitCount(b) === 1;
+}
+
 function getVerticalOperands(question: Question): [number, number] {
   expect(question.data.kind).toBe('vertical-calc');
   expect(question.data.operands).toHaveLength(2);
@@ -41,6 +55,45 @@ function getVerticalOperands(question: Question): [number, number] {
   expect(typeof a).toBe('number');
   expect(typeof b).toBe('number');
   return [a, b];
+}
+
+type OneDigitDivisionLoad = 'D0' | 'D1' | 'D2' | 'D3' | 'other';
+
+function classifyOneDigitIntDivision(question: Question): OneDigitDivisionLoad {
+  expect(question.data.kind).toBe('vertical-calc');
+  expect(question.data.operation).toBe('÷');
+  const [dividend, divisor] = getVerticalOperands(question);
+  const quotient = Number(question.solution.answer);
+
+  if (!Number.isInteger(dividend) || !Number.isInteger(divisor) || !Number.isInteger(quotient)) {
+    return 'other';
+  }
+  if (digitCount(divisor) !== 1 || dividend % divisor !== 0) return 'other';
+
+  const quotientMiddle = String(quotient).slice(1, -1);
+  if (quotientMiddle.includes('0')) return 'D3';
+
+  const digits = String(dividend).split('').map(Number);
+  let current = 0;
+  let quotientStarted = false;
+  let remainderTransfers = 0;
+
+  for (let i = 0; i < digits.length; i++) {
+    current = current * 10 + digits[i];
+    if (!quotientStarted && current < divisor) continue;
+
+    const qDigit = Math.floor(current / divisor);
+    const remainder = current % divisor;
+    if (qDigit > 0 || quotientStarted) {
+      quotientStarted = true;
+      if (remainder > 0 && i < digits.length - 1) remainderTransfers++;
+    }
+    current = remainder;
+  }
+
+  if (remainderTransfers === 0) return 'D0';
+  if (remainderTransfers === 1) return 'D1';
+  return 'D2';
 }
 
 function decimalPlacesOf(value: unknown): number {
@@ -69,15 +122,11 @@ describe('v0.4 Phase 3 · A03 低档后段乘法分布', () => {
     }
   });
 
-  it('difficulty<=3 的 int-mul 仍保持 2位数 × 1位数', () => {
-    const qs = generateIntMulQuestions(3, 300);
-    expect(qs.some(isTwoDigitByTwoDigit)).toBe(false);
-    for (const q of qs) {
-      expect(q.data.kind).toBe('vertical-calc');
-      expect(q.data.operation).toBe('×');
-      const [a, b] = q.data.operands;
-      expect(digitCount(a)).toBe(2);
-      expect(digitCount(b)).toBe(1);
+  it('BL-009: difficulty<=3 的 int-mul 不再生成 2位数 × 1位数', () => {
+    for (const difficulty of [2, 3]) {
+      const qs = generateIntMulQuestions(difficulty, 300);
+      expect(qs.some(isTwoDigitByOneDigitMultiplication)).toBe(false);
+      expect(qs.some(isThreeDigitByOneDigitMultiplication)).toBe(true);
     }
   });
 });
@@ -160,6 +209,31 @@ describe('v0.4 Phase 3 · A03 除法样本池治理', () => {
           expect(digitCount(dividend) === 2 && digitCount(divisor) === 1).toBe(false);
         }
       }
+    }
+  });
+});
+
+describe('v0.5 Phase 2 · BL-009 低档除法过滤', () => {
+  it('difficulty<=5 的 int-div 过滤 D0，并以 D2/D3 为主', () => {
+    for (const difficulty of [2, 3, 4, 5]) {
+      const qs = generateSubtypeQuestions('int-div', difficulty, 600);
+      const counts: Record<OneDigitDivisionLoad, number> = {
+        D0: 0,
+        D1: 0,
+        D2: 0,
+        D3: 0,
+        other: 0,
+      };
+
+      for (const q of qs) {
+        counts[classifyOneDigitIntDivision(q)]++;
+      }
+
+      expect(counts.D0).toBe(0);
+      expect(counts.D2 + counts.D3).toBeGreaterThanOrEqual(qs.length * 0.7);
+      expect(counts.D3).toBeGreaterThanOrEqual(qs.length * 0.25);
+      expect(counts.D1).toBeLessThanOrEqual(qs.length * 0.3);
+      expect(counts.other).toBe(0);
     }
   });
 });

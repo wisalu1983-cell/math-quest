@@ -48,6 +48,80 @@ function getDigits(n: number): number[] {
   return digits;
 }
 
+type OneDigitDivisionLoad = 'D0' | 'D1' | 'D2' | 'D3';
+
+function classifyOneDigitIntDivision(dividend: number, divisor: number): OneDigitDivisionLoad {
+  const quotient = dividend / divisor;
+  if (!Number.isInteger(quotient)) return 'D0';
+
+  const quotientMiddle = String(quotient).slice(1, -1);
+  if (quotientMiddle.includes('0')) return 'D3';
+
+  const digits = String(dividend).split('').map(Number);
+  let current = 0;
+  let quotientStarted = false;
+  let remainderTransfers = 0;
+
+  for (let i = 0; i < digits.length; i++) {
+    current = current * 10 + digits[i];
+    if (!quotientStarted && current < divisor) continue;
+
+    const qDigit = Math.floor(current / divisor);
+    const remainder = current % divisor;
+    if (qDigit > 0 || quotientStarted) {
+      quotientStarted = true;
+      if (remainder > 0 && i < digits.length - 1) remainderTransfers++;
+    }
+    current = remainder;
+  }
+
+  if (remainderTransfers === 0) return 'D0';
+  if (remainderTransfers === 1) return 'D1';
+  return 'D2';
+}
+
+function pickLowIntDivisionLoad(difficulty: number): OneDigitDivisionLoad {
+  const r = Math.random();
+  if (difficulty <= 3) {
+    if (r < 0.15) return 'D1';
+    if (r < 0.65) return 'D2';
+    return 'D3';
+  }
+  if (r < 0.10) return 'D1';
+  if (r < 0.55) return 'D2';
+  return 'D3';
+}
+
+function generateLowIntDivisionOperands(difficulty: number): {
+  dividend: number;
+  divisor: number;
+  quotient: number;
+  load: OneDigitDivisionLoad;
+} {
+  const targetLoad = pickLowIntDivisionLoad(difficulty);
+  const minDividend = difficulty <= 3 ? 100 : 1000;
+  const maxDividend = difficulty <= 3 ? 999 : 9999;
+
+  for (let attempt = 0; attempt < 2000; attempt++) {
+    const divisor = randInt(4, 9);
+    const minQuotient = Math.ceil(minDividend / divisor);
+    const maxQuotient = Math.floor(maxDividend / divisor);
+    const quotient = randInt(minQuotient, maxQuotient);
+    const dividend = divisor * quotient;
+    const load = classifyOneDigitIntDivision(dividend, divisor);
+    if (load === targetLoad) return { dividend, divisor, quotient, load };
+  }
+
+  if (difficulty <= 3) {
+    if (targetLoad === 'D3') return { dividend: 816, divisor: 4, quotient: 204, load: 'D3' };
+    if (targetLoad === 'D2') return { dividend: 672, divisor: 4, quotient: 168, load: 'D2' };
+    return { dividend: 452, divisor: 4, quotient: 113, load: 'D1' };
+  }
+  if (targetLoad === 'D3') return { dividend: 3264, divisor: 8, quotient: 408, load: 'D3' };
+  if (targetLoad === 'D2') return { dividend: 2672, divisor: 4, quotient: 668, load: 'D2' };
+  return { dividend: 1524, divisor: 4, quotient: 381, load: 'D1' };
+}
+
 // Normal (<=5): carry mandatory; Hard/Demon: carry optional
 function isCarrySkippable(difficulty: number): boolean {
   return difficulty > 5;
@@ -271,31 +345,19 @@ function generateMultiDigitMult(difficulty: number, id: string): Question {
 function generateDivision(difficulty: number, id: string): Question {
   // v2.1：低档整数÷整数（整除）；中档整数÷出小数；高档已不走此函数（dec-div 承担）
   if (difficulty <= 5) {
-    const b = randInt(4, 9);
-    if (difficulty <= 3) {
-      // 档1-低 (d=2~3)：三位数÷一位数，商整数
-      const quotient = randInt(Math.ceil(100 / b), Math.floor(999 / b));
-      const a = b * quotient;
-      const steps = longDivisionSolution(a, b);
-      return {
-        id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
-        prompt: `用竖式计算: ${a} ÷ ${b}`,
-        data: { kind: 'vertical-calc', operation: '÷' as const, operands: [a, b], steps: [] },
-        solution: { answer: quotient, steps, explanation: `${a} ÷ ${b} = ${quotient}` },
-        hints: ['从最高位开始，逐位试商'],
-        xpBase: 10 + (difficulty - 1) * 5,
-      };
-    }
-    // 档1-高 (d=4~5)：四位数÷一位数，商整数（操作步骤更多）
-    const quotient = randInt(Math.ceil(1000 / b), Math.floor(9999 / b));
-    const a = b * quotient;
+    const { dividend: a, divisor: b, quotient, load } = generateLowIntDivisionOperands(difficulty);
     const steps = longDivisionSolution(a, b);
+    const loadHint = load === 'D3'
+      ? '注意商中间 0 的占位'
+      : load === 'D2'
+        ? '注意多次余数传递和落位'
+        : '注意余数传递和落位';
     return {
       id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
       prompt: `用竖式计算: ${a} ÷ ${b}`,
       data: { kind: 'vertical-calc', operation: '÷' as const, operands: [a, b], steps: [] },
       solution: { answer: quotient, steps, explanation: `${a} ÷ ${b} = ${quotient}` },
-      hints: ['从最高位开始，逐位试商'],
+      hints: ['从最高位开始，逐位试商', loadHint],
       xpBase: 10 + (difficulty - 1) * 5,
     };
   }
@@ -687,8 +749,8 @@ function generateIntSub(difficulty: number, id: string): Question {
 function generateIntMul(difficulty: number, id: string): Question {
   if (difficulty > 5) return generateMultiDigitMult(difficulty, id);
   if (difficulty <= 3) {
-    // 档1-低 (d=2~3)：两位数 × 一位数
-    const a = randInt(10, 99); const b = randInt(2, 9);
+    // BL-009：低档乘法排除 2位数×1位数，改为仍可低负担起步的 3位数×1位数。
+    const a = randInt(100, 999); const b = randInt(2, 9);
     return { id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
       prompt: `用竖式计算: ${a} × ${b}`,
       data: { kind: 'vertical-calc' as const, operation: '×' as const, operands: [a, b], steps: generateMultiplicationSteps(a, b, difficulty) },
