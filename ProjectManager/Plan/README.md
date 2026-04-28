@@ -35,7 +35,7 @@
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | ✅ Phase 1 已完成；下一步启动 Phase 2 |
+| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | 🟡 Phase 2 进行中；`BL-009` 过滤规则已确认 |
 | [`v0.5/00-overview.md`](./v0.5/00-overview.md) | 背景、目标、阶段结构 | 📋 启动快照已建立 |
 | [`v0.5/01-research-catalog.md`](./v0.5/01-research-catalog.md) | 预研结论 / Backlog / Issue / Spec / 浏览器证据链 | 📋 已建立 |
 | [`v0.5/02-classification.md`](./v0.5/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
@@ -43,6 +43,7 @@
 | [`v0.5/04-execution-discipline.md`](./v0.5/04-execution-discipline.md) | 本版本执行纪律、验收规则 | 📋 已建立 |
 | [`v0.5/phases/`](./v0.5/phases/) | Phase 范围 / 进入条件 / 收尾条件 | ✅ Phase 1 已完成，后续 Phase 按子计划展开 |
 | [`v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md`](./v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md) | Phase 1 开工对齐 / 跨 Phase 边界 | ✅ 完成 |
+| [`v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md`](./v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md) | Phase 2 `BL-009` 样本质量诊断 / 过滤规则 | 🟡 进行中 |
 
 ## 跨版本工具性 Plan
 
