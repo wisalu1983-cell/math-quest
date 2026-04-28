@@ -2,7 +2,7 @@
 
 > 所属版本：v0.5
 > 创建：2026-04-28
-> 状态：📋 已启动；范围已纠偏为 A03 / Practice 输入体验主线，下一步讨论详细设计文档
+> 状态：✅ Phase 1 已完成；下一步启动 Phase 2 竖式题样本质量诊断
 > 设计规格：N/A（启动阶段由本版本预研结论和既有 current spec 约束驱动；具体子项开工前按需补设计 / 子计划）
 
 ---
@@ -25,11 +25,12 @@
 | 功能分类、依赖关系、范围边界 | [`02-classification.md`](./02-classification.md) |
 | Phase 1~5 总图、时序、进入 / 收尾条件 | [`03-phase-plan.md`](./03-phase-plan.md) |
 | 执行纪律、验收、PM 回写规则 | [`04-execution-discipline.md`](./04-execution-discipline.md) |
-| Phase 1：详细设计与架构启动门 | [`phases/phase-1.md`](./phases/phase-1.md) |
+| Phase 1：开工对齐与架构启动门 | [`phases/phase-1.md`](./phases/phase-1.md) |
+| Phase 1 开工对齐与跨 Phase 边界 | [`subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md`](./subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md) |
 
 ## N/A / 延迟创建说明
 
-- `subplans/`：具体详细设计文档 / 子计划启动时再创建；当前状态只要求具备讨论详细设计文档的版本控制面。
+- `subplans/`：Phase 1 开工对齐文档已完成；Phase 2 / 3 / 4 的详细设计与实施计划按各 Phase 启动时分别创建，不在 Phase 1 一次性写完。
 - 新设计规格：开发期不提前改写 `current.md`；若 v0.5 验收后改变长期功能行为，再按 Living Spec 制度在 phase 收口时回写。
 - QA 产物：当前未进入实现 / 验收，正式 QA run 暂无；各 Phase 收尾时按 `qa-leader` 规则补齐。
 
@@ -40,4 +41,5 @@
 - ✅ `BL-009`（闯关竖式题目排除纯口算样例）、`BL-011`（计算输入内置键盘）、`BL-010`（竖式除法 UI 化答题）已纳入 v0.5。
 - ✅ `ISSUE-067`（多行乘法竖式判错面板缺少过程 / 训练格错因）已纳入 v0.5 顺带修复。
 - ✅ `BL-012`（特定账号数据查询后台页面）已从 v0.5 拆出，改由 v0.6 承接；v0.6 版本包待启动。
-- ⏭️ 下一步：讨论并落盘 v0.5 详细设计文档，先处理 A03 样本过滤、Practice 输入、错因反馈、长除法 UI 与 QA 架构门，再展开各子项实施计划。
+- ✅ Phase 1 已完成：开工对齐、产品 / 体验决策确认、技术 ownership、类型/API、UI 容量与 QA 映射已形成后续 Phase 的共同边界。
+- ⏭️ 下一步：启动 Phase 2，创建 `BL-009` 竖式题样本质量诊断与过滤规则子计划，并先跑抽样诊断。
