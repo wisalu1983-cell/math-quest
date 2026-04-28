@@ -29,20 +29,19 @@
 5. **协作文档文件名用中文可读主题**：版本计划、子计划、开发文档、讨论样题等文件名在日期后优先写中文；专用术语和代号可保留原文，固定版本骨架除外。
 6. **低频长规则不写进本 README**：超过 10 行且非日常使用的规则放到 `rules/`、`templates/`、`Reports/` 或版本目录。
 
-## 当前版本（v0.4）
+## 当前版本（v0.5）
 
-> 主线：题目体验系统性修复 · 入口 [`v0.4/README.md`](./v0.4/README.md)
+> 主线：A03 竖式体验与输入系统 · 入口 [`v0.5/README.md`](./v0.5/README.md)
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.4/README.md`](./v0.4/README.md) | 版本入口 | ✅ 已发布（2026-04-26）；release gate 补测通过 |
-| [`v0.4/00-overview.md`](./v0.4/00-overview.md) | 背景、目标、阶段结构 | ✅ 收口快照已更新 |
-| [`v0.4/01-research-catalog.md`](./v0.4/01-research-catalog.md) | 预研 / Backlog / Issue / Spec 证据链 | 📋 已建立 |
-| [`v0.4/02-classification.md`](./v0.4/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
-| [`v0.4/03-phase-plan.md`](./v0.4/03-phase-plan.md) | Phase 1~5 总图与决策门 | ✅ Phase 2 已完成回写 |
-| [`v0.4/04-execution-discipline.md`](./v0.4/04-execution-discipline.md) | 本版本执行纪律、验收规则 | 📋 已建立 |
-| [`v0.4/phases/`](./v0.4/phases/) | Phase 1~5 范围 / 进入条件 / 收尾条件 | ✅ Phase 1~5 已完成 |
-| [`v0.4/issues-closed.md`](./v0.4/issues-closed.md) | v0.4 关闭 issue 归档 | ✅ `ISSUE-059`、`ISSUE-065` 已归档 |
+| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | 📋 已启动；范围已纠偏为 A03 / Practice 输入体验主线，下一步讨论详细设计文档 |
+| [`v0.5/00-overview.md`](./v0.5/00-overview.md) | 背景、目标、阶段结构 | 📋 启动快照已建立 |
+| [`v0.5/01-research-catalog.md`](./v0.5/01-research-catalog.md) | 预研结论 / Backlog / Issue / Spec / 浏览器证据链 | 📋 已建立 |
+| [`v0.5/02-classification.md`](./v0.5/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
+| [`v0.5/03-phase-plan.md`](./v0.5/03-phase-plan.md) | Phase 1~5 总图与决策门 | 📋 已建立 |
+| [`v0.5/04-execution-discipline.md`](./v0.5/04-execution-discipline.md) | 本版本执行纪律、验收规则 | 📋 已建立 |
+| [`v0.5/phases/`](./v0.5/phases/) | Phase 范围 / 进入条件 / 收尾条件 | 📋 Phase 1 已建立，后续 Phase 按详细设计展开 |
 
 ## 跨版本工具性 Plan
 
@@ -56,6 +55,7 @@
 
 | 版本 | 入口 | 摘要 |
 |---|---|---|
+| v0.4 | [`v0.4/README.md`](./v0.4/README.md) | 题目体验系统性修复；Phase 1~5、release gate 与 hotfix 完成；已发布 |
 | v0.3 | [`v0.3/README.md`](./v0.3/README.md) | Supabase 在线账号与数据同步；Phase 1/2/3 完成；真实 Supabase 验收通过；已上线 |
 | v0.2 | [`v0.2/README.md`](./v0.2/README.md) | 用户反馈驱动主线收口；Phase 1~5 完成；QAleader 三层 QA 完成 |
 | v0.1 | [`v0.1/README.md`](./v0.1/README.md) | 原型与三层游戏化闭环完成 |

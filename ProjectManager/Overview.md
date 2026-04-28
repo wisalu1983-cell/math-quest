@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-26（v0.4 已发布）
+> 最后更新：2026-04-28（v0.5 已启动）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,8 +28,9 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.4** | ✅ 已发布（题目体验系统性修复；release gate 补测通过） | [Plan/v0.4/](Plan/v0.4/) |
-| 上一版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
+| **当前版本** | **v0.5** | 📋 已启动（A03 竖式体验与输入系统；下一步讨论详细设计文档） | [Plan/v0.5/](Plan/v0.5/) |
+| 上一版本 | v0.4 | ✅ 已发布（题目体验系统性修复；release gate 补测通过） | [Plan/v0.4/](Plan/v0.4/) |
+| 更早版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
 | 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
 | 更早版本 | v0.1 | ✅ 已发布（2026-04-19 收口，三层游戏化闭环完成） | [Plan/v0.1/](Plan/v0.1/) |
 
@@ -37,7 +38,33 @@
 
 ---
 
-## 当前阶段（v0.4）
+## 当前阶段（v0.5）
+
+**阶段目标**：完成 A03 竖式体验与输入系统升级，覆盖闯关竖式题样本质量诊断、计算输入内置键盘、错因反馈补强和竖式除法 UI 化答题。
+
+**主线**：A03 竖式体验与输入系统（5 Phase：详细设计与架构启动门 → 竖式题样本质量诊断 → 输入与反馈基础设施 → 竖式除法 UI 化答题 → Release Gate 与 Living Spec 回写）。
+
+**当前状态**：
+
+- ✅ v0.5 版本管理包已建立：`README + 00-04 + phases/phase-1`
+- ✅ v0.5 预研结论已汇总，入口见 [`Plan/v0.5/01-research-catalog.md`](Plan/v0.5/01-research-catalog.md)
+- ✅ `BL-009`、`BL-011`、`BL-010` 已纳入 v0.5
+- ✅ `ISSUE-067` 已纳入 v0.5 Phase 3 顺带修复
+- ✅ `BL-012` 已从 v0.5 拆出，改由 v0.6 承接；v0.6 版本包待启动
+- ⏭️ 下一步：讨论并落盘 v0.5 详细设计文档，先确认口算样例过滤、内置键盘、错因反馈和长除法 UI 的架构门
+
+**入口**：
+
+- 版本入口：[`Plan/v0.5/README.md`](Plan/v0.5/README.md)
+- 启动快照：[`Plan/v0.5/00-overview.md`](Plan/v0.5/00-overview.md)
+- 预研结论：[`Plan/v0.5/01-research-catalog.md`](Plan/v0.5/01-research-catalog.md)
+- Phase 总图：[`Plan/v0.5/03-phase-plan.md`](Plan/v0.5/03-phase-plan.md)
+- 当前开放 issue：[`ISSUE_LIST.md`](ISSUE_LIST.md)
+- Backlog 来源：[`Backlog.md`](Backlog.md)
+
+---
+
+## 上一版本收口（v0.4）
 
 **阶段目标**：系统性修复题目体验问题，落地 4.25 真实用户反馈，并清理 v0.2 遗留技术债。
 
@@ -52,7 +79,7 @@
 - ✅ Phase 1 QAleader 三层 QA 已完成；QA run 原始结果按制度不入库，结论已回写到 Phase 1 计划与子计划
 - ✅ Phase 2 已完成：A04「运算律」/ A06「括号变换」取消玩家独立入口并从新主链路断联；相关能力迁入 A07「简便计算」低档知识点 lane；`npm test -- --run` 48/48 files、672/672 tests 通过，`npm run build` 通过，浏览器拟真验收通过
 - ✅ Phase 3 已完成：题目质量与生成器诊断入口见 [`Plan/v0.4/phases/phase-3.md`](Plan/v0.4/phases/phase-3.md)；A03 `difficulty=4-5 + int-mul` 的 `2位数 × 2位数` 分布达标，A03 进阶 3★ 短除候选降为 0，A02 compare 质量优化完成，session 内完全重复治理已覆盖 campaign / advance / rank-match；QAleader v2 已按风险驱动、规格追踪、统计抽样与拟真人工 oracle 补强并通过，记录见 [`../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md`](../QA/runs/2026-04-26-v04-phase3-question-quality-v2/qa-summary.md)
-- ✅ 当前版本开放 issue 数为 0；`ISSUE-065` 单行竖式已知操作数低对比已修复并通过视觉补测；`ISSUE-066` 竖式输入双入口导致 `0` 跨格重复消费与退位格输入心智不清已通过 v0.4 hotfix 修复
+- ✅ v0.4 收口时开放 issue 数为 0；`ISSUE-065` 单行竖式已知操作数低对比已修复并通过视觉补测；`ISSUE-066` 竖式输入双入口导致 `0` 跨格重复消费与退位格输入心智不清已通过 v0.4 hotfix 修复
 - ✅ Phase 4 已完成：进位/退位格三档规则采用策略判定器方案；低档默认跳格纳入进位/退位格且过程错不通过并进入错题本，中档只在统一结果 UI 给当前题过程提示，高档不显示过程格；compare tip 已用可控题对象与 dev hook 浏览器补证通过；A03 current spec 已回写。入口见 [`Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md`](Plan/v0.4/subplans/2026-04-26-phase4-进位退位格规则与compare-tip补证.md) · [`Specs/a03-vertical-calc/current.md`](Specs/a03-vertical-calc/current.md)
 - ✅ Phase 5 已完成：`BL-004` Practice 状态重置采用纯初始化函数 + reducer + `usePracticeInputState()` hook 落地；换题 reset 与首输入聚焦已收敛进 hook，TDD、全量 test/build、Playwright 与 QAleader 三层 QA 通过。入口见 [`Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md`](Plan/v0.4/subplans/2026-04-26-phase5-Practice状态重置启动准备.md) · [`../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`](../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md)
 - ✅ v0.4 Release Gate 已通过（补测后），入口见 [`../QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../QA/runs/2026-04-26-v04-release-gate/qa-summary.md)
@@ -69,11 +96,11 @@
 - 当前开放 issue：[`ISSUE_LIST.md`](ISSUE_LIST.md)
 - Backlog 来源：[`Backlog.md`](Backlog.md)
 
-**下一步**：等待下一版本轴决策；如继续推进新需求，从 Backlog 候选或真实用户反馈中激活 v0.5。
+**后续入口**：v0.4 已归档；后续新需求从当前版本 v0.5 进入。
 
 ---
 
-## 上一版本收口（v0.3）
+## 更早版本（v0.3）
 
 **收口结论**：v0.3 已完成账号同步系统并上线。
 
@@ -98,11 +125,11 @@
 
 ### 版本活跃入口
 
-- 当前版本根目录：[Plan/v0.4/](Plan/v0.4/)
-- 当前版本入口：[Plan/v0.4/README.md](Plan/v0.4/README.md)
-- 当前版本启动快照：[Plan/v0.4/00-overview.md](Plan/v0.4/00-overview.md)
-- 当前版本来源证据：[Plan/v0.4/01-research-catalog.md](Plan/v0.4/01-research-catalog.md)
-- 当前版本 Phase 总图：[Plan/v0.4/03-phase-plan.md](Plan/v0.4/03-phase-plan.md)
+- 当前版本根目录：[Plan/v0.5/](Plan/v0.5/)
+- 当前版本入口：[Plan/v0.5/README.md](Plan/v0.5/README.md)
+- 当前版本启动快照：[Plan/v0.5/00-overview.md](Plan/v0.5/00-overview.md)
+- 当前版本预研结论：[Plan/v0.5/01-research-catalog.md](Plan/v0.5/01-research-catalog.md)
+- 当前版本 Phase 总图：[Plan/v0.5/03-phase-plan.md](Plan/v0.5/03-phase-plan.md)
 
 ### 全局管理入口
 
@@ -114,6 +141,7 @@
 
 ### 历史版本
 
+- v0.4 版本归档：[Plan/v0.4/](Plan/v0.4/)（[README](Plan/v0.4/README.md) · [收口快照](Plan/v0.4/00-overview.md) · [Release Gate](../QA/runs/2026-04-26-v04-release-gate/qa-summary.md)）
 - v0.3 版本归档：[Plan/v0.3/](Plan/v0.3/)（[README](Plan/v0.3/README.md) · [收口快照](Plan/v0.3/00-overview.md) · [真实 Supabase 验收](Plan/v0.3/phases/phase-3-acceptance.md)）
 - v0.2 版本归档：[Plan/v0.2/](Plan/v0.2/)（[README](Plan/v0.2/README.md) · [收口快照](Plan/v0.2/00-overview.md) · [QA 总结](../QA/runs/2026-04-23-v0.2-full-regression/qa-summary.md)）
 - v0.1 版本归档：[Plan/v0.1/](Plan/v0.1/)（[README](Plan/v0.1/README.md) · [收口快照](Plan/v0.1/00-overview.md) · [已关闭 issue](Plan/v0.1/issues-closed.md)）

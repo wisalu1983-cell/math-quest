@@ -70,3 +70,6 @@ test_regression.py
 *.njsproj
 *.sln
 *.sw?
+
+
+.tmp/
