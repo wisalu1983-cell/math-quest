@@ -1,28 +1,74 @@
 # math-quest AGENTS.md
 
-## Codex 轻入口
+## Codex / Agent 高频必读
 
-1. 本项目级规则以 `CLAUDE.md` 为主入口；本文件只记录 Codex / Agent 环境适配，不维护 PM、QA、版本生命周期的复制版流程。
-2. Session 启动先读 `CLAUDE.md` 的高频必读层，再读 `ProjectManager/Overview.md`；需要细节时按 `CLAUDE.md` 的低频任务索引进入。
-3. 工具差异按当前 Codex 环境等价执行；若 `CLAUDE.md`、skill、实际工具能力冲突，先提醒用户决策。
+1. 本文件与 `CLAUDE.md` 做全文语义同步；共通规则在两边都保留，工具差异按本文件的 Codex / Agent 适配执行。
+2. Session 启动先读 `ProjectManager/Overview.md`：只获取背景、当前阶段、主线、状态、下一步。
+3. 默认只读本文件 + `Overview.md`；需要细节时沿 `Overview.md` 或下方低频索引进入，不默认通读 `ProjectManager/`。
+4. `pm-sync-check` 仅在跨源写入、里程碑收尾、Plan / Spec / Issue 生命周期变化时跑；纯诊断、只读分析、纯文档结构诊断豁免。
 
 ---
 
-## Codex 执行适配
+## 高频写入与执行约束
 
-- 实现类任务默认按 `CLAUDE.md` 使用仓库根 `.worktrees/`；只读诊断、纯 QA、纯文档可跳过。
-- `CLAUDE.md` 提到 `.claude/skills/*` 时，若 Codex 可用的同名 skill 位于 `.agents/skills/*`，优先使用 `.agents` 版本；不要维护两份流程。
+- **实现任务默认隔离开发**：新增功能、业务逻辑修改、跨文件重构、执行实施计划时，默认先开 git worktree；只读诊断、纯 QA、纯文档可跳过。
+- **默认 worktree 位置**：仓库根目录 `.worktrees/`；当前分支为 `master` / `main` 且用户未要求直接改当前工作树时，直接使用 `.worktrees/`，不单独询问目录位置。
+- **worktree 安全前置**：创建项目前先确认 `.worktrees/` 已被 `.gitignore` 忽略。
+- **worktree 文档前置**：在 worktree 内执行计划或开发文档前，确认该计划引用的 `ProjectManager / Specs / Reports / subplans / QA` 文档也存在于当前 worktree；缺失时先同步文档，或声明以主工作区文档为 source of truth，并在收尾记录差异。
+- **PM 写入顺序**：先改权威源，再按影响回写 `Overview.md`。详细路由只在需要写 `Plan / Spec / Issue / Backlog / QA / Overview` 时读取 `ProjectManager/Plan/rules/pm-write-routing.md`。
+- **协作文档命名**：版本计划、子计划、开发文档、讨论样题等文件名在日期后优先使用中文可读主题；专用术语、TopicId、Phase / BL / ISSUE 编号等代号可保留原文；固定版本骨架文件除外。
+
+---
+
+## 高频代码硬约束
+
+- **路由**：`react-router-dom` 已安装但禁用，页面路由统一用 `useUIStore.currentPage`。
+- **Store**：拆两文件：`src/store/index.ts`（`useUserStore` / `useSessionStore` / `useUIStore`）+ `src/store/gamification.ts`（`useGameProgressStore`）；`useProgressStore` 是废弃旧名，不存在。
+- **空壳**：`src/pages/TopicSelect.tsx` 已被 `CampaignMap` 替代，不要加逻辑。
+- **废弃字段**：`User.grade`、`Question.xpBase`，新代码不要依赖。
+- **生成器**：纯函数签名 `{ difficulty, id?, subtypeFilter? } -> Question`，不引入副作用；子题型过滤走 `CampaignLane.subtypeFilter` + `pickSubtype()`（会重新归一化权重）。
+- **存档版本升级**：`repository.init` 遇到旧版本号禁止 `clearAll()`，必须走 `migrateV{n}ToV{n+1}` 串行迁移链；迁移任一步抛错时，存档落到 `mq_backup_v{old}_{ts}` 备份后提示用户。`clearAll` 只能作为显式用户动作保留。详见 `ProjectManager/Specs/2026-04-18-rank-match-phase3-implementation-spec.md` §6.3。
+
+---
+
+## Codex / Agent 执行适配
+
+- Codex / Agent 环境执行实现类任务时，同样使用仓库根 `.worktrees/`；只读诊断、纯 QA、纯文档可跳过。
+- 同名 skill 同时存在 `.agents/skills/*` 与 `.claude/skills/*` 时，Codex / Agent 优先使用 `.agents` 版本；不要维护两份流程。
 - 版本生命周期 canonical skill：`.agents/skills/version-lifecycle-manager/SKILL.md`。
 - QA 编排 canonical 入口：`.agents/skills/qa-leader/SKILL.md`；规范源见 `QA/qa-leader-canonical.md`。
+- `dev-doc-flow` 在 Codex / Agent 侧使用 `.agents/skills/dev-doc-flow/SKILL.md`。
+- Frontend design 在 Codex 侧使用 `.codex/skills/frontend-design/SKILL.md`；UI/UX 设计情报在 Codex 侧使用 `.codex/skills/ui-ux-pro-max/`；Cursor 对应用 `.cursor/skills/ui-ux-pro-max/`。
 
 ---
 
-## 快速索引
+## Codex / Agent UI/UX 设计协作规则
 
-| 想了解 | 去哪里 |
+- **优先级**：项目现有体验与本文件规则优先；Codex 项目级 `frontend-design` skill 与 Codex frontend design 指令共同作为落地质量门；`ui-ux-pro-max` 作为设计情报库和检查清单，不直接覆盖 MathQuest 的品牌、交互心智和已有组件体系。
+- **触发时机**：新增或明显调整页面、组件、布局、输入反馈、动效、可访问性、视觉 QA 前，Codex 侧先使用 `.codex/skills/frontend-design/SKILL.md` 对齐 frontend design 质量要求，再使用 `.codex/skills/ui-ux-pro-max/` 查询设计系统或相关 UX 规则；小型样式修补可只查对应 domain。
+- **推荐查询**：全局或新页面先跑 `python .codex/skills/ui-ux-pro-max/scripts/search.py "education math game learning app" --design-system -p "MathQuest"`；具体问题按需查 `--domain ux`、`--domain style`、`--domain typography` 或 `--stack react`。
+- **落地方式**：从 `frontend-design` 提取审美方向与生产级 UI 质量要求，从 `ui-ux-pro-max` 提取结构、层级、色彩角色、字体气质、交互反馈、反模式；最终实现必须符合 Codex frontend design 约束，包括稳定尺寸、无文本重叠、按钮和图标语义清晰、可访问焦点、响应式检查、避免卡片套卡片和无意义装饰。
+- **冲突处理**：若 `frontend-design` 或 `ui-ux-pro-max` 建议与项目规格、现有 UI、儿童数学练习场景或 Codex frontend design 指令冲突，只保留可迁移的原则；重大视觉方向变化先向用户说明取舍再实现。
+- **验证**：涉及 UI 的实现完成前，至少做构建/测试中与改动风险匹配的一项验证；视觉或交互风险较高时，用截图或浏览器验收补证。
+
+---
+
+## 低频任务索引
+
+低频规则只在触发对应任务时读取；不要把长流程复制回本文件。
+
+| 触发场景 | 读取入口 |
 |---|---|
-| 高频项目规则 / 低频任务索引 | `CLAUDE.md` |
 | 当前主线 / 状态 / 下一步 | `ProjectManager/Overview.md` |
-| PM 写入路由 | `ProjectManager/Plan/rules/pm-write-routing.md` |
-| 计划索引 / 规格导航 | `ProjectManager/Plan/README.md` · `ProjectManager/Specs/_index.md` |
-| QA 流程与产物 | `QA/qa-leader-canonical.md` · `QA/` |
+| 判断某类文档该用哪些项目规则或 skill | `ProjectManager/Plan/rules/document-skill-routing.md` |
+| 写 ProjectManager、判断 PM 写入路由 | `ProjectManager/Plan/rules/pm-write-routing.md` · `scripts/pm-sync-check.ts` · `.cursor/rules/pm-sync-check.mdc` |
+| 判断 Spec / Plan / Report / QA 归属，或确认文件命名细则 | `ProjectManager/Plan/rules/document-ownership.md` |
+| 写新功能、优化、bugfix 开发文档或子计划 | `.agents/skills/dev-doc-flow/SKILL.md` |
+| 开新版本、版本收口、切版本轴、检查或补齐 `Plan/vX.Y` 管理包 | `.agents/skills/version-lifecycle-manager/SKILL.md` · `ProjectManager/Plan/version-lifecycle.md` |
+| QA、测试用例、视觉 QA、体验测试、拟真人工 QA | `.agents/skills/qa-leader/SKILL.md` · `QA/qa-leader-canonical.md` · `QA/capability-registry.md` |
+| 查当前版本计划、模板、阶段入口 | `ProjectManager/Plan/README.md` |
+| 查设计规格导航 | `ProjectManager/Specs/_index.md` |
+| 查 issue / backlog 细节 | `ProjectManager/ISSUE_LIST.md` · `ProjectManager/Backlog.md` |
+| 查生成器规格、难度档位、子题型 | `ProjectManager/Specs/2026-04-17-generator-redesign-v2.md` |
+| 查历史复盘或机制说明 | `ProjectManager/Reports/` |
+| 查真题参考库 | `reference-bank/README.md` |

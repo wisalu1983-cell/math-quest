@@ -2,9 +2,10 @@
 
 ## Session 高频必读
 
-1. 先读 `ProjectManager/Overview.md`：只获取背景、当前阶段、主线、状态、下一步。
-2. 默认只读本文件 + `Overview.md`；需要细节时沿 `Overview.md` 或下方低频索引进入，不默认通读 `ProjectManager/`。
-3. `pm-sync-check` 仅在跨源写入、里程碑收尾、Plan / Spec / Issue 生命周期变化时跑；纯诊断、只读分析、纯文档结构诊断豁免。
+1. 本文件与 `AGENTS.md` 做全文语义同步；共通规则在两边都保留，工具差异按各自环境适配执行。
+2. 先读 `ProjectManager/Overview.md`：只获取背景、当前阶段、主线、状态、下一步。
+3. 默认只读本文件 + `Overview.md`；需要细节时沿 `Overview.md` 或下方低频索引进入，不默认通读 `ProjectManager/`。
+4. `pm-sync-check` 仅在跨源写入、里程碑收尾、Plan / Spec / Issue 生命周期变化时跑；纯诊断、只读分析、纯文档结构诊断豁免。
 
 ---
 
@@ -27,6 +28,17 @@
 - **废弃字段**：`User.grade`、`Question.xpBase`，新代码不要依赖。
 - **生成器**：纯函数签名 `{ difficulty, id?, subtypeFilter? } -> Question`，不引入副作用；子题型过滤走 `CampaignLane.subtypeFilter` + `pickSubtype()`（会重新归一化权重）。
 - **存档版本升级**：`repository.init` 遇到旧版本号禁止 `clearAll()`，必须走 `migrateV{n}ToV{n+1}` 串行迁移链；迁移任一步抛错时，存档落到 `mq_backup_v{old}_{ts}` 备份后提示用户。`clearAll` 只能作为显式用户动作保留。详见 `ProjectManager/Specs/2026-04-18-rank-match-phase3-implementation-spec.md` §6.3。
+
+---
+
+## 高频 UI/UX 设计协作规则
+
+- **优先级**：项目现有体验与本文件规则优先；Claude Code 的 `frontend design` 指令作为落地质量门；`ui-ux-pro-max` 作为设计情报库和检查清单，不直接覆盖 MathQuest 的品牌、交互心智和已有组件体系。
+- **触发时机**：新增或明显调整页面、组件、布局、输入反馈、动效、可访问性、视觉 QA 前，先使用 `.claude/skills/ui-ux-pro-max/` 查询设计系统或相关 UX 规则；小型样式修补可只查对应 domain。
+- **推荐查询**：全局或新页面先跑 `python .claude/skills/ui-ux-pro-max/scripts/search.py "education math game learning app" --design-system -p "MathQuest"`；具体问题按需查 `--domain ux`、`--domain style`、`--domain typography` 或 `--stack react`。
+- **落地方式**：从 `ui-ux-pro-max` 提取结构、层级、色彩角色、字体气质、交互反馈、反模式；最终实现必须符合 frontend design 约束，包括稳定尺寸、无文本重叠、按钮和图标语义清晰、可访问焦点、响应式检查、避免卡片套卡片和无意义装饰。
+- **冲突处理**：若 `ui-ux-pro-max` 建议与项目规格、现有 UI、儿童数学练习场景或 frontend design 指令冲突，只保留可迁移的原则；重大视觉方向变化先向用户说明取舍再实现。
+- **验证**：涉及 UI 的实现完成前，至少做构建/测试中与改动风险匹配的一项验证；视觉或交互风险较高时，用截图或浏览器验收补证。
 
 ---
 
