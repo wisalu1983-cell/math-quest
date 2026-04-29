@@ -8,9 +8,9 @@ source_tool: codex
 source_session: codex-desktop-thread
 source_timestamp_start: 2026-04-25T13:08:04.048+08:00
 source_timestamp_end: 2026-04-25T13:08:04.048+08:00
-seen_count: 2
+seen_count: 3
 first_seen: 2026-04-25
-last_seen: 2026-04-26
+last_seen: 2026-04-29
 ---
 
 For MathQuest, distinguish formal QA work products from raw process artifacts:
@@ -20,4 +20,6 @@ For MathQuest, distinguish formal QA work products from raw process artifacts:
 
 **Why:** The user clarified on 2026-04-26 that "测试体系、工具、正式的测试工作生产资料和测试结论可以同步", while process artifacts should still be ignored. The previous memory overgeneralized by treating all `QA/runs/` outputs as non-committable.
 
-**How to apply:** Before staging QA paths, classify each file. Commit formal Markdown summaries/test cases/methodology/results and reusable hand-written QA scripts when they are intended as project records. Keep raw artifacts and bulky generated evidence ignored unless the user explicitly marks a small item as long-term evidence in the QA summary.
+On 2026-04-29, Codex placed iPad visual QA screenshots under `.qa-artifacts/` and did not create a formal `QA/runs/<date>-<scope>/` record, despite project QA rules requiring formal conclusions under `QA/runs/` and raw evidence under ignored `QA/artifacts/` or run-local `artifacts/`.
+
+**How to apply:** Before producing QA or visual-validation evidence, classify the work as formal QA run vs ad hoc diagnostic. For formal QA, create `QA/runs/<date>-<scope>/` Markdown records and put raw screenshots/traces under `QA/runs/<date>-<scope>/artifacts/` or `QA/artifacts/`. For ad hoc diagnostics, still use ignored QA artifacts locations rather than repo-root scratch dirs. Commit formal Markdown summaries/test cases/methodology/results and reusable hand-written QA scripts when they are intended as project records. Keep raw artifacts and bulky generated evidence ignored unless the user explicitly marks a small item as long-term evidence in the QA summary.
