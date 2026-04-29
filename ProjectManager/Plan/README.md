@@ -12,6 +12,7 @@
 | 想确认什么 | 读取入口 |
 |---|---|
 | 当前项目状态 / 下一步 | [`../Overview.md`](../Overview.md) |
+| 文档类型 / skill 路由 | [`rules/document-skill-routing.md`](./rules/document-skill-routing.md) |
 | PM 写入路由 / pm-sync-check 何时跑 | [`rules/pm-write-routing.md`](./rules/pm-write-routing.md) |
 | Phase / 子计划 ID 怎么命名 | [`rules/phase-and-subplan-naming.md`](./rules/phase-and-subplan-naming.md) |
 | Spec / Plan / Report / QA 分别放哪里 | [`rules/document-ownership.md`](./rules/document-ownership.md) |
@@ -24,10 +25,11 @@
 
 1. **先改权威源，再改主管**：Plan / Spec / Issue / QA / Report 先更新；影响当前状态时再回写 `Overview.md`。
 2. **索引只在生命周期变化时更新**：新建、归档、废弃、改名、入口关系变化时更新本文件或 `_index.md`。
-3. **新 Plan 开工前先扫规格索引**：从 [`../Specs/_index.md`](../Specs/_index.md) 找相关生效规格。
-4. **版本启动和收口必须读低频指南**：见 [`version-lifecycle.md`](./version-lifecycle.md) 和 [`templates/version-package-template.md`](./templates/version-package-template.md)。
-5. **协作文档文件名用中文可读主题**：版本计划、子计划、开发文档、讨论样题等文件名在日期后优先写中文；专用术语和代号可保留原文，固定版本骨架除外。
-6. **低频长规则不写进本 README**：超过 10 行且非日常使用的规则放到 `rules/`、`templates/`、`Reports/` 或版本目录。
+3. **文档类型不明时先路由**：见 [`rules/document-skill-routing.md`](./rules/document-skill-routing.md)，先判职责再调用 skill。
+4. **新 Plan 开工前先扫规格索引**：从 [`../Specs/_index.md`](../Specs/_index.md) 找相关生效规格。
+5. **版本启动和收口必须读低频指南**：见 [`version-lifecycle.md`](./version-lifecycle.md) 和 [`templates/version-package-template.md`](./templates/version-package-template.md)。
+6. **协作文档文件名用中文可读主题**：版本计划、子计划、开发文档、讨论样题等文件名在日期后优先写中文；专用术语和代号可保留原文，固定版本骨架除外。
+7. **低频长规则不写进本 README**：超过 10 行且非日常使用的规则放到 `rules/`、`templates/`、`Reports/` 或版本目录。
 
 ## 当前版本（v0.5）
 
@@ -35,7 +37,7 @@
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | 🟡 Phase 3 有条件完成；下一步准备进入 Phase 4 |
+| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | 🟡 Phase 3 有条件完成；Phase 4 `BL-010` Q1-Q7 已补齐，coding 前待 UI 方案单独确认 |
 | [`v0.5/00-overview.md`](./v0.5/00-overview.md) | 背景、目标、阶段结构 | 📋 启动快照已建立 |
 | [`v0.5/01-research-catalog.md`](./v0.5/01-research-catalog.md) | 预研结论 / Backlog / Issue / Spec / 浏览器证据链 | 📋 已建立 |
 | [`v0.5/02-classification.md`](./v0.5/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
@@ -49,7 +51,10 @@
 | [`v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](./v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) | Phase 3 `BL-011` 内置键盘 | 🟡 有条件完成 |
 | [`v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`](./v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md) | Phase 3 `BL-011` follow-up 自动换格统一化 | ✅ 完成 |
 | [`v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](./v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md) | Phase 3 `ISSUE-067` 结构化错因反馈 | ✅ 完成 |
-| [`v0.5/issues-closed.md`](./v0.5/issues-closed.md) | v0.5 已关闭 issue 归档 | ✅ `ISSUE-067` 已归档 |
+| [`v0.5/subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md`](./v0.5/subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md) | Phase 3 `ISSUE-068` 单行过程积乘法免重复答数 | ✅ 完成 |
+| [`v0.5/phases/phase-4.md`](./v0.5/phases/phase-4.md) | Phase 4 竖式除法 UI 化答题 | 🟡 `BL-010` Q1-Q7 已补齐，coding 前待 UI 方案单独确认 |
+| [`v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`](./v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) | Phase 4 `BL-010` 竖式除法 UI 化答题 | 🟡 进行中（Q1-Q7 已补齐；coding 前待 UI 确认） |
+| [`v0.5/issues-closed.md`](./v0.5/issues-closed.md) | v0.5 已关闭 issue 归档 | ✅ `ISSUE-067` / `ISSUE-068` 已归档 |
 
 ## 跨版本工具性 Plan
 

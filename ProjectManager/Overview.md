@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-29（`ISSUE-069` 纳入 v0.5 Release Gate 前小修，准备进入 Phase 4）
+> 最后更新：2026-04-29（Phase 4 `BL-010` Q1-Q7 已补齐；coding 前待 UI 方案单独确认）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.5** | 🟡 Phase 3 有条件完成，全量 QA 通过（Phase 1~3 L3 全量测试 44 PASS / 0 FAIL；真实设备证据发布后线上补验；下一步准备进入 Phase 4） | [Plan/v0.5/](Plan/v0.5/) |
+| **当前版本** | **v0.5** | 🟡 Phase 3 有条件完成，全量 QA 通过（Phase 1~3 L3 全量测试 44 PASS / 0 FAIL；真实设备证据发布后线上补验；Phase 4 `BL-010` Q1-Q7 已补齐，coding 前待 UI 方案单独确认） | [Plan/v0.5/](Plan/v0.5/) |
 | 上一版本 | v0.4 | ✅ 已发布（题目体验系统性修复；release gate 补测通过） | [Plan/v0.4/](Plan/v0.4/) |
 | 更早版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
 | 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
@@ -46,7 +46,7 @@
 
 **当前状态**：
 
-- ✅ v0.5 版本管理包已建立：`README + 00-04 + phases/phase-1..3`
+- ✅ v0.5 版本管理包已建立：`README + 00-04 + phases/phase-1..4`
 - ✅ v0.5 预研结论已汇总，入口见 [`Plan/v0.5/01-research-catalog.md`](Plan/v0.5/01-research-catalog.md)
 - ✅ `BL-009`、`BL-011`、`BL-010` 已纳入 v0.5
 - ✅ `ISSUE-067` 已随 v0.5 Phase 3 修复并关闭，归档见 [`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)
@@ -57,7 +57,8 @@
 - 🟡 Phase 3 剩余条件：真实 Android Chrome / iOS Safari 默认内置键盘证据发布后在线上环境验收，清单见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md)
 - ✅ v0.5 Phase 1~3 全量 QA 通过：L3 级 46 项用例，Vitest 59 files / 743 tests、Playwright 23 tests、build、npm audit 全部通过；Code Review PASS-WITH-NOTES；视觉 QA 12 截图 25 校验点 PASS。入口见 [`../QA/runs/2026-04-29-v05-full-regression/qa-summary.md`](../QA/runs/2026-04-29-v05-full-regression/qa-summary.md)
 - 🟡 `ISSUE-069` 已纳入 v0.5 Release Gate 前小修：A02 `reverse-round` 填空题答案口径冲突，作为 P1 correctness hotfix 处理，不并入 Phase 4 `BL-010` 竖式除法 UI 主线
-- ⏭️ 下一步：准备进入 Phase 4，创建 `BL-010`（竖式除法 UI 化答题功能）子计划，复用 Phase 3 的内置键盘、输入槽位、结构化错因和错题本链路
+- 🟡 Phase 4 `BL-010` 子计划 Q1-Q7 已补齐：[`Plan/v0.5/phases/phase-4.md`](Plan/v0.5/phases/phase-4.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md)
+- ⏭️ 下一步：coding 前单独确认 `BL-010`（竖式除法 UI 化答题功能）具体 UI 方案；确认后进入代码实现
 
 **入口**：
 
@@ -143,6 +144,9 @@
 - 已完成 Phase 3 `BL-011` 内置键盘：[Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md)
 - 已完成 Phase 3 `BL-011` 自动换格统一化：[Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md)
 - 已完成 Phase 3 `ISSUE-067` 结构化错因反馈：[Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
+- 已完成 Phase 3 `ISSUE-068` 单行过程积乘法免重复答数：[Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md)
+- Phase 4 入口：[Plan/v0.5/phases/phase-4.md](Plan/v0.5/phases/phase-4.md)
+- Phase 4 `BL-010` 竖式除法 UI 化答题：[Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md)
 
 ### 全局管理入口
 

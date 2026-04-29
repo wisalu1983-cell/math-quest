@@ -1,28 +1,31 @@
 ---
 name: dev-doc-flow
-description: Use when math-quest 项目中需要撰写新功能、优化、bugfix 相关的开发文档、方案文档或实施入口时
+description: Use when math-quest 项目中需要撰写新功能、优化、bugfix 的详细开发文档，或创建/补齐承载实施细节的 BL/ISSUE subplan 时
 ---
 
 # math-quest 开发文档流
 
-本 skill 用于 `math-quest` 项目中与开发直接相关的文档工作，目标是让新功能、优化、bugfix 三类文档拥有稳定的入口、固定的结构，以及与现有管理体系兼容的归属判断。
+本 skill 用于 `math-quest` 项目中与开发直接相关、且会指导实现的新功能、优化、bugfix 文档工作，目标是让这三类详细开发文档拥有稳定的入口、固定的结构，以及与现有管理体系兼容的归属判断。
 
 ## 适用范围
 
 - 新功能开发文档
 - 优化开发文档
 - bugfix 开发文档
+- 承载以上实施细节的 `BL-*` / `ISSUE-*` subplan
 
 ## 不适用范围
 
 - QA 用例、测试执行、回归报告：改走 `qa-leader`
-- 纯 PM 状态同步：按 `AGENTS.md` 和 `Plan/README.md` 现有规则处理
+- Phase 入口 `ProjectManager/Plan/vX.Y/phases/phase-N.md`、`Overview.md`、README、索引、Issue、Backlog、纯 PM 状态同步：按 `AGENTS.md`、`CLAUDE.md`、`Plan/README.md` 和 PM 路由规则处理
+- 普通说明文档、流程说明、提案、讨论稿、复盘、机制说明：优先走通用文档编写流程；Codex 下为 `doc-coauthoring`
 - 纯代码实现且用户未要求产出文档：不强制使用本 skill
 
 ## 开始前先判断任务挂靠
 
 - 若任务已明确属于某个 `vX.Y / phase-N`，优先走“版本-phase 阅读路径”
 - 若任务尚未挂靠版本 / phase，再退回全局入口：`ProjectManager/Overview.md` → `ProjectManager/Plan/README.md` → `ProjectManager/Specs/_index.md`
+- 若只是判断“该用哪套规则或 skill”，先读 `ProjectManager/Plan/rules/document-skill-routing.md`
 - A / B / C 只是**写作结构标签**，不是独立资产类型；若任务属于某个版本的某个 phase，默认主文档仍是对应 `subplan`
 - 若任务改变长期功能行为、数据契约、QA 口径或跨版本约束，必须做 `current spec` 影响评估；开发期只标待回写，phase 验收确认并准备合并 / 收口时才回写 `Specs/<feature-slug>/current.md`
 

@@ -37,6 +37,7 @@
 | 触发场景 | 读取入口 |
 |---|---|
 | 当前主线 / 状态 / 下一步 | `ProjectManager/Overview.md` |
+| 判断某类文档该用哪些项目规则或 skill | `ProjectManager/Plan/rules/document-skill-routing.md` |
 | 写 ProjectManager、判断 PM 写入路由、确认 `pm-sync-check` | `ProjectManager/Plan/rules/pm-write-routing.md` · `.cursor/rules/pm-sync-check.mdc` |
 | 判断 Spec / Plan / Report / QA 归属，或确认文件命名细则 | `ProjectManager/Plan/rules/document-ownership.md` |
 | 写新功能、优化、bugfix 开发文档或子计划 | `.claude/skills/dev-doc-flow/SKILL.md` |
