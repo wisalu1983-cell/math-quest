@@ -1,0 +1,771 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>v0.5 Phase 3 UI Preview</title>
+  <style>
+    :root {
+      --bg: #fff8f3;
+      --paper: #ffffff;
+      --paper-2: #fff1e7;
+      --ink: #181818;
+      --muted: #625c57;
+      --line: #ead8ca;
+      --line-strong: #d7bda9;
+      --orange: #ff6b35;
+      --orange-soft: #ffe0d2;
+      --green: #2f9f61;
+      --green-soft: #ddf6e7;
+      --blue: #246fb6;
+      --blue-soft: #e1f0ff;
+      --yellow: #9a7200;
+      --yellow-soft: #fff3c4;
+      --red: #c94f52;
+      --red-soft: #ffe4e5;
+      --shadow: 0 18px 48px rgba(91, 55, 26, .14);
+      --radius: 8px;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Microsoft YaHei UI", "PingFang SC", "Noto Sans CJK SC", Arial, sans-serif;
+      letter-spacing: 0;
+    }
+
+    .board {
+      width: 1480px;
+      min-height: 980px;
+      padding: 34px;
+      margin: 0 auto;
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      margin-bottom: 22px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: 32px;
+      line-height: 1.18;
+      font-weight: 900;
+    }
+
+    .subtitle {
+      margin: 8px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .legend {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      max-width: 600px;
+    }
+
+    .chip {
+      border: 2px solid var(--line);
+      border-radius: 999px;
+      background: var(--paper);
+      padding: 8px 12px;
+      font-size: 13px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 390px 390px 610px;
+      grid-template-rows: 740px 220px;
+      gap: 18px;
+    }
+
+    .panel {
+      background: var(--paper);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .panel-head {
+      height: 50px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 16px;
+      border-bottom: 2px solid var(--line);
+      background: #fffdfb;
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--orange);
+      flex: 0 0 auto;
+    }
+
+    .phone {
+      width: 352px;
+      height: 640px;
+      margin: 20px auto;
+      border: 10px solid #25201c;
+      border-radius: 28px;
+      background: var(--bg);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .phone-top {
+      height: 46px;
+      background: var(--paper);
+      border-bottom: 2px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 14px;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .hearts {
+      color: var(--red);
+      font-size: 15px;
+    }
+
+    .practice-body {
+      flex: 1;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      gap: 8px;
+    }
+
+    .question-card {
+      background: var(--paper);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      min-height: 384px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .question-title {
+      margin: 0 0 12px;
+      color: var(--muted);
+      font-size: 14px;
+      font-weight: 900;
+      text-align: center;
+      line-height: 1.35;
+    }
+
+    .math-line {
+      text-align: center;
+      font-size: 28px;
+      line-height: 1.2;
+      font-weight: 900;
+      margin: 4px 0 14px;
+    }
+
+    .active-input-row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 6px;
+      align-items: center;
+      margin-top: 12px;
+    }
+
+    .input-box {
+      min-height: 54px;
+      border: 3px solid var(--orange);
+      background: #fff8f4;
+      border-radius: var(--radius);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      padding: 5px 12px;
+      font-weight: 900;
+      color: var(--ink);
+      box-shadow: 0 0 0 4px rgba(255, 107, 53, .12);
+    }
+
+    .input-label {
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1;
+      font-weight: 900;
+    }
+
+    .input-box strong {
+      font-size: 24px;
+      line-height: 1.1;
+    }
+
+    .input-box.expression strong {
+      font-size: 22px;
+    }
+
+    .caption {
+      margin-top: 7px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-align: center;
+    }
+
+    .slots {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .slot {
+      min-height: 42px;
+      border: 2px solid var(--line-strong);
+      background: #fffdfa;
+      border-radius: var(--radius);
+      padding: 6px;
+      text-align: center;
+      font-size: 13px;
+      font-weight: 900;
+    }
+
+    .slot span {
+      display: block;
+      color: var(--muted);
+      font-size: 11px;
+      line-height: 1.2;
+    }
+
+    .keyboard {
+      margin-top: auto;
+      background: var(--paper);
+      border-top: 2px solid var(--line);
+      padding: 5px 8px 7px;
+    }
+
+    .keyboard-tools {
+      display: flex;
+      justify-content: flex-end;
+      margin-bottom: 4px;
+    }
+
+    .key-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 4px;
+    }
+
+    .key-grid.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    .key {
+      height: 24px;
+      border: 2px solid var(--line);
+      background: #fffdfa;
+      border-radius: var(--radius);
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 900;
+    }
+
+    .key.action {
+      background: var(--blue-soft);
+      border-color: #aed2f5;
+      color: var(--blue);
+    }
+
+    .delete-key {
+      min-width: 74px;
+      padding: 0 14px;
+    }
+
+    .zero-key {
+      grid-column: 2;
+    }
+
+    .key.ok {
+      background: var(--green-soft);
+      border-color: #a7dfbc;
+      color: var(--green);
+    }
+
+    .key.warn {
+      background: var(--yellow-soft);
+      border-color: #e3c75c;
+      color: var(--yellow);
+    }
+
+    .key.disabled {
+      color: #b4aaa2;
+      background: #f7efe9;
+    }
+
+    .expr-row {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 4px;
+      margin-bottom: 4px;
+    }
+
+    .expr-row .key {
+      height: 22px;
+      font-size: 13px;
+    }
+
+    .board-mini {
+      display: grid;
+      grid-template-columns: 36px repeat(5, 36px);
+      gap: 5px;
+      justify-content: center;
+      margin-top: 12px;
+    }
+
+    .cell {
+      height: 34px;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--paper);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 17px;
+      font-weight: 900;
+    }
+
+    .cell.blank {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .cell.active {
+      border-color: var(--orange);
+      background: #fff8f4;
+      box-shadow: 0 0 0 3px rgba(255, 107, 53, .12);
+    }
+
+    .cell.wrong {
+      border-color: var(--red);
+      background: var(--red-soft);
+      color: var(--red);
+    }
+
+    .wide {
+      grid-column: span 1;
+      grid-row: span 2;
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 18px;
+      background: transparent;
+      border: 0;
+      box-shadow: none;
+      overflow: visible;
+    }
+
+    .wide-card {
+      background: var(--paper);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    .feedback-body {
+      padding: 18px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: stretch;
+    }
+
+    .result-card {
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: #fffdfb;
+      padding: 16px;
+      min-width: 0;
+    }
+
+    .result-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 0 0 12px;
+      color: var(--yellow);
+      font-size: 20px;
+      font-weight: 900;
+    }
+
+    .answer-block {
+      margin: 0 0 12px;
+      padding: 12px;
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--bg);
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.55;
+    }
+
+    .reason {
+      border: 2px solid #e3c75c;
+      border-radius: var(--radius);
+      background: var(--yellow-soft);
+      padding: 12px;
+      color: var(--yellow);
+      font-size: 14px;
+      line-height: 1.5;
+      font-weight: 900;
+    }
+
+    .mistakes {
+      display: grid;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .mistake {
+      border: 2px solid #f0b7b9;
+      border-radius: var(--radius);
+      background: var(--red-soft);
+      color: #8f2f31;
+      padding: 10px;
+      font-size: 13px;
+      font-weight: 900;
+      line-height: 1.45;
+    }
+
+    .continue {
+      width: 100%;
+      height: 46px;
+      margin-top: 12px;
+      border: 0;
+      border-radius: var(--radius);
+      background: var(--orange);
+      color: #fff;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .wrongbook {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .wrong-item {
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      background: #fffdfa;
+      padding: 13px;
+      min-width: 0;
+    }
+
+    .wrong-title {
+      margin: 0 0 8px;
+      font-size: 14px;
+      font-weight: 900;
+      line-height: 1.35;
+    }
+
+    .answer-pair {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 14px;
+      font-size: 12px;
+      font-weight: 900;
+      margin-bottom: 9px;
+    }
+
+    .bad {
+      color: var(--red);
+    }
+
+    .good {
+      color: var(--green);
+    }
+
+    .bottom-strip {
+      grid-column: 1 / 3;
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 18px;
+    }
+
+    .note {
+      padding: 16px;
+      background: var(--paper);
+      border: 2px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .note h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+      font-weight: 900;
+    }
+
+    .note p {
+      margin: 0;
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.55;
+      font-weight: 800;
+    }
+  </style>
+</head>
+<body>
+  <main class="board">
+    <header class="header">
+      <div>
+        <h1 class="title">v0.5 Phase 3 · 输入与反馈基础设施预览</h1>
+        <p class="subtitle">BL-011 内置键盘 + ISSUE-067 结构化错因反馈</p>
+      </div>
+      <div class="legend" aria-label="预览范围">
+        <span class="chip">移动端默认内置键盘</span>
+        <span class="chip">系统键盘能力 UI 屏蔽</span>
+        <span class="chip">答题区高度 ≥ 60%</span>
+        <span class="chip">过程错因只给类别</span>
+        <span class="chip">训练格展示对比</span>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="panel">
+        <div class="panel-head"><span class="dot"></span>数字键盘 · 小数乘法训练格</div>
+        <div class="phone">
+          <div class="phone-top">
+            <span>第 3 / 10 题</span>
+            <span class="hearts">♥ ♥ ♥</span>
+          </div>
+          <div class="practice-body">
+            <div class="question-card">
+              <p class="question-title">完成小数乘法竖式，并填写小数点移动位数</p>
+              <div class="math-line">4.06 × 2.3</div>
+              <div class="slots">
+                <div class="slot"><span>被乘数小数位数</span>2</div>
+                <div class="slot"><span>乘数小数位数</span>1</div>
+              </div>
+              <div class="active-input-row">
+                <div class="input-box" aria-label="当前输入，小数点向左移动位数，值为 3">
+                  <span class="input-label">当前输入</span>
+                  <strong>3</strong>
+                </div>
+              </div>
+              <div class="caption">当前输入：小数点向左移动位数 · 答题区 ≥60%</div>
+            </div>
+
+            <div class="keyboard">
+              <div class="keyboard-tools">
+                <button class="key action delete-key" aria-label="删除一位" title="删除一位">⌫</button>
+              </div>
+              <div class="key-grid three">
+                <button class="key">7</button>
+                <button class="key">8</button>
+                <button class="key">9</button>
+                <button class="key">4</button>
+                <button class="key">5</button>
+                <button class="key">6</button>
+                <button class="key">1</button>
+                <button class="key">2</button>
+                <button class="key">3</button>
+                <button class="key zero-key">0</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-head"><span class="dot"></span>表达式键盘 · 等式输入</div>
+        <div class="phone">
+          <div class="phone-top">
+            <span>第 6 / 10 题</span>
+            <span class="hearts">♥ ♥ ♥</span>
+          </div>
+          <div class="practice-body">
+            <div class="question-card">
+              <p class="question-title">写出移项后的完整等式</p>
+              <div class="math-line">3x + 7 = 25</div>
+              <div class="active-input-row">
+                <div class="input-box expression" aria-label="当前输入，完整等式，值为 3x = 25 - 7">
+                  <span class="input-label">当前输入</span>
+                  <strong>3x = 25 - 7</strong>
+                </div>
+              </div>
+              <div class="caption">当前输入：完整等式 · 答题区 ≥60%</div>
+            </div>
+
+            <div class="keyboard">
+              <div class="keyboard-tools">
+                <button class="key action delete-key" aria-label="删除一位" title="删除一位">⌫</button>
+              </div>
+              <div class="expr-row">
+                <button class="key">+</button>
+                <button class="key">-</button>
+                <button class="key">×</button>
+                <button class="key">÷</button>
+                <button class="key">(</button>
+                <button class="key">)</button>
+                <button class="key">=</button>
+                <button class="key">x</button>
+              </div>
+              <div class="key-grid three">
+                <button class="key">7</button>
+                <button class="key">8</button>
+                <button class="key">9</button>
+                <button class="key">4</button>
+                <button class="key">5</button>
+                <button class="key">6</button>
+                <button class="key">1</button>
+                <button class="key">2</button>
+                <button class="key">3</button>
+                <button class="key zero-key">0</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+
+      <section class="wide">
+        <article class="wide-card">
+          <div class="panel-head"><span class="dot"></span>失败反馈 · 答案正确但过程 / 训练格未通过</div>
+          <div class="feedback-body">
+            <div class="result-card">
+              <p class="result-title">没关系，继续加油</p>
+              <div class="answer-block">
+                <strong>正确答案：</strong>4730<br>
+                <strong>解析：</strong>110 × 43 = 4730
+              </div>
+              <div class="reason">
+                未通过原因：竖式过程填写错误。虽然最终答案正确，但本题要求竖式过程也正确。
+              </div>
+              <button class="continue">继续</button>
+            </div>
+
+            <div class="result-card">
+              <p class="result-title">训练格错误明细</p>
+              <div class="answer-block">
+                <strong>正确答案：</strong>9.338<br>
+                <strong>解析：</strong>406 × 23 = 9338，再移动 3 位小数。
+              </div>
+              <div class="mistakes">
+                <div class="mistake">乘数小数位数错误：你填 0，正确是 1</div>
+                <div class="mistake">小数点移动位数错误：你填 2，正确是 3</div>
+              </div>
+              <button class="continue">继续</button>
+            </div>
+          </div>
+        </article>
+
+        <article class="wide-card">
+          <div class="panel-head"><span class="dot"></span>错题本 · 保留错因摘要</div>
+          <div class="feedback-body wrongbook">
+            <div class="wrong-item">
+              <p class="wrong-title">110 × 43 的竖式乘法</p>
+              <div class="answer-pair">
+                <span class="bad">你的答案：4730</span>
+                <span class="good">正确：4730</span>
+              </div>
+              <div class="reason">未通过原因：竖式过程填写错误</div>
+            </div>
+            <div class="wrong-item">
+              <p class="wrong-title">4.06 × 2.3 的小数乘法</p>
+              <div class="answer-pair">
+                <span class="bad">你的答案：9.338</span>
+                <span class="good">正确：9.338</span>
+              </div>
+              <div class="mistakes">
+                <div class="mistake">乘数小数位数错误：你填 0，正确是 1</div>
+                <div class="mistake">小数点移动位数错误：你填 2，正确是 3</div>
+              </div>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section class="bottom-strip">
+        <div class="note">
+          <h3>输入槽位</h3>
+          <p>橙色小格是当前槽位；下方大框是当前槽位的放大编辑区，不是额外答案格。</p>
+        </div>
+        <div class="note">
+          <h3>必要操作</h3>
+          <p>键盘常驻操作只保留删除；清空不常驻，移动用手指点目标槽位，确认走题型答题区原按钮。</p>
+        </div>
+        <div class="note">
+          <h3>错因边界</h3>
+          <p>系统键盘呼出能力保留在工程层，首版 UI 不显示按钮；过程格只展示错误类别。</p>
+        </div>
+      </section>
+
+      <article class="panel">
+        <div class="panel-head"><span class="dot"></span>竖式格 · 单字符输入</div>
+        <div class="phone">
+          <div class="phone-top">
+            <span>第 8 / 10 题</span>
+            <span class="hearts">♥ ♥ ♥</span>
+          </div>
+          <div class="practice-body">
+            <div class="question-card">
+              <p class="question-title">填写部分积和最终积</p>
+              <div class="board-mini">
+                <div class="cell blank"></div><div class="cell blank"></div><div class="cell">1</div><div class="cell">1</div><div class="cell">0</div><div class="cell blank"></div>
+                <div class="cell">×</div><div class="cell blank"></div><div class="cell blank"></div><div class="cell">4</div><div class="cell">3</div><div class="cell blank"></div>
+                <div class="cell blank"></div><div class="cell blank"></div><div class="cell">3</div><div class="cell">3</div><div class="cell">0</div><div class="cell blank"></div>
+                <div class="cell blank"></div><div class="cell active">4</div><div class="cell">4</div><div class="cell">0</div><div class="cell">0</div><div class="cell blank"></div>
+                <div class="cell blank"></div><div class="cell">4</div><div class="cell">7</div><div class="cell">3</div><div class="cell">0</div><div class="cell blank"></div>
+              </div>
+              <div class="active-input-row">
+                <div class="input-box" aria-label="当前格输入，第 2 个部分积第 1 格，值为 4">
+                  <span class="input-label">当前格输入</span>
+                  <strong>4</strong>
+                </div>
+              </div>
+              <div class="caption">当前输入：第 2 个部分积第 1 格 · 答题区 ≥60%</div>
+            </div>
+            <div class="keyboard">
+              <div class="keyboard-tools">
+                <button class="key action delete-key" aria-label="删除当前格" title="删除当前格">⌫</button>
+              </div>
+              <div class="key-grid three">
+                <button class="key">7</button><button class="key">8</button><button class="key">9</button>
+                <button class="key">4</button><button class="key">5</button><button class="key">6</button>
+                <button class="key">1</button><button class="key">2</button><button class="key">3</button>
+                <button class="key zero-key">0</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

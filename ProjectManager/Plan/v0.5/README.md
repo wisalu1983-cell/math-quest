@@ -2,7 +2,7 @@
 
 > 所属版本：v0.5
 > 创建：2026-04-28
-> 状态：✅ Phase 2 已完成；下一步 Phase 3 输入与反馈基础设施
+> 状态：🟡 Phase 3 已启动；输入与反馈基础设施开发文档已建立，待实现与验收
 > 设计规格：N/A（启动阶段由本版本预研结论和既有 current spec 约束驱动；具体子项开工前按需补设计 / 子计划）
 
 ---
@@ -29,10 +29,13 @@
 | Phase 1 开工对齐与跨 Phase 边界 | [`subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md`](./subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md) |
 | Phase 2：竖式题样本质量诊断 | [`phases/phase-2.md`](./phases/phase-2.md) |
 | Phase 2 `BL-009` 子计划 | [`subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md`](./subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md) |
+| Phase 3：输入与反馈基础设施 | [`phases/phase-3.md`](./phases/phase-3.md) |
+| Phase 3 `BL-011` 子计划 | [`subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](./subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) |
+| Phase 3 `ISSUE-067` 子计划 | [`subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](./subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md) |
 
 ## N/A / 延迟创建说明
 
-- `subplans/`：Phase 1 开工对齐文档已完成；Phase 2 `BL-009` 子计划已完成；Phase 3 / 4 的详细设计与实施计划按各 Phase 启动时分别创建。
+- `subplans/`：Phase 1 开工对齐文档已完成；Phase 2 `BL-009` 子计划已完成；Phase 3 `BL-011` 与 `ISSUE-067` 子计划已创建；Phase 4 的详细设计与实施计划按启动时创建。
 - 新设计规格：`BL-009` 已在 Phase 2 收口时回写 `ProjectManager/Specs/a03-vertical-calc/current.md`；后续若改变长期功能行为，继续按 Living Spec 制度在对应 phase 收口时回写。
 - QA 产物：Phase 2 使用固定 seed 诊断脚本、generator 单测、全量 test/build 验收；后续 UI / 体验类 Phase 收尾时按 `qa-leader` 规则补齐。
 
@@ -45,4 +48,4 @@
 - ✅ `BL-012`（特定账号数据查询后台页面）已从 v0.5 拆出，改由 v0.6 承接；v0.6 版本包待启动。
 - ✅ Phase 1 已完成：开工对齐、产品 / 体验决策确认、技术 ownership、类型/API、UI 容量与 QA 映射已形成后续 Phase 的共同边界。
 - ✅ Phase 2 已完成：`BL-009` 子计划、固定 seed 诊断、生成器过滤、自动化测试、实施后复测与 current spec 回写已完成。
-- ⏭️ 下一步：启动 Phase 3 `BL-011` 内置键盘 + `ISSUE-067` 错因反馈基础设施子计划。
+- 🟡 Phase 3 已启动：`BL-011` 内置键盘 + `ISSUE-067` 错因反馈基础设施开发文档已建立，下一步进入实现与验收。
