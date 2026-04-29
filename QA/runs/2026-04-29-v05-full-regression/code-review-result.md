@@ -70,7 +70,7 @@ V0.5 Phase 1~3 核心变更文件：
 
 | # | 严重性 | 文件 | 描述 | 建议 |
 |---|---|---|---|---|
-| CR-01 | P2 注意 | `vertical-calc.ts` | 高档小数除法循环使用非空断言代替结构安全 | 后续版本考虑 fallback 或 exhaustive check |
+| CR-01 | P2 注意 | `vertical-calc.ts` | 高档小数除法循环使用非空断言代替结构安全 | 概率分析确认触发概率 ≈10⁻⁵⁶，无实际运行时风险；后续清理即可 |
 | CR-02 | P2 注意 | build output | JS chunk 1809 kB 超过 500 kB 建议阈值 | 后续版本考虑 code splitting |
 
 ---

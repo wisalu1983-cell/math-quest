@@ -63,6 +63,6 @@ Phase 1 的文档目标是“别打架规则”，不一次性写完全部详细
 
 - 每个 Phase 收尾前必须更新对应 phase 或 subplan 状态。
 - 涉及 Backlog / Issue 生命周期变化时，先更新权威源，再回写 `Overview.md`。
-- v0.5 收口时必须处理 `BL-009`、`BL-011`、`BL-010` 和 `ISSUE-067` 的归档或延期；`BL-012` 不参与 v0.5 收口，后续由 v0.6 承接。
+- v0.5 收口时必须处理 `BL-009`、`BL-011`、`BL-010`、`ISSUE-067` 和 `ISSUE-069` 的归档或延期；`ISSUE-069` 作为 Release Gate 前 P1 correctness hotfix，不并入 Phase 4 `BL-010` 主线；`BL-012` 不参与 v0.5 收口，后续由 v0.6 承接。
 - 涉及版本启动、收口、跨源写入时运行 `npx tsx scripts/pm-sync-check.ts`。
 - 正式实现完成后按风险触发 `qa-leader`；release gate 前必须有 QA 结论。

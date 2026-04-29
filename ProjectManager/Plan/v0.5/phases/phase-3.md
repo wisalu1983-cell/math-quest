@@ -106,4 +106,6 @@ Phase 3 已于 2026-04-29 有条件完成。实现侧已落地统一内置键盘
 
 QA 入口：[`../../../../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`](../../../../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md)、[`../../../../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md`](../../../../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md)。自动换格 follow-up 自动化摘要为 59 files / 738 tests passed、20 Playwright tests passed、build 通过、scoped eslint / PM sync check 通过；全仓 lint 历史债仍为非阻塞 RISK。
 
+v0.5 Phase 1~3 全量 QA（L3）已于 2026-04-29 执行并有条件通过：Vitest 59 files / 743 tests、Playwright 23 tests、build、npm audit 全部通过；46 项用例中 44 PASS / 0 FAIL / 1 DEFERRED / 1 RISK。入口见 [`../../../../QA/runs/2026-04-29-v05-full-regression/qa-summary.md`](../../../../QA/runs/2026-04-29-v05-full-regression/qa-summary.md)。
+
 剩余条件：真实 Android Chrome / iOS Safari 证据按用户确认转发布后线上环境验收，清单见 [`../../../../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`](../../../../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md)。下一步准备进入 Phase 4：`BL-010` 竖式除法 UI 化答题。

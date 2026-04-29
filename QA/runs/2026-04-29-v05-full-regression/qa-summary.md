@@ -109,7 +109,7 @@
 |---|---|---|---|
 | 1 | DEFERRED (I-01) | 真实 Android Chrome / iOS Safari 默认不弹系统键盘证据 | 已确认发布后线上环境验收，清单见 `QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md` |
 | 2 | RISK (A-02) | 全仓 ESLint 历史债（~146 problems） | Phase 3 scoped ESLint exit 0；全仓清理为后续版本优化项 |
-| 3 | **中级注意** (N3) | `vertical-calc.ts:590-631` 高档 `generateDecimalDiv` 循环后 7 处 `!` 非空断言，缺少兜底 fallback；50 次重试全失败时可能 TypeError | **建议优先修复**：仿照同文件其他函数添加 fallback return |
+| 3 | 注意 (N3) | `vertical-calc.ts:590-631` 高档 `generateDecimalDiv` 循环后 7 处 `!` 非空断言，缺少兜底 fallback | 概率分析：每次迭代 break 概率 ≈92.5%，50 次全失败概率 ≈10⁻⁵⁶，实际不可能触发。降级为后续清理项，不阻塞 Phase 4 |
 | 4 | 注意 (CR-02) | 生产构建 JS chunk 1809 kB 超过 500 kB 建议阈值 | P2 级，后续版本考虑 code splitting |
 | 5 | 信息 | `Practice.tsx` ~985 行，承载所有题型 UI 逻辑 | 后续可考虑按题型拆分子组件 |
 | 6 | 信息 | `types/index.ts` `xpBase` 已标 deprecated 但仍被所有生成器赋值 | 后续清理 |

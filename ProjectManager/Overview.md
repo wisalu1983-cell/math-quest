@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-29（v0.5 Phase 3 自动换格 follow-up 完成，准备进入 Phase 4）
+> 最后更新：2026-04-29（`ISSUE-069` 纳入 v0.5 Release Gate 前小修，准备进入 Phase 4）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.5** | 🟡 Phase 3 有条件完成（`BL-011` 内置键盘、自动换格统一化 + `ISSUE-067` 结构化错因反馈已实现并通过本地 QA；真实设备证据发布后线上补验；下一步准备进入 Phase 4） | [Plan/v0.5/](Plan/v0.5/) |
+| **当前版本** | **v0.5** | 🟡 Phase 3 有条件完成，全量 QA 通过（Phase 1~3 L3 全量测试 44 PASS / 0 FAIL；真实设备证据发布后线上补验；下一步准备进入 Phase 4） | [Plan/v0.5/](Plan/v0.5/) |
 | 上一版本 | v0.4 | ✅ 已发布（题目体验系统性修复；release gate 补测通过） | [Plan/v0.4/](Plan/v0.4/) |
 | 更早版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
 | 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
@@ -55,6 +55,8 @@
 - ✅ Phase 2 已完成：`BL-009` 竖式题样本质量诊断、过滤规则、生成器实现、实施后复测和 current spec 回写已完成。入口见 [`Plan/v0.5/phases/phase-2.md`](Plan/v0.5/phases/phase-2.md) · [`Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md`](Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md)
 - 🟡 Phase 3 有条件完成：`BL-011` 内置键盘、自动换格统一化与 `ISSUE-067` 结构化错因反馈已实现，QA 见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md) 与 [`../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md`](../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md)。入口见 [`Plan/v0.5/phases/phase-3.md`](Plan/v0.5/phases/phase-3.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
 - 🟡 Phase 3 剩余条件：真实 Android Chrome / iOS Safari 默认内置键盘证据发布后在线上环境验收，清单见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md)
+- ✅ v0.5 Phase 1~3 全量 QA 通过：L3 级 46 项用例，Vitest 59 files / 743 tests、Playwright 23 tests、build、npm audit 全部通过；Code Review PASS-WITH-NOTES；视觉 QA 12 截图 25 校验点 PASS。入口见 [`../QA/runs/2026-04-29-v05-full-regression/qa-summary.md`](../QA/runs/2026-04-29-v05-full-regression/qa-summary.md)
+- 🟡 `ISSUE-069` 已纳入 v0.5 Release Gate 前小修：A02 `reverse-round` 填空题答案口径冲突，作为 P1 correctness hotfix 处理，不并入 Phase 4 `BL-010` 竖式除法 UI 主线
 - ⏭️ 下一步：准备进入 Phase 4，创建 `BL-010`（竖式除法 UI 化答题功能）子计划，复用 Phase 3 的内置键盘、输入槽位、结构化错因和错题本链路
 
 **入口**：
