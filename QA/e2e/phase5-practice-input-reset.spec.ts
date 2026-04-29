@@ -1,6 +1,4 @@
-import { mkdirSync } from 'node:fs';
-import path from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Page, type TestInfo } from '@playwright/test';
 
 type HarnessWindow = Window & {
   __MQ_SESSION__?: {
@@ -14,14 +12,6 @@ type HarnessWindow = Window & {
 };
 
 type QuestionFixture = Record<string, unknown>;
-
-const RUN_ARTIFACTS_DIR = path.join(
-  process.cwd(),
-  'QA',
-  'runs',
-  '2026-04-26-v04-phase5-practice-reset',
-  'artifacts',
-);
 
 function numericQuestion(id: string, prompt: string, answer: number): QuestionFixture {
   return {
@@ -87,11 +77,10 @@ function multiSelectQuestion(id: string, prompt: string, options: string[]): Que
   };
 }
 
-async function saveEvidence(page: Page, name: string): Promise<void> {
-  mkdirSync(RUN_ARTIFACTS_DIR, { recursive: true });
+async function saveEvidence(page: Page, testInfo: TestInfo, name: string): Promise<void> {
   await page.waitForTimeout(350);
   await page.screenshot({
-    path: path.join(RUN_ARTIFACTS_DIR, name),
+    path: testInfo.outputPath(name),
     fullPage: true,
   });
 }
@@ -172,7 +161,7 @@ async function activateInput(page: Page, label: string) {
 }
 
 test.describe('v0.4 Phase 5 Practice input reset', () => {
-  test('numeric answer is cleared and focused when the current question changes', async ({ page }) => {
+  test('numeric answer is cleared and focused when the current question changes', async ({ page }, testInfo) => {
     const first = numericQuestion('phase5-numeric-1', '12 + 8 = ?', 20);
     const second = numericQuestion('phase5-numeric-2', '9 + 6 = ?', 15);
 
@@ -184,10 +173,10 @@ test.describe('v0.4 Phase 5 Practice input reset', () => {
 
     await expect(page.getByRole('textbox', { name: '输入答案', exact: true })).toHaveValue('');
     await expect(page.getByRole('textbox', { name: '输入答案', exact: true })).toHaveClass(/ring-2/);
-    await saveEvidence(page, 'G-01-numeric-reset-focused.png');
+    await saveEvidence(page, testInfo, 'G-01-numeric-reset-focused.png');
   });
 
-  test('multi blank values are rebuilt from the next question shape', async ({ page }) => {
+  test('multi blank values are rebuilt from the next question shape', async ({ page }, testInfo) => {
     const first = multiBlankQuestion('phase5-blanks-3', '25 x 4 = __ x __ = __', [25, 4, 100]);
     const second = multiBlankQuestion('phase5-blanks-2', '18 + 12 = __ + __', [18, 12]);
 
@@ -205,10 +194,10 @@ test.describe('v0.4 Phase 5 Practice input reset', () => {
     await expect(page.getByRole('textbox', { name: '第 2 空', exact: true })).toHaveValue('');
     await expect(page.getByRole('textbox', { name: '第 3 空', exact: true })).toHaveCount(0);
     await expect(page.getByRole('textbox', { name: '第 1 空', exact: true })).toHaveClass(/ring-2/);
-    await saveEvidence(page, 'I-01-multi-blank-rebuilt.png');
+    await saveEvidence(page, testInfo, 'I-01-multi-blank-rebuilt.png');
   });
 
-  test('multi-select reset does not consume the quit dialog state', async ({ page }) => {
+  test('multi-select reset does not consume the quit dialog state', async ({ page }, testInfo) => {
     const first = multiSelectQuestion('phase5-select-1', '选择所有正确说法', [
       '2 是偶数',
       '3 是偶数',
@@ -231,6 +220,6 @@ test.describe('v0.4 Phase 5 Practice input reset', () => {
     await page.getByLabel('退出练习').click();
     await expect(page.getByRole('dialog', { name: '确定退出吗？' })).toBeVisible();
     await expect(page.getByRole('button', { name: '继续练习' })).toBeVisible();
-    await saveEvidence(page, 'H-01-multi-select-reset-quit-dialog.png');
+    await saveEvidence(page, testInfo, 'H-01-multi-select-reset-quit-dialog.png');
   });
 });
