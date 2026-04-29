@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-29（v0.5 Phase 3 已启动）
+> 最后更新：2026-04-29（v0.5 Phase 3 有条件完成，准备进入 Phase 4）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.5** | 🟡 Phase 3 已启动（`BL-011` 内置键盘 + `ISSUE-067` 结构化错因反馈开发文档已建立，待实现与验收） | [Plan/v0.5/](Plan/v0.5/) |
+| **当前版本** | **v0.5** | 🟡 Phase 3 有条件完成（`BL-011` 内置键盘 + `ISSUE-067` 结构化错因反馈已实现并通过本地 QA；真实设备证据发布后线上补验；下一步准备进入 Phase 4） | [Plan/v0.5/](Plan/v0.5/) |
 | 上一版本 | v0.4 | ✅ 已发布（题目体验系统性修复；release gate 补测通过） | [Plan/v0.4/](Plan/v0.4/) |
 | 更早版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
 | 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
@@ -46,15 +46,16 @@
 
 **当前状态**：
 
-- ✅ v0.5 版本管理包已建立：`README + 00-04 + phases/phase-1..2`
+- ✅ v0.5 版本管理包已建立：`README + 00-04 + phases/phase-1..3`
 - ✅ v0.5 预研结论已汇总，入口见 [`Plan/v0.5/01-research-catalog.md`](Plan/v0.5/01-research-catalog.md)
 - ✅ `BL-009`、`BL-011`、`BL-010` 已纳入 v0.5
-- ✅ `ISSUE-067` 已纳入 v0.5 Phase 3 顺带修复
+- ✅ `ISSUE-067` 已随 v0.5 Phase 3 修复并关闭，归档见 [`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)
 - ✅ `BL-012` 已从 v0.5 拆出，改由 v0.6 承接；v0.6 版本包待启动
 - ✅ Phase 1 已完成：开工对齐、产品 / 体验决策 P1~P5、技术 ownership、类型/API、UI 容量与 QA 映射已确认，入口见 [`Plan/v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md`](Plan/v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md)
 - ✅ Phase 2 已完成：`BL-009` 竖式题样本质量诊断、过滤规则、生成器实现、实施后复测和 current spec 回写已完成。入口见 [`Plan/v0.5/phases/phase-2.md`](Plan/v0.5/phases/phase-2.md) · [`Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md`](Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md)
-- 🟡 Phase 3 已启动：`BL-011` 内置键盘与 `ISSUE-067` 结构化错因反馈开发文档已建立。入口见 [`Plan/v0.5/phases/phase-3.md`](Plan/v0.5/phases/phase-3.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
-- ⏭️ 下一步：按 Phase 3 子计划进入 `BL-011` 输入基础设施实现，再接 `ISSUE-067` 错因反馈实现与移动端 / 反馈面板验收
+- 🟡 Phase 3 有条件完成：`BL-011` 内置键盘与 `ISSUE-067` 结构化错因反馈已实现，QA 见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md)。入口见 [`Plan/v0.5/phases/phase-3.md`](Plan/v0.5/phases/phase-3.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
+- 🟡 Phase 3 剩余条件：真实 Android Chrome / iOS Safari 默认内置键盘证据发布后在线上环境验收，清单见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md)
+- ⏭️ 下一步：准备进入 Phase 4，创建 `BL-010`（竖式除法 UI 化答题功能）子计划，复用 Phase 3 的内置键盘、输入槽位、结构化错因和错题本链路
 
 **入口**：
 
@@ -136,9 +137,9 @@
 - 当前 Phase 1 开工对齐：[Plan/v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md](Plan/v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md)
 - 已完成 Phase 2 入口：[Plan/v0.5/phases/phase-2.md](Plan/v0.5/phases/phase-2.md)
 - 已完成 Phase 2 `BL-009` 样本质量诊断与过滤规则：[Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md](Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md)
-- 当前 Phase 3 入口：[Plan/v0.5/phases/phase-3.md](Plan/v0.5/phases/phase-3.md)
-- 当前 Phase 3 `BL-011` 内置键盘：[Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md)
-- 当前 Phase 3 `ISSUE-067` 结构化错因反馈：[Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
+- 已完成 Phase 3 入口：[Plan/v0.5/phases/phase-3.md](Plan/v0.5/phases/phase-3.md)
+- 已完成 Phase 3 `BL-011` 内置键盘：[Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md)
+- 已完成 Phase 3 `ISSUE-067` 结构化错因反馈：[Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
 
 ### 全局管理入口
 

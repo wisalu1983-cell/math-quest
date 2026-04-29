@@ -3,8 +3,8 @@
 > 功能 slug：`a03-vertical-calc`
 > 当前状态：已实施并作为 A03 竖式笔算当前权威行为生效
 > 首次建立：2026-04-26
-> 最近确认：2026-04-28
-> 最近来源：`ProjectManager/Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md`、`scripts/diagnose-bl009-vertical-samples.mjs`、当前代码入口
+> 最近确认：2026-04-29
+> 最近来源：`ProjectManager/Plan/v0.5/phases/phase-3.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`、`QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`、当前代码入口
 
 ---
 
@@ -19,6 +19,11 @@
 - 单行竖式中的已知操作数与运算符必须使用高对比正文色；只有空白对齐格可使用浅色占位样式。
 - 单行竖式输入必须只有一个字符消费入口：hidden input 的 `onInput` 负责数字、`-`、软键盘与粘贴，`onKeyDown` 只处理 `Backspace` / `Delete` / `Enter` / `Tab` 控制键。
 - A03 低档竖式样本必须排除第一批已确认的心算候选：`difficulty<=3` 的 `int-mul` 不生成 `2位数 × 1位数`；`difficulty<=5` 的一位除数整数除法过滤 D0 逐段整除型，并以 D2 多次余数传递、D3 商中间 0 为主。
+- A03 / Practice 计算字符输入在移动端默认使用内置计算键盘；首版 UI 不显示系统键盘呼出按钮，工程层保留当前槽位系统键盘状态。
+- 内置键盘使用 5 列 x 4 行全量按键布局：`1 2 3 = 删除 / 4 5 6 + - / 7 8 9 × ÷ / . 0 x ( )`；左三列主输入区宽于右两列符号区，删除键独立使用危险色语义。
+- 计算输入槽位通过 `enabledKeys` 决定按键可用 / 置灰，通过 `sanitizeInput` 兜底桌面键盘、粘贴、系统键盘和测试注入；不可只依赖 UI disabled 防守。
+- 多行乘法竖式最终答案正确但部分积 / 合计过程格错误时，仍判未通过，并展示过程类别文案；小数乘法训练格错误时展示训练格类型、用户值和正确值。
+- `failureDetail` 为可选结构化错因对象，不触发存档版本升级；当前反馈、错题本、历史记录底层数据和同步合并必须保留该字段，历史记录 UI 不展示错因。
 
 ## 2. 当前行为
 
@@ -69,10 +74,29 @@
   - `passWithProcessWarning`
 - `failProcess` 在竖式板内先显示本地复盘，再进入统一失败结果 UI。
 - `passWithProcessWarning` 不在竖式板标红，只在统一成功结果 UI 显示“进位/退位过程有误，但本题答案正确，已通过”。
-- `QuestionAttempt`、`HistoryQuestionRecord`、`WrongQuestion` 可带 `failureReason?: 'wrong-answer' | 'vertical-process'`。
+- `QuestionAttempt`、`HistoryQuestionRecord`、`WrongQuestion` 可带 `failureReason?: 'wrong-answer' | 'vertical-process' | 'vertical-multiplication-process' | 'vertical-training-field'`。
+- `QuestionAttempt`、`HistoryQuestionRecord`、`WrongQuestion` 可带 `failureDetail?: PracticeFailureDetail`；该字段为可选，不 bump 存档版本。
 - `processWarning='vertical-process-warning'` 只用于当前反馈面板，不持久化为错题原因。
+- 多行乘法竖式提交使用结构化 `VerticalCalcCompletePayload`，不再只返回 `boolean`；`classifyMultiplicationErrors()` 负责区分最终答案错、过程格错、训练格错和过程格 + 训练格同时错。
+- 最终答案错误时仍按普通错答展示，不额外暴露过程格正确值。
+- 最终答案正确但多行乘法过程格错误时，统一失败面板展示“你的最终答案是对的，但竖式里的计算步骤有错误。把步骤也写对，才能通过哦。”方向文案，并显示 `部分积填写错误`、`竖式求和过程填写错误` 或 `竖式过程填写错误` 等类别。
+- 最终答案正确但小数乘法训练格错误时，统一失败面板展示训练格明细，例如“小数点移动位数错误：你填 1，正确是 2”；用户值为空时显示“未填写”。
+- 错题本展示结构化错因摘要和训练格明细；历史记录 UI 不展示错因，但底层记录可保留 `failureReason` / `failureDetail` 供未来分析。
+- 旧错题只有 `failureReason='vertical-process'` 且没有 `failureDetail` 时，仍显示旧文案 fallback，不白屏、不显示技术字段。
 
-### 2.6 视觉可读性
+### 2.6 内置计算键盘
+
+- 输入基础设施由 `src/pages/practice-math-keyboard.ts`、`src/pages/PracticeMathKeyboard.tsx` 和 `Practice.tsx` 的 slot 注册共同承载；题型组件只声明输入槽位、当前值、可用按键、sanitize 和 setter。
+- 移动端 / 触摸设备默认走内置键盘，真实输入控件使用 `readOnly=true` 与 `inputMode='none'`，避免主动弹系统键盘；桌面保留真实输入焦点与硬键盘输入，内置键盘作为辅助面板。
+- 当前填写格必须有明确 active 样式；active slot 变化通过隐藏的 `aria-live='polite'` 播报槽位 label。
+- 统一键盘全量按键常驻；数字 / 小数点 / 变量 `x` 属主输入区，运算符 / 等号 / 括号属符号区，删除键独立分组。
+- `x` 使用计算式未知数字体，与乘号 `×` 的 UI sans 字体区分。
+- 不适用于当前 slot 的按键必须显著禁用：disabled、虚线边框、低透明度和灰色 token 共同表达不可用。
+- 首版 UI 不显示系统键盘呼出按钮；工程状态 `useSystemKeyboardForSlotId` 或等价能力可用于后续辅助功能 / 设置入口。
+- QA 已验证 390x844 手机模拟下非键盘区高度占比为 74.6%，满足答题区高度占比 ≥60%。
+- 真实 Android Chrome / iOS Safari 默认不弹系统键盘证据因本地局域网访问不稳定，已转发布后线上环境验收；清单见 `QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`。
+
+### 2.7 视觉可读性
 
 - `VerticalCalcBoard` legacy single-line board 中，已知操作数、运算符、小数点和答案输入内容都属于主体信息，不得复用 `.digit-cell-empty` 的 `text-text-3` 占位色。
 - 空白对齐格继续使用 `.digit-cell-empty`，保留 `text-text-3` 的低强调占位样式。
@@ -85,6 +109,8 @@
 - 中档过程格错误不代表学生本题失败，不进入错题本、历史原因、统计或段位复习权重。
 - `BL-003` compare tip 在 Phase 4 只是补证既有行为，不归入本 A03 current spec。
 - 全局 lint 仍有既有债；Phase 4 使用本轮改动文件 scoped lint 控制新增风险。
+- 内置键盘的真实设备证据尚未在本地 dev server 补齐；发布后线上环境补证前，不能宣称 Android Chrome / iOS Safari 真实设备已通过。
+- 错题本重做、同类题推荐、回到相关关卡等学习行动路径不属于 Phase 3 当前承诺；后续候选见 `BL-013`。
 
 ## 4. 来源与证据
 
@@ -100,11 +126,17 @@
 | Hotfix QA | `QA/runs/2026-04-26-v04-hotfix-vertical-input/qa-summary.md` | `ISSUE-066` 红绿回归、全量 Playwright、全量单测和 build 证据 |
 | Release Gate QA | `QA/runs/2026-04-26-v04-release-gate/qa-summary.md`、`QA/runs/2026-04-26-v04-release-gate/visual-result.md` | `ISSUE-065` 单行竖式高对比回归补测通过 |
 | v0.5 Phase 2 subplan | `ProjectManager/Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md` | `BL-009` 诊断、过滤规则、实施后复测和验收命令 |
+| v0.5 Phase 3 phase | `ProjectManager/Plan/v0.5/phases/phase-3.md` | Phase 3 范围、收尾条件、有条件完成状态和 Phase 4 准备状态 |
+| v0.5 Phase 3 keyboard subplan | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md` | 统一内置键盘、槽位协议、移动端默认策略、真实设备补验证据口径 |
+| v0.5 Phase 3 failure subplan | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md` | 结构化错因、反馈面板、错题本、旧数据 fallback、同步合并 |
+| Phase 3 QA | `QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md` | Phase 3 QA 有条件通过；test/build/e2e/scoped lint/audit/diff check 通过；真实设备证据发布后补验 |
 | BL-009 诊断脚本 | `scripts/diagnose-bl009-vertical-samples.mjs` | 固定 seed 抽样诊断与 P0/P1 口径 |
 | BL-009 生成器测试 | `src/engine/generators/vertical-calc.phase3.test.ts` | 低档乘法过滤、低档一位除数整数除法 D0 过滤和 D2/D3 主力分布断言 |
 | 策略代码 | `src/engine/vertical-calc-policy.ts`、`src/engine/vertical-calc-policy.test.ts` | 三档策略、跳格、提交、结果分类 |
 | 生成器代码 | `src/engine/generators/vertical-calc.ts` | A03 竖式样本生成与 BL-009 P0 过滤规则 |
-| UI / Store | `src/components/VerticalCalcBoard.tsx`、`src/pages/Practice.tsx`、`src/pages/WrongBook.tsx`、`src/store/index.ts` | 竖式板接入、统一反馈、错题原因链路 |
+| UI / Store | `src/components/VerticalCalcBoard.tsx`、`src/components/MultiplicationVerticalBoard.tsx`、`src/components/DecimalTrainingGrid.tsx`、`src/pages/Practice.tsx`、`src/pages/PracticeMathKeyboard.tsx`、`src/pages/WrongBook.tsx`、`src/store/index.ts` | 竖式板接入、统一键盘、统一反馈、错题原因链路 |
+| 输入基础设施 | `src/pages/practice-math-keyboard.ts`、`src/pages/practice-math-keyboard.test.ts`、`src/pages/PracticeMathKeyboard.test.ts` | 键盘 reducer、slot state、按键集合、sanitize、组件渲染和 a11y 验证 |
+| 错因基础设施 | `src/engine/verticalMultiplicationErrors.ts`、`src/engine/verticalMultiplicationErrors.test.ts`、`src/utils/practiceFailureDisplay.ts`、`src/utils/practiceFailureDisplay.test.ts` | 多行乘法错误分类、结构化显示 helper 和旧数据 fallback |
 | 数据 / 同步 | `src/types/index.ts`、`src/sync/merge.test.ts` | 可选原因字段和同步合并保留 |
 
 ## 5. 变更记录
@@ -117,3 +149,4 @@
 | 2026-04-26 | `QA/runs/2026-04-26-v04-release-gate/visual-result.md` | release gate 补测关闭 `ISSUE-065`，补充单行竖式已知操作数 / 运算符高对比当前承诺 |
 | 2026-04-26 | `ProjectManager/Plan/v0.4/subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md` | v0.4 hotfix 关闭 `ISSUE-066`：单行竖式 hidden input 改为单一字符输入入口；退位格支持 `1 -> -1` 语义输入并显示 `退1`；软键盘删除清当前格 |
 | 2026-04-28 | `ProjectManager/Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md` | v0.5 Phase 2 关闭 `BL-009` 第一批 P0：低档乘法过滤 `2位数 × 1位数`；低档一位除数整数除法过滤 D0，并以 D2/D3 为主 |
+| 2026-04-29 | `ProjectManager/Plan/v0.5/phases/phase-3.md`、`QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md` | v0.5 Phase 3 有条件完成：统一内置计算键盘、槽位级 sanitize、移动端默认内置键盘策略、结构化 `failureDetail`、多行乘法过程 / 训练格错因、错题本展示和同步合并保留已落地；真实 Android / iOS 设备证据发布后线上补验 |

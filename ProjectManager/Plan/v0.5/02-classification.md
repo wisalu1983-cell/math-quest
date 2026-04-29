@@ -15,7 +15,7 @@
 | `BL-011` | 计算输入内置键盘与移动端默认键盘策略 | 新功能 / 输入体验 / 移动端 UX | Practice 输入基础设施 | 已纳入 v0.5 |
 | `BL-010` | 竖式除法 UI 化答题功能 | 新功能 / 学习交互 | A03 竖式计算、Practice 答题 UI | 已纳入 v0.5 |
 | `BL-012` | 特定账号数据查询后台页面 | 新功能 / 内部后台 / 账号数据运维 | Supabase 账号同步、后台只读查询 | 已拆分至 v0.6 |
-| `ISSUE-067` | 多行乘法竖式判错面板缺少过程 / 训练格错因 | bug / UX 反馈一致性 | 多行乘法竖式、统一结果 UI、错题数据 | 已纳入 v0.5 |
+| `ISSUE-067` | 多行乘法竖式判错面板缺少过程 / 训练格错因 | bug / UX 反馈一致性 | 多行乘法竖式、统一结果 UI、错题数据 | 已随 Phase 3 关闭 |
 
 ## 依赖关系
 
@@ -51,8 +51,8 @@
 
 | 功能 | 可能影响的 current spec | 预期处理 |
 |---|---|---|
-| `BL-009` / `BL-010` / `ISSUE-067` | [`../../Specs/a03-vertical-calc/current.md`](../../Specs/a03-vertical-calc/current.md) | `update-at-phase-close`：验收后回写 A03 竖式除法、输入、错因反馈和样本过滤的长期行为。 |
-| `BL-011` | 可能需要新增输入体验 current spec 或并入 A03 current spec | `deferred`：详细设计阶段判断是否跨题型长期生效；若跨 Practice 输入基础设施，考虑新增 spec。 |
+| `BL-009` / `BL-010` / `ISSUE-067` | [`../../Specs/a03-vertical-calc/current.md`](../../Specs/a03-vertical-calc/current.md) | `update-at-phase-close`：验收后回写 A03 竖式除法、输入、错因反馈和样本过滤的长期行为。`ISSUE-067` 已在 Phase 3 收口回写。 |
+| `BL-011` | [`../../Specs/a03-vertical-calc/current.md`](../../Specs/a03-vertical-calc/current.md) | Phase 3 收口已并入 A03 current spec；暂不新增跨 Practice 输入 current spec，后续若 A01-A08 全域输入策略独立扩张再新建。 |
 | `BL-012` | 可能影响账号 / 同步 current spec | 不在 v0.5 处理；v0.6 详细设计阶段再评估是否回写 v0.3 账号同步 current spec。 |
 
 开发期只在 v0.5 Plan / subplan 中记录待回写要点；验收前不改写 current spec。

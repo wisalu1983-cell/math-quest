@@ -9,6 +9,7 @@ import type {
   WrongQuestion,
   TrainingField,
   TrainingFieldMistake,
+  PracticeFailureDetail,
   PracticeFailureReason,
   PracticeProcessWarning,
   HistoryRecord,
@@ -42,6 +43,7 @@ import { startNextGame as rankStartNextGame } from '@/engine/rank-match/match-st
 interface SubmitAnswerOptions {
   trainingValues?: string[];
   failureReason?: PracticeFailureReason;
+  failureDetail?: PracticeFailureDetail;
   processWarning?: PracticeProcessWarning;
 }
 
@@ -96,6 +98,7 @@ function rebuildPendingWrongQuestions(session: PracticeSession): WrongQuestion[]
       wrongAnswer: attempt.userAnswer,
       wrongAt: attempt.attemptedAt,
       ...(attempt.failureReason ? { failureReason: attempt.failureReason } : {}),
+      ...(attempt.failureDetail ? { failureDetail: attempt.failureDetail } : {}),
     }));
 }
 
@@ -123,6 +126,7 @@ function buildHistoryRecord(session: PracticeSession): HistoryRecord {
       correctAnswer: String(attempt.question.solution.answer),
       correct: attempt.correct,
       failureReason: attempt.failureReason,
+      failureDetail: attempt.failureDetail,
       timeMs: attempt.timeMs,
     })),
   };
@@ -160,6 +164,7 @@ interface SessionStore {
   lastTrainingFieldMistakes: TrainingFieldMistake[];
   lastProcessWarning: PracticeProcessWarning | null;
   lastFailureReason: PracticeFailureReason | null;
+  lastFailureDetail: PracticeFailureDetail | null;
   pendingWrongQuestions: WrongQuestion[];
   /** 段位赛预生成题序（由 startRankMatchGame 填充，nextQuestion 按 currentIndex 取） */
   rankQuestionQueue: Question[];
@@ -213,6 +218,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
   lastTrainingFieldMistakes: [],
   lastProcessWarning: null,
   lastFailureReason: null,
+  lastFailureDetail: null,
   pendingWrongQuestions: [],
   rankQuestionQueue: [],
   sessionDuplicateSignatures: new Set<string>(),
@@ -248,6 +254,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
       pendingWrongQuestions: [],
       sessionDuplicateSignatures: new Set<string>(),
     });
@@ -332,6 +339,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: questions,
       sessionDuplicateSignatures: new Set<string>(),
@@ -432,6 +440,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
       pendingWrongQuestions: restoredPendingWrongQuestions,
       rankQuestionQueue: stored.rankQuestionQueue,
       sessionDuplicateSignatures: new Set<string>(),
@@ -472,6 +481,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
       pendingWrongQuestions: [],
       sessionDuplicateSignatures: new Set<string>(),
     });
@@ -524,6 +534,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
     });
   },
 
@@ -604,6 +615,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       userAnswer: answer,
       correct,
       ...(options?.failureReason ? { failureReason: options.failureReason } : {}),
+      ...(options?.failureDetail ? { failureDetail: options.failureDetail } : {}),
       timeMs,
       hintsUsed: 0,
       attemptedAt: Date.now(),
@@ -632,6 +644,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: trainingFieldMistakes,
       lastProcessWarning: processWarning,
       lastFailureReason: correct ? null : options?.failureReason ?? null,
+      lastFailureDetail: correct ? null : options?.failureDetail ?? null,
       currentIndex: currentIndex + 1,
     });
 
@@ -641,6 +654,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
         wrongAnswer: answer,
         wrongAt: Date.now(),
         ...(options?.failureReason ? { failureReason: options.failureReason } : {}),
+        ...(options?.failureDetail ? { failureDetail: options.failureDetail } : {}),
       };
       set(s => ({ pendingWrongQuestions: [...s.pendingWrongQuestions, wq] }));
     }
@@ -699,6 +713,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
       sessionDuplicateSignatures: new Set<string>(),
@@ -729,6 +744,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
       sessionDuplicateSignatures: new Set<string>(),
@@ -766,6 +782,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
       sessionDuplicateSignatures: new Set<string>(),
@@ -806,6 +823,7 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       lastTrainingFieldMistakes: [],
       lastProcessWarning: null,
       lastFailureReason: null,
+      lastFailureDetail: null,
       pendingWrongQuestions: [],
       rankQuestionQueue: [],
       sessionDuplicateSignatures: new Set<string>(),

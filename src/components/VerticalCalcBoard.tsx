@@ -1,6 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import type { VerticalCalcCompletePayload, VerticalCalcData } from '@/types';
+import PracticeMathKeyboard from '@/pages/PracticeMathKeyboard';
+import {
+  DIGIT_KEYS,
+  sanitizeSingleDigitInput,
+  usePrefersVirtualKeyboard,
+} from '@/pages/practice-math-keyboard';
+import type { MathInputSlot, MathKeyboardKey } from '@/pages/practice-math-keyboard';
 import {
   buildVerticalCalcPolicyColumns,
   canSubmitVerticalCalc,
@@ -97,10 +104,13 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
   const [pendingCompletion, setPendingCompletion] = useState<VerticalCalcCompletePayload | null>(null);
   const [submitWarning, setSubmitWarning] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const prefersVirtualKeyboard = usePrefersVirtualKeyboard();
 
   useEffect(() => {
-    if (inputRef.current && !completed) inputRef.current.focus({ preventScroll: true });
-  }, [activeCell, completed]);
+    if (inputRef.current && !completed && !prefersVirtualKeyboard) {
+      inputRef.current.focus({ preventScroll: true });
+    }
+  }, [activeCell, completed, prefersVirtualKeyboard]);
 
   const values: VerticalCalcValues = useMemo(() => ({
     answers: answerValues,
@@ -118,6 +128,12 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
   };
 
   const cellKey = (cell: VerticalCalcCellId) => `${cell.kind}-${cell.col}`;
+  const slotIdForCell = (cell: VerticalCalcCellId) => `vertical-${cell.kind}-${cell.col}`;
+  const cellFromSlotId = (slotId: string): VerticalCalcCellId | null => {
+    const match = /^vertical-(answer|process)-(\d+)$/.exec(slotId);
+    if (!match) return null;
+    return { kind: match[1] as VerticalCalcCellId['kind'], col: Number(match[2]) };
+  };
 
   const padDigits = (digits: number[]) => {
     const padded = new Array<number | undefined>(totalDigitCols).fill(undefined);
@@ -166,7 +182,7 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
     return `${integerPart}.${decimalPart}`;
   };
 
-  const focusAfterInput = (
+  const focusAfterInput = useCallback((
     currentCell: VerticalCalcCellId,
     nextValues: VerticalCalcValues,
     action?: 'input' | 'enter' | 'tab',
@@ -180,14 +196,64 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
       action,
     });
     if (next) setActiveCell(next);
-  };
+  }, [columns, difficulty, op]);
 
   const handleCellClick = (cell: VerticalCalcCellId) => {
     if (completed) return;
     setActiveCell(cell);
     setSubmitWarning(false);
-    inputRef.current?.focus({ preventScroll: true });
+    if (!prefersVirtualKeyboard) {
+      inputRef.current?.focus({ preventScroll: true });
+    }
   };
+
+  const setCellValue = useCallback((cell: VerticalCalcCellId, value: string) => {
+    if (completed) return;
+    setSubmitWarning(false);
+
+    if (value === '') {
+      if (cell.kind === 'process') {
+        setProcessValues(prev => {
+          const next = { ...prev };
+          delete next[cell.col];
+          return next;
+        });
+      } else {
+        setAnswerValues(prev => {
+          const next = { ...prev };
+          delete next[cell.col];
+          return next;
+        });
+      }
+      return;
+    }
+
+    if (value === '-') {
+      if (cell.kind === 'process' && op === '-') {
+        setProcessValues(prev => ({ ...prev, [cell.col]: '-' }));
+      }
+      return;
+    }
+
+    if (!/^[0-9]$/.test(value)) return;
+
+    if (cell.kind === 'answer') {
+      const nextAnswers = { ...answerValues, [cell.col]: value };
+      setAnswerValues(nextAnswers);
+      if (!prefersVirtualKeyboard) {
+        focusAfterInput(cell, { answers: nextAnswers, processes: processValues }, 'input');
+      }
+      return;
+    }
+
+    const nextValue = op === '-' && value === '1' ? '-1' : value;
+    if (!isCellComplete({ operation: op, cellKind: 'process', value: nextValue })) return;
+    const nextProcesses = { ...processValues, [cell.col]: nextValue };
+    setProcessValues(nextProcesses);
+    if (!prefersVirtualKeyboard) {
+      focusAfterInput(cell, { answers: answerValues, processes: nextProcesses }, 'input');
+    }
+  }, [answerValues, completed, focusAfterInput, op, prefersVirtualKeyboard, processValues]);
 
   const commitCellInput = (value: string) => {
     if (completed || !activeCell) return;
@@ -262,6 +328,50 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
         return next;
       });
     }
+  };
+
+  const verticalMathSlots = useMemo<MathInputSlot[]>(() => {
+    if (completed) return [];
+    const slots: MathInputSlot[] = [];
+    const processKeys = (op === '-' ? [...DIGIT_KEYS, '-'] : DIGIT_KEYS) as MathKeyboardKey[];
+    for (let col = 0; col <= highestAnswerCol; col++) {
+      const cell: VerticalCalcCellId = { kind: 'answer', col };
+      slots.push({
+        id: slotIdForCell(cell),
+        label: `答案第 ${highestAnswerCol - col + 1} 格`,
+        value: answerValues[col] ?? '',
+        maxLength: 1,
+        enabledKeys: DIGIT_KEYS,
+        sanitizeInput: sanitizeSingleDigitInput,
+        setValue: next => setCellValue(cell, next),
+      });
+    }
+    getVisibleProcessColumns({ difficulty, columns }).forEach(col => {
+      const cell: VerticalCalcCellId = { kind: 'process', col };
+      slots.push({
+        id: slotIdForCell(cell),
+        label: `进位/退位第 ${col + 1} 格`,
+        value: processValues[col] ?? '',
+        maxLength: 1,
+        enabledKeys: processKeys,
+        sanitizeInput: raw => {
+          if (raw === '-') return '-';
+          return sanitizeSingleDigitInput(raw);
+        },
+        setValue: next => setCellValue(cell, next),
+      });
+    });
+    return slots;
+  }, [answerValues, columns, completed, difficulty, highestAnswerCol, op, processValues, setCellValue]);
+
+  const activeVerticalSlotId = activeCell ? slotIdForCell(activeCell) : null;
+  const setActiveVerticalSlotId = (slotId: string | null) => {
+    if (!slotId) {
+      setActiveCell(null);
+      return;
+    }
+    const cell = cellFromSlotId(slotId);
+    if (cell) handleCellClick(cell);
   };
 
   const handleMoveKey = (action: 'enter' | 'tab') => {
@@ -499,7 +609,7 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
           }
         }}
         onInput={handleTextInput}
-        autoFocus
+        autoFocus={!prefersVirtualKeyboard}
       />
 
       <div className="card inline-block p-4">
@@ -535,25 +645,35 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
       )}
 
       {!completed ? (
-        <div className="mt-1 flex gap-3">
-          <button
-            onClick={handleClear}
-            className="btn-secondary px-4 py-2 text-sm"
-          >
-            清除
-          </button>
-          <button
-            onClick={handleSubmit}
-            className={`rounded-2xl px-6 py-2 text-sm font-bold transition-all ${
-              answerCellsComplete
-                ? 'btn-primary'
-                : 'cursor-not-allowed border-2 border-border bg-card-2 text-text-2'
-            }`}
-            disabled={!answerCellsComplete}
-          >
-            提交
-          </button>
-        </div>
+        <>
+          <div className="mt-1 flex gap-3">
+            <button
+              onClick={handleClear}
+              className="btn-secondary px-4 py-2 text-sm"
+            >
+              清除
+            </button>
+            <button
+              onClick={handleSubmit}
+              className={`rounded-2xl px-6 py-2 text-sm font-bold transition-all ${
+                answerCellsComplete
+                  ? 'btn-primary'
+                  : 'cursor-not-allowed border-2 border-border bg-card-2 text-text-2'
+              }`}
+              disabled={!answerCellsComplete}
+            >
+              提交
+            </button>
+          </div>
+          {verticalMathSlots.length > 0 && (
+            <PracticeMathKeyboard
+              slots={verticalMathSlots}
+              activeSlotId={activeVerticalSlotId}
+              onActiveSlotChange={setActiveVerticalSlotId}
+              className="mt-1"
+            />
+          )}
+        </>
       ) : (
         <button className="btn-flat mt-1 w-full max-w-xs" onClick={handleContinue}>
           继续

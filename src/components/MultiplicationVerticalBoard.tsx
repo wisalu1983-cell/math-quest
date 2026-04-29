@@ -1,15 +1,26 @@
 import { Check, RotateCcw } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import type { MultiplicationBoardData } from '@/types';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { MultiplicationBoardData, VerticalCalcCompletePayload } from '@/types';
+import PracticeMathKeyboard from '@/pages/PracticeMathKeyboard';
+import {
+  DECIMAL_KEYS,
+  DIGIT_KEYS,
+  sanitizeDecimalInput,
+  sanitizeDigitInput,
+  sanitizeSingleDigitInput,
+  usePrefersVirtualKeyboard,
+} from '@/pages/practice-math-keyboard';
+import type { MathInputSlot } from '@/pages/practice-math-keyboard';
 import {
   buildMultiplicationVerticalLayout,
   isEquivalentFinalAnswer,
   placeDecimalPoint,
 } from '@/engine/verticalMultiplication';
+import { classifyMultiplicationErrors } from '@/engine/verticalMultiplicationErrors';
 
 interface Props {
   data: MultiplicationBoardData;
-  onComplete: (correct: boolean) => void;
+  onComplete: (result: VerticalCalcCompletePayload) => void;
 }
 
 interface RenderRow {
@@ -22,6 +33,7 @@ const operandADecimalPlacesKey = 'operand-a-decimal-places';
 const operandBDecimalPlacesKey = 'operand-b-decimal-places';
 const decimalMoveKey = 'decimal-move';
 const finalAnswerKey = 'final-answer';
+const integerFinalAnswerKey = 'integer-final-answer';
 
 function countDecimalPlaces(value: string): number {
   const [, decimal = ''] = value.split('.');
@@ -46,6 +58,7 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
   const [completed, setCompleted] = useState(false);
   const [focusedKey, setFocusedKey] = useState<string | null>(null);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const prefersVirtualKeyboard = usePrefersVirtualKeyboard();
 
   const isDecimalMode = data.mode === 'decimal';
   const originalA = data.originalOperands?.[0] ?? String(multiplicand);
@@ -120,9 +133,13 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
   useEffect(() => {
     window.setTimeout(() => {
       const first = orderedInputKeys[0];
-      if (first) inputRefs.current[first]?.focus({ preventScroll: true });
+      if (!first) return;
+      setFocusedKey(first);
+      if (!prefersVirtualKeyboard) {
+        inputRefs.current[first]?.focus({ preventScroll: true });
+      }
     }, 0);
-  }, [orderedInputKeys]);
+  }, [orderedInputKeys, prefersVirtualKeyboard]);
 
   const isExpectedValue = (key: string, rawValue: string) => (
     key === finalAnswerKey
@@ -136,7 +153,12 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
   const focusNext = (key: string) => {
     const currentIndex = orderedInputKeys.indexOf(key);
     const nextKey = orderedInputKeys[currentIndex + 1];
-    if (nextKey) inputRefs.current[nextKey]?.focus({ preventScroll: true });
+    if (nextKey) {
+      setFocusedKey(nextKey);
+      if (!prefersVirtualKeyboard) {
+        inputRefs.current[nextKey]?.focus({ preventScroll: true });
+      }
+    }
   };
 
   const updateDigitCell = (key: string, raw: string) => {
@@ -144,7 +166,7 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
     const nextValue = raw.replace(/\D/g, '').slice(-1);
     setValues(prev => ({ ...prev, [key]: nextValue }));
     setSubmitted(false);
-    if (nextValue) focusNext(key);
+    if (nextValue && !prefersVirtualKeyboard) focusNext(key);
   };
 
   const updateSmallNumber = (key: string, raw: string) => {
@@ -152,7 +174,9 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
     const nextValue = raw.replace(/\D/g, '').slice(0, 2);
     setValues(prev => ({ ...prev, [key]: nextValue }));
     setSubmitted(false);
-    if (nextValue.length >= (expectedByKey[key]?.length ?? 1)) focusNext(key);
+    if (nextValue.length >= (expectedByKey[key]?.length ?? 1) && !prefersVirtualKeyboard) {
+      focusNext(key);
+    }
   };
 
   const updateFinalAnswer = (raw: string) => {
@@ -171,16 +195,111 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
     setSubmitted(false);
     setCompleted(false);
     const first = orderedInputKeys[0];
-    if (first) inputRefs.current[first]?.focus({ preventScroll: true });
+    if (first) {
+      setFocusedKey(first);
+      if (!prefersVirtualKeyboard) inputRefs.current[first]?.focus({ preventScroll: true });
+    }
+  };
+
+  const integerFinalAnswerFromValues = (source: Record<string, string>) => {
+    const totalRow = calculationRows[calculationRows.length - 1];
+    return totalRow.cells
+      .map((cell, index) => (cell == null ? '' : source[`${totalRow.id}-${index}`] ?? ''))
+      .join('')
+      .replace(/^0+(?=\d)/, '') || '';
   };
 
   const submit = () => {
     if (completed || !allFilled) return;
-    const correct = orderedInputKeys.every(key => isExpectedValue(key, values[key] ?? ''));
+    const classifierExpected = { ...expectedByKey };
+    const classifierValues = { ...values };
+    const classifierKeys = [...orderedInputKeys];
+    const classifierFinalKey = isDecimalMode ? finalAnswerKey : integerFinalAnswerKey;
+    if (!isDecimalMode) {
+      classifierExpected[integerFinalAnswerKey] = String(multiplicand * multiplier);
+      classifierValues[integerFinalAnswerKey] = integerFinalAnswerFromValues(values);
+      classifierKeys.push(integerFinalAnswerKey);
+    }
+    const result = classifyMultiplicationErrors({
+      orderedInputKeys: classifierKeys,
+      expectedByKey: classifierExpected,
+      userValues: classifierValues,
+      finalAnswerKey: classifierFinalKey,
+    });
     setSubmitted(true);
     setCompleted(true);
-    onComplete(correct);
+    onComplete(result);
   };
+
+  const labelForKey = useCallback((key: string): string => {
+    if (key === finalAnswerKey) return '最终答数';
+    if (key === operandADecimalPlacesKey) return '被乘数小数位数';
+    if (key === operandBDecimalPlacesKey) return '乘数小数位数';
+    if (key === decimalMoveKey) return '小数点移动位数';
+    const [rowId, index] = key.split(/-(?=\d+$)/);
+    const row = [...operandRows, ...calculationRows].find(item => item.id === rowId);
+    return row ? `${row.label}第 ${Number(index) + 1} 格` : key;
+  }, [calculationRows, operandRows]);
+
+  const setActiveSlotId = (slotId: string | null) => {
+    setFocusedKey(slotId);
+    if (slotId && !prefersVirtualKeyboard) {
+      inputRefs.current[slotId]?.focus({ preventScroll: true });
+    }
+  };
+
+  const multiplicationMathSlots = useMemo<MathInputSlot[]>(() => {
+    if (completed) return [];
+    return orderedInputKeys.map(key => {
+      if (key === finalAnswerKey) {
+        return {
+          id: key,
+          label: labelForKey(key),
+          value: values[key] ?? '',
+          maxLength: 16,
+          enabledKeys: DECIMAL_KEYS,
+          sanitizeInput: sanitizeDecimalInput,
+          setValue: next => {
+            if (completed) return;
+            setValues(prev => ({ ...prev, [key]: next }));
+            setSubmitted(false);
+          },
+        };
+      }
+      if (
+        key === operandADecimalPlacesKey ||
+        key === operandBDecimalPlacesKey ||
+        key === decimalMoveKey
+      ) {
+        return {
+          id: key,
+          label: labelForKey(key),
+          value: values[key] ?? '',
+          maxLength: 2,
+          enabledKeys: DIGIT_KEYS,
+          sanitizeInput: sanitizeDigitInput,
+          setValue: next => {
+            if (completed) return;
+            setValues(prev => ({ ...prev, [key]: next }));
+            setSubmitted(false);
+          },
+        };
+      }
+      return {
+        id: key,
+        label: labelForKey(key),
+        value: values[key] ?? '',
+        maxLength: 1,
+        enabledKeys: DIGIT_KEYS,
+        sanitizeInput: sanitizeSingleDigitInput,
+        setValue: next => {
+          if (completed) return;
+          setValues(prev => ({ ...prev, [key]: next }));
+          setSubmitted(false);
+        },
+      };
+    });
+  }, [completed, labelForKey, orderedInputKeys, values]);
 
   const renderStaticRow = (cells: Array<string | null>, prefix = '') => (
     <div
@@ -229,9 +348,15 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
             value={userValue}
             onChange={event => updateDigitCell(key, event.target.value)}
             onFocus={() => setFocusedKey(key)}
-            inputMode="numeric"
+            onPointerDown={event => {
+              if (!prefersVirtualKeyboard) return;
+              event.preventDefault();
+              setActiveSlotId(key);
+            }}
+            inputMode={prefersVirtualKeyboard ? 'none' : 'numeric'}
             aria-label={`${row.label}第 ${index + 1} 格`}
             className={`h-11 rounded-lg border-2 text-center text-2xl font-black outline-none transition-all ${cellClass(status, focusedKey === key)}`}
+            readOnly={prefersVirtualKeyboard}
             disabled={completed}
           />
         );
@@ -252,9 +377,15 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
         value={values[key] ?? ''}
         onChange={event => updateSmallNumber(key, event.target.value)}
         onFocus={() => setFocusedKey(key)}
-        inputMode="numeric"
+        onPointerDown={event => {
+          if (!prefersVirtualKeyboard) return;
+          event.preventDefault();
+          setActiveSlotId(key);
+        }}
+        inputMode={prefersVirtualKeyboard ? 'none' : 'numeric'}
         aria-label={`${label}的小数位数`}
         className={`h-11 w-14 rounded-lg border-2 text-center text-xl font-black outline-none transition-all ${cellClass(decimalFieldStatus(key), focusedKey === key)}`}
+        readOnly={prefersVirtualKeyboard}
         disabled={completed}
       />
       <span>位小数</span>
@@ -293,9 +424,15 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
               value={values[decimalMoveKey] ?? ''}
               onChange={event => updateSmallNumber(decimalMoveKey, event.target.value)}
               onFocus={() => setFocusedKey(decimalMoveKey)}
-              inputMode="numeric"
+              onPointerDown={event => {
+                if (!prefersVirtualKeyboard) return;
+                event.preventDefault();
+                setActiveSlotId(decimalMoveKey);
+              }}
+              inputMode={prefersVirtualKeyboard ? 'none' : 'numeric'}
               aria-label="小数点向左移动的位数"
               className={`h-11 w-14 rounded-lg border-2 text-center text-xl font-black outline-none transition-all ${cellClass(decimalFieldStatus(decimalMoveKey), focusedKey === decimalMoveKey)}`}
+              readOnly={prefersVirtualKeyboard}
               disabled={completed}
             />
             <span>位</span>
@@ -307,9 +444,15 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
               value={values[finalAnswerKey] ?? ''}
               onChange={event => updateFinalAnswer(event.target.value)}
               onFocus={() => setFocusedKey(finalAnswerKey)}
-              inputMode="decimal"
+              onPointerDown={event => {
+                if (!prefersVirtualKeyboard) return;
+                event.preventDefault();
+                setActiveSlotId(finalAnswerKey);
+              }}
+              inputMode={prefersVirtualKeyboard ? 'none' : 'decimal'}
               aria-label="最终答数"
               className={`h-11 w-0 min-w-0 flex-1 rounded-lg border-2 px-3 text-center text-2xl font-black outline-none transition-all ${cellClass(decimalFieldStatus(finalAnswerKey), focusedKey === finalAnswerKey)}`}
+              readOnly={prefersVirtualKeyboard}
               disabled={completed}
             />
           </label>
@@ -342,6 +485,13 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
             提交
           </button>
         </div>
+      )}
+      {!completed && multiplicationMathSlots.length > 0 && (
+        <PracticeMathKeyboard
+          slots={multiplicationMathSlots}
+          activeSlotId={focusedKey}
+          onActiveSlotChange={setActiveSlotId}
+        />
       )}
     </div>
   );

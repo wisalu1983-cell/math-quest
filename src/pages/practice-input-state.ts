@@ -19,6 +19,7 @@ export type PracticeAnswerAction =
   | { type: 'toggleSelectedOption'; value: string }
   | { type: 'setBlankValue'; index: number; value: string }
   | { type: 'setTrainingComplete'; value: boolean }
+  | { type: 'setTrainingValue'; index: number; value: string }
   | { type: 'setTrainingValues'; values: string[] };
 
 export function createInitialPracticeAnswerState(question: Question | null): PracticeAnswerState {
@@ -64,6 +65,11 @@ export function practiceAnswerReducer(
       };
     case 'setTrainingComplete':
       return { ...state, trainingComplete: action.value };
+    case 'setTrainingValue': {
+      const nextValues = [...state.trainingValues];
+      nextValues[action.index] = action.value;
+      return { ...state, trainingValues: nextValues };
+    }
     case 'setTrainingValues':
       return { ...state, trainingValues: action.values };
   }
@@ -112,6 +118,10 @@ export function usePracticeInputState(question: Question | null) {
     dispatch({ type: 'setTrainingComplete', value });
   }, []);
 
+  const setTrainingValue = useCallback((index: number, value: string) => {
+    dispatch({ type: 'setTrainingValue', index, value });
+  }, []);
+
   const setTrainingValues = useCallback((values: string[]) => {
     dispatch({ type: 'setTrainingValues', values });
   }, []);
@@ -125,6 +135,7 @@ export function usePracticeInputState(question: Question | null) {
     toggleSelectedOption,
     setBlankValue,
     setTrainingComplete,
+    setTrainingValue,
     setTrainingValues,
   };
 }

@@ -118,18 +118,39 @@ export interface TrainingField {
 }
 
 export interface TrainingFieldMistake {
+  code?: string;
   label: string;
   userValue: string;
   expectedValue: string;
 }
 
-export type PracticeFailureReason = 'wrong-answer' | 'vertical-process';
+export type PracticeFailureReason =
+  | 'wrong-answer'
+  | 'vertical-process'
+  | 'vertical-multiplication-process'
+  | 'vertical-training-field';
 export type PracticeProcessWarning = 'vertical-process-warning';
+
+export interface PracticeFailureDetail {
+  reason: PracticeFailureReason;
+  source: 'legacy-vertical' | 'vertical-multiplication' | 'long-division';
+  message: string;
+  processCategories?: Array<{
+    code: string;
+    label: string;
+  }>;
+  trainingFieldMistakes?: TrainingFieldMistake[];
+}
 
 export type VerticalCalcCompletePayload =
   | { result: 'pass'; answer: string }
   | { result: 'failWrongAnswer'; answer: string; failureReason: 'wrong-answer' }
-  | { result: 'failProcess'; answer: string; failureReason: 'vertical-process' }
+  | {
+      result: 'failProcess';
+      answer: string;
+      failureReason: PracticeFailureReason;
+      failureDetail?: PracticeFailureDetail;
+    }
   | { result: 'passWithProcessWarning'; answer: string; warningReason: 'vertical-process-warning' };
 
 export interface MultiStepData {
@@ -249,6 +270,7 @@ export interface QuestionAttempt {
   userAnswer: string;
   correct: boolean;
   failureReason?: PracticeFailureReason;
+  failureDetail?: PracticeFailureDetail;
   timeMs: number;
   hintsUsed: number;
   attemptedAt: number;
@@ -262,6 +284,7 @@ export interface HistoryQuestionRecord {
   correctAnswer: string;
   correct: boolean;
   failureReason?: PracticeFailureReason;
+  failureDetail?: PracticeFailureDetail;
   timeMs: number;
 }
 
@@ -326,6 +349,7 @@ export interface WrongQuestion {
   wrongAnswer: string;
   wrongAt: number;
   failureReason?: PracticeFailureReason;
+  failureDetail?: PracticeFailureDetail;
   reviewedAt?: number;
   reviewCorrect?: boolean;
 }

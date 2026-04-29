@@ -159,19 +159,31 @@ async function switchQuestion(page: Page, question: QuestionFixture, index: numb
   await expect(page.getByRole('heading', { name: String(question.prompt) })).toBeVisible();
 }
 
+async function pressMathKeys(page: Page, keys: string[]): Promise<void> {
+  for (const key of keys) {
+    await page.getByRole('button', { name: `输入 ${key}`, exact: true }).click({ force: true });
+  }
+}
+
+async function activateInput(page: Page, label: string) {
+  const input = page.getByRole('textbox', { name: label, exact: true });
+  await input.click({ force: true });
+  return input;
+}
+
 test.describe('v0.4 Phase 5 Practice input reset', () => {
   test('numeric answer is cleared and focused when the current question changes', async ({ page }) => {
     const first = numericQuestion('phase5-numeric-1', '12 + 8 = ?', 20);
     const second = numericQuestion('phase5-numeric-2', '9 + 6 = ?', 15);
 
     await openPracticeQuestion(page, first);
-    await page.getByLabel('输入答案').fill('99');
-    await expect(page.getByLabel('输入答案')).toHaveValue('99');
+    await pressMathKeys(page, ['9', '9']);
+    await expect(page.getByRole('textbox', { name: '输入答案', exact: true })).toHaveValue('99');
 
     await switchQuestion(page, second, 1);
 
-    await expect(page.getByLabel('输入答案')).toHaveValue('');
-    await expect(page.getByLabel('输入答案')).toBeFocused();
+    await expect(page.getByRole('textbox', { name: '输入答案', exact: true })).toHaveValue('');
+    await expect(page.getByRole('textbox', { name: '输入答案', exact: true })).toHaveClass(/ring-2/);
     await saveEvidence(page, 'G-01-numeric-reset-focused.png');
   });
 
@@ -180,17 +192,19 @@ test.describe('v0.4 Phase 5 Practice input reset', () => {
     const second = multiBlankQuestion('phase5-blanks-2', '18 + 12 = __ + __', [18, 12]);
 
     await openPracticeQuestion(page, first);
-    await page.getByLabel('第 1 空').fill('25');
-    await page.getByLabel('第 2 空').fill('4');
-    await page.getByLabel('第 3 空').fill('100');
+    await activateInput(page, '第 1 空');
+    await pressMathKeys(page, ['2', '5']);
+    await activateInput(page, '第 2 空');
+    await pressMathKeys(page, ['4']);
+    await activateInput(page, '第 3 空');
+    await pressMathKeys(page, ['1', '0', '0']);
 
     await switchQuestion(page, second, 1);
 
-    await expect(page.getByLabel('第 1 空')).toHaveValue('');
-    await expect(page.getByLabel('第 2 空')).toHaveValue('');
-    await expect(page.getByLabel('第 3 空')).toHaveCount(0);
-    // Practice binds inputRef to the first blank so the hook reset can restore focus.
-    await expect(page.getByLabel('第 1 空')).toBeFocused();
+    await expect(page.getByRole('textbox', { name: '第 1 空', exact: true })).toHaveValue('');
+    await expect(page.getByRole('textbox', { name: '第 2 空', exact: true })).toHaveValue('');
+    await expect(page.getByRole('textbox', { name: '第 3 空', exact: true })).toHaveCount(0);
+    await expect(page.getByRole('textbox', { name: '第 1 空', exact: true })).toHaveClass(/ring-2/);
     await saveEvidence(page, 'I-01-multi-blank-rebuilt.png');
   });
 

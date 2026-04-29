@@ -267,6 +267,34 @@ describe('mergeRankProgress', () => {
 });
 
 describe('mergeWrongQuestions', () => {
+  it('保留结构化 failureDetail 字段', () => {
+    const local = makeWrongQuestion('q-local', 100);
+    const remote: WrongQuestion = {
+      ...makeWrongQuestion('q-remote', 200),
+      failureReason: 'vertical-training-field',
+      failureDetail: {
+        reason: 'vertical-training-field',
+        source: 'vertical-multiplication',
+        message: '小数训练格有错误。',
+        trainingFieldMistakes: [
+          {
+            code: 'decimal-move',
+            label: '小数点移动位数错误',
+            userValue: '',
+            expectedValue: '2',
+          },
+        ],
+      },
+    };
+
+    const result = mergeWrongQuestions([local], [remote]);
+
+    expect(result[0]).toMatchObject({
+      failureReason: 'vertical-training-field',
+      failureDetail: remote.failureDetail,
+    });
+  });
+
   it('按 question.id + wrongAt 去重', () => {
     const wrong = makeWrongQuestion('q1', 100);
     const result = mergeWrongQuestions([wrong], [{ ...wrong }]);

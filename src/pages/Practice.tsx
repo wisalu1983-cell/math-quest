@@ -1,4 +1,5 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import type { PointerEvent } from 'react';
 import { motion } from 'framer-motion';
 import { useSessionStore, useUIStore } from '@/store';
 import { useRankMatchStore } from '@/store/rank-match';
@@ -6,6 +7,7 @@ import VerticalCalcBoard from '@/components/VerticalCalcBoard';
 import DecimalTrainingGrid from '@/components/DecimalTrainingGrid';
 import Hearts from '@/components/Hearts';
 import Dialog from '@/components/Dialog';
+import PracticeMathKeyboard from './PracticeMathKeyboard';
 
 // 题干字号：按权重字符数自适应，确保 375px 视口（可用宽 303px）内单行显示
 // 中文字符权重 1.0，ASCII/数字/运算符权重 0.6
@@ -26,12 +28,24 @@ import {
 import { getMethodTip } from '@/utils/method-tips';
 import { shouldAutoSuspendRankMatch } from '@/engine/rank-match/auto-suspend';
 import { usePracticeInputState } from './practice-input-state';
+import {
+  DECIMAL_KEYS,
+  DIGIT_KEYS,
+  EXPRESSION_KEYS,
+  sanitizeDecimalInput,
+  sanitizeDigitInput,
+  sanitizeExpressionInput,
+  useMathKeyboardState,
+  usePrefersVirtualKeyboard,
+} from './practice-math-keyboard';
+import type { MathInputSlot as PracticeMathInputSlot } from './practice-math-keyboard';
+import { getPracticeFailureDisplay } from '@/utils/practiceFailureDisplay';
 
 export default function Practice() {
   const {
     currentQuestion, currentIndex, totalQuestions,
     hearts, showFeedback, lastAnswerCorrect, lastTrainingFieldMistakes,
-    lastProcessWarning, lastFailureReason,
+    lastProcessWarning, lastFailureReason, lastFailureDetail,
     submitAnswer, nextQuestion, endSession, abandonSession,
     session,
     startRankMatchGame,
@@ -52,6 +66,7 @@ export default function Practice() {
     toggleSelectedOption,
     setBlankValue,
     setTrainingComplete,
+    setTrainingValue,
     setTrainingValues,
   } = usePracticeInputState(currentQuestion);
   const {
@@ -67,6 +82,7 @@ export default function Practice() {
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const prefersVirtualKeyboard = usePrefersVirtualKeyboard();
   const sessionEndedRef = useRef(false);
   const allowUnmountAutoSuspendRef = useRef(false);
 
@@ -149,6 +165,139 @@ export default function Practice() {
     !!currentQuestion &&
     currentQuestion.difficulty < 8;
 
+  const practiceMathSlots = useMemo<PracticeMathInputSlot[]>(() => {
+    if (!currentQuestion || showFeedback || isVerticalCalc || isMultipleChoice || isMultiSelect) {
+      return [];
+    }
+
+    const slots: PracticeMathInputSlot[] = [];
+    if (hasTrainingFields && dataTrainingFields && !trainingComplete) {
+      dataTrainingFields.forEach((field, index) => {
+        slots.push({
+          id: `training-${index}`,
+          label: field.label,
+          value: trainingValues[index] ?? '',
+          maxLength: 4,
+          enabledKeys: DECIMAL_KEYS,
+          sanitizeInput: sanitizeDecimalInput,
+          setValue: next => setTrainingValue(index, next),
+        });
+      });
+      return slots;
+    }
+
+    if (currentQuestion.type === 'numeric-input' && isDivisionMental) {
+      slots.push({
+        id: 'answer-main',
+        label: '商',
+        value: answer,
+        maxLength: 6,
+        enabledKeys: DIGIT_KEYS,
+        sanitizeInput: sanitizeDigitInput,
+        setValue: setAnswer,
+      });
+      slots.push({
+        id: 'remainder',
+        label: '余数',
+        value: remainderInput,
+        maxLength: 6,
+        enabledKeys: DIGIT_KEYS,
+        sanitizeInput: sanitizeDigitInput,
+        setValue: setRemainderInput,
+      });
+      return slots;
+    }
+
+    if (currentQuestion.type === 'numeric-input') {
+      slots.push({
+        id: 'answer-main',
+        label: '答案',
+        value: answer,
+        maxLength: 16,
+        enabledKeys: DECIMAL_KEYS,
+        sanitizeInput: sanitizeDecimalInput,
+        setValue: setAnswer,
+      });
+      return slots;
+    }
+
+    if (isMultiBlank) {
+      blankValues.forEach((value, index) => {
+        slots.push({
+          id: `blank-${index}`,
+          label: `第 ${index + 1} 空`,
+          value,
+          maxLength: 12,
+          enabledKeys: DECIMAL_KEYS,
+          sanitizeInput: sanitizeDecimalInput,
+          setValue: next => setBlankValue(index, next),
+        });
+      });
+      return slots;
+    }
+
+    if (isFreeTextInput) {
+      slots.push({
+        id: 'answer-main',
+        label: isEquationInput ? '等式' : '式子',
+        value: answer,
+        maxLength: 60,
+        enabledKeys: EXPRESSION_KEYS,
+        sanitizeInput: sanitizeExpressionInput,
+        setValue: setAnswer,
+      });
+    }
+
+    return slots;
+  }, [
+    answer,
+    blankValues,
+    currentQuestion,
+    dataTrainingFields,
+    hasTrainingFields,
+    isDivisionMental,
+    isEquationInput,
+    isFreeTextInput,
+    isMultipleChoice,
+    isMultiBlank,
+    isMultiSelect,
+    isVerticalCalc,
+    remainderInput,
+    setAnswer,
+    setBlankValue,
+    setRemainderInput,
+    setTrainingValue,
+    showFeedback,
+    trainingComplete,
+    trainingValues,
+  ]);
+  const {
+    state: practiceKeyboardState,
+    setActiveSlotId: setPracticeActiveSlotId,
+  } = useMathKeyboardState(practiceMathSlots);
+  const activePracticeSlotId = practiceKeyboardState.activeSlotId;
+  const activatePracticeSlot = useCallback((slotId: string) => {
+    setPracticeActiveSlotId(slotId);
+  }, [setPracticeActiveSlotId]);
+  const handleVirtualPointerDown = useCallback((event: PointerEvent<HTMLElement>, slotId: string) => {
+    if (!prefersVirtualKeyboard) return;
+    event.preventDefault();
+    activatePracticeSlot(slotId);
+  }, [activatePracticeSlot, prefersVirtualKeyboard]);
+  const activeInputClass = useCallback((slotId: string) => (
+    activePracticeSlotId === slotId
+      ? 'border-primary bg-primary-lt text-primary ring-2 ring-primary/25'
+      : ''
+  ), [activePracticeSlotId]);
+  const failureDisplay = useMemo(() => (
+    !lastAnswerCorrect && lastFailureReason
+      ? getPracticeFailureDisplay({
+          failureReason: lastFailureReason,
+          failureDetail: lastFailureDetail,
+        })
+      : null
+  ), [lastAnswerCorrect, lastFailureDetail, lastFailureReason]);
+
   const handleSubmit = useCallback(() => {
     if (showFeedback) return;
     let userAnswer: string;
@@ -217,7 +366,10 @@ export default function Practice() {
     }
 
     if (result.result === 'failWrongAnswer' || result.result === 'failProcess') {
-      submitAnswer(result.answer || '竖式计算有误', { failureReason: result.failureReason });
+      submitAnswer(result.answer || '竖式计算有误', {
+        failureReason: result.failureReason,
+        failureDetail: result.result === 'failProcess' ? result.failureDetail : undefined,
+      });
       return;
     }
 
@@ -462,25 +614,33 @@ return (
                   <input
                     ref={inputRef}
                     type="text"
-                    inputMode="numeric"
+                    inputMode={prefersVirtualKeyboard ? 'none' : 'numeric'}
                     value={answer}
                     onChange={e => setAnswer(e.target.value)}
+                    onFocus={() => activatePracticeSlot('answer-main')}
+                    onPointerDown={event => handleVirtualPointerDown(event, 'answer-main')}
                     placeholder="商"
                     aria-label="商（除法结果的商数部分）"
-                    className="w-24 text-center text-2xl font-bold bg-card-2 border-2 border-border
-                               rounded-2xl px-3 py-3 text-text focus:border-primary outline-none transition-colors"
-                    autoFocus
+                    className={`w-24 text-center text-2xl font-bold bg-card-2 border-2 border-border
+                               rounded-2xl px-3 py-3 text-text focus:border-primary outline-none transition-colors
+                               ${activeInputClass('answer-main')}`}
+                    readOnly={prefersVirtualKeyboard}
+                    autoFocus={!prefersVirtualKeyboard}
                   />
                   <span className="text-xl font-bold text-text-2 select-none">……（余）</span>
                   <input
                     type="text"
-                    inputMode="numeric"
+                    inputMode={prefersVirtualKeyboard ? 'none' : 'numeric'}
                     value={remainderInput}
                     onChange={e => setRemainderInput(e.target.value)}
+                    onFocus={() => activatePracticeSlot('remainder')}
+                    onPointerDown={event => handleVirtualPointerDown(event, 'remainder')}
                     placeholder="余数"
                     aria-label="余数（除法结果的余数部分）"
-                    className="w-24 text-center text-2xl font-bold bg-card-2 border-2 border-border
-                               rounded-2xl px-3 py-3 text-text focus:border-primary outline-none transition-colors"
+                    className={`w-24 text-center text-2xl font-bold bg-card-2 border-2 border-border
+                               rounded-2xl px-3 py-3 text-text focus:border-primary outline-none transition-colors
+                               ${activeInputClass('remainder')}`}
+                    readOnly={prefersVirtualKeyboard}
                   />
                 </div>
               )}
@@ -492,6 +652,14 @@ return (
                   difficulty={currentQuestion.difficulty}
                   onComplete={() => setTrainingComplete(true)}
                   onValuesChange={setTrainingValues}
+                  values={trainingValues}
+                  activeIndex={
+                    activePracticeSlotId?.startsWith('training-')
+                      ? Number(activePracticeSlotId.replace('training-', ''))
+                      : null
+                  }
+                  onFieldFocus={index => activatePracticeSlot(`training-${index}`)}
+                  preferVirtualKeyboard={prefersVirtualKeyboard}
                 />
               )}
 
@@ -506,17 +674,21 @@ return (
                   <input
                     ref={inputRef}
                     type="text"
-                    inputMode="decimal"
+                    inputMode={prefersVirtualKeyboard ? 'none' : 'decimal'}
                     value={answer}
                     onChange={e => setAnswer(e.target.value)}
+                    onFocus={() => activatePracticeSlot('answer-main')}
+                    onPointerDown={event => handleVirtualPointerDown(event, 'answer-main')}
                     placeholder="输入答案"
                     disabled={hasTrainingFields && !trainingComplete}
                     aria-label="输入答案"
                     aria-describedby={hasTrainingFields && !trainingComplete ? 'training-hint' : undefined}
                     className={`w-48 text-center text-2xl font-bold bg-card-2 border-2 border-border
                                rounded-2xl px-4 py-3 text-text focus:border-primary outline-none transition-colors
-                               ${hasTrainingFields && !trainingComplete ? 'opacity-40' : ''}`}
-                    autoFocus
+                               ${hasTrainingFields && !trainingComplete ? 'opacity-40' : ''}
+                               ${activeInputClass('answer-main')}`}
+                    readOnly={prefersVirtualKeyboard}
+                    autoFocus={!prefersVirtualKeyboard}
                   />
                 </div>
               )}
@@ -529,13 +701,17 @@ return (
                       key={idx}
                       ref={idx === 0 ? inputRef : undefined}
                       type="text"
-                      inputMode="decimal"
+                      inputMode={prefersVirtualKeyboard ? 'none' : 'decimal'}
                       value={blankValues[idx] ?? ''}
                       onChange={e => setBlankValue(idx, e.target.value)}
+                      onFocus={() => activatePracticeSlot(`blank-${idx}`)}
+                      onPointerDown={event => handleVirtualPointerDown(event, `blank-${idx}`)}
                       aria-label={`第 ${idx + 1} 空`}
                       placeholder={`${idx + 1}`}
-                      className="w-20 text-center text-xl font-bold bg-card-2 border-2 border-border
-                                 rounded-xl px-2 py-2 text-text focus:border-primary outline-none transition-colors"
+                      className={`w-20 text-center text-xl font-bold bg-card-2 border-2 border-border
+                                 rounded-xl px-2 py-2 text-text focus:border-primary outline-none transition-colors
+                                 ${activeInputClass(`blank-${idx}`)}`}
+                      readOnly={prefersVirtualKeyboard}
                     />
                   ))}
                 </div>
@@ -549,11 +725,16 @@ return (
                     type="text"
                     value={answer}
                     onChange={e => setAnswer(e.target.value)}
+                    onFocus={() => activatePracticeSlot('answer-main')}
+                    onPointerDown={event => handleVirtualPointerDown(event, 'answer-main')}
                     placeholder={isEquationInput ? '写出移项后的完整等式' : '直接写出变换后的式子'}
                     aria-label={isEquationInput ? '输入移项后的等式' : '输入变换后的式子'}
-                    className="w-full max-w-sm text-center text-xl font-bold bg-card-2 border-2 border-border
-                               rounded-2xl px-4 py-3 text-text focus:border-primary outline-none transition-colors"
-                    autoFocus
+                    className={`w-full max-w-sm text-center text-xl font-bold bg-card-2 border-2 border-border
+                               rounded-2xl px-4 py-3 text-text focus:border-primary outline-none transition-colors
+                               ${activeInputClass('answer-main')}`}
+                    inputMode={prefersVirtualKeyboard ? 'none' : 'text'}
+                    readOnly={prefersVirtualKeyboard}
+                    autoFocus={!prefersVirtualKeyboard}
                   />
                   <p className="text-xs text-text-3">支持 + − × ÷ 和 * /，括号使用 ( )</p>
                 </div>
@@ -575,6 +756,15 @@ return (
               >
                 确认
               </button>
+            )}
+
+            {practiceMathSlots.length > 0 && (
+              <PracticeMathKeyboard
+                slots={practiceMathSlots}
+                activeSlotId={activePracticeSlotId}
+                onActiveSlotChange={setPracticeActiveSlotId}
+                className="mt-3 stagger-3"
+              />
             )}
           </>
         ) : (
@@ -611,11 +801,33 @@ return (
               </div>
             )}
 
-            {!lastAnswerCorrect && lastFailureReason === 'vertical-process' && (
+            {!lastAnswerCorrect && failureDisplay && (
               <div className="mb-3 rounded-xl border-2 border-warning bg-warning-lt px-4 py-3">
                 <p className="text-sm font-black" style={{ color: '#7A5C00' }}>
-                  未通过原因：进位/退位格填写错误
+                  未通过原因：{failureDisplay.message}
                 </p>
+                {failureDisplay.processCategories.length > 0 && (
+                  <ul className="mt-2 space-y-1 text-sm font-bold text-text">
+                    {failureDisplay.processCategories.map(category => (
+                      <li key={category.code} className="rounded-lg bg-card/70 px-3 py-2">
+                        {category.label}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {failureDisplay.trainingFieldMistakes.length > 0 && (
+                  <ul className="mt-2 space-y-2 text-sm text-text">
+                    {failureDisplay.trainingFieldMistakes.map(mistake => (
+                      <li key={mistake.code} className="rounded-lg bg-card/70 px-3 py-2">
+                        <p className="font-bold text-text-2">{mistake.label}</p>
+                        <p className="mt-1">
+                          你填 <span className="font-black text-danger">{mistake.userValue}</span>
+                          ，正确是 <span className="font-black text-success">{mistake.expectedValue}</span>
+                        </p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

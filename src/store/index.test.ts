@@ -188,6 +188,35 @@ describe('useSessionStore.submitAnswer vertical process failure', () => {
     });
   });
 
+  it('多行乘法结构化错因会保留到当前反馈、session attempt 和错题链路', () => {
+    const failureDetail = {
+      reason: 'vertical-multiplication-process' as const,
+      source: 'vertical-multiplication' as const,
+      message: '你的最终答案是对的，但竖式里的计算步骤有错误。把步骤也写对，才能通过哦。',
+      processCategories: [
+        { code: 'multiplication-partial-product', label: '部分积填写错误' },
+      ],
+    };
+
+    const result = useSessionStore.getState().submitAnswer('1887', {
+      failureReason: 'vertical-multiplication-process',
+      failureDetail,
+    });
+
+    const state = useSessionStore.getState();
+    expect(result.correct).toBe(false);
+    expect(state.lastFailureReason).toBe('vertical-multiplication-process');
+    expect(state.lastFailureDetail).toEqual(failureDetail);
+    expect(state.session?.questions[0]).toMatchObject({
+      failureReason: 'vertical-multiplication-process',
+      failureDetail,
+    });
+    expect(state.pendingWrongQuestions[0]).toMatchObject({
+      failureReason: 'vertical-multiplication-process',
+      failureDetail,
+    });
+  });
+
   it('中档竖式过程格 warning 只保留在当前反馈状态，不进入错题链路', () => {
     const result = useSessionStore.getState().submitAnswer('1887', {
       processWarning: 'vertical-process-warning',

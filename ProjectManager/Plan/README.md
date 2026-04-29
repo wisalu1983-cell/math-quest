@@ -35,7 +35,7 @@
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | 🟡 Phase 3 已启动；输入与反馈基础设施开发文档已建立 |
+| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | 🟡 Phase 3 有条件完成；下一步准备进入 Phase 4 |
 | [`v0.5/00-overview.md`](./v0.5/00-overview.md) | 背景、目标、阶段结构 | 📋 启动快照已建立 |
 | [`v0.5/01-research-catalog.md`](./v0.5/01-research-catalog.md) | 预研结论 / Backlog / Issue / Spec / 浏览器证据链 | 📋 已建立 |
 | [`v0.5/02-classification.md`](./v0.5/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
@@ -45,9 +45,10 @@
 | [`v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md`](./v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md) | Phase 1 开工对齐 / 跨 Phase 边界 | ✅ 完成 |
 | [`v0.5/phases/phase-2.md`](./v0.5/phases/phase-2.md) | Phase 2 竖式题样本质量诊断 | ✅ 完成 |
 | [`v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md`](./v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md) | Phase 2 `BL-009` 样本质量诊断 / 过滤规则 | ✅ 完成 |
-| [`v0.5/phases/phase-3.md`](./v0.5/phases/phase-3.md) | Phase 3 输入与反馈基础设施 | 🟡 进行中 |
-| [`v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](./v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) | Phase 3 `BL-011` 内置键盘 | 🟡 待实现 |
-| [`v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](./v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md) | Phase 3 `ISSUE-067` 结构化错因反馈 | 🟡 待实现 |
+| [`v0.5/phases/phase-3.md`](./v0.5/phases/phase-3.md) | Phase 3 输入与反馈基础设施 | 🟡 有条件完成 |
+| [`v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](./v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) | Phase 3 `BL-011` 内置键盘 | 🟡 有条件完成 |
+| [`v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](./v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md) | Phase 3 `ISSUE-067` 结构化错因反馈 | ✅ 完成 |
+| [`v0.5/issues-closed.md`](./v0.5/issues-closed.md) | v0.5 已关闭 issue 归档 | ✅ `ISSUE-067` 已归档 |
 
 ## 跨版本工具性 Plan
 
