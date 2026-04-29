@@ -56,8 +56,8 @@ Cursor 侧（`.cursor/rules/qa-leader.mdc`）、Claude Code 侧（`.claude/skill
 | 深度 | 适用情境 | 必需产物 | 必需验证 |
 |---|---|---|---|
 | L0 Smoke | 文案、小样式、低风险文档改动 | 简短 QA 记录或 PR 说明 | 相关页面/文档自检 |
-| L1 Standard | 普通 feature、bugfix、局部 UI 修复 | `test-cases-vN.md` 基础表 + result/summary | 相关 Vitest / Playwright / 手工检查 |
-| L2 Professional | 题目生成器、教学体验、复杂状态、存档迁移、账号同步、跨模块重构 | 专业用例表 + risk model + coverage matrix + 三层报告 | Code Review、自动化、拟真人工 / 视觉 QA |
+| L1 Standard | 普通 feature、bugfix、局部 UI 修复 | `test-cases-vN.md` 基础表 + execution matrix/result/summary | 相关 Vitest / Playwright / 手工检查 |
+| L2 Professional | 题目生成器、教学体验、复杂状态、存档迁移、账号同步、跨模块重构 | 专业用例表 + risk model + coverage matrix + execution matrix + 三层报告 | Code Review、自动化、拟真人工 / 视觉 QA |
 | L3 Release Gate | 版本收口、上线前、全量回归、高影响风险关闭 | release QA summary + 回归矩阵 + issue 分流 | 全量测试、关键用户旅程、历史缺陷回归、残余风险裁决 |
 
 ### 情境矩阵
@@ -121,6 +121,17 @@ L2 / L3 或高风险任务必须增加：
 | Evidence | 执行时必填 | 命令输出、截图路径、报告、代码引用或诊断数据 |
 | Result | 执行时必填 | PASS / FAIL / RISK / BLOCKED |
 
+### 执行矩阵硬性要求
+
+L1 及以上 QA 在声明 PASS / FAIL / RISK 前，必须为测试用例表中的每个 Functional Case 和 Exploratory Charter 留下用例 ID 级执行记录。
+
+1. 记录可以写在 `test-cases-vN.md` 的 Result / Evidence 列，也可以单独写入 `execution-matrix.md`；若单独成文，`qa-summary.md` 必须链接它。
+2. execution matrix 至少包含：`ID`、`Result`、`补测/执行方式`、`Evidence`、`备注/残余风险`。
+3. 命令级 PASS 不能替代用例级 PASS；必须能从每个用例 ID 追溯到具体测试名、源码行、截图、手工记录或命令输出。
+4. 每个测试用例 ID 必须且只能有一个当前执行结论；未执行必须标 `BLOCKED` 或 `SKIP` 并说明原因。
+5. 探索式 charter 也必须进入矩阵。若结论是 `RISK`，必须写清用户感知、后续观察条件和是否阻塞。
+6. Exit Criteria 只能基于执行矩阵判断。若矩阵缺任何 P0 / P1 用例结果，不得声明本轮 QA PASS。
+
 ### 必备结构
 
 L2 / L3 测试方案必须包含：
@@ -128,8 +139,9 @@ L2 / L3 测试方案必须包含：
 1. `Traceability Summary`：Task / Spec / Risk / 用例族映射
 2. `Risk Model`：风险、影响、可能性、优先级、覆盖用例
 3. `Coverage Matrix`：每个风险由哪些用例覆盖
-4. `Exit Criteria`：P0 必过项、可接受 RISK、非阻塞项边界
-5. `Residual Risk`：剩余风险和后续观察项
+4. `Execution Matrix`：每个测试用例 ID 的 Result / Evidence 映射
+5. `Exit Criteria`：P0 必过项、可接受 RISK、非阻塞项边界
+6. `Residual Risk`：剩余风险和后续观察项
 
 ### 常用测试设计技术
 
@@ -217,6 +229,7 @@ L2 / L3 测试方案必须包含：
 - 随机生成必须固定 seed / 足够样本 / 验收带
 - 大型浏览器测试需要说明为何不能下沉到单元或集成层
 - flaky 不能直接标 PASS；必须复跑、归因、隔离或降级为 RISK
+- 自动化执行完成后，必须把每个相关用例 ID 写入 execution matrix；只记录“命令通过”不算完成用例执行记录
 
 ---
 
@@ -228,9 +241,10 @@ L2 / L3 测试方案必须包含：
 
 1. 测试前确定目标用户画像：math-quest 默认是上海五年级学生，数学能力中等
 2. 按 charter 执行，每批 10-20 条用例或 45-90 分钟 session
-3. 每条记录使用四栏协议：用户预期 / 操作路径 / 实际观察 / 判定与证据
+3. 每条记录使用四栏协议：用户预期 / 操作路径 / 实际观察 / 判定与证据，并带上对应用例 ID
 4. 每条 FAIL 和 RISK 必须附证据；PASS 可附代表性证据
 5. 体验问题必须写用户感知，不只写技术现象
+6. 每个 charter 的最终 Result / Evidence 必须同步到 execution matrix；分组总结不能替代 ID 级记录
 
 ### 视觉与无障碍重点
 
@@ -301,6 +315,7 @@ QA 发现问题后，写入 `ProjectManager/ISSUE_LIST.md`，每条包含：
 - `QA/capability-registry.md`
 - `QA/templates/*.md`
 - `QA/runs/<date>-<scope>/test-cases-vN.md`
+- `QA/runs/<date>-<scope>/execution-matrix.md`
 - `QA/runs/<date>-<scope>/test-design-methodology.md`
 - `QA/runs/<date>-<scope>/qa-summary.md`
 - `QA/runs/<date>-<scope>/*-result.md`
@@ -336,6 +351,7 @@ QA/
   runs/<date>-<scope>/
     test-design-methodology.md
     test-cases-v{N}.md
+    execution-matrix.md
     code-review-result.md
     automated-result.md
     manual-result.md
@@ -354,7 +370,7 @@ QA/
     ↓
 步骤 1: 选择 QA 深度（L0/L1/L2/L3）
     ↓
-步骤 2: 设计/更新测试用例（basis → risk → technique → oracle → evidence）
+步骤 2: 设计/更新测试用例（basis → risk → technique → oracle → 预置 execution matrix）
     ↓
 第一层: Code Review（无新代码可说明跳过）
     ↓
@@ -362,7 +378,7 @@ QA/
     ↓
 第三层: 拟真人工 / 视觉 QA（charter + 四栏协议 + 证据）
     ↓
-汇总: 缺陷分流 → ISSUE_LIST → 产品裁决 → 文档回写 → 残余风险
+汇总: execution matrix 完整性检查 → 缺陷分流 → ISSUE_LIST → 产品裁决 → 文档回写 → 残余风险
 ```
 
 用户可指定范围：

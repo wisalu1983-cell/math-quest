@@ -181,12 +181,14 @@ export default function Practice() {
           enabledKeys: DECIMAL_KEYS,
           sanitizeInput: sanitizeDecimalInput,
           setValue: next => setTrainingValue(index, next),
+          shouldAutoAdvance: ({ nextValue }) => nextValue.trim().length >= String(field.answer).length,
         });
       });
       return slots;
     }
 
     if (currentQuestion.type === 'numeric-input' && isDivisionMental) {
+      const quotientExpectedLength = String(currentQuestion.solution.answer).split('...')[0]?.length ?? 0;
       slots.push({
         id: 'answer-main',
         label: '商',
@@ -195,6 +197,9 @@ export default function Practice() {
         enabledKeys: DIGIT_KEYS,
         sanitizeInput: sanitizeDigitInput,
         setValue: setAnswer,
+        shouldAutoAdvance: ({ nextValue }) => (
+          quotientExpectedLength > 0 && nextValue.trim().length >= quotientExpectedLength
+        ),
       });
       slots.push({
         id: 'remainder',
@@ -223,6 +228,7 @@ export default function Practice() {
 
     if (isMultiBlank) {
       blankValues.forEach((value, index) => {
+        const expectedLength = String(currentQuestion.solution.blanks?.[index] ?? '').length;
         slots.push({
           id: `blank-${index}`,
           label: `第 ${index + 1} 空`,
@@ -231,6 +237,9 @@ export default function Practice() {
           enabledKeys: DECIMAL_KEYS,
           sanitizeInput: sanitizeDecimalInput,
           setValue: next => setBlankValue(index, next),
+          shouldAutoAdvance: ({ nextValue }) => (
+            expectedLength > 0 && nextValue.trim().length >= expectedLength
+          ),
         });
       });
       return slots;
@@ -289,6 +298,8 @@ export default function Practice() {
       ? 'border-primary bg-primary-lt text-primary ring-2 ring-primary/25'
       : ''
   ), [activePracticeSlotId]);
+  const hasDockedMathKeyboard = !showFeedback && (practiceMathSlots.length > 0 || isVerticalCalc);
+  const DOCKED_KEYBOARD_PADDING = '14rem';
   const failureDisplay = useMemo(() => (
     !lastAnswerCorrect && lastFailureReason
       ? getPracticeFailureDisplay({
@@ -499,7 +510,10 @@ return (
       </div>
 
       {/* Question area */}
-      <div className="flex-1 flex flex-col items-center justify-center py-6 px-4 max-w-lg mx-auto w-full relative">
+      <div
+        className="flex-1 flex flex-col items-center justify-center py-6 px-4 max-w-lg mx-auto w-full relative"
+        style={hasDockedMathKeyboard ? { paddingBottom: DOCKED_KEYBOARD_PADDING } : undefined}
+      >
         {!showFeedback ? (
           <>
             {/* Question card */}

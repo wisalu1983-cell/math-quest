@@ -47,6 +47,7 @@
 | [`v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md`](./v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md) | Phase 2 `BL-009` 样本质量诊断 / 过滤规则 | ✅ 完成 |
 | [`v0.5/phases/phase-3.md`](./v0.5/phases/phase-3.md) | Phase 3 输入与反馈基础设施 | 🟡 有条件完成 |
 | [`v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](./v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) | Phase 3 `BL-011` 内置键盘 | 🟡 有条件完成 |
+| [`v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`](./v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md) | Phase 3 `BL-011` follow-up 自动换格统一化 | ✅ 完成 |
 | [`v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](./v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md) | Phase 3 `ISSUE-067` 结构化错因反馈 | ✅ 完成 |
 | [`v0.5/issues-closed.md`](./v0.5/issues-closed.md) | v0.5 已关闭 issue 归档 | ✅ `ISSUE-067` 已归档 |
 

@@ -58,11 +58,13 @@ describe('PracticeMathKeyboard', () => {
     expect(equalsClass).toContain('text-primary-dark');
   });
 
-  it('makes unavailable keys visibly muted and leaves breathing room below the keyboard on mobile', () => {
+  it('makes unavailable keys visibly muted and keeps the keyboard fixed at the viewport bottom', () => {
     const markup = renderKeyboard(makeSlot({
       enabledKeys: ['1', '2', '3', 'delete'] as MathKeyboardKey[],
     }));
 
+    expect(markup).toContain('fixed');
+    expect(markup).toContain('bottom-0');
     expect(markup).toContain('pb-3');
 
     const enabledClass = getButtonClass(markup, '输入 1');

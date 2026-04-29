@@ -1,5 +1,7 @@
 import { Check, RotateCcw, Wand2 } from 'lucide-react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { inputKeysForRow, resolveTabTarget } from '@/utils/multiplication-input-order';
 
 type ScenarioId = 'integer' | 'decimal';
 
@@ -143,15 +145,11 @@ export default function MultiplicationVerticalBoardPreview() {
   const finalAnswerKey = 'final-answer';
   const orderedInputKeys = useMemo(() => {
     const calculationRows = [...board.partials, board.total];
-    const rowKeys = calculationRows.flatMap(row =>
-      row.cells.flatMap((cell, index) => cell == null ? [] : `${row.id}-${index}`),
-    );
+    const rowKeys = calculationRows.flatMap(row => inputKeysForRow(row, 'rtl'));
     const operandKeys = [
       { id: 'operand-a', cells: board.operandA },
       { id: 'operand-b', cells: board.operandB },
-    ].flatMap(row =>
-      row.cells.flatMap((cell, index) => cell == null ? [] : `${row.id}-${index}`),
-    );
+    ].flatMap(row => inputKeysForRow(row, 'ltr'));
     return scenario.decimalPlaces > 0
       ? [...operandKeys, ...rowKeys, operandADecimalPlacesKey, operandBDecimalPlacesKey, decimalPlacesKey, finalAnswerKey]
       : rowKeys;
@@ -214,6 +212,14 @@ export default function MultiplicationVerticalBoardPreview() {
     const nextKey = orderedInputKeys[currentIndex + 1];
     if (nextKey) inputRefs.current[nextKey]?.focus();
   };
+
+  const handleInputKeyDown = useCallback((event: KeyboardEvent<HTMLInputElement>, key: string) => {
+    if (event.key !== 'Tab') return;
+    const nextKey = resolveTabTarget(orderedInputKeys, key, event.shiftKey);
+    if (!nextKey) return;
+    event.preventDefault();
+    inputRefs.current[nextKey]?.focus();
+  }, [orderedInputKeys]);
 
   const updateCell = (key: string, raw: string) => {
     const nextValue = raw.replace(/\D/g, '').slice(-1);
@@ -283,6 +289,7 @@ export default function MultiplicationVerticalBoardPreview() {
             ref={node => { inputRefs.current[key] = node; }}
             value={userValue}
             onChange={event => updateCell(key, event.target.value)}
+            onKeyDown={event => handleInputKeyDown(event, key)}
             onFocus={() => setFocusedKey(key)}
             inputMode="numeric"
             aria-label={`${row.label} 第 ${index + 1} 格`}
@@ -360,6 +367,7 @@ export default function MultiplicationVerticalBoardPreview() {
                     ref={node => { inputRefs.current[operandADecimalPlacesKey] = node; }}
                     value={values[operandADecimalPlacesKey] ?? ''}
                     onChange={event => updateCell(operandADecimalPlacesKey, event.target.value)}
+                    onKeyDown={event => handleInputKeyDown(event, operandADecimalPlacesKey)}
                     onFocus={() => setFocusedKey(operandADecimalPlacesKey)}
                     inputMode="numeric"
                     aria-label={`${operandAText} 的小数位数`}
@@ -373,6 +381,7 @@ export default function MultiplicationVerticalBoardPreview() {
                     ref={node => { inputRefs.current[operandBDecimalPlacesKey] = node; }}
                     value={values[operandBDecimalPlacesKey] ?? ''}
                     onChange={event => updateCell(operandBDecimalPlacesKey, event.target.value)}
+                    onKeyDown={event => handleInputKeyDown(event, operandBDecimalPlacesKey)}
                     onFocus={() => setFocusedKey(operandBDecimalPlacesKey)}
                     inputMode="numeric"
                     aria-label={`${operandBText} 的小数位数`}
@@ -386,6 +395,7 @@ export default function MultiplicationVerticalBoardPreview() {
                     ref={node => { inputRefs.current[decimalPlacesKey] = node; }}
                     value={values[decimalPlacesKey] ?? ''}
                     onChange={event => updateCell(decimalPlacesKey, event.target.value)}
+                    onKeyDown={event => handleInputKeyDown(event, decimalPlacesKey)}
                     onFocus={() => setFocusedKey(decimalPlacesKey)}
                     inputMode="numeric"
                     aria-label="小数点定位位数"
@@ -399,6 +409,7 @@ export default function MultiplicationVerticalBoardPreview() {
                     ref={node => { inputRefs.current[finalAnswerKey] = node; }}
                     value={values[finalAnswerKey] ?? ''}
                     onChange={event => updateFinalAnswer(event.target.value)}
+                    onKeyDown={event => handleInputKeyDown(event, finalAnswerKey)}
                     onFocus={() => setFocusedKey(finalAnswerKey)}
                     inputMode="decimal"
                     aria-label="小数乘法最终答数"

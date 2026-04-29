@@ -240,9 +240,7 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
     if (cell.kind === 'answer') {
       const nextAnswers = { ...answerValues, [cell.col]: value };
       setAnswerValues(nextAnswers);
-      if (!prefersVirtualKeyboard) {
-        focusAfterInput(cell, { answers: nextAnswers, processes: processValues }, 'input');
-      }
+      focusAfterInput(cell, { answers: nextAnswers, processes: processValues }, 'input');
       return;
     }
 
@@ -250,10 +248,8 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
     if (!isCellComplete({ operation: op, cellKind: 'process', value: nextValue })) return;
     const nextProcesses = { ...processValues, [cell.col]: nextValue };
     setProcessValues(nextProcesses);
-    if (!prefersVirtualKeyboard) {
-      focusAfterInput(cell, { answers: answerValues, processes: nextProcesses }, 'input');
-    }
-  }, [answerValues, completed, focusAfterInput, op, prefersVirtualKeyboard, processValues]);
+    focusAfterInput(cell, { answers: answerValues, processes: nextProcesses }, 'input');
+  }, [answerValues, completed, focusAfterInput, op, processValues]);
 
   const commitCellInput = (value: string) => {
     if (completed || !activeCell) return;

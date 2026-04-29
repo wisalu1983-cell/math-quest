@@ -38,12 +38,22 @@
 |---|---|---|
 | R1 | F-001, U-001 | <无 / 后续观察> |
 
+## Execution Matrix
+
+> 执行矩阵是 QA 结论的事实源。每个 Functional Case 和 Exploratory Charter 都必须有一行当前结果；命令级 PASS 不能替代用例 ID 级记录。
+
+| ID | Result | 执行方式 | Evidence | 备注 / 残余风险 |
+|---|---|---|---|---|
+| F-001 | PASS / FAIL / RISK / BLOCKED / SKIP | <Vitest / Playwright / 模拟人工 / Code Review> | <测试名、源码行、截图、命令输出摘要或报告链接> | <必要说明> |
+| U-001 | PASS / FAIL / RISK / BLOCKED / SKIP | <模拟人工 / 视觉 QA / Playwright 观察> | <四栏记录、截图或报告链接> | <用户感知和后续观察条件> |
+
 ## Exit Criteria
 
 - P0 用例全部 PASS。
 - P1 可有 RISK，但必须写入 summary 的 residual risk。
 - FAIL 必须进入 `ProjectManager/ISSUE_LIST.md` 或经产品裁决接受。
 - 自动化失败不得写成 QA PASS。
+- `Execution Matrix` 必须覆盖测试用例表中所有 ID；缺少 P0 / P1 结果不得声明 QA PASS。
 - 对随机生成器，必须记录 seed / 样本量 / 验收带。
 
 ## Execution Summary

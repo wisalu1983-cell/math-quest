@@ -121,23 +121,31 @@ async function pressMathKeys(page: Page, keys: string[]): Promise<void> {
 }
 
 async function fillSlot(page: Page, label: string, keys: string[]): Promise<void> {
-  await page.getByRole('textbox', { name: label, exact: true }).click({ force: true });
+  const slot = page.getByRole('textbox', { name: label, exact: true });
+  await slot.evaluate((element) => {
+    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+  });
+  await slot.click({ force: true });
   await pressMathKeys(page, keys);
 }
 
 test('小数乘法训练格错误会在反馈面板展示用户值和正确值', async ({ page }) => {
   await openDecimalMultiplication(page);
 
-  await fillSlot(page, '第 1 个部分积第 1 格', ['3']);
   await fillSlot(page, '第 1 个部分积第 2 格', ['6']);
-  await fillSlot(page, '积第 1 格', ['3']);
+  await fillSlot(page, '第 1 个部分积第 1 格', ['3']);
   await fillSlot(page, '积第 2 格', ['6']);
+  await fillSlot(page, '积第 1 格', ['3']);
   await fillSlot(page, '1.2的小数位数', ['1']);
   await fillSlot(page, '0.3的小数位数', ['1']);
   await fillSlot(page, '小数点向左移动的位数', ['1']);
   await fillSlot(page, '最终答数', ['0', '.', '3', '6']);
 
-  await page.getByRole('button', { name: '提交' }).click({ force: true });
+  const submitButton = page.getByRole('button', { name: '提交' });
+  await submitButton.evaluate((element) => {
+    element.scrollIntoView({ block: 'center', inline: 'nearest' });
+  });
+  await submitButton.click({ force: true });
 
   await expect(page.getByText('未通过原因：小数训练格有错误。')).toBeVisible();
   await expect(page.getByText('小数点移动位数错误')).toBeVisible();

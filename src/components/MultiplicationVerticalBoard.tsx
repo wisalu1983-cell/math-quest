@@ -1,7 +1,9 @@
 import { Check, RotateCcw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
 import type { MultiplicationBoardData, VerticalCalcCompletePayload } from '@/types';
 import PracticeMathKeyboard from '@/pages/PracticeMathKeyboard';
+import { inputKeysForRow, resolveTabTarget } from '@/utils/multiplication-input-order';
 import {
   DECIMAL_KEYS,
   DIGIT_KEYS,
@@ -90,10 +92,10 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
 
   const orderedInputKeys = useMemo(() => {
     const operandKeys = isDecimalMode && data.operandInputMode === 'blank'
-      ? operandRows.flatMap(row => row.cells.flatMap((cell, index) => cell == null ? [] : `${row.id}-${index}`))
+      ? operandRows.flatMap(row => inputKeysForRow(row, 'ltr'))
       : [];
     const calculationKeys = calculationRows.flatMap(row =>
-      row.cells.flatMap((cell, index) => cell == null ? [] : `${row.id}-${index}`),
+      inputKeysForRow(row, 'rtl'),
     );
     return isDecimalMode
       ? [
@@ -150,23 +152,40 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
   const allFilled = orderedInputKeys.every(key => (values[key] ?? '').trim().length > 0);
   const hasWrong = submitted && orderedInputKeys.some(key => !isExpectedValue(key, values[key] ?? ''));
 
+  const scrollInputIntoView = useCallback((key: string) => {
+    inputRefs.current[key]?.scrollIntoView({ block: 'center', inline: 'nearest' });
+  }, []);
+
   const focusNext = (key: string) => {
     const currentIndex = orderedInputKeys.indexOf(key);
     const nextKey = orderedInputKeys[currentIndex + 1];
     if (nextKey) {
       setFocusedKey(nextKey);
+      scrollInputIntoView(nextKey);
       if (!prefersVirtualKeyboard) {
         inputRefs.current[nextKey]?.focus({ preventScroll: true });
       }
     }
   };
 
+  const handleInputKeyDown = useCallback((event: KeyboardEvent<HTMLInputElement>, key: string) => {
+    if (event.key !== 'Tab') return;
+    const nextKey = resolveTabTarget(orderedInputKeys, key, event.shiftKey);
+    if (!nextKey) return;
+    event.preventDefault();
+    setFocusedKey(nextKey);
+    scrollInputIntoView(nextKey);
+    if (!prefersVirtualKeyboard) {
+      inputRefs.current[nextKey]?.focus({ preventScroll: true });
+    }
+  }, [orderedInputKeys, prefersVirtualKeyboard, scrollInputIntoView]);
+
   const updateDigitCell = (key: string, raw: string) => {
     if (completed) return;
     const nextValue = raw.replace(/\D/g, '').slice(-1);
     setValues(prev => ({ ...prev, [key]: nextValue }));
     setSubmitted(false);
-    if (nextValue && !prefersVirtualKeyboard) focusNext(key);
+    if (nextValue) focusNext(key);
   };
 
   const updateSmallNumber = (key: string, raw: string) => {
@@ -174,7 +193,7 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
     const nextValue = raw.replace(/\D/g, '').slice(0, 2);
     setValues(prev => ({ ...prev, [key]: nextValue }));
     setSubmitted(false);
-    if (nextValue.length >= (expectedByKey[key]?.length ?? 1) && !prefersVirtualKeyboard) {
+    if (nextValue.length >= (expectedByKey[key]?.length ?? 1)) {
       focusNext(key);
     }
   };
@@ -244,7 +263,10 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
   const setActiveSlotId = (slotId: string | null) => {
     setFocusedKey(slotId);
     if (slotId && !prefersVirtualKeyboard) {
+      scrollInputIntoView(slotId);
       inputRefs.current[slotId]?.focus({ preventScroll: true });
+    } else if (slotId) {
+      scrollInputIntoView(slotId);
     }
   };
 
@@ -283,6 +305,7 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
             setValues(prev => ({ ...prev, [key]: next }));
             setSubmitted(false);
           },
+          shouldAutoAdvance: ({ nextValue }) => nextValue.length >= (expectedByKey[key]?.length ?? 1),
         };
       }
       return {
@@ -297,9 +320,10 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
           setValues(prev => ({ ...prev, [key]: next }));
           setSubmitted(false);
         },
+        shouldAutoAdvance: ({ nextValue }) => nextValue.length >= 1,
       };
     });
-  }, [completed, labelForKey, orderedInputKeys, values]);
+  }, [completed, expectedByKey, labelForKey, orderedInputKeys, values]);
 
   const renderStaticRow = (cells: Array<string | null>, prefix = '') => (
     <div
@@ -347,6 +371,7 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
             ref={node => { inputRefs.current[key] = node; }}
             value={userValue}
             onChange={event => updateDigitCell(key, event.target.value)}
+            onKeyDown={event => handleInputKeyDown(event, key)}
             onFocus={() => setFocusedKey(key)}
             onPointerDown={event => {
               if (!prefersVirtualKeyboard) return;
@@ -376,6 +401,7 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
         ref={node => { inputRefs.current[key] = node; }}
         value={values[key] ?? ''}
         onChange={event => updateSmallNumber(key, event.target.value)}
+        onKeyDown={event => handleInputKeyDown(event, key)}
         onFocus={() => setFocusedKey(key)}
         onPointerDown={event => {
           if (!prefersVirtualKeyboard) return;
@@ -423,6 +449,7 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
               ref={node => { inputRefs.current[decimalMoveKey] = node; }}
               value={values[decimalMoveKey] ?? ''}
               onChange={event => updateSmallNumber(decimalMoveKey, event.target.value)}
+              onKeyDown={event => handleInputKeyDown(event, decimalMoveKey)}
               onFocus={() => setFocusedKey(decimalMoveKey)}
               onPointerDown={event => {
                 if (!prefersVirtualKeyboard) return;
@@ -443,6 +470,7 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
               ref={node => { inputRefs.current[finalAnswerKey] = node; }}
               value={values[finalAnswerKey] ?? ''}
               onChange={event => updateFinalAnswer(event.target.value)}
+              onKeyDown={event => handleInputKeyDown(event, finalAnswerKey)}
               onFocus={() => setFocusedKey(finalAnswerKey)}
               onPointerDown={event => {
                 if (!prefersVirtualKeyboard) return;

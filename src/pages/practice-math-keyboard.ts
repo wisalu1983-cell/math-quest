@@ -41,6 +41,11 @@ export interface MathInputSlot {
   enabledKeys: MathKeyboardKey[];
   sanitizeInput?: (raw: string, previous: string) => string;
   setValue: (next: string) => void;
+  shouldAutoAdvance?: (params: {
+    key: MathKeyboardKey;
+    previousValue: string;
+    nextValue: string;
+  }) => boolean;
   focusSystemInput?: () => void;
 }
 
@@ -149,6 +154,27 @@ export function applyMathKeyboardKey(slot: MathInputSlot, key: MathKeyboardKey):
     : `${slot.value}${key}`;
   const bounded = applyMaxLength(raw, slot.maxLength);
   return slot.sanitizeInput ? slot.sanitizeInput(bounded, slot.value) : bounded;
+}
+
+export function resolveAutoAdvanceSlotId(params: {
+  slots: MathInputSlot[];
+  activeSlotId: string | null;
+  key: MathKeyboardKey;
+  previousValue: string;
+  nextValue: string;
+}): string | null {
+  if (params.key === 'delete') return null;
+  const currentIndex = params.slots.findIndex(slot => slot.id === params.activeSlotId);
+  if (currentIndex < 0) return null;
+  const currentSlot = params.slots[currentIndex];
+  if (!currentSlot.shouldAutoAdvance?.({
+    key: params.key,
+    previousValue: params.previousValue,
+    nextValue: params.nextValue,
+  })) {
+    return null;
+  }
+  return params.slots[currentIndex + 1]?.id ?? null;
 }
 
 export function sanitizeDigitInput(raw: string): string {

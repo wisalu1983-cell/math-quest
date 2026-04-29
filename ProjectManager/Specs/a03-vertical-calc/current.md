@@ -4,7 +4,7 @@
 > 当前状态：已实施并作为 A03 竖式笔算当前权威行为生效
 > 首次建立：2026-04-26
 > 最近确认：2026-04-29
-> 最近来源：`ProjectManager/Plan/v0.5/phases/phase-3.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`、`QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`、当前代码入口
+> 最近来源：`ProjectManager/Plan/v0.5/phases/phase-3.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`、`QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`、`QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md`、当前代码入口
 
 ---
 
@@ -20,8 +20,12 @@
 - 单行竖式输入必须只有一个字符消费入口：hidden input 的 `onInput` 负责数字、`-`、软键盘与粘贴，`onKeyDown` 只处理 `Backspace` / `Delete` / `Enter` / `Tab` 控制键。
 - A03 低档竖式样本必须排除第一批已确认的心算候选：`difficulty<=3` 的 `int-mul` 不生成 `2位数 × 1位数`；`difficulty<=5` 的一位除数整数除法过滤 D0 逐段整除型，并以 D2 多次余数传递、D3 商中间 0 为主。
 - A03 / Practice 计算字符输入在移动端默认使用内置计算键盘；首版 UI 不显示系统键盘呼出按钮，工程层保留当前槽位系统键盘状态。
+- 内置计算键盘必须固定在视口底部，不随题卡或页面内容一起滚动；实现上需避免被题卡 / transform 布局上下文限制。
 - 内置键盘使用 5 列 x 4 行全量按键布局：`1 2 3 = 删除 / 4 5 6 + - / 7 8 9 × ÷ / . 0 x ( )`；左三列主输入区宽于右两列符号区，删除键独立使用危险色语义。
 - 计算输入槽位通过 `enabledKeys` 决定按键可用 / 置灰，通过 `sanitizeInput` 兜底桌面键盘、粘贴、系统键盘和测试注入；不可只依赖 UI disabled 防守。
+- 计算输入槽位可声明 `shouldAutoAdvance`；默认不自动换格，`delete` 不自动换格，题型所需答案长度由题型组件闭包捕获，不由键盘层传题目语义。
+- 商余数、multi-blank、trainingFields 按各自标准答案长度自动进入下一 slot；普通单答案、表达式 / 等式和最终答数不自动换格。
+- 多行乘法竖式的部分积 / 总积按实际笔算从右侧低位到左侧高位输入；桌面 `Tab` / `Shift+Tab` 顺序必须与内置键盘 slot 顺序一致。
 - 多行乘法竖式最终答案正确但部分积 / 合计过程格错误时，仍判未通过，并展示过程类别文案；小数乘法训练格错误时展示训练格类型、用户值和正确值。
 - `failureDetail` 为可选结构化错因对象，不触发存档版本升级；当前反馈、错题本、历史记录底层数据和同步合并必须保留该字段，历史记录 UI 不展示错因。
 
@@ -88,10 +92,16 @@
 
 - 输入基础设施由 `src/pages/practice-math-keyboard.ts`、`src/pages/PracticeMathKeyboard.tsx` 和 `Practice.tsx` 的 slot 注册共同承载；题型组件只声明输入槽位、当前值、可用按键、sanitize 和 setter。
 - 移动端 / 触摸设备默认走内置键盘，真实输入控件使用 `readOnly=true` 与 `inputMode='none'`，避免主动弹系统键盘；桌面保留真实输入焦点与硬键盘输入，内置键盘作为辅助面板。
+- 键盘面板通过 portal 挂到 `document.body` 并固定在视口底部；答题内容需要保留可滚动底部空间，避免当前输入和提交按钮被固定键盘永久遮挡。
 - 当前填写格必须有明确 active 样式；active slot 变化通过隐藏的 `aria-live='polite'` 播报槽位 label。
 - 统一键盘全量按键常驻；数字 / 小数点 / 变量 `x` 属主输入区，运算符 / 等号 / 括号属符号区，删除键独立分组。
 - `x` 使用计算式未知数字体，与乘号 `×` 的 UI sans 字体区分。
 - 不适用于当前 slot 的按键必须显著禁用：disabled、虚线边框、低透明度和灰色 token 共同表达不可用。
+- `MathInputSlot.shouldAutoAdvance` 是自动换格的统一声明入口。键盘层在有效非删除键写入后调用该声明，若返回 true，则按当前 `slots` 顺序激活下一 slot。
+- 完成条件需要的外部信息，例如商长度、blank 标准答案长度、training field 标准答案长度、乘法格预期长度，必须由对应题型组件在构建 slot 时闭包捕获。
+- 商余数中只有商达到标准长度后自动进入余数，余数不继续自动跳；multi-blank 和 trainingFields 按字段顺序逐格移动；普通答案、表达式 / 等式、最终答数不自动跳。
+- legacy 单行竖式继续由 `getNextFocus()` 保留低 / 中 / 高三档动态策略；内置键盘仍通过统一 slot `setValue` 写入。
+- 多行乘法板的操作数空格按左到右，部分积 / 总积按行内右到左、行序上到下；桌面 `Tab` / `Shift+Tab` 与同一 `orderedInputKeys` 保持一致。
 - 首版 UI 不显示系统键盘呼出按钮；工程状态 `useSystemKeyboardForSlotId` 或等价能力可用于后续辅助功能 / 设置入口。
 - QA 已验证 390x844 手机模拟下非键盘区高度占比为 74.6%，满足答题区高度占比 ≥60%。
 - 真实 Android Chrome / iOS Safari 默认不弹系统键盘证据因本地局域网访问不稳定，已转发布后线上环境验收；清单见 `QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`。
@@ -128,8 +138,10 @@
 | v0.5 Phase 2 subplan | `ProjectManager/Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md` | `BL-009` 诊断、过滤规则、实施后复测和验收命令 |
 | v0.5 Phase 3 phase | `ProjectManager/Plan/v0.5/phases/phase-3.md` | Phase 3 范围、收尾条件、有条件完成状态和 Phase 4 准备状态 |
 | v0.5 Phase 3 keyboard subplan | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md` | 统一内置键盘、槽位协议、移动端默认策略、真实设备补验证据口径 |
+| v0.5 Phase 3 keyboard auto-advance follow-up | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md` | slot 级自动换格、固定底部、乘法右到左输入顺序和桌面 Tab 顺序 |
 | v0.5 Phase 3 failure subplan | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md` | 结构化错因、反馈面板、错题本、旧数据 fallback、同步合并 |
 | Phase 3 QA | `QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md` | Phase 3 QA 有条件通过；test/build/e2e/scoped lint/audit/diff check 通过；真实设备证据发布后补验 |
+| Phase 3 keyboard auto-advance QA | `QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md` | L2 QA 通过；TDD red-green、全量 Vitest、全量 Playwright、scoped ESLint、build、PM sync check 通过；编辑回填保留观察 |
 | BL-009 诊断脚本 | `scripts/diagnose-bl009-vertical-samples.mjs` | 固定 seed 抽样诊断与 P0/P1 口径 |
 | BL-009 生成器测试 | `src/engine/generators/vertical-calc.phase3.test.ts` | 低档乘法过滤、低档一位除数整数除法 D0 过滤和 D2/D3 主力分布断言 |
 | 策略代码 | `src/engine/vertical-calc-policy.ts`、`src/engine/vertical-calc-policy.test.ts` | 三档策略、跳格、提交、结果分类 |
@@ -150,3 +162,4 @@
 | 2026-04-26 | `ProjectManager/Plan/v0.4/subplans/2026-04-26-ISSUE-066-竖式输入单入口与退位语义.md` | v0.4 hotfix 关闭 `ISSUE-066`：单行竖式 hidden input 改为单一字符输入入口；退位格支持 `1 -> -1` 语义输入并显示 `退1`；软键盘删除清当前格 |
 | 2026-04-28 | `ProjectManager/Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md` | v0.5 Phase 2 关闭 `BL-009` 第一批 P0：低档乘法过滤 `2位数 × 1位数`；低档一位除数整数除法过滤 D0，并以 D2/D3 为主 |
 | 2026-04-29 | `ProjectManager/Plan/v0.5/phases/phase-3.md`、`QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md` | v0.5 Phase 3 有条件完成：统一内置计算键盘、槽位级 sanitize、移动端默认内置键盘策略、结构化 `failureDetail`、多行乘法过程 / 训练格错因、错题本展示和同步合并保留已落地；真实 Android / iOS 设备证据发布后线上补验 |
+| 2026-04-29 | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`、`QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md` | Phase 3 `BL-011` follow-up 完成：内置键盘固定视口底部；slot 级 `shouldAutoAdvance` 生效；商余数、多空、训练格自动换格；多行乘法部分积 / 总积右到左；桌面 Tab 顺序与 slot 顺序一致 |

@@ -1,8 +1,10 @@
 import { Delete } from 'lucide-react';
+import { createPortal } from 'react-dom';
 import {
   ALL_MATH_KEYBOARD_KEYS,
   applyMathKeyboardKey,
   isMathKeyboardKeyEnabled,
+  resolveAutoAdvanceSlotId,
 } from './practice-math-keyboard';
 import type { MathInputSlot } from './practice-math-keyboard';
 
@@ -81,37 +83,52 @@ export default function PracticeMathKeyboard({
     const targetSlot = activeSlot ?? slots[0];
     if (!targetSlot || !isMathKeyboardKeyEnabled(targetSlot, key)) return;
     if (targetSlot.id !== activeSlotId) onActiveSlotChange(targetSlot.id);
-    targetSlot.setValue(applyMathKeyboardKey(targetSlot, key));
+    const previousValue = targetSlot.value;
+    const nextValue = applyMathKeyboardKey(targetSlot, key);
+    targetSlot.setValue(nextValue);
+    const nextSlotId = resolveAutoAdvanceSlotId({
+      slots,
+      activeSlotId: targetSlot.id,
+      key,
+      previousValue,
+      nextValue,
+    });
+    if (nextSlotId) onActiveSlotChange(nextSlotId);
   };
 
-  return (
-    <div className={`w-full max-w-lg pb-3 ${className}`}>
-      <div className="sr-only" aria-live="polite" aria-atomic="true">
-        当前输入：{activeSlot.label}
-      </div>
-      <div
-        className="rounded-[18px] border-2 border-border bg-card px-2.5 py-2.5 shadow-[0_2px_10px_rgba(0,0,0,.09)]"
-        aria-label="计算输入键盘"
-      >
-        <div className="grid grid-cols-[1fr_1fr_1fr_0.72fr_0.72fr] gap-1.5 sm:gap-2">
-          {ALL_MATH_KEYBOARD_KEYS.map(key => {
-            const enabled = isMathKeyboardKeyEnabled(activeSlot, key);
-            return (
-              <button
-                key={key}
-                type="button"
-                aria-label={keyAriaLabel(key)}
-                title={keyAriaLabel(key)}
-                disabled={!enabled}
-                onClick={() => handleKeyPress(key)}
-                className={keyClassName(key, enabled)}
-              >
-                {keyContent(key)}
-              </button>
-            );
-          })}
+  const keyboard = (
+    <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 flex w-full justify-center px-3 pb-3 pt-2 safe-bottom ${className}`}>
+      <div className="pointer-events-auto w-full max-w-lg">
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          当前输入：{activeSlot.label}
+        </div>
+        <div
+          className="rounded-[18px] border-2 border-border bg-card px-2.5 py-2.5 shadow-[0_2px_10px_rgba(0,0,0,.09)]"
+          aria-label="计算输入键盘"
+        >
+          <div className="grid grid-cols-[1fr_1fr_1fr_0.72fr_0.72fr] gap-1.5 sm:gap-2">
+            {ALL_MATH_KEYBOARD_KEYS.map(key => {
+              const enabled = isMathKeyboardKeyEnabled(activeSlot, key);
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  aria-label={keyAriaLabel(key)}
+                  title={keyAriaLabel(key)}
+                  disabled={!enabled}
+                  onClick={() => handleKeyPress(key)}
+                  className={keyClassName(key, enabled)}
+                >
+                  {keyContent(key)}
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
     </div>
   );
+
+  if (typeof document === 'undefined') return keyboard;
+  return createPortal(keyboard, document.body);
 }

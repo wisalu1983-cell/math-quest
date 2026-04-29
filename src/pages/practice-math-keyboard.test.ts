@@ -5,11 +5,12 @@ import {
   createMathKeyboardInitialState,
   isMathKeyboardKeyEnabled,
   mathKeyboardReducer,
+  resolveAutoAdvanceSlotId,
   sanitizeDecimalInput,
   sanitizeDigitInput,
   sanitizeExpressionInput,
 } from './practice-math-keyboard';
-import type { MathInputSlot } from './practice-math-keyboard';
+import type { MathInputSlot, MathKeyboardKey } from './practice-math-keyboard';
 
 function makeSlot(overrides: Partial<MathInputSlot> = {}): MathInputSlot {
   return {
@@ -104,5 +105,88 @@ describe('practice-math-keyboard core input', () => {
     expect(isMathKeyboardKeyEnabled(digitSlot, '×')).toBe(false);
     expect(ALL_MATH_KEYBOARD_KEYS).toContain('×');
     expect(ALL_MATH_KEYBOARD_KEYS).toContain('delete');
+  });
+});
+
+describe('practice-math-keyboard auto advance', () => {
+  it('keeps the active slot when the slot does not opt into auto advance', () => {
+    const slots = [
+      makeSlot({ id: 'first', value: '' }),
+      makeSlot({ id: 'second', value: '' }),
+    ];
+
+    expect(resolveAutoAdvanceSlotId({
+      slots,
+      activeSlotId: 'first',
+      key: '1',
+      previousValue: '',
+      nextValue: '1',
+    })).toBeNull();
+  });
+
+  it('never advances after delete even when the slot completion rule would pass', () => {
+    const slots = [
+      makeSlot({
+        id: 'first',
+        value: '1',
+        shouldAutoAdvance: () => true,
+      }),
+      makeSlot({ id: 'second', value: '' }),
+    ];
+
+    expect(resolveAutoAdvanceSlotId({
+      slots,
+      activeSlotId: 'first',
+      key: 'delete',
+      previousValue: '1',
+      nextValue: '',
+    })).toBeNull();
+  });
+
+  it('advances to the next slot when the active slot completion rule passes', () => {
+    const calls: Array<{
+      key: MathKeyboardKey;
+      previousValue: string;
+      nextValue: string;
+    }> = [];
+    const slots = [
+      makeSlot({
+        id: 'first',
+        value: '',
+        shouldAutoAdvance: params => {
+          calls.push(params);
+          return params.nextValue.length >= 1;
+        },
+      }),
+      makeSlot({ id: 'second', value: '' }),
+    ];
+
+    expect(resolveAutoAdvanceSlotId({
+      slots,
+      activeSlotId: 'first',
+      key: '1',
+      previousValue: '',
+      nextValue: '1',
+    })).toBe('second');
+    expect(calls).toEqual([{ key: '1', previousValue: '', nextValue: '1' }]);
+  });
+
+  it('does not advance past the final slot', () => {
+    const slots = [
+      makeSlot({ id: 'first', value: '' }),
+      makeSlot({
+        id: 'last',
+        value: '',
+        shouldAutoAdvance: () => true,
+      }),
+    ];
+
+    expect(resolveAutoAdvanceSlotId({
+      slots,
+      activeSlotId: 'last',
+      key: '1',
+      previousValue: '',
+      nextValue: '1',
+    })).toBeNull();
   });
 });
