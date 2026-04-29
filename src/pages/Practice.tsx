@@ -39,7 +39,10 @@ import {
   usePrefersVirtualKeyboard,
 } from './practice-math-keyboard';
 import type { MathInputSlot as PracticeMathInputSlot } from './practice-math-keyboard';
-import { getPracticeFailureDisplay } from '@/utils/practiceFailureDisplay';
+import {
+  getPracticeFailureDisplay,
+  hasPracticeFailureDisplayContent,
+} from '@/utils/practiceFailureDisplay';
 
 export default function Practice() {
   const {
@@ -300,14 +303,14 @@ export default function Practice() {
   ), [activePracticeSlotId]);
   const hasDockedMathKeyboard = !showFeedback && (practiceMathSlots.length > 0 || isVerticalCalc);
   const DOCKED_KEYBOARD_PADDING = '14rem';
-  const failureDisplay = useMemo(() => (
-    !lastAnswerCorrect && lastFailureReason
-      ? getPracticeFailureDisplay({
-          failureReason: lastFailureReason,
-          failureDetail: lastFailureDetail,
-        })
-      : null
-  ), [lastAnswerCorrect, lastFailureDetail, lastFailureReason]);
+  const failureDisplay = useMemo(() => {
+    if (lastAnswerCorrect || !lastFailureReason) return null;
+    const display = getPracticeFailureDisplay({
+      failureReason: lastFailureReason,
+      failureDetail: lastFailureDetail,
+    });
+    return hasPracticeFailureDisplayContent(display) ? display : null;
+  }, [lastAnswerCorrect, lastFailureDetail, lastFailureReason]);
 
   const handleSubmit = useCallback(() => {
     if (showFeedback) return;

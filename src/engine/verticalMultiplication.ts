@@ -63,6 +63,20 @@ export function buildMultiplicationVerticalLayout(
   };
 }
 
+export function buildMultiplicationVerticalCalculationRows(
+  layout: MultiplicationVerticalLayout,
+): MultiplicationRow[] {
+  if (layout.partials.length === 1) return layout.partials;
+  return [...layout.partials, layout.total];
+}
+
+export function getMultiplicationVerticalFinalProductRow(
+  layout: MultiplicationVerticalLayout,
+): MultiplicationRow {
+  if (layout.partials.length === 1) return layout.partials[0];
+  return layout.total;
+}
+
 export function placeDecimalPoint(integerProduct: string, decimalPlaces: number): string {
   if (decimalPlaces <= 0) return integerProduct;
   const padded = integerProduct.padStart(decimalPlaces + 1, '0');

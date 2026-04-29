@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import type { PracticeFailureDetail } from '@/types';
-import { getPracticeFailureDisplay } from './practiceFailureDisplay';
+import {
+  getPracticeFailureDisplay,
+  hasPracticeFailureDisplayContent,
+} from './practiceFailureDisplay';
 
 describe('practiceFailureDisplay', () => {
   it('falls back for legacy vertical process failures', () => {
@@ -64,5 +67,16 @@ describe('practiceFailureDisplay', () => {
         text: '小数点移动位数错误：你填 未填写，正确是 2',
       },
     ]);
+  });
+
+  it('does not mark plain wrong-answer failures as displayable process feedback', () => {
+    const display = getPracticeFailureDisplay({
+      failureReason: 'wrong-answer',
+    });
+
+    expect(display.message).toBe('');
+    expect(display.processCategories).toEqual([]);
+    expect(display.trainingFieldMistakes).toEqual([]);
+    expect(hasPracticeFailureDisplayContent(display)).toBe(false);
   });
 });

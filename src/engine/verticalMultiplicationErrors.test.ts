@@ -103,4 +103,59 @@ describe('classifyMultiplicationErrors', () => {
 
     expect(result).toEqual({ result: 'pass', answer: '4.73' });
   });
+
+  it('does not let empty finalAnswerKeys skip final answer validation', () => {
+    const result = classifyMultiplicationErrors({
+      orderedInputKeys: ['partial-0-1', 'partial-0-2', 'integer-final-answer'],
+      expectedByKey: {
+        'partial-0-1': '4',
+        'partial-0-2': '5',
+        'integer-final-answer': '45',
+      },
+      userValues: {
+        'partial-0-1': '4',
+        'partial-0-2': '4',
+        'integer-final-answer': '44',
+      },
+      finalAnswerKey: 'integer-final-answer',
+      finalAnswerKeys: [],
+    });
+
+    expect(result).toEqual({
+      result: 'failWrongAnswer',
+      answer: '44',
+      failureReason: 'wrong-answer',
+    });
+  });
+
+  it('reports the first wrong final answer value when multiple final keys are validated', () => {
+    const result = classifyMultiplicationErrors({
+      orderedInputKeys: [
+        'partial-0-1',
+        'partial-0-2',
+        'integer-final-answer',
+        'final-answer',
+      ],
+      expectedByKey: {
+        'partial-0-1': '4',
+        'partial-0-2': '5',
+        'integer-final-answer': '45',
+        'final-answer': '4.5',
+      },
+      userValues: {
+        'partial-0-1': '4',
+        'partial-0-2': '4',
+        'integer-final-answer': '44',
+        'final-answer': '4.5',
+      },
+      finalAnswerKey: 'final-answer',
+      finalAnswerKeys: ['integer-final-answer', 'final-answer'],
+    });
+
+    expect(result).toEqual({
+      result: 'failWrongAnswer',
+      answer: '44',
+      failureReason: 'wrong-answer',
+    });
+  });
 });

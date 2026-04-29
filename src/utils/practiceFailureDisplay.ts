@@ -50,3 +50,11 @@ export function getPracticeFailureDisplay(input: FailureDisplayInput): PracticeF
     trainingFieldMistakes,
   };
 }
+
+export function hasPracticeFailureDisplayContent(display: PracticeFailureDisplay): boolean {
+  return Boolean(
+    display.message ||
+    display.processCategories.length > 0 ||
+    display.trainingFieldMistakes.length > 0,
+  );
+}

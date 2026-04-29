@@ -20,42 +20,42 @@ const RUN_ARTIFACTS_DIR = path.join(
   process.cwd(),
   'QA',
   'runs',
-  '2026-04-29-v05-phase3-input-feedback-qa',
+  '2026-04-29-v05-issue-068-single-partial-multiplication-qa',
   'artifacts',
 );
 
-function decimalMultiplicationQuestion() {
+function singlePartialDecimalMultiplicationQuestion() {
   return {
-    id: 'phase3-decimal-training-failure',
+    id: 'issue-068-single-partial-decimal-multiplication',
     topicId: 'vertical-calc',
     type: 'vertical-fill',
     difficulty: 6,
-    prompt: '用竖式计算: 1.2 × 0.3',
+    prompt: '列竖式计算: 90.8 × 5',
     data: {
       kind: 'vertical-calc',
       operation: '×',
-      operands: [12, 3],
+      operands: [908, 5],
       steps: [],
       multiplicationBoard: {
         mode: 'decimal',
-        integerOperands: [12, 3],
+        integerOperands: [908, 5],
         operandInputMode: 'static',
-        originalOperands: ['1.2', '0.3'],
-        operandDecimalPlaces: [1, 1],
-        decimalPlaces: 2,
-        finalAnswer: '0.36',
+        originalOperands: ['90.8', '5'],
+        operandDecimalPlaces: [1, 0],
+        decimalPlaces: 1,
+        finalAnswer: '454',
       },
     },
     solution: {
-      answer: '0.36',
-      explanation: '1.2 × 0.3 = 0.36',
+      answer: '454',
+      explanation: '90.8 × 5 = 454',
     },
     hints: [],
   };
 }
 
-async function openDecimalMultiplication(page: Page): Promise<void> {
-  const question = decimalMultiplicationQuestion();
+async function openSinglePartialDecimalMultiplication(page: Page): Promise<void> {
+  const question = singlePartialDecimalMultiplicationQuestion();
 
   await page.goto('/');
   await page.waitForLoadState('networkidle');
@@ -68,7 +68,7 @@ async function openDecimalMultiplication(page: Page): Promise<void> {
 
     harness.__MQ_GAME_PROGRESS__.setState({
       gameProgress: {
-        userId: 'phase3-qa-user',
+        userId: 'issue-068-qa-user',
         campaignProgress: {},
         advanceProgress: {},
         wrongQuestions: [],
@@ -79,13 +79,13 @@ async function openDecimalMultiplication(page: Page): Promise<void> {
     harness.__MQ_SESSION__.setState({
       active: true,
       session: {
-        id: 'phase3-decimal-training-session',
-        userId: 'phase3-qa-user',
+        id: 'issue-068-session',
+        userId: 'issue-068-qa-user',
         topicId: 'vertical-calc',
         startedAt: Date.now(),
         difficulty: 6,
         sessionMode: 'campaign',
-        targetLevelId: 'phase3-decimal-training-level',
+        targetLevelId: 'issue-068-level',
         questions: [],
         heartsRemaining: 3,
         completed: false,
@@ -109,7 +109,7 @@ async function openDecimalMultiplication(page: Page): Promise<void> {
     harness.__MQ_UI__.getState().setPage('practice');
   }, question);
 
-  await expect(page.getByRole('heading', { name: '用竖式计算: 1.2 × 0.3' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '列竖式计算: 90.8 × 5' })).toBeVisible();
   await expect(page.locator('[aria-label="计算输入键盘"]')).toBeVisible();
 }
 
@@ -121,39 +121,46 @@ async function pressMathKeys(page: Page, keys: string[]): Promise<void> {
 }
 
 async function fillSlot(page: Page, label: string, keys: string[]): Promise<void> {
-  const slot = page.getByRole('textbox', { name: label, exact: true });
-  await slot.evaluate((element) => {
-    element.scrollIntoView({ block: 'center', inline: 'nearest' });
-  });
-  await slot.click({ force: true });
+  await page.getByRole('textbox', { name: label, exact: true }).click({ force: true });
   await pressMathKeys(page, keys);
 }
 
-test('小数乘法训练格错误会在反馈面板展示用户值和正确值', async ({ page }) => {
-  await openDecimalMultiplication(page);
+test('单行过程积乘法不展示重复合计行', async ({ page }) => {
+  await openSinglePartialDecimalMultiplication(page);
 
+  await expect(page.getByRole('textbox', { name: /^第 1 个部分积第 \d+ 格$/ })).toHaveCount(4);
   await expect(page.getByRole('textbox', { name: /^积第 \d+ 格$/ })).toHaveCount(0);
-  await fillSlot(page, '第 1 个部分积第 1 格', ['3']);
-  await fillSlot(page, '第 1 个部分积第 2 格', ['6']);
-  await fillSlot(page, '1.2的小数位数', ['1']);
-  await fillSlot(page, '0.3的小数位数', ['1']);
-  await fillSlot(page, '小数点向左移动的位数', ['1']);
-  await fillSlot(page, '最终答数', ['0', '.', '3', '6']);
-
-  const submitButton = page.getByRole('button', { name: '提交' });
-  await submitButton.evaluate((element) => {
-    element.scrollIntoView({ block: 'center', inline: 'nearest' });
-  });
-  await submitButton.click({ force: true });
-
-  await expect(page.getByText('未通过原因：小数训练格有错误。')).toBeVisible();
-  await expect(page.getByText('小数点移动位数错误')).toBeVisible();
-  await expect(page.getByText('你填')).toBeVisible();
-  await expect(page.getByText('正确是')).toBeVisible();
+  const separatorCount = await page.locator('.rounded-2xl.border-2.border-border.bg-bg.p-3').evaluate(board =>
+    Array.from(board.children).filter(child =>
+      child instanceof HTMLElement &&
+      child.classList.contains('border-b-2') &&
+      child.classList.contains('border-text'),
+    ).length,
+  );
+  expect(separatorCount).toBe(1);
 
   fs.mkdirSync(RUN_ARTIFACTS_DIR, { recursive: true });
   await page.screenshot({
-    path: path.join(RUN_ARTIFACTS_DIR, 'decimal-training-failure-feedback.png'),
+    path: path.join(RUN_ARTIFACTS_DIR, 'single-partial-no-duplicate-total-row.png'),
     fullPage: true,
   });
+});
+
+test('单行过程积填错按最终答案错误处理', async ({ page }) => {
+  await openSinglePartialDecimalMultiplication(page);
+
+  await fillSlot(page, '第 1 个部分积第 1 格', ['4']);
+  await fillSlot(page, '第 1 个部分积第 2 格', ['5']);
+  await fillSlot(page, '第 1 个部分积第 3 格', ['4']);
+  await fillSlot(page, '第 1 个部分积第 4 格', ['1']);
+  await fillSlot(page, '90.8的小数位数', ['1']);
+  await fillSlot(page, '5的小数位数', ['0']);
+  await fillSlot(page, '小数点向左移动的位数', ['1']);
+  await fillSlot(page, '最终答数', ['4', '5', '4']);
+
+  await page.getByRole('button', { name: '提交' }).click({ force: true });
+
+  await expect(page.getByText('正确答案：')).toBeVisible();
+  await expect(page.getByText('未通过原因：')).toHaveCount(0);
+  await expect(page.getByText('部分积填写错误')).toHaveCount(0);
 });

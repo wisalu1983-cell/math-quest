@@ -14,7 +14,9 @@ import {
 } from '@/pages/practice-math-keyboard';
 import type { MathInputSlot } from '@/pages/practice-math-keyboard';
 import {
+  buildMultiplicationVerticalCalculationRows,
   buildMultiplicationVerticalLayout,
+  getMultiplicationVerticalFinalProductRow,
   isEquivalentFinalAnswer,
   placeDecimalPoint,
 } from '@/engine/verticalMultiplication';
@@ -76,14 +78,23 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
   const integerProduct = String(multiplicand * multiplier);
   const expectedFinalAnswer = data.finalAnswer ?? placeDecimalPoint(integerProduct, decimalPlaces);
 
-  const calculationRows = useMemo<RenderRow[]>(() => [
-    ...board.partials.map((row, index) => ({
+  const calculationRows = useMemo<RenderRow[]>(() => buildMultiplicationVerticalCalculationRows(board).map(row => {
+    if (row.id === board.total.id) {
+      return { id: row.id, label: '积', cells: row.cells };
+    }
+    const partialIndex = Number(row.id.replace('partial-', ''));
+    return {
       id: row.id,
-      label: `第 ${index + 1} 个部分积`,
+      label: `第 ${partialIndex + 1} 个部分积`,
       cells: row.cells,
-    })),
-    { id: board.total.id, label: '积', cells: board.total.cells },
-  ], [board]);
+    };
+  }), [board]);
+
+  const finalProductRow = useMemo(
+    () => getMultiplicationVerticalFinalProductRow(board),
+    [board],
+  );
+  const singlePartialFinalProduct = finalProductRow.id !== board.total.id;
 
   const operandRows = useMemo<RenderRow[]>(() => [
     { id: 'operand-a', label: '整数被乘数', cells: board.operandA },
@@ -221,9 +232,8 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
   };
 
   const integerFinalAnswerFromValues = (source: Record<string, string>) => {
-    const totalRow = calculationRows[calculationRows.length - 1];
-    return totalRow.cells
-      .map((cell, index) => (cell == null ? '' : source[`${totalRow.id}-${index}`] ?? ''))
+    return finalProductRow.cells
+      .map((cell, index) => (cell == null ? '' : source[`${finalProductRow.id}-${index}`] ?? ''))
       .join('')
       .replace(/^0+(?=\d)/, '') || '';
   };
@@ -234,16 +244,21 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
     const classifierValues = { ...values };
     const classifierKeys = [...orderedInputKeys];
     const classifierFinalKey = isDecimalMode ? finalAnswerKey : integerFinalAnswerKey;
-    if (!isDecimalMode) {
+    const shouldValidateIntegerFinalAnswer = !isDecimalMode || singlePartialFinalProduct;
+    if (shouldValidateIntegerFinalAnswer) {
       classifierExpected[integerFinalAnswerKey] = String(multiplicand * multiplier);
       classifierValues[integerFinalAnswerKey] = integerFinalAnswerFromValues(values);
       classifierKeys.push(integerFinalAnswerKey);
     }
+    const classifierFinalAnswerKeys = isDecimalMode && singlePartialFinalProduct
+      ? [integerFinalAnswerKey, finalAnswerKey]
+      : undefined;
     const result = classifyMultiplicationErrors({
       orderedInputKeys: classifierKeys,
       expectedByKey: classifierExpected,
       userValues: classifierValues,
       finalAnswerKey: classifierFinalKey,
+      finalAnswerKeys: classifierFinalAnswerKeys,
     });
     setSubmitted(true);
     setCompleted(true);
@@ -433,7 +448,9 @@ export default function MultiplicationVerticalBoard({ data, onComplete }: Props)
             {calculationRows.slice(0, -1).map(row => (
               <div key={row.id}>{renderInputRow(row)}</div>
             ))}
-            <div className="ml-10 border-b-2 border-text" />
+            {calculationRows.length > 1 && (
+              <div className="ml-10 border-b-2 border-text" />
+            )}
             {renderInputRow(calculationRows[calculationRows.length - 1])}
           </div>
         </div>
