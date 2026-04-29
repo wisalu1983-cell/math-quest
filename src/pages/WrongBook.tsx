@@ -5,7 +5,10 @@ import type { TopicId, WrongQuestion } from '@/types';
 import BottomNav from '@/components/BottomNav';
 import LoadingScreen from '@/components/LoadingScreen';
 import { TopicIcon } from '@/components/TopicIcon';
-import { getPracticeFailureDisplay } from '@/utils/practiceFailureDisplay';
+import {
+  getPracticeFailureDisplay,
+  hasPracticeFailureDisplayContent,
+} from '@/utils/practiceFailureDisplay';
 
 const COLLAPSED_LIMIT = 5;
 
@@ -87,39 +90,36 @@ export default function WrongBook() {
                           <span className="text-danger">你的答案：{wq.wrongAnswer}</span>
                           <span className="text-success">正确：{String(wq.question.solution.answer)}</span>
                         </div>
-                        {wq.failureReason && (
-                          <div className="mt-2 rounded-xl border border-warning/40 bg-warning-lt px-3 py-2 text-xs font-black" style={{ color: '#7A5C00' }}>
-                            {(() => {
-                              const display = getPracticeFailureDisplay({
-                                failureReason: wq.failureReason,
-                                failureDetail: wq.failureDetail,
-                              });
-                              return (
-                                <>
-                                  <p>未通过原因：{display.message}</p>
-                                  {display.processCategories.length > 0 && (
-                                    <ul className="mt-1 space-y-1 text-text">
-                                      {display.processCategories.map(category => (
-                                        <li key={category.code} className="rounded-lg bg-card/70 px-2 py-1">
-                                          {category.label}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                  {display.trainingFieldMistakes.length > 0 && (
-                                    <ul className="mt-1 space-y-1 text-text">
-                                      {display.trainingFieldMistakes.map(mistake => (
-                                        <li key={mistake.code} className="rounded-lg bg-card/70 px-2 py-1">
-                                          {mistake.text}
-                                        </li>
-                                      ))}
-                                    </ul>
-                                  )}
-                                </>
-                              );
-                            })()}
-                          </div>
-                        )}
+                        {wq.failureReason && (() => {
+                          const display = getPracticeFailureDisplay({
+                            failureReason: wq.failureReason,
+                            failureDetail: wq.failureDetail,
+                          });
+                          if (!hasPracticeFailureDisplayContent(display)) return null;
+                          return (
+                            <div className="mt-2 rounded-xl border border-warning/40 bg-warning-lt px-3 py-2 text-xs font-black" style={{ color: '#7A5C00' }}>
+                              <p>未通过原因：{display.message}</p>
+                              {display.processCategories.length > 0 && (
+                                <ul className="mt-1 space-y-1 text-text">
+                                  {display.processCategories.map(category => (
+                                    <li key={category.code} className="rounded-lg bg-card/70 px-2 py-1">
+                                      {category.label}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                              {display.trainingFieldMistakes.length > 0 && (
+                                <ul className="mt-1 space-y-1 text-text">
+                                  {display.trainingFieldMistakes.map(mistake => (
+                                    <li key={mistake.code} className="rounded-lg bg-card/70 px-2 py-1">
+                                      {mistake.text}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )}
+                            </div>
+                          );
+                        })()}
                         {wq.question.solution.explanation && (
                           <div className="text-xs text-text-2 mt-1.5 leading-relaxed">
                             {wq.question.solution.explanation}

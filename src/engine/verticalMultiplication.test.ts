@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  buildMultiplicationVerticalCalculationRows,
   buildMultiplicationVerticalLayout,
+  getMultiplicationVerticalFinalProductRow,
   isEquivalentFinalAnswer,
   normalizeFinalAnswer,
   placeDecimalPoint,
@@ -18,6 +20,26 @@ describe('vertical multiplication layout', () => {
       { id: 'partial-1', cells: [null, '7', '8', '2', null] },
     ]);
     expect(layout.total.cells).toEqual(['1', '0', '9', '4', '8']);
+  });
+
+  it('does not require a repeated total row when there is only one partial product', () => {
+    const layout = buildMultiplicationVerticalLayout(908, 5);
+
+    expect(layout.partials).toHaveLength(1);
+    expect(layout.partials[0].cells).toEqual(layout.total.cells);
+    expect(buildMultiplicationVerticalCalculationRows(layout).map(row => row.id)).toEqual(['partial-0']);
+    expect(getMultiplicationVerticalFinalProductRow(layout).id).toBe('partial-0');
+  });
+
+  it('keeps the total row when multiple partial products must be summed', () => {
+    const layout = buildMultiplicationVerticalLayout(782, 14);
+
+    expect(buildMultiplicationVerticalCalculationRows(layout).map(row => row.id)).toEqual([
+      'partial-0',
+      'partial-1',
+      'total',
+    ]);
+    expect(getMultiplicationVerticalFinalProductRow(layout).id).toBe('total');
   });
 
   it('places and normalizes decimal final answers without weakening move-count validation', () => {

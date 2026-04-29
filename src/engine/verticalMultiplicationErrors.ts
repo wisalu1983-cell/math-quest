@@ -43,17 +43,23 @@ function uniqueCategories(categories: Array<{ code: string; label: string }>) {
 export function classifyMultiplicationErrors(
   params: ClassifyMultiplicationErrorsParams,
 ): VerticalCalcCompletePayload {
-  const finalAnswerKeys = params.finalAnswerKeys ?? [params.finalAnswerKey];
+  const finalAnswerKeys = params.finalAnswerKeys?.length
+    ? params.finalAnswerKeys
+    : [params.finalAnswerKey];
   const finalAnswer = params.userValues[params.finalAnswerKey] ?? params.expectedByKey[params.finalAnswerKey] ?? '';
-  const hasWrongFinalAnswer = finalAnswerKeys.some(key => !isExpectedValue(
+  const wrongFinalAnswerKey = finalAnswerKeys.find(key => !isExpectedValue(
     key,
     params.userValues[key] ?? '',
     params.expectedByKey[key] ?? '',
     params.finalAnswerKey,
   ));
 
-  if (hasWrongFinalAnswer) {
-    return { result: 'failWrongAnswer', answer: finalAnswer, failureReason: 'wrong-answer' };
+  if (wrongFinalAnswerKey) {
+    return {
+      result: 'failWrongAnswer',
+      answer: params.userValues[wrongFinalAnswerKey] ?? finalAnswer,
+      failureReason: 'wrong-answer',
+    };
   }
 
   const processCategories: Array<{ code: string; label: string }> = [];

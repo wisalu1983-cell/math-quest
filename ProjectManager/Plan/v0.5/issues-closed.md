@@ -26,3 +26,24 @@
   - `npm run build`：通过，仅 Vite chunk size warning。
   - `npx playwright test`：13 tests passed。
 
+### ISSUE-068 · 单行过程积乘法竖式要求重复填写答数（P2 · UX / 输入冗余）
+
+- **状态**：✅ 已修复（2026-04-29，v0.5 Phase 3 小修）
+- **来源**：2026-04-29 用户界面优化反馈；截图样例为 `90.8 × 5`。
+- **类别**：UX / 输入冗余 / A03 竖式计算。
+- **归位**：[`phases/phase-3.md`](phases/phase-3.md) · [`subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md`](subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md)。
+- **问题摘要**：当乘法竖式只有一行过程积时，唯一过程积本身已经等同最终乘积，界面仍要求学生在下方合计 / 答数行原样再填一遍。
+- **修复摘要**：新增乘法竖式计算行 helper；单行过程积场景不再渲染 `total` 行；提交时从唯一过程积行推导 `integer-final-answer`，单行过程积填错按普通最终答案错误处理；wrong-answer 无结构化错因时不渲染空的“未通过原因”块；多行部分积仍保留合计行。
+- **关闭证据**：
+  - `src/engine/verticalMultiplication.ts` / `.test.ts`：覆盖单行 partial 不返回 `total`、多行 partial 保留 `total`、final product row 来源。
+  - `src/components/MultiplicationVerticalBoard.tsx`：单行过程积场景从唯一 partial 行推导最终整数乘积。
+  - `src/engine/verticalMultiplicationErrors.ts` / `.test.ts`：空 `finalAnswerKeys` 不跳过最终答案判断，多 final key 返回第一条错误最终答案值。
+  - `src/utils/practiceFailureDisplay.ts` / `.test.ts`、`src/pages/Practice.tsx`、`src/pages/WrongBook.tsx`：wrong-answer 不展示空错因块。
+  - `QA/e2e/issue-068-single-partial-multiplication.spec.ts`：固定 `90.8 × 5` 验证无重复合计行、单行过程积填错按最终答案错误处理。
+  - `QA/e2e/phase3-decimal-training-failure.spec.ts`：小数训练格错因回归按新规格通过。
+  - `QA/runs/2026-04-29-v05-issue-068-single-partial-multiplication-qa/qa-summary.md`：L2 QA 通过。
+  - `npm test -- --run`：59 files / 739 tests passed。
+  - `npm run build`：通过，仅 Vite chunk size warning。
+  - `npx playwright test`：15 tests passed。
+  - scoped ESLint：exit 0。
+  - `npm audit --audit-level=high`：found 0 vulnerabilities。
