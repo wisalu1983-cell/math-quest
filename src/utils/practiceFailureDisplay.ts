@@ -20,6 +20,7 @@ export interface PracticeFailureDisplay {
 function legacyMessage(reason?: PracticeFailureReason | null): string {
   if (reason === 'vertical-process') return '进位/退位格填写错误';
   if (reason === 'vertical-multiplication-process') return '本题未通过：竖式过程有误。';
+  if (reason === 'vertical-long-division-process') return '本题未通过：竖式过程有误。';
   if (reason === 'vertical-training-field') return '本题未通过：小数训练格有误。';
   return '';
 }

@@ -24,6 +24,7 @@ import type {
   VerticalCalcWrongCell,
 } from '@/engine/vertical-calc-policy';
 import MultiplicationVerticalBoard from './MultiplicationVerticalBoard';
+import LongDivisionBoard from './LongDivisionBoard';
 
 interface Props {
   data: VerticalCalcData;
@@ -46,6 +47,25 @@ export default function VerticalCalcBoard({ data, difficulty, onComplete }: Prop
       <MultiplicationVerticalBoard
         key={boardKey}
         data={data.multiplicationBoard}
+        onComplete={onComplete}
+      />
+    );
+  }
+
+  if (data.longDivisionBoard) {
+    const boardKey = [
+      data.longDivisionBoard.mode,
+      data.longDivisionBoard.workingDividend,
+      data.longDivisionBoard.workingDivisor,
+      data.longDivisionBoard.rounds.length,
+      data.longDivisionBoard.resultFields?.map(field => field.id).join('|') ?? '',
+    ].join(':');
+
+    return (
+      <LongDivisionBoard
+        key={boardKey}
+        data={data.longDivisionBoard}
+        difficulty={difficulty}
         onComplete={onComplete}
       />
     );

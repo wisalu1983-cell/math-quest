@@ -37,7 +37,7 @@
 
 | 文件 | 用途 | 状态 |
 |---|---|---|
-| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | 🟡 Phase 3 有条件完成；Phase 4 `BL-010` Q1-Q7 已补齐，coding 前待 UI 方案单独确认 |
+| [`v0.5/README.md`](./v0.5/README.md) | 版本入口 | ✅ Phase 4 `BL-010` 已完成；下一步进入 Phase 5 Release Gate |
 | [`v0.5/00-overview.md`](./v0.5/00-overview.md) | 背景、目标、阶段结构 | 📋 启动快照已建立 |
 | [`v0.5/01-research-catalog.md`](./v0.5/01-research-catalog.md) | 预研结论 / Backlog / Issue / Spec / 浏览器证据链 | 📋 已建立 |
 | [`v0.5/02-classification.md`](./v0.5/02-classification.md) | 分类、依赖、边界 | 📋 已建立 |
@@ -52,8 +52,8 @@
 | [`v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`](./v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md) | Phase 3 `BL-011` follow-up 自动换格统一化 | ✅ 完成 |
 | [`v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](./v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md) | Phase 3 `ISSUE-067` 结构化错因反馈 | ✅ 完成 |
 | [`v0.5/subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md`](./v0.5/subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md) | Phase 3 `ISSUE-068` 单行过程积乘法免重复答数 | ✅ 完成 |
-| [`v0.5/phases/phase-4.md`](./v0.5/phases/phase-4.md) | Phase 4 竖式除法 UI 化答题 | 🟡 `BL-010` Q1-Q7 已补齐，coding 前待 UI 方案单独确认 |
-| [`v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`](./v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) | Phase 4 `BL-010` 竖式除法 UI 化答题 | 🟡 进行中（Q1-Q7 已补齐；coding 前待 UI 确认） |
+| [`v0.5/phases/phase-4.md`](./v0.5/phases/phase-4.md) | Phase 4 竖式除法 UI 化答题 | ✅ 完成 |
+| [`v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`](./v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) | Phase 4 `BL-010` 竖式除法 UI 化答题 | ✅ 完成（L2 QA PASS-WITH-NOTES） |
 | [`v0.5/issues-closed.md`](./v0.5/issues-closed.md) | v0.5 已关闭 issue 归档 | ✅ `ISSUE-067` / `ISSUE-068` 已归档 |
 
 ## 跨版本工具性 Plan

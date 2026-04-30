@@ -4,6 +4,7 @@ import { pickSubtype } from '../index';
 import type { SubtypeDef } from '@/types/gamification';
 import { formatNum } from './utils';
 import { placeDecimalPoint } from '../verticalMultiplication';
+import { buildLongDivisionBoardData } from '../longDivision';
 
 // v2.1 规格：
 //   低档 (d≤5): 纯整数，禁止小数。
@@ -29,7 +30,8 @@ export function getSubtypeEntries(difficulty: number): SubtypeDef[] {
     { tag: 'dec-add-sub', weight: 10 },  // 少量，保留训练对齐
     { tag: 'dec-mul',     weight: 25 },  // 小数×小数，位数多
     { tag: 'dec-div',     weight: 30 },  // 小数÷小数扩倍长除
-    { tag: 'approximate', weight: 20 },  // 循环小数取近似
+    { tag: 'approximate', weight: 15 },  // 循环小数取近似
+    { tag: 'cyclic-div',  weight: 5 },   // 循环小数结构化输入
   ];
 }
 
@@ -353,9 +355,20 @@ function generateDivision(difficulty: number, id: string): Question {
         ? '注意多次余数传递和落位'
         : '注意余数传递和落位';
     return {
-      id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+      id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
       prompt: `用竖式计算: ${a} ÷ ${b}`,
-      data: { kind: 'vertical-calc', operation: '÷' as const, operands: [a, b], steps: [] },
+      data: {
+        kind: 'vertical-calc',
+        operation: '÷' as const,
+        operands: [a, b],
+        steps: [],
+        longDivisionBoard: buildLongDivisionBoardData({
+          kind: 'integer',
+          dividend: a,
+          divisor: b,
+          finalAnswer: quotient,
+        }),
+      },
       solution: { answer: quotient, steps, explanation: `${a} ÷ ${b} = ${quotient}` },
       hints: ['从最高位开始，逐位试商', loadHint],
       xpBase: 10 + (difficulty - 1) * 5,
@@ -368,9 +381,20 @@ function generateDivision(difficulty: number, id: string): Question {
     `${a} ÷ ${b} = ${q}`,
   ];
   return {
-    id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+    id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
     prompt: `用竖式计算: ${a} ÷ ${b}（除不尽时继续补0）`,
-    data: { kind: 'vertical-calc', operation: '÷' as const, operands: [a, b], steps: [] },
+    data: {
+      kind: 'vertical-calc',
+      operation: '÷' as const,
+      operands: [a, b],
+      steps: [],
+      longDivisionBoard: buildLongDivisionBoardData({
+        kind: 'integer',
+        dividend: a,
+        divisor: b,
+        finalAnswer: formatNum(q),
+      }),
+    },
     solution: { answer: formatNum(q), steps, explanation: `${a} ÷ ${b} = ${q}` },
     hints: ['整数除完后，商上加小数点，余数后补0继续除'],
     xpBase: 10 + (difficulty - 1) * 5,
@@ -573,9 +597,20 @@ function generateDecimalDiv(difficulty: number, id: string): Question {
     const expression = `${formatNum(dividend)} ÷ ${intDivisor}`;
     const steps = [`商的小数点与被除数的小数点对齐`, `${expression} = ${formatNum(quotient)}`];
     return {
-      id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+      id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
       prompt: `列竖式计算: ${expression}`,
-      data: { kind: 'vertical-calc', operation: '÷', operands: [dividend, intDivisor], steps: [] },
+      data: {
+        kind: 'vertical-calc',
+        operation: '÷',
+        operands: [dividend, intDivisor],
+        steps: [],
+        longDivisionBoard: buildLongDivisionBoardData({
+          kind: 'decimal-dividend',
+          dividend,
+          divisor: intDivisor,
+          finalAnswer: formatNum(quotient),
+        }),
+      },
       solution: {
         answer: formatNum(quotient),
         steps,
@@ -620,10 +655,19 @@ function generateDecimalDiv(difficulty: number, id: string): Question {
     `长除法得到商 = ${formatNum(quotient!)}`,
   ];
   return {
-    id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+    id, topicId: 'vertical-calc', type: 'vertical-fill', difficulty,
     prompt: `列竖式计算: ${expression}`,
     data: {
-      kind: 'vertical-calc', operation: '÷', operands: [dividend!, divisor], steps: [],
+      kind: 'vertical-calc',
+      operation: '÷',
+      operands: [dividend!, divisor],
+      steps: [],
+      longDivisionBoard: buildLongDivisionBoardData({
+        kind: 'decimal-divisor',
+        dividend: dividend!,
+        divisor,
+        finalAnswer: formatNum(quotient!),
+      }),
     },
     solution: {
       answer: formatNum(quotient!),
@@ -672,10 +716,28 @@ function generateApproximate(difficulty: number, id: string): Question {
     }
   }
   const rounded = Number(exactAnswer.toFixed(places));
+  const divisionLongBoard = opChar === '÷'
+    ? buildLongDivisionBoardData({
+        kind: b % 1 !== 0 ? 'decimal-divisor' : 'approximation',
+        dividend: a,
+        divisor: b,
+        finalAnswer: rounded.toFixed(places),
+        approximationPlaces: places,
+      })
+    : undefined;
   return {
-    id, topicId: 'vertical-calc', type: 'numeric-input', difficulty,
+    id,
+    topicId: 'vertical-calc',
+    type: opChar === '÷' ? 'vertical-fill' : 'numeric-input',
+    difficulty,
     prompt: `列竖式计算: ${expression}（精确到${placeText}）`,
-    data: { kind: 'vertical-calc', operation: opChar, operands: [a, b], steps: [] },
+    data: {
+      kind: 'vertical-calc',
+      operation: opChar,
+      operands: [a, b],
+      steps: [],
+      ...(divisionLongBoard ? { longDivisionBoard: divisionLongBoard } : {}),
+    },
     solution: {
       answer: rounded.toFixed(places),
       steps: [
@@ -696,6 +758,49 @@ function generateApproximateIntDivision(): { dividend: number; divisor: number }
     if (dividend % divisor !== 0) return { dividend, divisor };
   }
   return { dividend: 685, divisor: 7 };
+}
+
+function generateCyclicLongDivision(difficulty: number, id: string): Question {
+  const cases = [
+    { dividend: 14, divisor: 135, nonRepeating: '0.1', repeating: '037', displayAnswer: '0.1037' },
+    { dividend: 1, divisor: 6, nonRepeating: '0.1', repeating: '6', displayAnswer: '0.16' },
+    { dividend: 1, divisor: 11, nonRepeating: '0.', repeating: '09', displayAnswer: '0.09' },
+  ];
+  const c = cases[randInt(0, cases.length - 1)];
+
+  return {
+    id,
+    topicId: 'vertical-calc',
+    type: 'vertical-fill',
+    difficulty,
+    prompt: `列竖式计算: ${c.dividend} ÷ ${c.divisor}，写出循环节`,
+    data: {
+      kind: 'vertical-calc',
+      operation: '÷',
+      operands: [c.dividend, c.divisor],
+      steps: [],
+      longDivisionBoard: buildLongDivisionBoardData({
+        kind: 'cyclic',
+        dividend: c.dividend,
+        divisor: c.divisor,
+        finalAnswer: c.displayAnswer,
+        cyclic: {
+          nonRepeating: c.nonRepeating,
+          repeating: c.repeating,
+        },
+      }),
+    },
+    solution: {
+      answer: c.displayAnswer,
+      steps: [
+        '先用长除法算出重复出现的商位',
+        `非循环部分是 ${c.nonRepeating}，循环节是 ${c.repeating}`,
+      ],
+      explanation: `${c.dividend} ÷ ${c.divisor} 是循环小数，循环节是 ${c.repeating}`,
+    },
+    hints: ['先把竖式继续算到循环节第二次出现', '最后填写完整非循环部分和循环节'],
+    xpBase: 10 + (difficulty - 1) * 5,
+  };
 }
 
 function generateIntAdd(difficulty: number, id: string): Question {
@@ -799,7 +904,8 @@ export function generateVerticalCalc(params: GeneratorParams): Question {
     { tag: 'dec-add-sub', weight: 10, gen: () => generateDecimalAddSub(difficulty, id) },
     { tag: 'dec-mul', weight: 25, gen: () => generateDecimalMul(difficulty, id) },
     { tag: 'dec-div', weight: 30, gen: () => generateDecimalDiv(difficulty, id) },
-    { tag: 'approximate', weight: 20, gen: () => generateApproximate(difficulty, id) },
+    { tag: 'approximate', weight: 15, gen: () => generateApproximate(difficulty, id) },
+    { tag: 'cyclic-div', weight: 5, gen: () => generateCyclicLongDivision(difficulty, id) },
   ];
 
   return pickSubtype(entries, subtypeFilter);

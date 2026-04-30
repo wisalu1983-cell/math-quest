@@ -16,6 +16,16 @@ describe('practiceFailureDisplay', () => {
     expect(display.trainingFieldMistakes).toEqual([]);
   });
 
+  it('falls back for long division process failures without legacy carry wording', () => {
+    const display = getPracticeFailureDisplay({
+      failureReason: 'vertical-long-division-process',
+    });
+
+    expect(display.message).toBe('本题未通过：竖式过程有误。');
+    expect(display.message).not.toContain('进位');
+    expect(display.message).not.toContain('退位');
+  });
+
   it('explains multiplication process failures without exposing process values', () => {
     const detail: PracticeFailureDetail = {
       reason: 'vertical-multiplication-process',

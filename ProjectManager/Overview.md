@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-30（Phase 4 `BL-010` UI 审核稿已按用户确认收口；下一步进入正式代码实现）
+> 最后更新：2026-04-30（Phase 4 `BL-010` 已完成并通过 L2 QA；下一步进入 Phase 5 Release Gate）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.5** | 🟡 Phase 3 有条件完成，全量 QA 通过（Phase 1~3 L3 全量测试 44 PASS / 0 FAIL；真实设备证据发布后线上补验；Phase 4 `BL-010` Q1-Q7 已补齐，UI 审核稿已按 2026-04-30 用户确认收口，可进入 coding） | [Plan/v0.5/](Plan/v0.5/) |
+| **当前版本** | **v0.5** | ✅ Phase 4 `BL-010` 已完成并通过 L2 QA；下一步进入 Phase 5 Release Gate，处理 `ISSUE-069` 与版本级 L3 QA | [Plan/v0.5/](Plan/v0.5/) |
 | 上一版本 | v0.4 | ✅ 已发布（题目体验系统性修复；release gate 补测通过） | [Plan/v0.4/](Plan/v0.4/) |
 | 更早版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
 | 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
@@ -57,8 +57,8 @@
 - 🟡 Phase 3 剩余条件：真实 Android Chrome / iOS Safari 默认内置键盘证据发布后在线上环境验收，清单见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md)
 - ✅ v0.5 Phase 1~3 全量 QA 通过：L3 级 46 项用例，Vitest 59 files / 743 tests、Playwright 23 tests、build、npm audit 全部通过；Code Review PASS-WITH-NOTES；视觉 QA 12 截图 25 校验点 PASS。入口见 [`../QA/runs/2026-04-29-v05-full-regression/qa-summary.md`](../QA/runs/2026-04-29-v05-full-regression/qa-summary.md)
 - 🟡 `ISSUE-069` 已纳入 v0.5 Release Gate 前小修：A02 `reverse-round` 填空题答案口径冲突，作为 P1 correctness hotfix 处理，不并入 Phase 4 `BL-010` 竖式除法 UI 主线
-- 🟡 Phase 4 `BL-010` 子计划 Q1-Q7 已补齐，UI 审核稿已按 2026-04-30 用户确认收口：[`Plan/v0.5/phases/phase-4.md`](Plan/v0.5/phases/phase-4.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI审核稿.md`](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI审核稿.md)
-- ⏭️ 下一步：进入 `BL-010`（竖式除法 UI 化答题功能）正式代码实现；实现完成后按 Phase 4 L2 QA 与 Living Spec 回写流程收口
+- ✅ Phase 4 `BL-010` 已完成：长除法 UI 化答题生产实现、A03 current spec 回写和 L2 QA PASS-WITH-NOTES 已完成。入口见 [`Plan/v0.5/phases/phase-4.md`](Plan/v0.5/phases/phase-4.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) · [`../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md`](../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md)
+- ⏭️ 下一步：进入 v0.5 Phase 5 Release Gate；处理 `ISSUE-069`（A02 `reverse-round` 填空题答案口径冲突，P1 correctness hotfix），并执行版本级 L3 QA / 收口
 
 **入口**：
 

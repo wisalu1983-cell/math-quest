@@ -182,12 +182,13 @@ describe('Mental Arithmetic (口算速算)', () => {
 // ==================== Vertical Calc ====================
 describe('Vertical Calc (竖式笔算)', () => {
   describe('Normal (difficulty=5)', () => {
-    it('应包含除法题 (numeric-input)', () => {
+    it('应包含长除法 UI 题 (vertical-fill)', () => {
       const qs = genN(generateVerticalCalc, 5, 100);
       const divs = qs.filter(q => q.data.operation === '÷');
       expect(divs.length).toBeGreaterThan(0);
       for (const q of divs) {
-        expect(q.type).toBe('numeric-input');
+        expect(q.type).toBe('vertical-fill');
+        expect(q.data.longDivisionBoard?.mode).toBe('integer');
       }
     });
   });
@@ -958,27 +959,36 @@ describe('Vertical Calc - Decimal Div (小数除法)', () => {
   it('中档应生成小数÷整数除法题', () => {
     const qs = genN(generateVerticalCalc, 7, 400);
     const decDiv = qs.filter((q: any) =>
-      q.type === 'numeric-input' && q.prompt.includes('列竖式计算') &&
+      q.type === 'vertical-fill' && q.prompt.includes('列竖式计算') &&
       q.data.operation === '÷' &&
+      q.data.longDivisionBoard?.mode === 'decimal-dividend' &&
       (q.data.operands[0] % 1 !== 0 || q.data.operands[1] % 1 !== 0)
     );
     expect(decDiv.length).toBeGreaterThan(0);
+    for (const q of decDiv) {
+      expect(q.data.longDivisionBoard.rounds.length).toBeGreaterThan(0);
+    }
   });
 
   it('高档应生成除数是小数的除法题', () => {
     const qs = genN(generateVerticalCalc, 9, 400);
     const decDivDecDivisor = qs.filter((q: any) =>
-      q.type === 'numeric-input' && q.data.operation === '÷' &&
+      q.type === 'vertical-fill' && q.data.operation === '÷' &&
+      q.data.longDivisionBoard?.mode === 'decimal-divisor' &&
       q.data.operands[1] % 1 !== 0
     );
     expect(decDivDecDivisor.length).toBeGreaterThan(0);
+    for (const q of decDivDecDivisor) {
+      expect(q.data.longDivisionBoard.setupFields).toHaveLength(3);
+    }
   });
 
   it('高档 dec-div 不应残留隐藏 trainingFields（ISSUE-059）', () => {
     const qs = genN(generateVerticalCalc, 9, 400);
     const highDecDivs = qs.filter((q: any) =>
-      q.type === 'numeric-input' &&
+      q.type === 'vertical-fill' &&
       q.data.operation === '÷' &&
+      q.data.longDivisionBoard?.mode === 'decimal-divisor' &&
       q.data.operands[1] % 1 !== 0 &&
       q.solution.steps?.some((step: string) => step.includes('除数是小数'))
     );
@@ -1006,6 +1016,25 @@ describe('Vertical Calc - Approximate (取近似值)', () => {
     for (const q of approxQs) {
       expect(isNaN(Number(q.solution.answer))).toBe(false);
     }
+  });
+});
+
+describe('Vertical Calc - Cyclic Long Division (循环小数长除法)', () => {
+  it('高档 cyclic-div 应生成结构化循环小数长除法题', () => {
+    const q = generateVerticalCalc({
+      difficulty: 8,
+      id: 'cyclic-long-division',
+      subtypeFilter: 'cyclic-div',
+    });
+
+    expect(q.type).toBe('vertical-fill');
+    expect(q.data.operation).toBe('÷');
+    expect(q.data.longDivisionBoard?.mode).toBe('cyclic');
+    expect(q.data.longDivisionBoard?.resultFields).toEqual([
+      expect.objectContaining({ id: 'result-non-repeating' }),
+      expect.objectContaining({ id: 'result-repeating' }),
+    ]);
+    expect(q.solution.steps?.some((step: string) => step.includes('循环节'))).toBe(true);
   });
 });
 
@@ -1055,11 +1084,12 @@ describe('Vertical Calc - Dispatcher Distribution (调度器分布)', () => {
 
   it('中档整数 vertical-fill 应明显下降（小数接管主流）', () => {
     const qs = genN(generateVerticalCalc, 7, 1000);
-    const intVf = qs.filter((q: any) => {
-      if (q.type !== 'vertical-fill') return false;
-      if (q.data.multiplicationBoard?.mode === 'decimal') return false;
-      return q.data.decimalPlaces == null;
-    });
+      const intVf = qs.filter((q: any) => {
+        if (q.type !== 'vertical-fill') return false;
+        if (q.data.multiplicationBoard?.mode === 'decimal') return false;
+        if (q.data.longDivisionBoard) return false;
+        return q.data.decimalPlaces == null;
+      });
     expect(intVf.length / qs.length).toBeLessThan(0.25);
   });
 

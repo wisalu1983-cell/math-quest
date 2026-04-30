@@ -146,7 +146,7 @@ test('小数乘法训练格错误会在反馈面板展示用户值和正确值',
   });
   await submitButton.click({ force: true });
 
-  await expect(page.getByText('未通过原因：小数训练格有错误。')).toBeVisible();
+  await expect(page.getByText('未通过原因：本题未通过：小数训练格有误。')).toBeVisible();
   await expect(page.getByText('小数点移动位数错误')).toBeVisible();
   await expect(page.getByText('你填')).toBeVisible();
   await expect(page.getByText('正确是')).toBeVisible();

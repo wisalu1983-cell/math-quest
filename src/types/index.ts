@@ -89,6 +89,7 @@ export interface VerticalCalcData {
   decimalPlaces?: number;
   trainingFields?: TrainingField[];
   multiplicationBoard?: MultiplicationBoardData;
+  longDivisionBoard?: LongDivisionBoardData;
 }
 
 export interface MultiplicationBoardData {
@@ -99,6 +100,59 @@ export interface MultiplicationBoardData {
   operandDecimalPlaces?: [number, number];
   decimalPlaces?: number;
   finalAnswer?: string;
+}
+
+export type LongDivisionBoardMode =
+  | 'integer'
+  | 'decimal-dividend'
+  | 'decimal-divisor'
+  | 'approximation'
+  | 'cyclic';
+
+export interface LongDivisionSetupField {
+  id: string;
+  label: string;
+  expected: string;
+  allowDecimal: boolean;
+  mustBeInteger?: boolean;
+}
+
+export interface LongDivisionResultField {
+  id: string;
+  label: string;
+  expected: string;
+  allowDecimal: boolean;
+}
+
+export interface LongDivisionRoundData {
+  index: number;
+  currentPartialDividend: string;
+  quotientDigit: string;
+  product: string;
+  remainder: string;
+  nextPartialDividend?: string;
+  broughtDownDigit?: string;
+}
+
+export interface LongDivisionBoardData {
+  mode: LongDivisionBoardMode;
+  originalDividend: string;
+  originalDivisor: string;
+  workingDividend: string;
+  workingDivisor: string;
+  finalAnswer: string;
+  quotientStartColumn: number;
+  quotientDecimalAfter: number | null;
+  boardColumnCount: number;
+  rounds: LongDivisionRoundData[];
+  expectedByKey: Record<string, string>;
+  setupFields?: LongDivisionSetupField[];
+  resultFields?: LongDivisionResultField[];
+  cyclic?: {
+    nonRepeating: string;
+    repeating: string;
+    displayText: string;
+  };
 }
 
 export interface VerticalCalcStep {
@@ -128,6 +182,7 @@ export type PracticeFailureReason =
   | 'wrong-answer'
   | 'vertical-process'
   | 'vertical-multiplication-process'
+  | 'vertical-long-division-process'
   | 'vertical-training-field';
 export type PracticeProcessWarning = 'vertical-process-warning';
 

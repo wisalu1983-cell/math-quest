@@ -1,6 +1,6 @@
 # Backlog（未激活需求 / 想法 / 延期候选）
 
-> 最后更新：2026-04-30（新增 `BL-014` 乘法竖式迭代候选；新增 `BL-015` v0.6 开发 / QA 子 agent 试点候选；新增 `BL-016` master lint 债清理候选）
+> 最后更新：2026-04-30（新增 `BL-014` 乘法竖式迭代候选；新增 `BL-015` v0.6 开发 / QA 子 agent 试点候选；新增 `BL-016` master lint 债清理候选；新增 `BL-017` 题型生成器硬编码样例池审计候选）
 > 角色：**未激活的需求 / 想法 / 方向 / 延期候选**集中地。只有被正式纳入某个版本之后，条目才会展开为正式 Plan；已纳入当前版本但尚未收口的条目可暂存在本文件作为来源索引，版本收口时必须归档或回流。
 >
 > **与 `ISSUE_LIST.md` 的边界**：
@@ -121,6 +121,17 @@
   - 关键非测试风险：`src/components/SyncStatusIndicator.tsx` ref render access；`src/pages/CampaignMap.tsx` 条件调用 hook；`src/pages/RankMatchHub.tsx` render 中调用 `Date.now()`；`src/sync/merge-flow.ts` 非 hook 函数调用 `useRemoteAccount()`。
 - **初步分流**：先把 lint 债拆成“规则配置 / 测试 helper 类型化 / React Hooks 结构性修复 / 小型风格修复”四组；优先处理可能影响运行语义的 React Hooks 类问题，再集中收敛测试 helper 的 `any`，避免在业务功能 PR 中混合大量低风险机械改动。
 - **期望方向**：恢复 `npm run lint` 作为可信质量门；后续新增功能不再继承 master 上的 lint 噪音。
+
+---
+
+### BL-017 · 题型生成器硬编码样例池审计与循环小数生成优化
+
+- **来源**：2026-04-30 Phase 4 长除法开发收口 review；发现 `src/engine/generators/vertical-calc.ts` 的 `generateCyclicLongDivision` 仅有 3 个硬编码循环小数样例。
+- **背景**：当前 3 个固定样例可支撑 v0.5 初版功能可用性，但学生反复练习时很快会遇到重复题。用户要求不要只局部修 `cyclic-div`，需先检查本软件所有题型是否也存在类似“有限硬编码样例池”问题，再决定是在 v0.5 顺手修掉，还是升格为单独优化任务。
+- **类别**：题目质量 / 生成器审计 / 去重与样本丰富度
+- **状态**：候选（先做全题型审计；v0.5 Release Gate 前根据审计结论决定是否纳入当前版本，或延期为独立优化任务）
+- **初步分流**：先审计 `src/engine/generators/` 下所有题型生成器、campaign 题型过滤入口、固定样例 / fallback 样例、有限枚举池和高频重复风险；输出题型清单、重复风险等级、是否影响当前 v0.5 验收。若仅 `cyclic-div` 风险高且修复面小，可在 v0.5 hardening 中用反向构造法生成循环小数；若多题型存在系统性问题，则升格为独立生成器样本质量优化任务。
+- **期望方向**：题型生成器避免依赖过小硬编码池；需要硬编码 fallback 的地方保留为异常兜底，正常路径应使用可控随机生成并满足难度、可验收与重复率约束。
 
 ---
 

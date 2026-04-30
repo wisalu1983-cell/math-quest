@@ -3,8 +3,8 @@
 > 功能 slug：`a03-vertical-calc`
 > 当前状态：已实施并作为 A03 竖式笔算当前权威行为生效
 > 首次建立：2026-04-26
-> 最近确认：2026-04-29
-> 最近来源：`ProjectManager/Plan/v0.5/phases/phase-3.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`、`QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`、`QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md`、当前代码入口
+> 最近确认：2026-04-30
+> 最近来源：`ProjectManager/Plan/v0.5/phases/phase-4.md`、`ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`、`QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md`、当前代码入口
 
 ---
 
@@ -27,15 +27,19 @@
 - 商余数、multi-blank、trainingFields 按各自标准答案长度自动进入下一 slot；普通单答案、表达式 / 等式和最终答数不自动换格。
 - 多行乘法竖式的部分积 / 总积按实际笔算从右侧低位到左侧高位输入；桌面 `Tab` / `Shift+Tab` 顺序必须与内置键盘 slot 顺序一致。
 - 多行乘法竖式最终答案正确但部分积 / 合计过程格错误时，仍判未通过，并展示过程类别文案；小数乘法训练格错误时展示训练格类型、用户值和正确值。
+- A03 除法题可通过显式 `longDivisionBoard` 进入长除法 UI；旧 `numeric-input + operation='÷'` 且无该字段的历史题继续走旧路径，不要求迁移。
+- 长除法 UI 覆盖整数除法、小数 ÷ 整数、小数 ÷ 小数、取近似和循环小数结构化输入；小数 ÷ 小数先完成扩倍字段，循环小数填写完整非循环部分和循环节。
+- 长除法核心过程格按“商位 -> 乘积 -> 余数 / 落位或最终余数”顺序注册 slot；所有可见过程格与结构化字段均正确才通过。
+- 长除法过程格错误使用 `failureReason='vertical-long-division-process'` 与 `failureDetail.source='long-division'`；反馈只展示类别，不暴露中间过程正确值。
 - `failureDetail` 为可选结构化错因对象，不触发存档版本升级；当前反馈、错题本、历史记录底层数据和同步合并必须保留该字段，历史记录 UI 不展示错因。
 
 ## 2. 当前行为
 
 ### 2.1 适用范围
 
-- 本 current spec 约束 A03 `vertical-calc` 的 `vertical-fill` 交互与判定，尤其是单行 `+` / `-` / `×` 的过程格。
+- 本 current spec 约束 A03 `vertical-calc` 的 `vertical-fill` 交互与判定，包含单行 `+` / `-` / `×` 过程格、多行乘法竖式和长除法 UI。
 - 多行乘法竖式仍由 `src/components/MultiplicationVerticalBoard.tsx` 承载。
-- 除法本轮不新增进位 / 退位过程格策略。
+- 长除法竖式由 `src/components/LongDivisionBoard.tsx` 承载，并通过 `VerticalCalcBoard` 内部数据分支挂载。
 
 ### 2.2 样本准入与过滤
 
@@ -78,7 +82,7 @@
   - `passWithProcessWarning`
 - `failProcess` 在竖式板内先显示本地复盘，再进入统一失败结果 UI。
 - `passWithProcessWarning` 不在竖式板标红，只在统一成功结果 UI 显示“进位/退位过程有误，但本题答案正确，已通过”。
-- `QuestionAttempt`、`HistoryQuestionRecord`、`WrongQuestion` 可带 `failureReason?: 'wrong-answer' | 'vertical-process' | 'vertical-multiplication-process' | 'vertical-training-field'`。
+- `QuestionAttempt`、`HistoryQuestionRecord`、`WrongQuestion` 可带 `failureReason?: 'wrong-answer' | 'vertical-process' | 'vertical-multiplication-process' | 'vertical-long-division-process' | 'vertical-training-field'`。
 - `QuestionAttempt`、`HistoryQuestionRecord`、`WrongQuestion` 可带 `failureDetail?: PracticeFailureDetail`；该字段为可选，不 bump 存档版本。
 - `processWarning='vertical-process-warning'` 只用于当前反馈面板，不持久化为错题原因。
 - 多行乘法竖式提交使用结构化 `VerticalCalcCompletePayload`，不再只返回 `boolean`；`classifyMultiplicationErrors()` 负责区分最终答案错、过程格错、训练格错和过程格 + 训练格同时错。
@@ -87,8 +91,23 @@
 - 最终答案正确但小数乘法训练格错误时，统一失败面板展示训练格明细，例如“小数点移动位数错误：你填 1，正确是 2”；用户值为空时显示“未填写”。
 - 错题本展示结构化错因摘要和训练格明细；历史记录 UI 不展示错因，但底层记录可保留 `failureReason` / `failureDetail` 供未来分析。
 - 旧错题只有 `failureReason='vertical-process'` 且没有 `failureDetail` 时，仍显示旧文案 fallback，不白屏、不显示技术字段。
+- 长除法过程错因即使缺少 `failureDetail`，fallback 也必须显示“本题未通过：竖式过程有误。”，不得落到 legacy 进位 / 退位文案。
 
-### 2.6 内置计算键盘
+### 2.6 长除法 UI
+
+- 新生成的 A03 除法 `vertical-fill` 题通过 `data.longDivisionBoard` 显式声明长除法任务；`VerticalCalcBoard` 先识别多行乘法板，再识别长除法板，最后才走 legacy 单行竖式。
+- `LongDivisionBoardData` 至少包含原始被除数 / 除数、工作被除数 / 除数、最终答案、商位起点、商小数点位置、板宽、轮次数组、标准答案字典；字段为题目数据的一部分，不依赖 UI 临时推断。
+- 每轮长除法标准过程包含当前工作数、商位、乘积、余数，以及落位 / 补 0 后的新工作数；最后一轮没有新工作数时填写最终余数。
+- 输入顺序为前置扩倍字段（如有） -> 每轮商位、乘积、余数与落位 / 最终余数 -> 后置结果字段（如有）。桌面 `Tab` 顺序与内置键盘 slot 顺序一致。
+- 整数除法与小数 ÷ 整数直接进入长除法板；商的小数点由系统预置，不作为学生输入格。
+- 小数 ÷ 小数先填写扩倍倍数、转换后除数、转换后被除数；转换后除数必须可归一为整数。中档转换错在本地提示并停留，高档转换错直接进入结构化失败反馈。
+- 取近似题计算到保留位后一位，并在长除法板后填写“保留 X 位小数”结果字段。
+- 循环小数题填写完整非循环部分和循环节；生产入口为高档 `cyclic-div`，循环节最长 3 位，超限样例不进入该结构化题池。
+- 长除法过程格错误只展示类别，例如商位判断、乘积、落位后新工作数、最终余数等；扩倍字段、取近似字段、循环字段属于结构化字段错误，可展示用户值和正确值。
+- 长除法板接入 Phase 3 内置键盘、slot 级 `enabledKeys` / `sanitizeInput` / `shouldAutoAdvance`；过程格数字键有效，结构化小数字段允许小数点。
+- 375x812、390x844 与桌面视口均需有 QA 证据；移动端键盘固定底部时非键盘区高度比例需不低于 60%。
+
+### 2.7 内置计算键盘
 
 - 输入基础设施由 `src/pages/practice-math-keyboard.ts`、`src/pages/PracticeMathKeyboard.tsx` 和 `Practice.tsx` 的 slot 注册共同承载；题型组件只声明输入槽位、当前值、可用按键、sanitize 和 setter。
 - 移动端 / 触摸设备默认走内置键盘，真实输入控件使用 `readOnly=true` 与 `inputMode='none'`，避免主动弹系统键盘；桌面保留真实输入焦点与硬键盘输入，内置键盘作为辅助面板。
@@ -106,7 +125,7 @@
 - QA 已验证 390x844 手机模拟下非键盘区高度占比为 74.6%，满足答题区高度占比 ≥60%。
 - 真实 Android Chrome / iOS Safari 默认不弹系统键盘证据因本地局域网访问不稳定，已转发布后线上环境验收；清单见 `QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`。
 
-### 2.7 视觉可读性
+### 2.8 视觉可读性
 
 - `VerticalCalcBoard` legacy single-line board 中，已知操作数、运算符、小数点和答案输入内容都属于主体信息，不得复用 `.digit-cell-empty` 的 `text-text-3` 占位色。
 - 空白对齐格继续使用 `.digit-cell-empty`，保留 `text-text-3` 的低强调占位样式。
@@ -142,6 +161,9 @@
 | v0.5 Phase 3 failure subplan | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md` | 结构化错因、反馈面板、错题本、旧数据 fallback、同步合并 |
 | Phase 3 QA | `QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md` | Phase 3 QA 有条件通过；test/build/e2e/scoped lint/audit/diff check 通过；真实设备证据发布后补验 |
 | Phase 3 keyboard auto-advance QA | `QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md` | L2 QA 通过；TDD red-green、全量 Vitest、全量 Playwright、scoped ESLint、build、PM sync check 通过；编辑回填保留观察 |
+| v0.5 Phase 4 subplan | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md` | 长除法 UI 化答题范围、轮次模型、错因边界、响应式约束和 QA 映射 |
+| Phase 4 long division QA | `QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md` | L2 QA PASS-WITH-NOTES；长除法生产实现、375 / 390 / 桌面视觉证据、全量 Vitest、全量 Playwright、build、scoped ESLint 通过 |
+| 长除法实现 | `src/engine/longDivision.ts`、`src/components/LongDivisionBoard.tsx`、`src/engine/generators/vertical-calc.ts` | 长除法数据生成、过程判定、生产 UI 挂载和 A03 除法生成器入口 |
 | BL-009 诊断脚本 | `scripts/diagnose-bl009-vertical-samples.mjs` | 固定 seed 抽样诊断与 P0/P1 口径 |
 | BL-009 生成器测试 | `src/engine/generators/vertical-calc.phase3.test.ts` | 低档乘法过滤、低档一位除数整数除法 D0 过滤和 D2/D3 主力分布断言 |
 | 策略代码 | `src/engine/vertical-calc-policy.ts`、`src/engine/vertical-calc-policy.test.ts` | 三档策略、跳格、提交、结果分类 |
@@ -163,3 +185,4 @@
 | 2026-04-28 | `ProjectManager/Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md` | v0.5 Phase 2 关闭 `BL-009` 第一批 P0：低档乘法过滤 `2位数 × 1位数`；低档一位除数整数除法过滤 D0，并以 D2/D3 为主 |
 | 2026-04-29 | `ProjectManager/Plan/v0.5/phases/phase-3.md`、`QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md` | v0.5 Phase 3 有条件完成：统一内置计算键盘、槽位级 sanitize、移动端默认内置键盘策略、结构化 `failureDetail`、多行乘法过程 / 训练格错因、错题本展示和同步合并保留已落地；真实 Android / iOS 设备证据发布后线上补验 |
 | 2026-04-29 | `ProjectManager/Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`、`QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md` | Phase 3 `BL-011` follow-up 完成：内置键盘固定视口底部；slot 级 `shouldAutoAdvance` 生效；商余数、多空、训练格自动换格；多行乘法部分积 / 总积右到左；桌面 Tab 顺序与 slot 顺序一致 |
+| 2026-04-30 | `ProjectManager/Plan/v0.5/phases/phase-4.md`、`QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md` | Phase 4 `BL-010` 完成：A03 除法题显式长除法 UI、扩倍 / 取近似 / 循环结构化字段、长除法过程错因、375 / 390 / 桌面视觉证据已落地；全仓 lint 历史债与真实设备补验保留为后续风险 |

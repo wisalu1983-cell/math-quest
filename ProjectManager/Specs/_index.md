@@ -32,7 +32,7 @@
 | `2026-04-14-difficulty-standard.md` | **生效** | `difficulty=5` 的锚点定义：上海五年级小学毕业生正常考试应做对 |
 | `2026-04-08-generator-improvements.md` | **生效（部分落地）** | 基于 280 道真题校准的生成器盲区清单 |
 | `2026-04-08-reference-bank-extraction-design.md` | 生效 | 真题库提取方法和覆盖策略 |
-| `a03-vertical-calc/current.md` | **生效（current spec；v0.5 Phase 3 已回写）** | A03 `vertical-fill` 当前权威行为：低档非 0 过程格必填且过程错不通过；中档答案对即通过且只给当前题过程提示；高档不显示过程格；单行竖式已知操作数 / 运算符使用高对比正文色；低档乘法过滤 `2位数 × 1位数`；低档一位除数整数除法过滤 D0，并以 D2/D3 为主；移动端计算输入默认内置键盘且固定视口底部；slot `enabledKeys` + `sanitizeInput` 是按键可用与输入合法性的权威；slot `shouldAutoAdvance` 是自动换格声明入口；商余数 / multi-blank / trainingFields 按答案长度自动换格；多行乘法部分积 / 总积右到左输入且桌面 Tab 顺序一致；多行乘法过程格 / 小数训练格结构化错因进入反馈面板和错题本；`failureDetail` 可选且同步合并保留；真实 Android / iOS 设备证据发布后线上补验 |
+| `a03-vertical-calc/current.md` | **生效（current spec；v0.5 Phase 4 已回写）** | A03 `vertical-fill` 当前权威行为：低档非 0 过程格必填且过程错不通过；中档答案对即通过且只给当前题过程提示；高档不显示单行进位 / 退位过程格；单行竖式已知操作数 / 运算符使用高对比正文色；低档乘法过滤 `2位数 × 1位数`；低档一位除数整数除法过滤 D0，并以 D2/D3 为主；移动端计算输入默认内置键盘且固定视口底部；slot `enabledKeys` + `sanitizeInput` 是按键可用与输入合法性的权威；slot `shouldAutoAdvance` 是自动换格声明入口；商余数 / multi-blank / trainingFields 按答案长度自动换格；多行乘法部分积 / 总积右到左输入且桌面 Tab 顺序一致；多行乘法过程格 / 小数训练格结构化错因进入反馈面板和错题本；A03 除法题可通过显式 `longDivisionBoard` 进入长除法 UI，覆盖整数除法、小数 ÷ 整数、小数 ÷ 小数、取近似与高档 `cyclic-div` 循环小数结构化输入；长除法过程错因使用 `vertical-long-division-process` 且不泄露中间正确值；`failureDetail` 可选且同步合并保留；真实 Android / iOS 设备证据发布后线上补验 |
 | `2026-04-09-a03-block-b-design.md` | **生效（已落地）** | A03 VerticalCalcBoard 组件设计 |
 | `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 2026-04-18 二次重排后 A03+ 不进入代码实施；设计规格文件保留以备未来重启时参考；本阶段任何改动都**不得**再引用其作为生效规格 |
 | `2026-04-22-审题原则总则.md` | **生效** | A3 审题原则总则：审题步骤定义（A/B/B'/C/D）、双机制设计原则、适用题型矩阵；作为 4-2/4-3/4-4 设计依据 |
@@ -64,7 +64,7 @@
 |------|------|---------|
 | `2026-04-14-ui-redesign-spec.md` | **生效**（阳光版 v5 已批准） | 全产品视觉语言 + 组件规范；字号下限 11px；关卡卡片固定 96px |
 | `2026-04-18-rank-match-phase3-implementation-spec.md` | **生效（实施级；2026-04-18 落盘）** | Phase 3 段位赛 UI 信息架构：新增 `/rank-match` / `/rank-match/session` / `/rank-match/game-result` / `/rank-match/match-result` 四个页面；Home 段位赛入口需独立卡片化（替代现有"进阶训练"里的占位文案）；段位徽标色需作为 token 进入 `globals.css`，不允许在组件里写死 |
-| `a03-vertical-calc/current.md` | **生效（current spec；v0.5 Phase 3 已回写）** | A03 竖式板过程格显示 / 跳格 / 本地复盘 / 统一结果 UI / 单行竖式操作数高对比 / 低档竖式样本过滤 / 内置键盘固定底部 / 自动换格 / 多行乘法右到左输入 / 结构化错因反馈的当前行为入口 |
+| `a03-vertical-calc/current.md` | **生效（current spec；v0.5 Phase 4 已回写）** | A03 竖式板过程格显示 / 跳格 / 本地复盘 / 统一结果 UI / 单行竖式操作数高对比 / 低档竖式样本过滤 / 内置键盘固定底部 / 自动换格 / 多行乘法右到左输入 / 结构化错因反馈 / 长除法 UI 的当前行为入口 |
 | `2026-04-18-a03-block-b-plus-design.md` | **历史参考（本阶段废弃）** | 过程格错误提示 UI 方案本阶段不落地；文件保留以备未来重启时参考 |
 | `dev-tool-panel/current.md` | **生效（已实施；current spec 试点）** | Dev Tool Panel 当前 UI 入口为 DEV / 显式 dev 构建下的右下 FAB + 右侧抽屉；纯净生产版不得显示入口或包含 dev-tool chunk |
 

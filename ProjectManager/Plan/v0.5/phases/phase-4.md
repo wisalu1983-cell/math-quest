@@ -3,7 +3,7 @@
 > 所属版本：v0.5
 > 创建：2026-04-29
 > 所属主线：[../README](../README.md)
-> 状态：🟡 `BL-010` Q1-Q7 已补齐；UI 审核稿已按 2026-04-30 用户确认收口，可进入 coding
+> 状态：✅ 完成（`BL-010` 生产实现与 Phase 4 L2 QA 已通过；保留全仓 lint 历史 RISK 与真实设备线上补验 DEFERRED）
 
 ---
 
@@ -61,7 +61,7 @@ Phase 4 承接 `BL-010` 竖式除法 UI 化答题功能。本阶段目标是把 
 
 | 子计划 | 目标 | 状态 | 备注 |
 |---|---|---|---|
-| [`BL-010` 竖式除法 UI 化答题](../subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) | 写明长除法轮次模型、输入格顺序、训练格、判定、错因、UI 容量、测试与 QA 映射 | 🟡 进行中 | Q1-Q7 已补齐；UI 审核稿已按 2026-04-30 用户确认收口，可进入 coding |
+| [`BL-010` 竖式除法 UI 化答题](../subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) | 长除法轮次模型、输入格顺序、训练格、判定、错因、UI 容量、测试与 QA 映射 | ✅ 完成 | 生产实现已落地；L2 QA 见 [`../../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md`](../../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md) |
 
 ## 决策门
 
@@ -91,6 +91,8 @@ Phase 4 承接 `BL-010` 竖式除法 UI 化答题功能。本阶段目标是把 
 
 ## 当前状态
 
-Phase 4 阶段入口已建立，`BL-010` 子计划 Q1-Q7 已补齐：长除法轮次模型、数据结构、输入格顺序、题型覆盖样例、错因枚举、UI 容量验证和测试映射已写入子计划。UI 审核稿已按 2026-04-30 用户确认收口，当前预览版暂无其他问题。
+Phase 4 已完成：`BL-010` 长除法生产实现已落地，A03 除法题通过显式 `longDivisionBoard` 挂载生产 `LongDivisionBoard`，覆盖整数除法、小数 ÷ 整数、小数 ÷ 小数、取近似和高档 `cyclic-div` 循环小数结构化输入。Phase 4 L2 QA 结论为 PASS-WITH-NOTES，入口见 [`../../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md`](../../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md)。
 
-下一步：进入 `BL-010` 正式代码实现；实现完成后按 Phase 4 L2 QA 和 Living Spec 回写流程收口。
+验证边界：`npm test`、`npm run build`、全量 Playwright、scoped ESLint、`npm audit --audit-level=moderate`、`git diff --check` 通过；全仓 `npm run lint` 仍为既有 146 problems 基线，不宣称全仓 lint 通过；真实 Android Chrome / iOS Safari 设备证据沿 Phase 3 口径发布后线上补验。
+
+下一步：进入 v0.5 Phase 5 Release Gate，处理 `ISSUE-069` P1 correctness hotfix，并执行版本级 L3 QA / 收口。
