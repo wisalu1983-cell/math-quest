@@ -55,6 +55,11 @@ __pycache__/
 _staging/
 .worktrees/
 
+# Project-wide temporary artifacts
+.agent-tmp/*
+!.agent-tmp/.gitkeep
+.codex-tmp/
+
 # Generated test scripts (auto-generated, not hand-written)
 test-*.cjs
 test_recon.py

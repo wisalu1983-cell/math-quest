@@ -15,6 +15,7 @@
 - **默认 worktree 位置**：仓库根目录 `.worktrees/`；当前分支为 `master` / `main` 且用户未要求直接改当前工作树时，直接使用 `.worktrees/`，不单独询问目录位置。
 - **worktree 安全前置**：创建项目前先确认 `.worktrees/` 已被 `.gitignore` 忽略。
 - **worktree 文档前置**：在 worktree 内执行计划或开发文档前，确认该计划引用的 `ProjectManager / Specs / Reports / subplans / QA` 文档也存在于当前 worktree；缺失时先同步文档，或声明以主工作区文档为 source of truth，并在收尾记录差异。
+- **临时产物目录**：有明确项目规则的临时 / 过程产物按专门规则走，例如正式 QA 原始截图、JSON、trace 等仍按 QA 规则放入 `QA/runs/**/artifacts/` 或 `QA/artifacts/`。没有明确规则的 agent 临时图片、截图、JSON、log、一次性脚本输出统一写入 `.agent-tmp/<scope>/`；禁止新增 repo 根散落临时文件或未忽略临时目录。
 - **PM 写入顺序**：先改权威源，再按影响回写 `Overview.md`。详细路由只在需要写 `Plan / Spec / Issue / Backlog / QA / Overview` 时读取 `ProjectManager/Plan/rules/pm-write-routing.md`。
 - **协作文档命名**：版本计划、子计划、开发文档、讨论样题等文件名在日期后优先使用中文可读主题；专用术语、TopicId、Phase / BL / ISSUE 编号等代号可保留原文；固定版本骨架文件除外。
 
