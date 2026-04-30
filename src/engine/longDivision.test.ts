@@ -200,7 +200,7 @@ describe('longDivision engine', () => {
       source: 'long-division',
       message: '本题未通过：竖式过程有误。',
       processCategories: [
-        { code: 'long-division-quotient', label: '商位判断错误' },
+        { code: 'long-division-round-0-quotient', label: '第 1 轮商位错误' },
       ],
       trainingFieldMistakes: [],
     });
@@ -230,7 +230,7 @@ describe('longDivision engine', () => {
       source: 'long-division',
       message: '本题未通过：竖式过程和结构化字段都有误。',
       processCategories: [
-        { code: 'long-division-quotient', label: '商位判断错误' },
+        { code: 'long-division-round-0-quotient', label: '第 1 轮商位错误' },
       ],
       trainingFieldMistakes: [
         {

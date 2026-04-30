@@ -322,10 +322,15 @@ function fieldAllowsDecimal(board: LongDivisionBoardData, key: string): boolean 
 }
 
 function categoryForRoundKey(key: string): { code: string; label: string } {
-  if (key.endsWith('-quotient')) return { code: 'long-division-quotient', label: '商位判断错误' };
-  if (key.endsWith('-product')) return { code: 'long-division-product', label: '乘积填写错误' };
-  if (key.endsWith('-next')) return { code: 'long-division-next-partial', label: '落位后新工作数错误' };
-  return { code: 'long-division-remainder', label: '相减余数错误' };
+  const match = /^round-(\d+)-(quotient|product|next|remainder)$/.exec(key);
+  if (!match) return { code: key, label: '结构化字段错误' };
+
+  const round = Number(match[1]) + 1;
+  const kind = match[2];
+  if (kind === 'quotient') return { code: `long-division-${key}`, label: `第 ${round} 轮商位错误` };
+  if (kind === 'product') return { code: `long-division-${key}`, label: `第 ${round} 轮乘积错误` };
+  if (kind === 'next') return { code: `long-division-${key}`, label: `第 ${round} 轮余数与落位错误` };
+  return { code: `long-division-${key}`, label: `第 ${round} 轮最终余数错误` };
 }
 
 function structuredLabelForKey(board: LongDivisionBoardData, key: string): string {
