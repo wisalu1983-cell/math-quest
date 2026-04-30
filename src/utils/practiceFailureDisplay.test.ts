@@ -20,7 +20,7 @@ describe('practiceFailureDisplay', () => {
     const detail: PracticeFailureDetail = {
       reason: 'vertical-multiplication-process',
       source: 'vertical-multiplication',
-      message: '你的最终答案是对的，但竖式里的计算步骤有错误。把步骤也写对，才能通过哦。',
+      message: '本题未通过：竖式过程有误。',
       processCategories: [
         { code: 'multiplication-partial-product', label: '部分积填写错误' },
       ],
@@ -31,7 +31,7 @@ describe('practiceFailureDisplay', () => {
       failureDetail: detail,
     });
 
-    expect(display.message).toBe('你的最终答案是对的，但竖式里的计算步骤有错误。把步骤也写对，才能通过哦。');
+    expect(display.message).toBe('本题未通过：竖式过程有误。');
     expect(display.processCategories).toEqual([
       { code: 'multiplication-partial-product', label: '部分积填写错误' },
     ]);
@@ -42,7 +42,7 @@ describe('practiceFailureDisplay', () => {
     const detail: PracticeFailureDetail = {
       reason: 'vertical-training-field',
       source: 'vertical-multiplication',
-      message: '小数训练格有错误。',
+      message: '本题未通过：小数训练格有误。',
       trainingFieldMistakes: [
         {
           code: 'decimal-move',

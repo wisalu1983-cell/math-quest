@@ -630,7 +630,7 @@ function LegacyVerticalCalcBoard({ data, difficulty, onComplete }: Props) {
 
       {(showMissingProcessWarning || submitWarning) && (
         <div className="w-full rounded-xl border-2 border-warning bg-warning-lt px-4 py-3 text-center text-sm font-black" style={{ color: '#7A5C00' }}>
-          请把非 0 的进位/退位格填完整，再提交
+          非 0 的进位/退位格未填完整
         </div>
       )}
 

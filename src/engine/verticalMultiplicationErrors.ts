@@ -1,7 +1,8 @@
 import type { PracticeFailureDetail, PracticeFailureReason, VerticalCalcCompletePayload } from '@/types';
 import { isEquivalentFinalAnswer } from './verticalMultiplication';
 
-const PROCESS_FAILURE_MESSAGE = '你的最终答案是对的，但竖式里的计算步骤有错误。把步骤也写对，才能通过哦。';
+const PROCESS_FAILURE_MESSAGE = '本题未通过：竖式过程有误。';
+const TRAINING_FAILURE_MESSAGE = '本题未通过：小数训练格有误。';
 
 const trainingLabels: Record<string, string> = {
   'operand-a-decimal-places': '被乘数小数位数错误',
@@ -96,7 +97,7 @@ export function classifyMultiplicationErrors(
   const detail: PracticeFailureDetail = {
     reason,
     source: 'vertical-multiplication',
-    message: uniqueProcessCategories.length > 0 ? PROCESS_FAILURE_MESSAGE : '小数训练格有错误。',
+    message: uniqueProcessCategories.length > 0 ? PROCESS_FAILURE_MESSAGE : TRAINING_FAILURE_MESSAGE,
     processCategories: uniqueProcessCategories,
     trainingFieldMistakes,
   };

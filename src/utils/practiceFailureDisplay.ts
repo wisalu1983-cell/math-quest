@@ -19,11 +19,15 @@ export interface PracticeFailureDisplay {
 
 function legacyMessage(reason?: PracticeFailureReason | null): string {
   if (reason === 'vertical-process') return '进位/退位格填写错误';
-  if (reason === 'vertical-multiplication-process') {
-    return '你的最终答案是对的，但竖式里的计算步骤有错误。把步骤也写对，才能通过哦。';
-  }
-  if (reason === 'vertical-training-field') return '小数训练格有错误。';
+  if (reason === 'vertical-multiplication-process') return '本题未通过：竖式过程有误。';
+  if (reason === 'vertical-training-field') return '本题未通过：小数训练格有误。';
   return '';
+}
+
+function normalizeFailureMessage(message: string): string {
+  if (message.includes('把步骤' + '也写对')) return '本题未通过：竖式过程有误。';
+  if (message === '小数训练格有错误。') return '本题未通过：小数训练格有误。';
+  return message;
 }
 
 function formatTrainingMistake(mistake: TrainingFieldMistake): DisplayTrainingFieldMistake {
@@ -39,7 +43,7 @@ function formatTrainingMistake(mistake: TrainingFieldMistake): DisplayTrainingFi
 
 export function getPracticeFailureDisplay(input: FailureDisplayInput): PracticeFailureDisplay {
   const detail = input.failureDetail;
-  const message = detail?.message || legacyMessage(input.failureReason);
+  const message = normalizeFailureMessage(detail?.message || legacyMessage(input.failureReason));
   const processCategories = detail?.processCategories ?? [];
   const trainingFieldMistakes = (detail?.trainingFieldMistakes ?? []).map(formatTrainingMistake);
 

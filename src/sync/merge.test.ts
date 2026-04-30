@@ -275,7 +275,7 @@ describe('mergeWrongQuestions', () => {
       failureDetail: {
         reason: 'vertical-training-field',
         source: 'vertical-multiplication',
-        message: '小数训练格有错误。',
+        message: '本题未通过：小数训练格有误。',
         trainingFieldMistakes: [
           {
             code: 'decimal-move',

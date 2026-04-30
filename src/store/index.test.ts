@@ -192,7 +192,7 @@ describe('useSessionStore.submitAnswer vertical process failure', () => {
     const failureDetail = {
       reason: 'vertical-multiplication-process' as const,
       source: 'vertical-multiplication' as const,
-      message: '你的最终答案是对的，但竖式里的计算步骤有错误。把步骤也写对，才能通过哦。',
+      message: '本题未通过：竖式过程有误。',
       processCategories: [
         { code: 'multiplication-partial-product', label: '部分积填写错误' },
       ],
