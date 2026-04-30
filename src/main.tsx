@@ -4,6 +4,7 @@ import '@/styles/globals.css'
 import 'katex/dist/katex.min.css'
 import App from './App.tsx'
 import A03PlusComparisonPreview from './previews/A03PlusComparisonPreview.tsx'
+import LongDivisionUiReviewPreview from './previews/LongDivisionUiReviewPreview.tsx'
 import MultiplicationVerticalBoardPreview from './previews/MultiplicationVerticalBoardPreview.tsx'
 
 const searchParams = new URLSearchParams(window.location.search)
@@ -11,6 +12,8 @@ const previewPage = import.meta.env.DEV ? searchParams.get('preview') : null
 const rootPage =
   previewPage === 'a03plus'
     ? <A03PlusComparisonPreview />
+    : previewPage === 'longdiv'
+      ? <LongDivisionUiReviewPreview />
     : previewPage === 'mult'
       ? <MultiplicationVerticalBoardPreview />
       : <App />

@@ -13,6 +13,7 @@ interface Props {
   activeSlotId: string | null;
   onActiveSlotChange: (slotId: string | null) => void;
   className?: string;
+  announceActiveSlot?: boolean;
 }
 
 function keyLabel(key: string): string {
@@ -75,6 +76,7 @@ export default function PracticeMathKeyboard({
   activeSlotId,
   onActiveSlotChange,
   className = '',
+  announceActiveSlot = true,
 }: Props) {
   const activeSlot = slots.find(slot => slot.id === activeSlotId) ?? slots[0] ?? null;
   if (!activeSlot) return null;
@@ -99,9 +101,11 @@ export default function PracticeMathKeyboard({
   const keyboard = (
     <div className={`pointer-events-none fixed inset-x-0 bottom-0 z-40 flex w-full justify-center px-3 pb-3 pt-2 safe-bottom ${className}`}>
       <div className="pointer-events-auto w-full max-w-lg">
-        <div className="sr-only" aria-live="polite" aria-atomic="true">
-          当前输入：{activeSlot.label}
-        </div>
+        {announceActiveSlot && (
+          <div className="sr-only" aria-live="polite" aria-atomic="true">
+            当前输入：{activeSlot.label}
+          </div>
+        )}
         <div
           className="rounded-[18px] border-2 border-border bg-card px-2.5 py-2.5 shadow-[0_2px_10px_rgba(0,0,0,.09)]"
           aria-label="计算输入键盘"
