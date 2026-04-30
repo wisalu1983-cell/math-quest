@@ -964,7 +964,11 @@ function replaceAtLeastOne(values: Record<string, string>, fields: FieldSpec[], 
   return true;
 }
 
-export default function LongDivisionUiReviewPreview() {
+interface LongDivisionUiReviewPreviewProps {
+  formal?: boolean;
+}
+
+export default function LongDivisionUiReviewPreview({ formal = false }: LongDivisionUiReviewPreviewProps = {}) {
   const [scenarioId, setScenarioId] = useState<ScenarioId>('integer-remainder');
   const [guidanceMode, setGuidanceMode] = useState<GuidanceMode>('medium');
   const [decimalDivisorVariant, setDecimalDivisorVariant] = useState<DecimalDivisorVariant>('integer');
@@ -1417,6 +1421,7 @@ export default function LongDivisionUiReviewPreview() {
   const cyclicAnswerPreview = scenario.id === 'cyclic'
     ? { nonRepeating: cyclicNonRepeatingValue, repeating: cyclicRepeatingValue }
     : null;
+  const showTrainingPanel = Boolean(scenario.trainingFields && (!formal || !conversionConfirmed));
   const conversionProcessHints = useMemo(() => {
     if (!scenario.setupFields || submitted || !conversionSubmitted) return [];
     return conversionFields.flatMap(field => {
@@ -1803,13 +1808,13 @@ export default function LongDivisionUiReviewPreview() {
               </div>
             </div>
 
-            {scenario.decimalHint && (
+            {!formal && scenario.decimalHint && (
               <div className="mx-auto mt-3 max-w-md rounded-xl border border-success-mid bg-success-lt px-3 py-2 text-center text-sm font-bold text-success">
                 {scenario.decimalHint}
               </div>
             )}
 
-            {boardLayout.id !== 'comfortable' && (
+            {!formal && boardLayout.id !== 'comfortable' && (
               <div className="mx-auto mt-2 max-w-md rounded-xl border border-primary/30 bg-primary-lt px-3 py-2 text-center text-xs font-black text-primary">
                 宽度自适应：{boardLayout.label} · 最小字号 {boardLayout.minFontPx}px
               </div>
@@ -1828,11 +1833,17 @@ export default function LongDivisionUiReviewPreview() {
       <div className="mx-auto flex w-full max-w-7xl flex-col gap-4">
         <header className="flex flex-col gap-3 rounded-[18px] border-2 border-border-2 bg-card px-4 py-4 shadow-[0_2px_10px_rgba(0,0,0,.08)] lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <p className="text-[12px] font-black uppercase text-primary">v0.5 Phase 4 · BL-010 UI Review</p>
-            <h1 className="mt-1 text-2xl font-black leading-tight text-text sm:text-3xl">竖式除法 UI 化答题审核稿</h1>
-            <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-text-2">
-              预览重点是核心板形态、输入顺序、扩展训练格、失败反馈和 375px 手机竖屏下的键盘共存。
+            <p className="text-[12px] font-black uppercase text-primary">
+              {formal ? 'v0.5 Phase 4 · Formal Prototype' : 'v0.5 Phase 4 · BL-010 UI Review'}
             </p>
+            <h1 className="mt-1 text-2xl font-black leading-tight text-text sm:text-3xl">
+              {formal ? '竖式除法正式版高保真原型' : '竖式除法 UI 化答题审核稿'}
+            </h1>
+            {!formal && (
+              <p className="mt-2 max-w-3xl text-sm font-semibold leading-relaxed text-text-2">
+                预览重点是核心板形态、输入顺序、扩展训练格、失败反馈和 375px 手机竖屏下的键盘共存。
+              </p>
+            )}
           </div>
           <div className="grid grid-cols-2 gap-2 sm:flex">
             <button
@@ -1863,11 +1874,11 @@ export default function LongDivisionUiReviewPreview() {
           </div>
         </header>
 
-        <section className="grid min-w-0 gap-4 lg:grid-cols-[14rem_minmax(0,1fr)_18rem]">
+        <section className={`grid min-w-0 gap-4 ${formal ? 'lg:grid-cols-[13rem_minmax(0,1fr)]' : 'lg:grid-cols-[14rem_minmax(0,1fr)_18rem]'}`}>
           <nav className="min-w-0 rounded-[18px] border-2 border-border-2 bg-card p-3 shadow-[0_2px_10px_rgba(0,0,0,.07)] lg:self-start">
             <div className="mb-3 flex items-center gap-2 text-sm font-black text-text">
               <MonitorSmartphone size={18} className="text-primary" aria-hidden="true" />
-              审核场景
+              {formal ? '题型类型' : '审核场景'}
             </div>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
               {scenarios.map(item => (
@@ -1900,17 +1911,19 @@ export default function LongDivisionUiReviewPreview() {
                 <p className="mt-2 text-sm font-bold text-text-2">{scenario.prompt}</p>
                 <p className="mt-1 text-3xl font-black text-text">{scenario.expression}</p>
               </div>
-              <div className="rounded-xl border-2 border-border bg-bg px-3 py-2 text-sm font-bold leading-relaxed text-text-2 sm:max-w-xs">
-                {scenario.focus}
-              </div>
+              {!formal && (
+                <div className="rounded-xl border-2 border-border bg-bg px-3 py-2 text-sm font-bold leading-relaxed text-text-2 sm:max-w-xs">
+                  {scenario.focus}
+                </div>
+              )}
             </div>
 
-            {scenario.trainingFields && (
+            {showTrainingPanel && (
               <section data-conversion-panel="true" className="mt-4 rounded-2xl border-2 border-primary/20 bg-primary/[0.06] p-3">
                 <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex items-center gap-2 text-sm font-black text-primary-dark">
                     <ClipboardList size={17} aria-hidden="true" />
-                    计算前训练格
+                    {formal ? '转换与表达' : '计算前训练格'}
                   </div>
                   {scenario.setupFields && (
                     <div className="inline-flex rounded-xl border-2 border-border bg-card p-1" aria-label="提示难度预览">
@@ -1975,7 +1988,7 @@ export default function LongDivisionUiReviewPreview() {
                   </div>
                 )}
                 <div className="flex flex-wrap justify-center gap-2">
-                  {scenario.trainingFields.map((field, index) => {
+                  {(scenario.trainingFields ?? []).map((field, index) => {
                     const spec = fieldById.get(trainingFieldId(scenario.id, index));
                     if (!spec) return null;
                     return (
@@ -2024,7 +2037,7 @@ export default function LongDivisionUiReviewPreview() {
               <section className="mt-4 rounded-2xl border-2 border-success-mid bg-success-lt p-3">
                 <div className="mb-3 flex items-center gap-2 text-sm font-black text-success">
                   <ListChecks size={17} aria-hidden="true" />
-                  计算后结构化结果格
+                  {formal ? '结果表达' : '计算后结构化结果格'}
                 </div>
                 <div className={`grid gap-2 ${scenario.id === 'cyclic' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                   {visibleResultFields.map(({ field, spec }) => {
@@ -2082,7 +2095,7 @@ export default function LongDivisionUiReviewPreview() {
               >
                 <div className="flex items-center gap-2 text-sm font-black" style={{ color: '#7A5C00' }}>
                   <AlertTriangle size={17} aria-hidden="true" />
-                  失败反馈预览
+                  {formal ? '未通过原因' : '失败反馈预览'}
                 </div>
                 <p className="mt-2 text-sm font-bold text-text">
                   {feedbackSummary}
@@ -2107,6 +2120,7 @@ export default function LongDivisionUiReviewPreview() {
             )}
           </article>
 
+          {!formal && (
           <aside className="min-w-0 rounded-[18px] border-2 border-border-2 bg-card p-4 shadow-[0_2px_10px_rgba(0,0,0,.07)] lg:self-start">
             <div className="flex items-center gap-2 text-sm font-black text-text">
               <MousePointer2 size={18} className="text-primary" aria-hidden="true" />
@@ -2142,6 +2156,7 @@ export default function LongDivisionUiReviewPreview() {
               </ul>
             </div>
           </aside>
+          )}
         </section>
       </div>
 

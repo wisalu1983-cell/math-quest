@@ -12,6 +12,8 @@ const previewPage = import.meta.env.DEV ? searchParams.get('preview') : null
 const rootPage =
   previewPage === 'a03plus'
     ? <A03PlusComparisonPreview />
+    : previewPage === 'longdiv-formal'
+      ? <LongDivisionUiReviewPreview formal />
     : previewPage === 'longdiv'
       ? <LongDivisionUiReviewPreview />
     : previewPage === 'mult'

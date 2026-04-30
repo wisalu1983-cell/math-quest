@@ -3,7 +3,7 @@
 > 所属版本：v0.5
 > 创建：2026-04-29
 > 所属主线：[../README](../README.md)
-> 状态：✅ 完成（`BL-010` 生产实现与 Phase 4 L2 QA 已通过；保留全仓 lint 历史 RISK 与真实设备线上补验 DEFERRED）
+> 状态：✅ 完成（`BL-010` 生产实现、正式版原型还原修复与 parity 补测已完成；保留全仓 lint 历史 RISK 与真实设备线上补验 DEFERRED）
 
 ---
 
@@ -62,6 +62,8 @@ Phase 4 承接 `BL-010` 竖式除法 UI 化答题功能。本阶段目标是把 
 | 子计划 | 目标 | 状态 | 备注 |
 |---|---|---|---|
 | [`BL-010` 竖式除法 UI 化答题](../subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) | 长除法轮次模型、输入格顺序、训练格、判定、错因、UI 容量、测试与 QA 映射 | ✅ 完成 | 生产实现已落地；L2 QA 见 [`../../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md`](../../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md) |
+| [`BL-010` 原型扩倍阶段替换修复](../subplans/2026-04-30-v05-phase4-BL-010-竖式除法原型扩倍阶段替换修复.md) | 修正 formal prototype 中小数 ÷ 小数扩倍通过后仍保留转换区的问题 | ✅ 完成 | 正式组件修复已由下方“正式版原型还原修复”承接完成 |
+| [`BL-010` 正式版原型还原修复](../subplans/2026-04-30-v05-phase4-BL-010-竖式除法正式版原型还原修复.md) | 将生产 `LongDivisionBoard` 的 UI、交互和小数 ÷ 小数扩倍流程还原到已确认 formal prototype | ✅ 完成 | 已补 parity QA、生产 E2E、formal prototype 回归、引擎单测、build 与 current spec 回写 |
 
 ## 决策门
 
@@ -91,8 +93,8 @@ Phase 4 承接 `BL-010` 竖式除法 UI 化答题功能。本阶段目标是把 
 
 ## 当前状态
 
-Phase 4 已完成：`BL-010` 长除法生产实现已落地，A03 除法题通过显式 `longDivisionBoard` 挂载生产 `LongDivisionBoard`，覆盖整数除法、小数 ÷ 整数、小数 ÷ 小数、取近似和高档 `cyclic-div` 循环小数结构化输入。Phase 4 L2 QA 结论为 PASS-WITH-NOTES，入口见 [`../../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md`](../../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md)。
+Phase 4 已完成：`BL-010` 长除法生产实现已落地，A03 除法题通过显式 `longDivisionBoard` 挂载生产 `LongDivisionBoard`，覆盖整数除法、小数 ÷ 整数、小数 ÷ 小数、取近似和高档 `cyclic-div` 循环小数结构化输入；2026-04-30 已追加完成 [`BL-010` 正式版原型还原修复](../subplans/2026-04-30-v05-phase4-BL-010-竖式除法正式版原型还原修复.md)，生产 UI 已对齐 `/?preview=longdiv-formal` 的纸面逐位长除法、逐步显现、小数 ÷ 小数扩倍阶段替换、步骤级错因和循环小数标准格式预览。补测证据见 [`../../../../QA/runs/2026-04-30-v05-phase4-long-division-parity-qa/qa-summary.md`](../../../../QA/runs/2026-04-30-v05-phase4-long-division-parity-qa/qa-summary.md)。
 
-验证边界：`npm test`、`npm run build`、全量 Playwright、scoped ESLint、`npm audit --audit-level=moderate`、`git diff --check` 通过；全仓 `npm run lint` 仍为既有 146 problems 基线，不宣称全仓 lint 通过；真实 Android Chrome / iOS Safari 设备证据沿 Phase 3 口径发布后线上补验。
+验证边界：Phase 4 原 L2 QA 中 `npm test`、`npm run build`、全量 Playwright、scoped ESLint、`npm audit --audit-level=moderate`、`git diff --check` 通过；正式版原型还原修复补跑 parity QA 14 passed、`QA/e2e/phase4-long-division.spec.ts` 5 passed、`QA/e2e/phase4-long-division-formal-prototype.spec.ts` 1 passed、`src/engine/longDivision.test.ts` 10 passed、`npm run build` 通过、`git diff --check` 通过。全仓 `npm run lint` 仍为既有 146 problems 基线，不宣称全仓 lint 通过；真实 Android Chrome / iOS Safari 设备证据沿 Phase 3 口径发布后线上补验。
 
 下一步：进入 v0.5 Phase 5 Release Gate，处理 `ISSUE-069` P1 correctness hotfix，并执行版本级 L3 QA / 收口。
