@@ -8,6 +8,7 @@ import {
   STAR_THRESHOLDS_3,
   STAR_THRESHOLDS_5,
 } from '@/constants/advance';
+import { getStars } from '@/engine/advance';
 import { useUserStore } from '@/store';
 import { repository } from '@/repository/local';
 import { applyAndReload } from '../namespace';
@@ -66,33 +67,40 @@ function setStarsFor(
   };
 }
 
-// 每题型封顶 cap★
-const perTopicMaxStars: DevInjection[] = TOPICS.map(t => {
+function addOneStarForTopic(gp: GameProgress, topicId: TopicId): GameProgress {
+  const cap = TOPIC_STAR_CAP[topicId];
+  const currentHearts = gp.advanceProgress[topicId]?.heartsAccumulated ?? 0;
+  const nextStars = Math.min(getStars(currentHearts, cap) + 1, cap);
+  return setStarsFor(gp, topicId, nextStars);
+}
+
+// 每题型每次 +1★
+const perTopicAddStar: DevInjection[] = TOPICS.map(t => {
   const cap = TOPIC_STAR_CAP[t.id];
   return {
-    id: `advance.max.${t.id}`,
+    id: `advance.add-star.${t.id}`,
     group: 'advance',
-    label: `${t.name} 进阶 → ${cap}★（封顶）`,
-    description: `将 ${t.name} 累计心数设为 ${heartsFor(t.id, cap)}，对应 ${cap}★ 封顶`,
+    label: `${t.name} 进阶 +1★`,
+    description: `每点一次只给 ${t.name} 增加 1★；已到 ${cap}★ 时保持封顶`,
     async run() {
       await applyAndReload(() => {
-        mutateProgress(gp => setStarsFor(gp, t.id, cap));
+        mutateProgress(gp => addOneStarForTopic(gp, t.id));
       });
     },
   };
 });
 
-const allMax: DevInjection = {
-  id: 'advance.max.all',
+const addAll: DevInjection = {
+  id: 'advance.add-star.all',
   group: 'advance',
-  label: '所有题型进阶封顶（各自 cap★）',
-  description: '8 题型进阶同时拉满（A01/A04/A08=3★；其余=5★）',
+  label: '所有题型进阶 +1★',
+  description: '所有玩家可见题型各增加 1★；已封顶题型保持封顶',
   async run() {
     await applyAndReload(() => {
       mutateProgress(gp => {
         let next = gp;
         for (const t of TOPICS) {
-          next = setStarsFor(next, t.id, TOPIC_STAR_CAP[t.id]);
+          next = addOneStarForTopic(next, t.id);
         }
         return next;
       });
@@ -123,4 +131,4 @@ const clearAll: DevInjection = {
   },
 };
 
-export const advanceInjections: DevInjection[] = [allMax, clearAll, ...perTopicMaxStars];
+export const advanceInjections: DevInjection[] = [addAll, clearAll, ...perTopicAddStar];

@@ -39,6 +39,7 @@ import { RANK_QUESTIONS_PER_GAME } from '@/constants/rank-match';
 import { useRankMatchStore, RankMatchRecoveryError } from './rank-match';
 import type { GameFinishedNextAction } from '@/engine/rank-match/match-state';
 import { startNextGame as rankStartNextGame } from '@/engine/rank-match/match-state';
+import { isDevHeartLockEnabled } from '@/utils/dev-tool-flags';
 
 interface SubmitAnswerOptions {
   trainingValues?: string[];
@@ -621,7 +622,8 @@ export const useSessionStore = create<SessionStore>((set, get) => ({
       attemptedAt: Date.now(),
     };
 
-    const newHearts = correct ? hearts : hearts - 1;
+    const preserveHearts = !correct && isDevHeartLockEnabled();
+    const newHearts = correct || preserveHearts ? hearts : hearts - 1;
 
     const updatedSession = {
       ...session,

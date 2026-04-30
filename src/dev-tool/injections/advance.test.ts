@@ -92,12 +92,34 @@ describe('advanceInjections', () => {
     vi.restoreAllMocks();
   });
 
-  it('advance.max.mental-arithmetic：heartsAccumulated 对齐 cap★ 门槛', async () => {
-    const inj = advanceInjections.find(i => i.id === 'advance.max.mental-arithmetic');
+  it('advance.add-star.mental-arithmetic：每执行一次只增加 1★', async () => {
+    const inj = advanceInjections.find(i => i.id === 'advance.add-star.mental-arithmetic');
     expect(inj).toBeDefined();
     await inj!.run();
-    const hearts = useGameProgressStore.getState().gameProgress?.advanceProgress['mental-arithmetic']?.heartsAccumulated;
-    expect(hearts).toBe(heartsAtCap('mental-arithmetic'));
+    let hearts = useGameProgressStore.getState().gameProgress?.advanceProgress['mental-arithmetic']?.heartsAccumulated;
+    expect(hearts).toBe(STAR_THRESHOLDS_3[0]);
+
+    await inj!.run();
+    hearts = useGameProgressStore.getState().gameProgress?.advanceProgress['mental-arithmetic']?.heartsAccumulated;
+    expect(hearts).toBe(STAR_THRESHOLDS_3[1]);
+  });
+
+  it('advance.add-star.all：所有已知题型各增加 1★，已封顶题型保持封顶', async () => {
+    repository.saveGameProgress(seedProgress({
+      'mental-arithmetic': heartsAtCap('mental-arithmetic'),
+      'number-sense': 0,
+      'vertical-calc': 0,
+    }));
+    useGameProgressStore.getState().loadGameProgress('u-adv');
+
+    const inj = advanceInjections.find(i => i.id === 'advance.add-star.all');
+    expect(inj).toBeDefined();
+    await inj!.run();
+
+    const gp = useGameProgressStore.getState().gameProgress;
+    expect(gp?.advanceProgress['mental-arithmetic']?.heartsAccumulated).toBe(heartsAtCap('mental-arithmetic'));
+    expect(gp?.advanceProgress['number-sense']?.heartsAccumulated).toBe(STAR_THRESHOLDS_5[0]);
+    expect(gp?.advanceProgress['vertical-calc']?.heartsAccumulated).toBe(STAR_THRESHOLDS_5[0]);
   });
 
   it('advance.clear.all：所有题型 heartsAccumulated 归零（保留 unlock 条目）', async () => {

@@ -98,6 +98,27 @@ function primeGameProgress(): void {
   });
 }
 
+function installLocalStorageMock(): void {
+  const store = new Map<string, string>();
+  const mock = {
+    getItem: (k: string) => (store.has(k) ? (store.get(k) as string) : null),
+    setItem: (k: string, v: string) => {
+      store.set(k, v);
+    },
+    removeItem: (k: string) => {
+      store.delete(k);
+    },
+    clear: () => {
+      store.clear();
+    },
+    key: (i: number) => Array.from(store.keys())[i] ?? null,
+    get length() {
+      return store.size;
+    },
+  };
+  (globalThis as Record<string, unknown>).localStorage = mock;
+}
+
 describe('useSessionStore.submitAnswer training feedback', () => {
   beforeEach(() => {
     (useGameProgressStore.setState as unknown as (partial: Record<string, unknown>) => void)({
@@ -186,6 +207,23 @@ describe('useSessionStore.submitAnswer vertical process failure', () => {
       wrongAnswer: '1887',
       failureReason: 'vertical-process',
     });
+  });
+
+  it('dev 锁血开启时，错题仍记录但 hearts 不扣减', () => {
+    installLocalStorageMock();
+    localStorage.setItem('mq_dev_lock_hearts', '1');
+
+    const result = useSessionStore.getState().submitAnswer('1887', {
+      failureReason: 'vertical-process',
+    });
+
+    const state = useSessionStore.getState();
+    expect(result.correct).toBe(false);
+    expect(state.hearts).toBe(3);
+    expect(state.session?.heartsRemaining).toBe(3);
+    expect(state.pendingWrongQuestions).toHaveLength(1);
+
+    localStorage.clear();
   });
 
   it('多行乘法结构化错因会保留到当前反馈、session attempt 和错题链路', () => {

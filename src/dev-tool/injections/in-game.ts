@@ -3,6 +3,7 @@
 
 import type { DevInjection } from '../types';
 import { useSessionStore, useUIStore } from '@/store';
+import { setDevHeartLockEnabled } from '@/utils/dev-tool-flags';
 
 function requireActiveSession(): void {
   if (!useSessionStore.getState().active || !useSessionStore.getState().session) {
@@ -53,4 +54,29 @@ const finishSession: DevInjection = {
   },
 };
 
-export const inGameInjections: DevInjection[] = [finishSession, ...setHearts];
+const enableHeartLock: DevInjection = {
+  id: 'in-game.lock-hearts.enable',
+  group: 'in-game',
+  label: '开启关内锁血',
+  description: '开启后当前浏览器内错题仍记录，但不会扣 hearts',
+  run() {
+    setDevHeartLockEnabled(true);
+  },
+};
+
+const disableHeartLock: DevInjection = {
+  id: 'in-game.lock-hearts.disable',
+  group: 'in-game',
+  label: '关闭关内锁血',
+  description: '恢复正常扣心逻辑',
+  run() {
+    setDevHeartLockEnabled(false);
+  },
+};
+
+export const inGameInjections: DevInjection[] = [
+  finishSession,
+  enableHeartLock,
+  disableHeartLock,
+  ...setHearts,
+];
