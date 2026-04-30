@@ -25,11 +25,11 @@ type ScenarioId =
   | 'middle-zero'
   | 'decimal-dividend'
   | 'decimal-divisor'
-  | 'decimal-divisor-fractional'
   | 'approximation'
   | 'cyclic';
 
 type GuidanceMode = 'medium' | 'high';
+type DecimalDivisorVariant = 'integer' | 'fractional';
 
 type FieldKind =
   | 'training'
@@ -48,12 +48,14 @@ interface FieldSpec {
   expected: string;
   helper?: string;
   allowDecimal?: boolean;
+  maxLength?: number;
 }
 
 interface TrainingField {
   label: string;
   expected: string;
   suffix?: string;
+  allowDecimal?: boolean;
 }
 
 interface ResultField {
@@ -268,7 +270,7 @@ const scenarios: Scenario[] = [
     quotientPreview: '65',
     focus: '先判断扩大的倍数，再在同一区块填写转换后的除数和被除数。',
     trainingFields: [
-      { label: '除数扩大', expected: '100', suffix: '倍' },
+      { label: '除数扩大', expected: '100', suffix: '倍', allowDecimal: true },
     ],
     setupFields: {
       divisorExpected: '24',
@@ -301,76 +303,7 @@ const scenarios: Scenario[] = [
     ],
     reviewNotes: [
       '前置转换区连续填写扩大倍数、转换后除数和转换后被除数。',
-      '竖式板按学生输入的转换值生成；提交后转换错因仍统一展示。',
-    ],
-  },
-  {
-    id: 'decimal-divisor-fractional',
-    title: '小数 ÷ 小数 · 扩倍后仍有小数',
-    shortTitle: '扩倍后小数',
-    badge: '仍小数',
-    prompt: '除数转整数，被除数小数点固定显示',
-    expression: '1.234 ÷ 0.04',
-    coreExpression: '123.4 ÷ 4',
-    quotientStartColumn: 1,
-    quotientDecimalAfter: 2,
-    boardColumnCount: 5,
-    quotientPreview: '30.85',
-    focus: '验证转换后被除数仍带小数时，转换区可输入小数点，竖式板据此生成。',
-    trainingFields: [
-      { label: '除数扩大', expected: '100', suffix: '倍' },
-    ],
-    setupFields: {
-      divisorExpected: '4',
-      dividendExpected: '1234',
-      dividendDisplay: '123.4',
-      mediumHint: '同扩 100 倍，填转换值。',
-    },
-    rounds: [
-      {
-        current: '12',
-        sourceLabel: '先看 12',
-        quotientDigit: '3',
-        product: '12',
-        remainder: '0',
-        nextPartialDividend: '3',
-        bringLabel: '落下 3',
-      },
-      {
-        current: '3',
-        sourceLabel: '不够除也要写商位',
-        quotientDigit: '0',
-        product: '0',
-        remainder: '3',
-        nextPartialDividend: '34',
-        bringLabel: '落下 4',
-      },
-      {
-        current: '34',
-        sourceLabel: '小数点后继续除',
-        quotientDigit: '8',
-        product: '32',
-        remainder: '2',
-        nextPartialDividend: '20',
-        bringLabel: '补 0',
-      },
-      {
-        current: '20',
-        sourceLabel: '补 0 后继续除',
-        quotientDigit: '5',
-        product: '20',
-        remainder: '0',
-        terminalNote: '除尽，本题结束',
-      },
-    ],
-    feedbackCategories: ['商位补 0 遗漏', '补 0 后新工作数错误'],
-    structuredMistakes: [
-      { label: '扩倍倍数错误', userValue: '10', expectedValue: '100' },
-      { label: '转换后的被除数错误', userValue: '1234', expectedValue: '123.4' },
-    ],
-    reviewNotes: [
-      '转换后的被除数允许仍带小数点；竖式板按输入值固定小数点列。',
-      '中档错填转换值时当场提示，高档过程不提示。',
+      '转换后除数或被除数填错时，先停留在转换区给非泄露式提示，不进入竖式板。',
     ],
   },
   {
@@ -442,75 +375,268 @@ const scenarios: Scenario[] = [
     shortTitle: '循环小数',
     badge: '循环节',
     prompt: '识别重复余数后，填写循环小数结构',
-    expression: '1 ÷ 6',
-    coreExpression: '1.00 ÷ 6',
-    dividendDisplay: '1',
+    expression: '14 ÷ 135',
+    coreExpression: '14.0000000 ÷ 135',
+    dividendDisplay: '14',
     quotientStartColumn: 0,
     quotientDecimalAfter: 0,
-    boardColumnCount: 4,
-    quotientPreview: '0.166...',
-    decimalHint: '循环节最长 3 位，竖式中至少出现 2 次。',
+    boardColumnCount: 8,
+    quotientPreview: '0.1037',
+    decimalHint: '极限样例：展示串 8 字符，循环节 3 位，竖式中至少出现 2 次。',
     focus: '删除复杂的“重复余数位置”字段，只保留学生最需要表达的结果结构。',
     rounds: [
       {
-        current: '1',
+        current: '14',
         sourceLabel: '整数部分不够除',
         quotientDigit: '0',
         product: '0',
-        remainder: '1',
-        nextPartialDividend: '10',
+        remainder: '14',
+        nextPartialDividend: '140',
         bringLabel: '补 0',
       },
       {
-        current: '10',
-        sourceLabel: '整数部分 0 后补 0',
+        current: '140',
+        sourceLabel: '十分位为非循环部分',
         quotientDigit: '1',
-        product: '6',
-        remainder: '4',
-        nextPartialDividend: '40',
+        product: '135',
+        remainder: '5',
+        nextPartialDividend: '50',
         bringLabel: '补 0',
       },
       {
-        current: '40',
-        sourceLabel: '余数 4 再次出现',
-        quotientDigit: '6',
-        product: '36',
-        remainder: '4',
-        nextPartialDividend: '40',
-        bringLabel: '再补 0',
+        current: '50',
+        sourceLabel: '循环节第 1 位',
+        quotientDigit: '0',
+        product: '0',
+        remainder: '50',
+        nextPartialDividend: '500',
+        bringLabel: '补 0',
       },
       {
-        current: '40',
+        current: '500',
+        sourceLabel: '循环节第 2 位',
+        quotientDigit: '3',
+        product: '405',
+        remainder: '95',
+        nextPartialDividend: '950',
+        bringLabel: '补 0',
+      },
+      {
+        current: '950',
+        sourceLabel: '循环节第 3 位',
+        quotientDigit: '7',
+        product: '945',
+        remainder: '5',
+        nextPartialDividend: '50',
+        bringLabel: '补 0',
+      },
+      {
+        current: '50',
         sourceLabel: '循环节第二次出现',
-        quotientDigit: '6',
-        product: '36',
-        remainder: '4',
-        terminalNote: '循环节已出现两次',
+        quotientDigit: '0',
+        product: '0',
+        remainder: '50',
+        nextPartialDividend: '500',
+        bringLabel: '补 0',
+      },
+      {
+        current: '500',
+        sourceLabel: '循环节第二次第 2 位',
+        quotientDigit: '3',
+        product: '405',
+        remainder: '95',
+        nextPartialDividend: '950',
+        bringLabel: '补 0',
+      },
+      {
+        current: '950',
+        sourceLabel: '循环节第二次写完',
+        quotientDigit: '7',
+        product: '945',
+        remainder: '5',
+        terminalNote: '循环节 037 已出现 2 次',
       },
     ],
     resultFields: [
-      { label: '非循环部分', expected: '1', helper: '小数点后的非循环数字' },
-      { label: '循环节', expected: '6', helper: '用最短重复片段填写' },
+      { label: '非循环部分', expected: '0.1', allowDecimal: true, helper: '包含整数部分和小数点' },
+      { label: '循环节', expected: '037', helper: '用最短重复片段填写' },
     ],
     feedbackCategories: ['余数大小判断错误'],
     structuredMistakes: [
-      { label: '循环节错误', userValue: '66', expectedValue: '6' },
+      { label: '循环节错误', userValue: '37', expectedValue: '037' },
     ],
     reviewNotes: [
       '竖式板至少写到循环节第二次出现，再进入循环结构结果格。',
-      '后置结构化字段展示明细，便于订正。',
+      '后置结构化字段展示明细，便于定位错误位置。',
     ],
   },
 ];
 
-const DIGIT_CELL_REM = 2.2;
-const DIGIT_GAP_REM = 0.65;
-const DECIMAL_GAP_REM = 1.05;
-const DIVIDER_TRACK_REM = 0.95;
+const decimalDivisorFractionalScenario: Scenario = {
+  id: 'decimal-divisor',
+  title: '小数 ÷ 小数 · 扩倍训练格',
+  shortTitle: '小数÷小数',
+  badge: '仍小数',
+  prompt: '除数转整数，被除数小数点固定显示',
+  expression: '1.234 ÷ 0.04',
+  coreExpression: '123.4 ÷ 4',
+  quotientStartColumn: 1,
+  quotientDecimalAfter: 2,
+  boardColumnCount: 5,
+  quotientPreview: '30.85',
+  focus: '验证转换后被除数仍带小数时，转换区可输入小数点，竖式板据此生成。',
+  trainingFields: [
+    { label: '除数扩大', expected: '100', suffix: '倍', allowDecimal: true },
+  ],
+  setupFields: {
+    divisorExpected: '4',
+    dividendExpected: '1234',
+    dividendDisplay: '123.4',
+    mediumHint: '同扩 100 倍，填转换值。',
+  },
+  rounds: [
+    {
+      current: '12',
+      sourceLabel: '先看 12',
+      quotientDigit: '3',
+      product: '12',
+      remainder: '0',
+      nextPartialDividend: '3',
+      bringLabel: '落下 3',
+    },
+    {
+      current: '3',
+      sourceLabel: '不够除也要写商位',
+      quotientDigit: '0',
+      product: '0',
+      remainder: '3',
+      nextPartialDividend: '34',
+      bringLabel: '落下 4',
+    },
+    {
+      current: '34',
+      sourceLabel: '小数点后继续除',
+      quotientDigit: '8',
+      product: '32',
+      remainder: '2',
+      nextPartialDividend: '20',
+      bringLabel: '补 0',
+    },
+    {
+      current: '20',
+      sourceLabel: '补 0 后继续除',
+      quotientDigit: '5',
+      product: '20',
+      remainder: '0',
+      terminalNote: '除尽，本题结束',
+    },
+  ],
+  feedbackCategories: ['商位补 0 遗漏', '补 0 后新工作数错误'],
+  structuredMistakes: [
+    { label: '扩倍倍数错误', userValue: '10', expectedValue: '100' },
+    { label: '转换后的被除数错误', userValue: '1234', expectedValue: '123.4' },
+  ],
+  reviewNotes: [
+    '转换后的被除数允许仍带小数点；竖式板按输入值固定小数点列。',
+    '转换值填错先在转换区提示并停住，不直接泄露正确值。',
+  ],
+};
+
 const BASE_BOARD_FONT_PX = 16;
-const MIN_BOARD_FONT_PX = 14;
-const MIN_BOARD_SCALE = MIN_BOARD_FONT_PX / BASE_BOARD_FONT_PX;
 const KEYBOARD_RESERVED_REM = 14.5;
+const COMPACT_FIELD_INPUT_REM = 6.75;
+const REGULAR_FIELD_INPUT_REM = 7.5;
+
+type BoardLayoutProfile = {
+  id: 'comfortable' | 'font-compact' | 'gap-compact' | 'rail-compact' | 'edge-compact';
+  label: string;
+  minFontPx: number;
+  digitCellRem: number;
+  digitCellHeightRem: number;
+  digitGapRem: number;
+  decimalGapRem: number;
+  dividerTrackRem: number;
+  divisorTrackRem?: number;
+  ellipsisTrackRem: number;
+  paperPaddingRem: number;
+  innerPaddingXRem: number;
+  innerPaddingYRem: number;
+};
+
+const BOARD_LAYOUT_PROFILES: BoardLayoutProfile[] = [
+  {
+    id: 'comfortable',
+    label: '舒展',
+    minFontPx: 14,
+    digitCellRem: 2.2,
+    digitCellHeightRem: 2.2,
+    digitGapRem: 0.65,
+    decimalGapRem: 1.05,
+    dividerTrackRem: 0.95,
+    ellipsisTrackRem: 1.25,
+    paperPaddingRem: 0.75,
+    innerPaddingXRem: 0.75,
+    innerPaddingYRem: 0.75,
+  },
+  {
+    id: 'font-compact',
+    label: '字号压缩',
+    minFontPx: 12,
+    digitCellRem: 2.2,
+    digitCellHeightRem: 2.2,
+    digitGapRem: 0.65,
+    decimalGapRem: 1.05,
+    dividerTrackRem: 0.95,
+    ellipsisTrackRem: 1.25,
+    paperPaddingRem: 0.75,
+    innerPaddingXRem: 0.75,
+    innerPaddingYRem: 0.75,
+  },
+  {
+    id: 'gap-compact',
+    label: '间距压缩',
+    minFontPx: 12,
+    digitCellRem: 2.15,
+    digitCellHeightRem: 2.2,
+    digitGapRem: 0.38,
+    decimalGapRem: 0.55,
+    dividerTrackRem: 0.78,
+    ellipsisTrackRem: 1,
+    paperPaddingRem: 0.6,
+    innerPaddingXRem: 0.55,
+    innerPaddingYRem: 0.65,
+  },
+  {
+    id: 'rail-compact',
+    label: '除号区压缩',
+    minFontPx: 12,
+    digitCellRem: 2.05,
+    digitCellHeightRem: 2.18,
+    digitGapRem: 0.31,
+    decimalGapRem: 0.45,
+    dividerTrackRem: 0.68,
+    divisorTrackRem: 4.55,
+    ellipsisTrackRem: 0.85,
+    paperPaddingRem: 0.48,
+    innerPaddingXRem: 0.45,
+    innerPaddingYRem: 0.6,
+  },
+  {
+    id: 'edge-compact',
+    label: '边界压缩',
+    minFontPx: 12,
+    digitCellRem: 1.88,
+    digitCellHeightRem: 2.12,
+    digitGapRem: 0.22,
+    decimalGapRem: 0.33,
+    dividerTrackRem: 0.58,
+    divisorTrackRem: 4.05,
+    ellipsisTrackRem: 0.68,
+    paperPaddingRem: 0.28,
+    innerPaddingXRem: 0.3,
+    innerPaddingYRem: 0.55,
+  },
+];
 
 const scenarioById = new Map(scenarios.map(scenario => [scenario.id, scenario]));
 
@@ -556,6 +682,7 @@ function buildFields(scenario: Scenario, boardRounds: LongDivisionRound[], inclu
     label: field.label,
     expected: field.expected,
     helper: field.suffix,
+    allowDecimal: field.allowDecimal,
   })) ?? [];
 
   const setup = scenario.setupFields
@@ -565,13 +692,16 @@ function buildFields(scenario: Scenario, boardRounds: LongDivisionRound[], inclu
           kind: 'setup-divisor' as const,
           label: '转换后除数',
           expected: scenario.setupFields.divisorExpected,
+          allowDecimal: true,
+          maxLength: Math.max(scenario.setupFields.divisorExpected.length + 3, 4),
         },
         {
           id: setupFieldId(scenario.id, 'setup-dividend'),
           kind: 'setup-dividend' as const,
           label: '转换后被除数',
           expected: scenario.setupFields.dividendDisplay ?? scenario.setupFields.dividendExpected,
-          allowDecimal: Boolean(scenario.setupFields.dividendDisplay?.includes('.')),
+          allowDecimal: true,
+          maxLength: Math.max((scenario.setupFields.dividendDisplay ?? scenario.setupFields.dividendExpected).length + 3, 4),
         },
       ]
     : [];
@@ -628,8 +758,77 @@ function statusClass(status: 'idle' | 'correct' | 'wrong', active: boolean) {
   return 'border-border bg-card text-text hover:border-primary/50';
 }
 
+function renderRecurringDecimalAnswer(nonRepeating: string, repeating: string) {
+  const prefix = nonRepeating || '□';
+  const cycleDigits = repeating ? repeating.split('') : ['□'];
+  const ariaLabel = repeating
+    ? `标准格式答数：${prefix}，循环节${repeating}`
+    : `标准格式答数：${prefix}，循环节未填写`;
+
+  return (
+    <span
+      data-cyclic-answer-preview="true"
+      aria-label={ariaLabel}
+      aria-live="polite"
+      className="inline-flex items-end text-lg font-black leading-none text-primary tabular-nums"
+    >
+      <span>{prefix}</span>
+      <span className="inline-flex items-end" aria-hidden="true">
+        {cycleDigits.map((digit, index) => {
+          const shouldDot = repeating.length <= 1
+            ? index === 0
+            : index === 0 || index === cycleDigits.length - 1;
+          return (
+            <span key={`${digit}-${index}`} className="relative inline-flex min-w-[0.58em] justify-center pt-2">
+              {shouldDot && (
+                <span
+                  data-cyclic-dot="true"
+                  className="absolute left-1/2 top-0 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-primary"
+                />
+              )}
+              {digit}
+            </span>
+          );
+        })}
+      </span>
+    </span>
+  );
+}
+
 function normalize(value: string) {
   return value.trim().replace(/\s/g, '').replace(/^0+(?=\d)/, '');
+}
+
+function normalizeDecimalNumber(value: string) {
+  const cleaned = value.trim().replace(/\s/g, '');
+  if (!/^\d+(?:\.\d+)?$/.test(cleaned)) return null;
+  const [whole = '0', fraction = ''] = cleaned.split('.');
+  const normalizedWhole = whole.replace(/^0+(?=\d)/, '') || '0';
+  const normalizedFraction = fraction.replace(/0+$/g, '');
+  return normalizedFraction ? `${normalizedWhole}.${normalizedFraction}` : normalizedWhole;
+}
+
+function normalizeComparableValue(value: string) {
+  return normalizeDecimalNumber(value) ?? normalize(value);
+}
+
+function fieldValueMatches(field: FieldSpec, value: string) {
+  if (field.allowDecimal || field.kind === 'setup-divisor' || field.kind === 'setup-dividend') {
+    return normalizeComparableValue(value) === normalizeComparableValue(field.expected);
+  }
+  return normalize(value) === normalize(field.expected);
+}
+
+function feedbackSummaryForFields(fields: FieldSpec[]) {
+  const hasProcess = fields.some(field => isCoreBoardField(field));
+  const hasStructured = fields.some(field => !isCoreBoardField(field));
+  if (hasProcess && hasStructured) return '本题未通过：竖式过程和结构化字段都有误。';
+  if (hasProcess) return '本题未通过：竖式过程有误。';
+  if (fields.some(field => field.kind === 'training' || field.kind === 'setup-divisor' || field.kind === 'setup-dividend')) {
+    return '本题未通过：扩倍结果有误。';
+  }
+  if (fields.some(field => field.kind === 'result')) return '本题未通过：结果表达有误。';
+  return '本题未通过：存在错误答题项。';
 }
 
 function splitExpression(expression: string) {
@@ -646,19 +845,35 @@ function hasFilledExpectedLength(value: string, expected: string) {
   return normalize(value).length >= normalize(expected).length;
 }
 
+function hasFilledComparableConversionValue(value: string, expected: string) {
+  const normalizedValue = normalize(value);
+  const normalizedExpected = normalize(expected);
+  if (!normalizedValue) return false;
+  const valueDigits = normalizedValue.replace(/\D/g, '').length;
+  const expectedDigits = normalizedExpected.replace(/\D/g, '').length;
+  if (valueDigits >= expectedDigits) return true;
+  return normalizedValue.length >= normalizedExpected.length;
+}
+
 function normalizeConvertedDecimal(value: string) {
-  const cleaned = value.trim().replace(/\s/g, '');
-  if (!/^\d+(?:\.\d+)?$/.test(cleaned)) return null;
-  const [whole = '0', fraction] = cleaned.split('.');
-  const normalizedWhole = whole.replace(/^0+(?=\d)/, '') || '0';
-  return fraction == null ? normalizedWhole : `${normalizedWhole}.${fraction}`;
+  return normalizeDecimalNumber(value);
+}
+
+function isIntegerValue(value: string) {
+  const normalized = normalizeDecimalNumber(value);
+  return Boolean(normalized && !normalized.includes('.'));
+}
+
+function shouldAutoAdvanceField(field: FieldSpec, value: string) {
+  if (field.kind === 'setup-divisor' && !isIntegerValue(value)) return false;
+  return hasFilledExpectedLength(value, field.expected);
 }
 
 function buildBoardModelFromInput(dividendValue: string, divisorValue: string): BoardModel | null {
   const dividendDisplay = normalizeConvertedDecimal(dividendValue);
   if (!dividendDisplay) return null;
-  const divisorDisplay = normalize(divisorValue);
-  if (!/^\d+$/.test(divisorDisplay)) return null;
+  const divisorDisplay = normalizeDecimalNumber(divisorValue);
+  if (!divisorDisplay || divisorDisplay.includes('.')) return null;
   const divisor = Number(divisorDisplay);
   if (!Number.isInteger(divisor) || divisor <= 0) return null;
 
@@ -667,7 +882,7 @@ function buildBoardModelFromInput(dividendValue: string, divisorValue: string): 
   const integerDigitCount = dividendDisplay.includes('.')
     ? dividendDisplay.split('.')[0].replace(/\D/g, '').length
     : digits.length;
-  const quotientDecimalAfter = integerDigitCount - 1;
+  const dividendHasDecimal = dividendDisplay.includes('.');
   const extendedDigits = [...digits];
   const rounds: LongDivisionRound[] = [];
   const maxRounds = Math.max(6, digits.length + 3);
@@ -723,10 +938,13 @@ function buildBoardModelFromInput(dividendValue: string, divisorValue: string): 
 
   if (rounds.length === 0) return null;
 
+  const quotientDecimalAfter = dividendHasDecimal || extendedDigits.length > digits.length
+    ? integerDigitCount - 1
+    : null;
   const boardColumnCount = Math.max(
     extendedDigits.length,
     quotientStartColumn + rounds.length,
-    quotientDecimalAfter + 2,
+    quotientDecimalAfter == null ? 0 : quotientDecimalAfter + 2,
   );
 
   return {
@@ -749,48 +967,81 @@ function replaceAtLeastOne(values: Record<string, string>, fields: FieldSpec[], 
 export default function LongDivisionUiReviewPreview() {
   const [scenarioId, setScenarioId] = useState<ScenarioId>('integer-remainder');
   const [guidanceMode, setGuidanceMode] = useState<GuidanceMode>('medium');
+  const [decimalDivisorVariant, setDecimalDivisorVariant] = useState<DecimalDivisorVariant>('integer');
+  const [conversionSubmitted, setConversionSubmitted] = useState(false);
+  const [conversionConfirmed, setConversionConfirmed] = useState(false);
   const [values, setValues] = useState<Record<string, string>>({});
   const [activeSlotId, setActiveSlotId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [showFeedback, setShowFeedback] = useState(false);
   const [boardMetrics, setBoardMetrics] = useState({ width: 0, height: 0, scale: 1 });
+  const [boardLayoutIndex, setBoardLayoutIndex] = useState(0);
   const inputRefs = useRef<Record<string, HTMLInputElement | null>>({});
   const feedbackRef = useRef<HTMLElement | null>(null);
   const boardViewportRef = useRef<HTMLDivElement | null>(null);
   const boardPaperRef = useRef<HTMLDivElement | null>(null);
 
-  const scenario = scenarioById.get(scenarioId) ?? scenarios[0];
+  const baseScenario = scenarioById.get(scenarioId) ?? scenarios[0];
+  const scenario = baseScenario.id === 'decimal-divisor' && decimalDivisorVariant === 'fractional'
+    ? decimalDivisorFractionalScenario
+    : baseScenario;
+  const isDecimalDivisorScenario = baseScenario.id === 'decimal-divisor';
   const setupScaleFieldId = trainingFieldId(scenario.id, 0);
   const setupDivisorFieldId = setupFieldId(scenario.id, 'setup-divisor');
   const setupDividendFieldId = setupFieldId(scenario.id, 'setup-dividend');
   const expectedSetupDividend = scenario.setupFields?.dividendDisplay ?? scenario.setupFields?.dividendExpected ?? '';
+  const setupScaleHasValue = normalize(values[setupScaleFieldId] ?? '').length > 0;
+  const setupDivisorHasValue = normalize(values[setupDivisorFieldId] ?? '').length > 0;
+  const setupDividendHasValue = normalize(values[setupDividendFieldId] ?? '').length > 0;
   const setupTrainingFilled = Boolean(
     scenario.setupFields &&
-    hasFilledExpectedLength(values[setupScaleFieldId] ?? '', scenario.trainingFields?.[0]?.expected ?? ''),
+    setupScaleHasValue,
   );
   const setupTrainingReady = Boolean(
     scenario.setupFields &&
-    normalize(values[setupScaleFieldId] ?? '') === normalize(scenario.trainingFields?.[0]?.expected ?? ''),
+    normalizeComparableValue(values[setupScaleFieldId] ?? '') === normalizeComparableValue(scenario.trainingFields?.[0]?.expected ?? ''),
   );
   const setupValuesComplete = Boolean(
     scenario.setupFields &&
     setupTrainingFilled &&
-    hasFilledExpectedLength(values[setupDivisorFieldId] ?? '', scenario.setupFields.divisorExpected) &&
-    hasFilledExpectedLength(values[setupDividendFieldId] ?? '', expectedSetupDividend),
+    setupDivisorHasValue &&
+    setupDividendHasValue,
   );
+  const setupDivisorFormatError = Boolean(
+    scenario.setupFields &&
+    setupTrainingFilled &&
+    values[setupDivisorFieldId] &&
+    !isIntegerValue(values[setupDivisorFieldId] ?? ''),
+  );
+  const setupDivisorValueError = Boolean(
+    scenario.setupFields &&
+    setupTrainingReady &&
+    !setupDivisorFormatError &&
+    hasFilledExpectedLength(values[setupDivisorFieldId] ?? '', scenario.setupFields.divisorExpected) &&
+    normalizeComparableValue(values[setupDivisorFieldId] ?? '') !== normalizeComparableValue(scenario.setupFields.divisorExpected),
+  );
+  const setupDividendValueError = Boolean(
+    scenario.setupFields &&
+    setupTrainingReady &&
+    hasFilledComparableConversionValue(values[setupDividendFieldId] ?? '', expectedSetupDividend) &&
+    normalizeComparableValue(values[setupDividendFieldId] ?? '') !== normalizeComparableValue(expectedSetupDividend),
+  );
+  const setupConversionValueError = setupDivisorValueError || setupDividendValueError;
   const dynamicBoardModel = useMemo(() => (
-    scenario.setupFields && setupValuesComplete
+    scenario.setupFields && setupValuesComplete && !setupDivisorFormatError && !setupConversionValueError
       ? buildBoardModelFromInput(values[setupDividendFieldId] ?? '', values[setupDivisorFieldId] ?? '')
       : null
   ), [
+    setupConversionValueError,
     scenario.setupFields,
+    setupDivisorFormatError,
     setupDividendFieldId,
     setupDivisorFieldId,
     setupValuesComplete,
     values,
   ]);
   const activeBoardRounds = dynamicBoardModel?.rounds ?? scenario.rounds;
-  const canRenderBoard = !scenario.setupFields || Boolean(dynamicBoardModel);
+  const canRenderBoard = !scenario.setupFields || (conversionConfirmed && Boolean(dynamicBoardModel));
   const fields = useMemo(
     () => buildFields(scenario, activeBoardRounds, canRenderBoard),
     [activeBoardRounds, canRenderBoard, scenario],
@@ -806,7 +1057,6 @@ export default function LongDivisionUiReviewPreview() {
       : [{ id: field.id, field, digitIndex: null as number | null }]
   )), [fields]);
   const orderedInputIds = useMemo(() => inputSlotSpecs.map(spec => spec.id), [inputSlotSpecs]);
-  const firstInputSlotId = inputSlotSpecs[0]?.id ?? null;
   const { dividend: coreDividend, divisor: staticDivisor } = splitExpression(scenario.coreExpression);
   const dividendDisplay = scenario.dividendDisplay ?? coreDividend;
   const boardDividendDisplay = dynamicBoardModel?.dividendDisplay ?? dividendDisplay;
@@ -819,7 +1069,27 @@ export default function LongDivisionUiReviewPreview() {
   const setupDividendField = scenario.setupFields
     ? fieldById.get(setupDividendFieldId)
     : null;
-  const showSetupHint = Boolean(scenario.setupFields && setupTrainingReady && guidanceMode === 'medium');
+  const setupScaleField = scenario.setupFields
+    ? fieldById.get(setupScaleFieldId)
+    : null;
+  const conversionFields = useMemo(() => (
+    [setupScaleField, setupDivisorField, setupDividendField]
+      .filter((field): field is FieldSpec => Boolean(field))
+  ), [setupDividendField, setupDivisorField, setupScaleField]);
+  const conversionWrongFields = useMemo(() => (
+    conversionFields.filter(field => !fieldValueMatches(field, values[field.id] ?? ''))
+  ), [conversionFields, values]);
+  const conversionHasError = Boolean(
+    scenario.setupFields &&
+    setupValuesComplete &&
+    (setupDivisorFormatError || conversionWrongFields.length > 0),
+  );
+  const showSetupHint = Boolean(
+    scenario.setupFields &&
+    setupTrainingReady &&
+    guidanceMode === 'medium' &&
+    !conversionSubmitted,
+  );
   const quotientStartColumn = dynamicBoardModel?.quotientStartColumn ?? scenario.quotientStartColumn ?? 0;
   const decimalGapAfterColumn = dynamicBoardModel?.quotientDecimalAfter ?? scenario.quotientDecimalAfter ?? dividendDecimalAfter;
   const boardColumnCount = Math.max(
@@ -828,16 +1098,8 @@ export default function LongDivisionUiReviewPreview() {
     quotientStartColumn + activeBoardRounds.length,
     decimalGapAfterColumn == null ? 0 : decimalGapAfterColumn + 2,
   );
-
-  useEffect(() => {
-    const resetTimer = window.setTimeout(() => {
-      setValues({});
-      setSubmitted(false);
-      setShowFeedback(false);
-      setActiveSlotId(firstInputSlotId);
-    }, 0);
-    return () => window.clearTimeout(resetTimer);
-  }, [firstInputSlotId, scenario.id]);
+  const boardLayout = BOARD_LAYOUT_PROFILES[boardLayoutIndex] ?? BOARD_LAYOUT_PROFILES[0];
+  const minBoardScale = boardLayout.minFontPx / BASE_BOARD_FONT_PX;
 
   useEffect(() => {
     if (activeSlotId && orderedInputIds.includes(activeSlotId)) return;
@@ -851,7 +1113,7 @@ export default function LongDivisionUiReviewPreview() {
     if (!activeSlotId || showFeedback) return;
     const field = fieldById.get(parseDigitSlotId(activeSlotId)?.fieldId ?? activeSlotId);
     if (!field || field.kind !== 'setup-dividend') return;
-    if (!hasFilledExpectedLength(values[field.id] ?? '', field.expected)) return;
+    if (!hasFilledComparableConversionValue(values[field.id] ?? '', field.expected)) return;
     const currentIndex = orderedInputIds.indexOf(activeSlotId);
     const nextId = orderedInputIds[currentIndex + 1];
     if (!nextId) return;
@@ -904,7 +1166,11 @@ export default function LongDivisionUiReviewPreview() {
         ? Math.max(220, window.innerHeight - keyboardReservePx - viewportRect.top - 16)
         : Number.POSITIVE_INFINITY;
       const fitScale = Math.min(1, availableWidth / naturalWidth, availableHeight / naturalHeight);
-      const nextScale = Math.max(MIN_BOARD_SCALE, Math.min(1, fitScale));
+      if (fitScale + 0.005 < minBoardScale && boardLayoutIndex < BOARD_LAYOUT_PROFILES.length - 1) {
+        setBoardLayoutIndex(previous => Math.min(previous + 1, BOARD_LAYOUT_PROFILES.length - 1));
+        return;
+      }
+      const nextScale = Math.max(minBoardScale, Math.min(1, fitScale));
 
       setBoardMetrics(previous => {
         if (
@@ -929,15 +1195,38 @@ export default function LongDivisionUiReviewPreview() {
       resizeObserver.disconnect();
       window.removeEventListener('resize', updateBoardScale);
     };
-  }, [activeBoardRounds.length, canRenderBoard, scenario.id, setupTrainingReady, showFeedback]);
+  }, [
+    activeBoardRounds.length,
+    boardLayoutIndex,
+    boardLayout.minFontPx,
+    canRenderBoard,
+    minBoardScale,
+    scenario.id,
+    setupTrainingReady,
+    showFeedback,
+  ]);
+
+  const isConversionField = (field: FieldSpec) => (
+    Boolean(scenario.setupFields) &&
+    (field.kind === 'training' || field.kind === 'setup-divisor' || field.kind === 'setup-dividend')
+  );
+
+  const setFieldValue = (field: FieldSpec, next: string) => {
+    setValues(prev => ({ ...prev, [field.id]: next }));
+    setSubmitted(false);
+    if (isConversionField(field)) {
+      setConversionSubmitted(false);
+      setConversionConfirmed(false);
+      setShowFeedback(false);
+    }
+  };
 
   const updateField = (field: FieldSpec, raw: string) => {
     const sanitizer = field.allowDecimal ? sanitizeDecimalInput : sanitizeDigitInput;
     const previous = values[field.id] ?? '';
     const next = sanitizer(raw, previous);
-    setValues(prev => ({ ...prev, [field.id]: next }));
-    setSubmitted(false);
-    if (next.length >= field.expected.length) {
+    setFieldValue(field, next);
+    if (shouldAutoAdvanceField(field, next)) {
       const currentIndex = orderedInputIds.indexOf(field.id);
       const nextId = orderedInputIds[currentIndex + 1];
       if (nextId) setActiveSlotId(nextId);
@@ -979,14 +1268,23 @@ export default function LongDivisionUiReviewPreview() {
     return buildFields(scenario, expectedModel?.rounds ?? scenario.rounds, Boolean(expectedModel));
   };
 
+  const resetBoardLayout = () => {
+    setBoardLayoutIndex(0);
+    setBoardMetrics({ width: 0, height: 0, scale: 1 });
+  };
+
   const fillExpected = () => {
+    resetBoardLayout();
     const expectedFields = buildExpectedFields();
     setValues(Object.fromEntries(expectedFields.map(field => [field.id, field.expected])));
     setSubmitted(false);
     setShowFeedback(false);
+    setConversionSubmitted(false);
+    setConversionConfirmed(Boolean(scenario.setupFields));
   };
 
   const fillMistake = () => {
+    resetBoardLayout();
     const expectedFields = buildExpectedFields();
     const next = Object.fromEntries(expectedFields.map(field => [field.id, field.expected]));
     const changedTraining = replaceAtLeastOne(next, expectedFields, 'training', '10');
@@ -999,13 +1297,41 @@ export default function LongDivisionUiReviewPreview() {
     setValues(next);
     setSubmitted(true);
     setShowFeedback(true);
+    setConversionSubmitted(Boolean(scenario.setupFields));
+    setConversionConfirmed(false);
   };
 
   const reset = () => {
+    resetBoardLayout();
     setValues({});
     setSubmitted(false);
     setShowFeedback(false);
+    setConversionSubmitted(false);
+    setConversionConfirmed(false);
     setActiveSlotId(inputSlotSpecs[0]?.id ?? null);
+  };
+
+  const selectScenario = (nextScenarioId: ScenarioId) => {
+    resetBoardLayout();
+    setScenarioId(nextScenarioId);
+    if (nextScenarioId === 'decimal-divisor') setDecimalDivisorVariant('integer');
+    setValues({});
+    setSubmitted(false);
+    setShowFeedback(false);
+    setConversionSubmitted(false);
+    setConversionConfirmed(false);
+    setActiveSlotId(null);
+  };
+
+  const selectDecimalDivisorVariant = (variant: DecimalDivisorVariant) => {
+    resetBoardLayout();
+    setDecimalDivisorVariant(variant);
+    setValues({});
+    setSubmitted(false);
+    setShowFeedback(false);
+    setConversionSubmitted(false);
+    setConversionConfirmed(false);
+    setActiveSlotId(null);
   };
 
   const slots: MathInputSlot[] = inputSlotSpecs.map(spec => {
@@ -1027,18 +1353,15 @@ export default function LongDivisionUiReviewPreview() {
       id: spec.id,
       label: field.label,
       value: values[field.id] ?? '',
-      maxLength: Math.max(field.expected.length, 1),
+      maxLength: field.maxLength ?? Math.max(field.expected.length, 1),
       enabledKeys: field.allowDecimal ? DECIMAL_KEYS : DIGIT_KEYS,
       sanitizeInput: field.allowDecimal ? sanitizeDecimalInput : sanitizeDigitInput,
-      setValue: next => {
-        setValues(prev => ({ ...prev, [field.id]: next }));
-        setSubmitted(false);
-      },
-      shouldAutoAdvance: ({ nextValue }) => nextValue.trim().length >= field.expected.length,
+      setValue: next => setFieldValue(field, next),
+      shouldAutoAdvance: ({ nextValue }) => shouldAutoAdvanceField(field, nextValue),
     };
   });
 
-  const collectWrongFields = () => fields.filter(field => normalize(values[field.id] ?? '') !== normalize(field.expected));
+  const collectWrongFields = () => fields.filter(field => !fieldValueMatches(field, values[field.id] ?? ''));
   const wrongFields = submitted ? collectWrongFields() : [];
   const processFeedbackCategories = wrongFields
     .filter(field => isCoreBoardField(field))
@@ -1050,11 +1373,15 @@ export default function LongDivisionUiReviewPreview() {
       userValue: values[field.id] || '空',
       expectedValue: field.expected,
     }));
+  const feedbackSummary = feedbackSummaryForFields(wrongFields);
   const allFilled = fields.every(field => {
     const normalizedValue = normalize(values[field.id] ?? '');
     return normalizedValue.length >= normalize(field.expected).length;
   });
-  const canSubmit = allFilled && canRenderBoard;
+  const isConversionPhase = Boolean(scenario.setupFields && !conversionConfirmed);
+  const canConfirmConversion = Boolean(scenario.setupFields && setupValuesComplete);
+  const canSubmitAnswer = allFilled && canRenderBoard;
+  const primaryActionDisabled = isConversionPhase ? !canConfirmConversion : !canSubmitAnswer;
   const activeField = activeSlotId
     ? fieldById.get(parseDigitSlotId(activeSlotId)?.fieldId ?? activeSlotId)
     : null;
@@ -1078,39 +1405,79 @@ export default function LongDivisionUiReviewPreview() {
     shouldRevealField(roundFieldId(scenario.id, index, 'quotient'))
   ));
   const lastQuotientFieldId = roundFieldId(scenario.id, activeBoardRounds.length - 1, 'quotient');
+  const continuationMarkerVisible = scenario.id === 'cyclic' && shouldRevealField(lastQuotientFieldId);
   const visibleResultFields = scenario.resultFields?.map((field, index) => ({
     field,
     spec: fieldById.get(resultFieldId(scenario.id, index)),
   })).filter(item => item.spec && shouldRevealField(item.spec.id)) ?? [];
+  const cyclicNonRepeatingFieldId = resultFieldId(scenario.id, 0);
+  const cyclicRepeatingFieldId = resultFieldId(scenario.id, 1);
+  const cyclicNonRepeatingValue = (values[cyclicNonRepeatingFieldId] ?? '').trim().replace(/\s/g, '');
+  const cyclicRepeatingValue = (values[cyclicRepeatingFieldId] ?? '').trim().replace(/\s/g, '');
+  const cyclicAnswerPreview = scenario.id === 'cyclic'
+    ? { nonRepeating: cyclicNonRepeatingValue, repeating: cyclicRepeatingValue }
+    : null;
   const conversionProcessHints = useMemo(() => {
-    if (!scenario.setupFields || guidanceMode !== 'medium' || submitted || !setupTrainingReady) return [];
-    return [setupDivisorField, setupDividendField].flatMap(field => {
+    if (!scenario.setupFields || submitted || !conversionSubmitted) return [];
+    return conversionFields.flatMap(field => {
       if (!field) return [];
       const value = normalize(values[field.id] ?? '');
-      const expected = normalize(field.expected);
-      if (value.length < expected.length || value === expected) return [];
+      if (field.kind === 'setup-divisor' && !isIntegerValue(value)) return [];
+      if (!value || fieldValueMatches(field, value)) return [];
       return [{
         id: field.id,
-        text: field.kind === 'setup-divisor'
-          ? `除数应为 ${scenario.setupFields?.divisorExpected ?? field.expected}`
-          : `被除数应为 ${scenario.setupFields?.dividendDisplay ?? field.expected}`,
+        text: field.kind === 'training'
+          ? '扩倍倍数填写有误'
+          : field.kind === 'setup-divisor'
+            ? '转换后除数填写有误'
+            : '转换后被除数填写有误',
       }];
     });
   }, [
-    guidanceMode,
+    conversionFields,
+    conversionSubmitted,
     scenario.setupFields,
-    setupDividendField,
-    setupDivisorField,
-    setupTrainingReady,
     submitted,
     values,
   ]);
+
+  const handleConfirmConversion = () => {
+    if (!scenario.setupFields) return;
+    setConversionSubmitted(true);
+    if (conversionHasError) {
+      setConversionConfirmed(false);
+      if (guidanceMode === 'high') {
+        setSubmitted(true);
+        setShowFeedback(true);
+        setActiveSlotId(null);
+        return;
+      }
+      setSubmitted(false);
+      setShowFeedback(false);
+      setActiveSlotId(conversionWrongFields[0]?.id ?? setupDivisorFieldId);
+      return;
+    }
+
+    const nextModel = buildBoardModelFromInput(values[setupDividendFieldId] ?? '', values[setupDivisorFieldId] ?? '');
+    if (!nextModel) return;
+    resetBoardLayout();
+    setSubmitted(false);
+    setShowFeedback(false);
+    setConversionConfirmed(true);
+    setActiveSlotId(digitSlotId(roundFieldId(scenario.id, 0, 'quotient'), 0));
+  };
+
+  const handleSubmitAnswer = () => {
+    const nextWrongFields = collectWrongFields();
+    setSubmitted(true);
+    setShowFeedback(nextWrongFields.length > 0);
+  };
 
   const renderInput = (field: FieldSpec, compact = false) => {
     const value = values[field.id] ?? '';
     const status = !submitted
       ? 'idle'
-      : normalize(value) === normalize(field.expected)
+      : fieldValueMatches(field, value)
         ? 'correct'
         : 'wrong';
     return (
@@ -1125,9 +1492,7 @@ export default function LongDivisionUiReviewPreview() {
         onKeyDown={event => handleInputKeyDown(event, field)}
         onFocus={() => setActiveSlotId(field.id)}
         style={{
-          width: compact
-            ? `${Math.max(3.5, field.expected.length * 1.35 + 1.4)}rem`
-            : `${Math.max(5, field.expected.length * 1.35 + 1.8)}rem`,
+          width: `${compact ? COMPACT_FIELD_INPUT_REM : REGULAR_FIELD_INPUT_REM}rem`,
         }}
         className={`${compact ? 'h-10 px-2 text-lg' : 'h-11 px-3 text-xl'} rounded-lg border-2 text-center font-black outline-none transition-all ${statusClass(status, activeSlotId === field.id)}`}
       />
@@ -1160,8 +1525,8 @@ export default function LongDivisionUiReviewPreview() {
         }}
         onFocus={() => setActiveSlotId(slotId)}
         style={{
-          width: `${DIGIT_CELL_REM}rem`,
-          height: `${DIGIT_CELL_REM}rem`,
+          width: `${boardLayout.digitCellRem}rem`,
+          height: `${boardLayout.digitCellHeightRem}rem`,
         }}
         className={`rounded-lg border-2 text-center text-base font-black outline-none transition-all ${statusClass(status, activeSlotId === slotId)}`}
       />
@@ -1175,8 +1540,8 @@ export default function LongDivisionUiReviewPreview() {
       <div
         className="grid"
         style={{
-          columnGap: `${DIGIT_GAP_REM}rem`,
-          gridTemplateColumns: `repeat(${field.expected.length}, ${DIGIT_CELL_REM}rem)`,
+          columnGap: `${boardLayout.digitGapRem}rem`,
+          gridTemplateColumns: `repeat(${field.expected.length}, ${boardLayout.digitCellRem}rem)`,
         }}
       >
         {Array.from({ length: field.expected.length }).map((_, digitIndex) => (
@@ -1186,21 +1551,25 @@ export default function LongDivisionUiReviewPreview() {
     );
   };
 
-  const divisorTrackRem = Math.max(
-    DIGIT_CELL_REM,
-    divisor.length * DIGIT_CELL_REM + Math.max(0, divisor.length - 1) * DIGIT_GAP_REM,
+  const naturalDivisorTrackRem = Math.max(
+    boardLayout.digitCellRem,
+    divisor.length * boardLayout.digitCellRem + Math.max(0, divisor.length - 1) * boardLayout.digitGapRem,
   );
+  const divisorTrackRem = boardLayout.divisorTrackRem ?? naturalDivisorTrackRem;
 
   const digitTracks = Array.from({ length: boardColumnCount }).flatMap((_, index) => {
-    const tracks = [`${DIGIT_CELL_REM}rem`];
+    const tracks = [`${boardLayout.digitCellRem}rem`];
     if (index < boardColumnCount - 1) {
-      tracks.push(`${index === decimalGapAfterColumn ? DECIMAL_GAP_REM : DIGIT_GAP_REM}rem`);
+      tracks.push(`${index === decimalGapAfterColumn ? boardLayout.decimalGapRem : boardLayout.digitGapRem}rem`);
     }
     return tracks;
   });
+  if (continuationMarkerVisible) {
+    digitTracks.push('0rem', `${boardLayout.ellipsisTrackRem}rem`);
+  }
 
   const boardGridStyle = {
-    gridTemplateColumns: `${divisorTrackRem}rem ${DIGIT_GAP_REM}rem ${DIVIDER_TRACK_REM}rem ${DIGIT_GAP_REM}rem ${digitTracks.join(' ')}`,
+    gridTemplateColumns: `${divisorTrackRem}rem ${boardLayout.digitGapRem}rem ${boardLayout.dividerTrackRem}rem ${boardLayout.digitGapRem}rem ${digitTracks.join(' ')}`,
     justifyContent: 'center',
   };
 
@@ -1265,7 +1634,7 @@ export default function LongDivisionUiReviewPreview() {
         );
       })}
       {anyQuotientRevealed && renderQuotientDecimalPoint()}
-      {scenario.id === 'cyclic' && shouldRevealField(lastQuotientFieldId) && (
+      {continuationMarkerVisible && (
         <div
           className="flex h-10 items-center justify-center text-2xl font-black text-text-2"
           style={{ gridColumn: gridColumn(quotientStartColumn + activeBoardRounds.length, quotientStartColumn + activeBoardRounds.length), gridRow: '1' }}
@@ -1361,7 +1730,11 @@ export default function LongDivisionUiReviewPreview() {
 
   const renderLongDivisionBoard = () => (
     <section className="mt-4 min-w-0" data-long-division-board-section="true">
-      <div ref={boardViewportRef} className="flex min-w-0 justify-center overflow-x-auto overflow-y-visible pb-2">
+      <div
+        ref={boardViewportRef}
+        data-long-division-board-viewport="true"
+        className="flex min-w-0 justify-center overflow-x-auto overflow-y-visible pb-2"
+      >
         <div
           className="relative shrink-0"
           style={boardMetrics.width && boardMetrics.height
@@ -1373,15 +1746,22 @@ export default function LongDivisionUiReviewPreview() {
         >
           <div
             ref={boardPaperRef}
+            data-long-division-adaptive-profile={boardLayout.id}
             data-long-division-board-scale={boardMetrics.scale.toFixed(3)}
-            data-min-readable-font-px={MIN_BOARD_FONT_PX}
+            data-min-readable-font-px={boardLayout.minFontPx}
             className={`${boardMetrics.width ? 'absolute left-0 top-0' : ''} w-max rounded-[18px] border-2 border-border bg-bg p-3`}
             style={{
+              padding: `${boardLayout.paperPaddingRem}rem`,
               transform: `scale(${boardMetrics.scale})`,
               transformOrigin: 'top left',
             }}
           >
-            <div className="mx-auto max-w-2xl rounded-2xl border-2 border-border-2 bg-card px-3 py-3">
+            <div
+              className="mx-auto max-w-2xl rounded-2xl border-2 border-border-2 bg-card px-3 py-3"
+              style={{
+                padding: `${boardLayout.innerPaddingYRem}rem ${boardLayout.innerPaddingXRem}rem`,
+              }}
+            >
               {renderQuotientRow()}
               {renderDividendRow()}
 
@@ -1426,6 +1806,12 @@ export default function LongDivisionUiReviewPreview() {
             {scenario.decimalHint && (
               <div className="mx-auto mt-3 max-w-md rounded-xl border border-success-mid bg-success-lt px-3 py-2 text-center text-sm font-bold text-success">
                 {scenario.decimalHint}
+              </div>
+            )}
+
+            {boardLayout.id !== 'comfortable' && (
+              <div className="mx-auto mt-2 max-w-md rounded-xl border border-primary/30 bg-primary-lt px-3 py-2 text-center text-xs font-black text-primary">
+                宽度自适应：{boardLayout.label} · 最小字号 {boardLayout.minFontPx}px
               </div>
             )}
           </div>
@@ -1488,7 +1874,7 @@ export default function LongDivisionUiReviewPreview() {
                 <button
                   key={item.id}
                   type="button"
-                  onClick={() => setScenarioId(item.id)}
+                  onClick={() => selectScenario(item.id)}
                   className={`min-w-0 rounded-xl border-2 px-3 py-2 text-left transition-all ${
                     scenario.id === item.id
                       ? 'border-primary bg-primary-lt text-primary'
@@ -1547,6 +1933,47 @@ export default function LongDivisionUiReviewPreview() {
                     </div>
                   )}
                 </div>
+                {scenario.setupFields && (
+                  <div className="mb-3 flex justify-center">
+                    <div className="grid w-full max-w-sm grid-cols-2 gap-2 rounded-xl border-2 border-border bg-card p-1" aria-label="小数除小数答题步骤">
+                      {([
+                        ['1', '扩倍环节', !conversionConfirmed],
+                        ['2', '实际计算', conversionConfirmed],
+                      ] as const).map(([step, label, active]) => (
+                        <div
+                          key={step}
+                          className={`rounded-lg px-3 py-1.5 text-center text-xs font-black transition-colors ${
+                            active ? 'bg-primary text-on-primary' : 'text-text-2'
+                          }`}
+                        >
+                          {step}. {label}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {isDecimalDivisorScenario && (
+                  <div className="mb-3 flex justify-center">
+                    <div className="inline-flex rounded-xl border-2 border-border bg-card p-1" aria-label="小数除小数转换结果类型">
+                      {([
+                        ['integer', '转换后整数'],
+                        ['fractional', '转换后仍有小数'],
+                      ] as const).map(([variant, label]) => (
+                        <button
+                          key={variant}
+                          type="button"
+                          aria-pressed={decimalDivisorVariant === variant}
+                          onClick={() => selectDecimalDivisorVariant(variant)}
+                          className={`rounded-lg px-3 py-1.5 text-xs font-black transition-colors ${
+                            decimalDivisorVariant === variant ? 'bg-primary text-on-primary' : 'text-text-2 hover:text-primary'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-wrap justify-center gap-2">
                   {scenario.trainingFields.map((field, index) => {
                     const spec = fieldById.get(trainingFieldId(scenario.id, index));
@@ -1559,7 +1986,7 @@ export default function LongDivisionUiReviewPreview() {
                       </label>
                     );
                   })}
-                  {setupTrainingFilled && [setupDivisorField, setupDividendField].map(spec => {
+                  {scenario.setupFields && [setupDivisorField, setupDividendField].map(spec => {
                     if (!spec) return null;
                     return (
                       <label key={spec.id} className="flex min-w-0 items-center justify-center gap-2 rounded-xl bg-card px-3 py-2 text-sm font-black text-text sm:min-w-64">
@@ -1583,6 +2010,11 @@ export default function LongDivisionUiReviewPreview() {
                     ))}
                   </div>
                 )}
+                {conversionSubmitted && setupDivisorFormatError && !showFeedback && (
+                  <div className="mt-3 rounded-xl border-2 border-warning bg-warning-lt px-3 py-2 text-center text-sm font-black" style={{ color: '#7A5C00' }} role="alert">
+                    转换后除数不是整数。
+                  </div>
+                )}
               </section>
             )}
 
@@ -1594,7 +2026,7 @@ export default function LongDivisionUiReviewPreview() {
                   <ListChecks size={17} aria-hidden="true" />
                   计算后结构化结果格
                 </div>
-                <div className="grid gap-2 md:grid-cols-2">
+                <div className={`grid gap-2 ${scenario.id === 'cyclic' ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
                   {visibleResultFields.map(({ field, spec }) => {
                     if (!spec) return null;
                     return (
@@ -1604,6 +2036,17 @@ export default function LongDivisionUiReviewPreview() {
                       </label>
                     );
                   })}
+                  {cyclicAnswerPreview && (
+                    <div className="flex min-w-0 items-center gap-2 rounded-xl bg-card px-3 py-2 text-sm font-black text-text">
+                      <span className="min-w-0 flex-1 truncate">标准格式答数</span>
+                      <span className="shrink-0 rounded-lg border-2 border-border bg-bg px-3 py-1.5">
+                        {renderRecurringDecimalAnswer(
+                          cyclicAnswerPreview.nonRepeating,
+                          cyclicAnswerPreview.repeating,
+                        )}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </section>
             )}
@@ -1611,19 +2054,15 @@ export default function LongDivisionUiReviewPreview() {
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <button
                 type="button"
-                disabled={!canSubmit}
-                onClick={() => {
-                  const nextWrongFields = collectWrongFields();
-                  setSubmitted(true);
-                  setShowFeedback(nextWrongFields.length > 0);
-                }}
+                disabled={primaryActionDisabled}
+                onClick={isConversionPhase ? handleConfirmConversion : handleSubmitAnswer}
                 className={`inline-flex min-w-24 items-center justify-center rounded-2xl px-6 py-2 text-sm font-black transition-all ${
-                  canSubmit
+                  !primaryActionDisabled
                     ? 'bg-primary text-on-primary'
                     : 'cursor-not-allowed border-2 border-border bg-card-2 text-text-2'
                 }`}
               >
-                提交
+                {isConversionPhase ? '确认扩倍' : '提交答案'}
               </button>
               <button
                 type="button"
@@ -1646,7 +2085,7 @@ export default function LongDivisionUiReviewPreview() {
                   失败反馈预览
                 </div>
                 <p className="mt-2 text-sm font-bold text-text">
-                  最终答案可能已经接近，但长除法过程或训练格还需要订正。
+                  {feedbackSummary}
                 </p>
                 <div className="mt-3 grid gap-2 md:grid-cols-2">
                   {processFeedbackCategories.map(category => (
