@@ -1,6 +1,6 @@
 # Backlog（未激活需求 / 想法 / 延期候选）
 
-> 最后更新：2026-04-29（`BL-011` Phase 3 本地完成；真实设备证据发布后线上补验；`BL-013` 保持后续候选）
+> 最后更新：2026-04-30（新增 `BL-014` 乘法竖式迭代候选；新增 `BL-015` v0.6 开发 / QA 子 agent 试点候选；新增 `BL-016` master lint 债清理候选）
 > 角色：**未激活的需求 / 想法 / 方向 / 延期候选**集中地。只有被正式纳入某个版本之后，条目才会展开为正式 Plan；已纳入当前版本但尚未收口的条目可暂存在本文件作为来源索引，版本收口时必须归档或回流。
 >
 > **与 `ISSUE_LIST.md` 的边界**：
@@ -83,6 +83,44 @@
 - **状态**：候选（建议 v0.6 或后续版本评估；不进入 v0.5 Phase 3）
 - **初步分流**：后续版本启动时评估错题本重练、同类题推荐、回到相关关卡或知识点 lane 的最低成本方案；需要与错题数据、Practice session、campaign / advance / rank-match 入口边界一起设计。
 - **期望方向**：让结构化错因不仅能解释错误，也能给学生一个低压力的下一步练习动作；Phase 3 只记录缺口，不扩大当前范围。
+
+---
+
+### BL-014 · 乘法竖式迭代：删除 legacy 并统一过程错因
+
+- **来源**：2026-04-30 用户新需求反馈
+- **背景**：A03 乘法竖式当前同时存在 legacy 单行竖式和多行乘法竖式两套交互与判定口径。legacy 一位乘法使用进位过程格和三档宽松策略；多行乘法竖式已经能覆盖一位乘数的单行过程积场景，且 `ISSUE-068` 已修复单行过程积重复填写问题。后续希望收敛为一套乘法竖式能力。
+- **类别**：体验一致性 / A03 竖式计算交互 / 判定与反馈抽象
+- **状态**：候选（后续版本评估；不并入当前 `BL-010` 竖式除法 UI 主线）
+- **初步分流**：先评估用多行乘法板覆盖原 legacy 乘法题型的改造范围，再决定是否保留 legacy 仅服务加法 / 减法，或进一步拆除 legacy 组件。同步检查乘法过程格错误提示是否可参照长除法设计，并评估过程错因分类、结构化字段展示、错题本展示是否能抽象为跨题型统一逻辑。
+- **期望方向**：删除或收敛乘法 legacy 路径，用多行乘法覆盖原 legacy 乘法题型；乘法过程错因提示与长除法保持一致，并尽量沉淀出所有竖式题型可复用的统一判定 / 错因展示逻辑。
+
+---
+
+### BL-015 · v0.6 开发 / QA 子 agent 职责拆分试点
+
+- **来源**：2026-04-30 Matt Pocock skills repo 与 MathQuest 项目治理讨论；归档入口：[`Reports/2026-04-30-agent-roles-and-development-workflow/summary.md`](Reports/2026-04-30-agent-roles-and-development-workflow/summary.md)
+- **背景**：本轮讨论确认 Matt repo 更适合作为 MathQuest 的“开发执行质量控制层”，不替代现有 ProjectManager / 版本包 / QA leader / Living Spec。v0.6 可试点更轻量的 agent 职责拆分：主 agent 继续负责产品、项目、文档、版本治理和需求澄清；开发子 agent 负责技术方案、开发模式判定、实现、TDD、refactor 和架构检查；QA 子 agent 负责测试策略、用例、自动化 / 拟真 / 视觉 QA、缺陷分流和 release gate。
+- **类别**：项目治理 / Agent 协作 / 开发流程
+- **状态**：候选（建议 v0.6 版本预研后决定是否纳入版本治理计划）
+- **初步分流**：v0.6 启动时先做一次“开发模式判定”：用户可见功能优先 vertical slice；账号同步、存档迁移、共享输入协议等高风险基础设施采用 foundation slice + vertical slice；纯诊断走 diagnostic phase；release gate 走 stabilization / QA phase。若采用子 agent 拆分，先写一份 canonical 职责文档，再按 Claude Code / Codex / Cursor 分别做轻量适配。
+- **期望方向**：把开发实现与 QA 验证从主 agent 的常规职责中拆出，降低主 agent 上下文负担，同时保留用户作为制作人 / PO 的产品决策入口；不新增常驻学习设计、发布或 Spec 治理角色。
+
+---
+
+### BL-016 · master lint 债清理
+
+- **来源**：2026-04-30 用户要求记录当前 `master` lint 债；证据来自独立 worktree `.worktrees/lint-master-20260430`，`master@5bfb1bf`，先执行 `npm ci`，再执行 `npm run lint`。
+- **背景**：`master@5bfb1bf` 当前 `npm run lint` 未通过，共 `145 errors / 1 warning`，涉及 17 个文件。主要集中在生成器测试中的 `@typescript-eslint/no-explicit-any`，以及 React Hooks 新规则、ESLint 规则配置和少量历史代码风格问题。该项记录为未激活工程债清理候选；若后续拆成具体缺陷或版本阻塞项，应迁入 `ISSUE_LIST.md` 或对应版本 Plan。
+- **类别**：工程债 / Lint hygiene / 测试类型收敛
+- **状态**：候选（不并入 v0.5 当前功能主线；建议在 v0.6 或单独 hardening slice 中处理）
+- **已确认范围**：
+  - 总量：`145 errors / 1 warning`。
+  - 主要规则：`@typescript-eslint/no-explicit-any` 126 条；`react-hooks/refs` 5 条；`react-hooks/rules-of-hooks` 3 条；`react-hooks/set-state-in-effect` 2 条；`react-hooks/purity` 2 条；其余为未使用变量、`prefer-const`、`no-useless-escape`、`react-hooks/exhaustive-deps` warning，以及 `react/no-danger` 规则定义缺失。
+  - 高集中度文件：`src/engine/generators/generators.test.ts` 79 errors；`src/engine/generators/difficulty-tiers.test.ts` 22 errors；`src/engine/generators/qa-v3.test.ts` 18 errors。
+  - 关键非测试风险：`src/components/SyncStatusIndicator.tsx` ref render access；`src/pages/CampaignMap.tsx` 条件调用 hook；`src/pages/RankMatchHub.tsx` render 中调用 `Date.now()`；`src/sync/merge-flow.ts` 非 hook 函数调用 `useRemoteAccount()`。
+- **初步分流**：先把 lint 债拆成“规则配置 / 测试 helper 类型化 / React Hooks 结构性修复 / 小型风格修复”四组；优先处理可能影响运行语义的 React Hooks 类问题，再集中收敛测试 helper 的 `any`，避免在业务功能 PR 中混合大量低风险机械改动。
+- **期望方向**：恢复 `npm run lint` 作为可信质量门；后续新增功能不再继承 master 上的 lint 噪音。
 
 ---
 
