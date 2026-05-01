@@ -4,6 +4,8 @@ export default defineConfig({
   testDir: './QA/e2e',
   timeout: 30_000,
   testMatch: '*.spec.ts',
+  // Long-division parity uses progressive active-slot reveal across paired pages.
+  workers: 1,
   outputDir: 'QA/artifacts/playwright-test-results',
   reporter: 'list',
   use: {

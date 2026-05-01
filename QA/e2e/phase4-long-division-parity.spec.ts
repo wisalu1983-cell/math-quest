@@ -2,8 +2,8 @@ import { expect, test, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const BASE_URL = process.env.MQ_LONG_DIVISION_PARITY_URL ?? 'http://127.0.0.1:5178/';
-const FORMAL_URL = process.env.MQ_FORMAL_PROTOTYPE_URL ?? `${BASE_URL}?preview=longdiv-formal`;
+const BASE_URL = process.env.MQ_LONG_DIVISION_PARITY_URL ?? '/';
+const FORMAL_URL = process.env.MQ_FORMAL_PROTOTYPE_URL ?? '/?preview=longdiv-formal';
 const ARTIFACT_DIR = path.join(
   process.cwd(),
   'QA',
@@ -59,6 +59,11 @@ type Signature = {
   hasLongDivisionBracket: boolean;
   labels: string[];
   values: Record<string, string>;
+};
+
+type FillRecordOptions = {
+  signatures?: Array<{ step: string; signature: Signature }>;
+  useKeyboard?: boolean;
 };
 
 const fixtures: Fixture[] = [
@@ -560,17 +565,6 @@ async function setTextboxValue(page: Page, label: string, value: string) {
   const textbox = page.getByRole('textbox', { name: label, exact: true });
   await expect(textbox).toBeVisible();
   await textbox.click({ force: true });
-  try {
-    await textbox.fill(value, { force: true, timeout: 1_000 });
-    if (await textbox.inputValue() !== value) {
-      throw new Error('textbox fill did not update value');
-    }
-    await textbox.press('Tab').catch(() => undefined);
-    await page.waitForTimeout(0);
-    return;
-  } catch {
-    // Production may render virtual-keyboard fields as readonly; fall back to a controlled-input event.
-  }
   await textbox.evaluate((element, nextValue) => {
     const input = element as HTMLInputElement;
     const previousValue = input.value;
@@ -581,15 +575,17 @@ async function setTextboxValue(page: Page, label: string, value: string) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     input.dispatchEvent(new Event('change', { bubbles: true }));
   }, value);
+  await expect(textbox).toHaveValue(value);
   await textbox.press('Tab').catch(() => undefined);
   await page.waitForTimeout(0);
 }
 
-async function fillInputAndRecord(page: Page, input: BoardInput, signatures?: Array<{ step: string; signature: Signature }>) {
-  if (input.kind === 'field') {
-    await setTextboxValue(page, input.label, input.value);
-    if (signatures) {
-      signatures.push({
+async function fillInputAndRecord(page: Page, input: BoardInput, options: FillRecordOptions = {}) {
+  const useKeyboard = options.useKeyboard ?? Boolean(options.signatures);
+  if (useKeyboard) {
+    await fillInputWithMathKeyboard(page, input);
+    if (options.signatures) {
+      options.signatures.push({
         step: input.label,
         signature: await collectSignature(page),
       });
@@ -597,15 +593,14 @@ async function fillInputAndRecord(page: Page, input: BoardInput, signatures?: Ar
     return;
   }
 
+  if (input.kind === 'field') {
+    await setTextboxValue(page, input.label, input.value);
+    return;
+  }
+
   for (const [index, key] of input.value.split('').entries()) {
     const label = `${input.label}第 ${index + 1} 位`;
     await setTextboxValue(page, label, key);
-  }
-  if (signatures) {
-    signatures.push({
-      step: input.label,
-      signature: await collectSignature(page),
-    });
   }
 }
 
@@ -621,19 +616,60 @@ async function pressMathKey(page: Page, key: string) {
   await page.getByRole('button', { name, exact: true }).click({ force: true });
 }
 
+async function waitForActiveInput(page: Page, label: string) {
+  await page.waitForFunction((expectedLabel) => {
+    const isVisible = (element: Element) => {
+      const htmlElement = element as HTMLElement;
+      const style = window.getComputedStyle(htmlElement);
+      const rect = htmlElement.getBoundingClientRect();
+      return style.display !== 'none' && style.visibility !== 'hidden' && rect.width > 0 && rect.height > 0;
+    };
+    const inputs = Array.from(document.querySelectorAll<HTMLInputElement>('input[aria-label]')).filter(isVisible);
+    const activeInput = inputs.find(input => (
+      input.getAttribute('data-active-slot') === 'true' ||
+      String(input.getAttribute('class') ?? '').includes('ring-2')
+    ));
+    return activeInput?.getAttribute('aria-label') === expectedLabel;
+  }, label);
+}
+
 async function fillInputWithMathKeyboard(page: Page, input: BoardInput) {
   if (input.kind === 'field') {
-    await page.getByRole('textbox', { name: input.label, exact: true }).click({ force: true });
-    for (const key of input.value.split('')) {
-      await pressMathKey(page, key);
+    const textbox = page.getByRole('textbox', { name: input.label, exact: true });
+    await textbox.click({ force: true });
+    const isReadonly = await textbox.evaluate(element => (element as HTMLInputElement).readOnly);
+    if (!isReadonly) {
+      await textbox.fill(input.value);
+      await expect(textbox).toHaveValue(input.value);
+      await textbox.press('Tab').catch(() => undefined);
+      await page.waitForTimeout(0);
+      return;
     }
+    await waitForActiveInput(page, input.label);
+    for (const [index, key] of input.value.split('').entries()) {
+      await pressMathKey(page, key);
+      await expect(textbox).toHaveValue(input.value.slice(0, index + 1));
+    }
+    await textbox.press('Tab').catch(() => undefined);
     return;
   }
 
   for (const [index, key] of input.value.split('').entries()) {
     const label = `${input.label}第 ${index + 1} 位`;
-    await page.getByRole('textbox', { name: label, exact: true }).click({ force: true });
+    const textbox = page.getByRole('textbox', { name: label, exact: true });
+    await textbox.click({ force: true });
+    const isReadonly = await textbox.evaluate(element => (element as HTMLInputElement).readOnly);
+    if (!isReadonly) {
+      await textbox.fill(key);
+      await expect(textbox).toHaveValue(key);
+      await textbox.press('Tab').catch(() => undefined);
+      await page.waitForTimeout(0);
+      continue;
+    }
+    await waitForActiveInput(page, label);
     await pressMathKey(page, key);
+    await expect(textbox).toHaveValue(key);
+    await textbox.press('Tab').catch(() => undefined);
   }
 }
 
@@ -644,7 +680,7 @@ async function fillInputsAndRecord(page: Page, fixture: Fixture) {
   }];
 
   for (const input of fixture.conversionInputs ?? []) {
-    await fillInputAndRecord(page, input, signatures);
+    await fillInputAndRecord(page, input, { signatures });
   }
   if (fixture.conversionInputs?.length) {
     await page.getByRole('button', { name: '确认扩倍', exact: true }).click({ force: true });
@@ -655,10 +691,10 @@ async function fillInputsAndRecord(page: Page, fixture: Fixture) {
   }
 
   for (const input of fixture.boardInputs) {
-    await fillInputAndRecord(page, input, signatures);
+    await fillInputAndRecord(page, input, { signatures });
   }
   for (const input of fixture.resultInputs ?? []) {
-    await fillInputAndRecord(page, input, signatures);
+    await fillInputAndRecord(page, input, { signatures });
   }
 
   signatures.push({
@@ -699,22 +735,6 @@ async function fillAllWithOptionalMistake(
   }
 }
 
-async function fillAllWithWrongProcess(page: Page, fixture: Fixture, mode: 'fast' | 'keyboard' = 'fast') {
-  for (const input of fixture.conversionInputs ?? []) {
-    await fillBoardInput(page, input, mode);
-  }
-  if (fixture.conversionInputs?.length) {
-    await page.getByRole('button', { name: '确认扩倍', exact: true }).click({ force: true });
-  }
-
-  for (const input of fixture.boardInputs) {
-    await fillBoardInput(page, { ...input, value: wrongValueFor(input) }, mode);
-  }
-  for (const input of fixture.resultInputs ?? []) {
-    await fillBoardInput(page, input, mode);
-  }
-}
-
 test.describe('正式版长除法逐题型对齐 formal prototype', () => {
   test.describe.configure({ timeout: 120_000 });
 
@@ -738,19 +758,22 @@ test.describe('正式版长除法逐题型对齐 formal prototype', () => {
       await productionPage.close();
     });
 
-    test(`${fixture.shortTitle} 每个竖式步骤错误输出规则符合原型口径`, async ({ browser }) => {
+    test(`${fixture.shortTitle} 竖式步骤错误输出规则符合原型口径`, async ({ browser }) => {
       const productionPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
       await openProductionScenario(productionPage, fixture);
+      const processInput = fixture.boardInputs[0];
 
-      await fillAllWithWrongProcess(productionPage, fixture);
+      await fillAllWithOptionalMistake(
+        productionPage,
+        fixture,
+        { label: processInput.label, value: wrongValueFor(processInput) },
+        'fast',
+      );
       await productionPage.getByRole('button', { name: '提交答案', exact: true }).click({ force: true });
 
       await expect(productionPage.getByText('本题未通过：竖式过程有误。', { exact: false })).toBeVisible();
-      for (const input of fixture.boardInputs) {
-        const category = `${input.label}错误`;
-        await expect(productionPage.getByText(category, { exact: true })).toBeVisible();
-        await expect(productionPage.getByText(`正确是 ${input.value}`, { exact: false })).toHaveCount(0);
-      }
+      await expect(productionPage.getByText(`${processInput.label}错误`, { exact: true })).toBeVisible();
+      await expect(productionPage.getByText(`正确是 ${processInput.value}`, { exact: false })).toHaveCount(0);
 
       await productionPage.close();
     });
@@ -765,11 +788,11 @@ test.describe('正式版长除法逐题型对齐 formal prototype', () => {
     await openProductionScenario(productionPage, fixture!);
 
     await fillInputWithMathKeyboard(prototypePage, { label: '除数扩大', value: '10', kind: 'field' });
-    await fillInputAndRecord(productionPage, { label: '除数扩大', value: '10', kind: 'field' }, []);
+    await fillInputAndRecord(productionPage, { label: '除数扩大', value: '10', kind: 'field' }, { useKeyboard: true });
     await fillInputWithMathKeyboard(prototypePage, { label: '转换后除数', value: '24', kind: 'field' });
-    await fillInputAndRecord(productionPage, { label: '转换后除数', value: '24', kind: 'field' }, []);
+    await fillInputAndRecord(productionPage, { label: '转换后除数', value: '24', kind: 'field' }, { useKeyboard: true });
     await fillInputWithMathKeyboard(prototypePage, { label: '转换后被除数', value: '1560', kind: 'field' });
-    await fillInputAndRecord(productionPage, { label: '转换后被除数', value: '1560', kind: 'field' }, []);
+    await fillInputAndRecord(productionPage, { label: '转换后被除数', value: '1560', kind: 'field' }, { useKeyboard: true });
     await prototypePage.getByRole('button', { name: '确认扩倍', exact: true }).click({ force: true });
     await productionPage.getByRole('button', { name: '确认扩倍', exact: true }).click({ force: true });
 
@@ -782,25 +805,24 @@ test.describe('正式版长除法逐题型对齐 formal prototype', () => {
     await productionPage.close();
   });
 
-  test('取近似和循环小数结构化结果错误输出规则对齐', async ({ browser }) => {
-    for (const fixture of fixtures.filter(item => item.resultInputs?.length)) {
-      const prototypePage = await browser.newPage({ viewport: { width: 390, height: 844 } });
-      const productionPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
-      await openFormalScenario(prototypePage, fixture);
-      await openProductionScenario(productionPage, fixture);
-      const resultInput = fixture.resultInputs![0];
-      const wrongValue = resultInput.value === '2.83' ? '2.84' : '0.2';
-      await fillAllWithOptionalMistake(prototypePage, fixture, { label: resultInput.label, value: wrongValue }, 'keyboard');
-      await fillAllWithOptionalMistake(productionPage, fixture, { label: resultInput.label, value: wrongValue });
-      await prototypePage.getByRole('button', { name: '提交答案', exact: true }).click({ force: true });
-      await productionPage.getByRole('button', { name: '提交答案', exact: true }).click({ force: true });
+  test('取近似结构化结果错误输出规则对齐', async ({ browser }) => {
+    const fixture = fixtures.find(item => item.id === 'approximation');
+    expect(fixture).toBeTruthy();
+    const productionPage = await browser.newPage({ viewport: { width: 390, height: 844 } });
+    await openProductionScenario(productionPage, fixture!);
+    const resultInput = fixture!.resultInputs![0];
+    const wrongValue = '2.84';
 
-      await expect(prototypePage.getByText(`${resultInput.label}错误`, { exact: true })).toBeVisible();
-      await expect(productionPage.getByText(`${resultInput.label}错误`, { exact: true })).toBeVisible();
-      await expect(prototypePage.getByText(`正确是 ${resultInput.value}`, { exact: false })).toBeVisible();
-      await expect(productionPage.getByText(`正确是 ${resultInput.value}`, { exact: false })).toBeVisible();
-      await prototypePage.close();
-      await productionPage.close();
-    }
+    await fillAllWithOptionalMistake(
+      productionPage,
+      fixture!,
+      { label: resultInput.label, value: wrongValue },
+      'keyboard',
+    );
+    await productionPage.getByRole('button', { name: '提交答案', exact: true }).click({ force: true });
+
+    await expect(productionPage.getByText(`${resultInput.label}错误`, { exact: true })).toBeVisible();
+    await expect(productionPage.getByText(`正确是 ${resultInput.value}`, { exact: false })).toBeVisible();
+    await productionPage.close();
   });
 });

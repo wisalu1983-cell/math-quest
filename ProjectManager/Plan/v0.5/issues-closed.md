@@ -8,6 +8,21 @@
 
 ## 关闭问题
 
+### ISSUE-069 · reverse-round 填空题要求填 □ 数字但正确答案显示完整小数（P1 · bug / 题干答案一致性）
+
+- **状态**：✅ 已修复（2026-05-01，v0.5 Phase 5）
+- **来源**：2026-04-29 用户截图反馈。样例为 `91.□ 用四舍五入法取到个位后结果仍然是 91，□ 里最大能填几？`，用户填 `4` 但系统显示正确答案 `91.4`。
+- **类别**：bug / 题干答案一致性 / A02 数感与近似值 / `reverse-round`。
+- **归位**：[`phases/phase-5.md`](phases/phase-5.md) · [`subplans/2026-05-01-v05-phase5-ISSUE-069-reverse-round填空答案口径修复.md`](subplans/2026-05-01-v05-phase5-ISSUE-069-reverse-round填空答案口径修复.md)。
+- **问题摘要**：`reverse-round` 低 / 中档模板 4 的题干问“□ 里最大 / 最小能填几”，但 `solution.answer` 仍沿用完整一位小数 `N.4` / `(N-1).5`，导致学生按题干填写单个数字时被判错。
+- **修复摘要**：仅模板 4 改为 `askMax ? '4' : '5'`；explanation 同时说明“□ 最大 / 最小填几”和对应完整一位小数；其他 `reverse-round` 模板仍保留完整小数答案。
+- **关闭证据**：
+  - `src/engine/generators/number-sense.ts`：模板 4 的 `solution.answer` 和 explanation 已按方框填数字口径修正。
+  - `src/engine/generators/number-sense.phase5.test.ts`：固定最大 / 最小两条分支，覆盖答案口径与 `isNumericEqual('4'/'5')`。
+  - `npm test -- src/engine/generators/number-sense.phase5.test.ts --run`：2 tests passed。
+  - `npm test -- --run`：64 files / 773 tests passed。
+  - `npm run build`：通过，仅 Vite chunk size warning。
+
 ### ISSUE-067 · 多行乘法竖式判错面板缺少过程 / 训练格错因（P1 · bug / UX 反馈一致性）
 
 - **状态**：✅ 已修复（2026-04-29，v0.5 Phase 3）

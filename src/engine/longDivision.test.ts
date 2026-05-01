@@ -276,4 +276,41 @@ describe('longDivision engine', () => {
       ],
     });
   });
+
+  it('classifies cyclic structured result mistakes with user and expected values', () => {
+    const board = buildLongDivisionBoardData({
+      kind: 'cyclic',
+      dividend: '14',
+      divisor: '135',
+      finalAnswer: '0.1037037',
+      cyclic: {
+        nonRepeating: '0.1',
+        repeating: '037',
+      },
+    });
+    const values = Object.fromEntries(
+      getLongDivisionOrderedInputKeys(board).map(key => [key, board.expectedByKey[key]]),
+    );
+    values['result-repeating'] = '37';
+
+    const result = classifyLongDivisionSubmission({ board, values });
+
+    expect(result.result).toBe('failProcess');
+    if (result.result !== 'failProcess') throw new Error('expected cyclic structured failure');
+    expect(result.failureReason).toBe('vertical-training-field');
+    expect(result.failureDetail).toMatchObject({
+      reason: 'vertical-training-field',
+      source: 'long-division',
+      message: '本题未通过：结果表达有误。',
+      processCategories: [],
+      trainingFieldMistakes: [
+        {
+          code: 'result-repeating',
+          label: '循环节错误',
+          userValue: '37',
+          expectedValue: '037',
+        },
+      ],
+    });
+  });
 });

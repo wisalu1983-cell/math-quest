@@ -760,13 +760,77 @@ function generateApproximateIntDivision(): { dividend: number; divisor: number }
   return { dividend: 685, divisor: 7 };
 }
 
-function generateCyclicLongDivision(difficulty: number, id: string): Question {
-  const cases = [
+type CyclicDivisionCase = {
+  dividend: number;
+  divisor: number;
+  nonRepeating: string;
+  repeating: string;
+  displayAnswer: string;
+};
+
+function fallbackCyclicDivisionCase(): CyclicDivisionCase {
+  const cases: CyclicDivisionCase[] = [
     { dividend: 14, divisor: 135, nonRepeating: '0.1', repeating: '037', displayAnswer: '0.1037' },
     { dividend: 1, divisor: 6, nonRepeating: '0.1', repeating: '6', displayAnswer: '0.16' },
     { dividend: 1, divisor: 11, nonRepeating: '0.', repeating: '09', displayAnswer: '0.09' },
   ];
-  const c = cases[randInt(0, cases.length - 1)];
+  return cases[randInt(0, cases.length - 1)];
+}
+
+function buildCyclicDivisionCase(dividend: number, divisor: number): CyclicDivisionCase | null {
+  const integerPart = Math.floor(dividend / divisor);
+  let remainder = dividend % divisor;
+  if (remainder === 0) return null;
+
+  const seen = new Map<number, number>();
+  const decimals: string[] = [];
+
+  while (remainder !== 0 && decimals.length < 16) {
+    if (seen.has(remainder)) {
+      const cycleStart = seen.get(remainder) ?? 0;
+      const nonRepeatingDigits = decimals.slice(0, cycleStart);
+      const repeatingDigits = decimals.slice(cycleStart);
+      if (
+        repeatingDigits.length === 0 ||
+        repeatingDigits.length > 6 ||
+        nonRepeatingDigits.length > 2
+      ) {
+        return null;
+      }
+
+      const nonRepeating = `${integerPart}.${nonRepeatingDigits.join('')}`;
+      return {
+        dividend,
+        divisor,
+        nonRepeating,
+        repeating: repeatingDigits.join(''),
+        displayAnswer: `${integerPart}.${[...nonRepeatingDigits, ...repeatingDigits].join('')}`,
+      };
+    }
+
+    seen.set(remainder, decimals.length);
+    remainder *= 10;
+    const digit = Math.floor(remainder / divisor);
+    decimals.push(String(digit));
+    remainder %= divisor;
+  }
+
+  return null;
+}
+
+function generateCyclicDivisionCase(difficulty: number): CyclicDivisionCase {
+  const maxDivisor = difficulty >= 9 ? 99 : 60;
+  for (let attempt = 0; attempt < 120; attempt++) {
+    const divisor = randInt(6, maxDivisor);
+    const dividend = randInt(1, divisor - 1);
+    const candidate = buildCyclicDivisionCase(dividend, divisor);
+    if (candidate) return candidate;
+  }
+  return fallbackCyclicDivisionCase();
+}
+
+function generateCyclicLongDivision(difficulty: number, id: string): Question {
+  const c = generateCyclicDivisionCase(difficulty);
 
   return {
     id,

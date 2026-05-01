@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-05-01（v0.5 / v0.6 / v0.7 待办分流已确认；下一步进入 Phase 5 Release Gate）
+> 最后更新：2026-05-01（v0.5 Phase 5 Release Gate QA PASS-WITH-NOTES；下一步版本收口 / 合并决策）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.5** | ✅ Phase 4 `BL-010` 已完成并补齐正式版原型还原修复与 parity 补测；下一步进入 Phase 5 Release Gate，处理 `ISSUE-069`、`BL-017` 审计判断与版本级 L3 QA | [Plan/v0.5/](Plan/v0.5/) |
+| **当前版本** | **v0.5** | 🟡 Phase 5 Release Gate QA PASS-WITH-NOTES；`ISSUE-069` 已修复关闭，`BL-017` v0.5 范围已完成；下一步版本收口 / 合并决策 | [Plan/v0.5/](Plan/v0.5/) |
 | 上一版本 | v0.4 | ✅ 已发布（题目体验系统性修复；release gate 补测通过） | [Plan/v0.4/](Plan/v0.4/) |
 | 更早版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
 | 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
@@ -46,7 +46,7 @@
 
 **当前状态**：
 
-- ✅ v0.5 版本管理包已建立：`README + 00-04 + phases/phase-1..4`
+- ✅ v0.5 版本管理包已建立：`README + 00-04 + phases/phase-1..5`
 - ✅ v0.5 预研结论已汇总，入口见 [`Plan/v0.5/01-research-catalog.md`](Plan/v0.5/01-research-catalog.md)
 - ✅ `BL-009`、`BL-011`、`BL-010` 已纳入 v0.5
 - ✅ `ISSUE-067` 已随 v0.5 Phase 3 修复并关闭，归档见 [`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)
@@ -56,10 +56,10 @@
 - 🟡 Phase 3 有条件完成：`BL-011` 内置键盘、自动换格统一化与 `ISSUE-067` 结构化错因反馈已实现，QA 见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md) 与 [`../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md`](../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md)。入口见 [`Plan/v0.5/phases/phase-3.md`](Plan/v0.5/phases/phase-3.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
 - 🟡 Phase 3 剩余条件：真实 Android Chrome / iOS Safari 默认内置键盘证据发布后在线上环境验收，清单见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md)
 - ✅ v0.5 Phase 1~3 全量 QA 通过：L3 级 46 项用例，Vitest 59 files / 743 tests、Playwright 23 tests、build、npm audit 全部通过；Code Review PASS-WITH-NOTES；视觉 QA 12 截图 25 校验点 PASS。入口见 [`../QA/runs/2026-04-29-v05-full-regression/qa-summary.md`](../QA/runs/2026-04-29-v05-full-regression/qa-summary.md)
-- 🟡 `ISSUE-069` 已纳入 v0.5 Release Gate 前小修：A02 `reverse-round` 填空题答案口径冲突，作为 P1 correctness hotfix 处理，不并入 Phase 4 `BL-010` 竖式除法 UI 主线
-- 🟡 `BL-017` 已纳入 v0.5 Release Gate 审计判断：先做全题型硬编码样例池 / 重复风险审计，不承诺在 v0.5 内全量修复；若发现系统性问题，拆入 v0.6 生成器样本质量优化
 - ✅ Phase 4 `BL-010` 已完成：长除法 UI 化答题生产实现、正式版原型还原修复、parity 补测、A03 current spec 回写和专项 E2E / build 验证已完成。入口见 [`Plan/v0.5/phases/phase-4.md`](Plan/v0.5/phases/phase-4.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) · [`Plan/v0.5/subplans/2026-04-30-v05-phase4-BL-010-竖式除法正式版原型还原修复.md`](Plan/v0.5/subplans/2026-04-30-v05-phase4-BL-010-竖式除法正式版原型还原修复.md) · [`../QA/runs/2026-04-30-v05-phase4-long-division-parity-qa/qa-summary.md`](../QA/runs/2026-04-30-v05-phase4-long-division-parity-qa/qa-summary.md)
-- ⏭️ 下一步：进入 v0.5 Phase 5 Release Gate；处理 `ISSUE-069`（A02 `reverse-round` 填空题答案口径冲突，P1 correctness hotfix），完成 `BL-017` 全题型样例池审计判断，并执行版本级 L3 QA / 收口
+- ✅ Phase 5 `ISSUE-069` 已修复并关闭：A02 `reverse-round` 模板 4 的答案口径改为方框内单个数字，入口见 [`Plan/v0.5/phases/phase-5.md`](Plan/v0.5/phases/phase-5.md) · [`Plan/v0.5/subplans/2026-05-01-v05-phase5-ISSUE-069-reverse-round填空答案口径修复.md`](Plan/v0.5/subplans/2026-05-01-v05-phase5-ISSUE-069-reverse-round填空答案口径修复.md)
+- ✅ Phase 5 `BL-017` 审计判断与小范围 hardening 已完成：全题型样例池审计后，v0.5 只修复新增 `vertical-calc/cyclic-div` 3 样例池风险；旧题型系统性样例池治理回流 v0.6，入口见 [`Plan/v0.5/subplans/2026-05-01-v05-phase5-BL-017-题型生成器样例池审计.md`](Plan/v0.5/subplans/2026-05-01-v05-phase5-BL-017-题型生成器样例池审计.md)
+- 🟡 Phase 5 Release Gate QA PASS-WITH-NOTES：`npm test -- --run` 64 files / 773 tests、`npm run build`、`npx playwright test` 58 tests、`npm audit --audit-level=moderate`、`npx tsx scripts/pm-sync-check.ts` 均通过；入口见 [`../QA/runs/2026-05-01-v05-phase5-release-gate/qa-summary.md`](../QA/runs/2026-05-01-v05-phase5-release-gate/qa-summary.md)
 
 **入口**：
 
@@ -146,8 +146,11 @@
 - 已完成 Phase 3 `BL-011` 自动换格统一化：[Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md)
 - 已完成 Phase 3 `ISSUE-067` 结构化错因反馈：[Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
 - 已完成 Phase 3 `ISSUE-068` 单行过程积乘法免重复答数：[Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-068-单行过程积乘法免重复答数.md)
-- Phase 4 入口：[Plan/v0.5/phases/phase-4.md](Plan/v0.5/phases/phase-4.md)
-- Phase 4 `BL-010` 竖式除法 UI 化答题：[Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md)
+- 已完成 Phase 4 入口：[Plan/v0.5/phases/phase-4.md](Plan/v0.5/phases/phase-4.md)
+- 已完成 Phase 4 `BL-010` 竖式除法 UI 化答题：[Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md)
+- 当前 Phase 5 入口：[Plan/v0.5/phases/phase-5.md](Plan/v0.5/phases/phase-5.md)
+- 当前 Phase 5 `ISSUE-069` reverse-round 填空答案口径修复：[Plan/v0.5/subplans/2026-05-01-v05-phase5-ISSUE-069-reverse-round填空答案口径修复.md](Plan/v0.5/subplans/2026-05-01-v05-phase5-ISSUE-069-reverse-round填空答案口径修复.md)
+- 当前 Phase 5 `BL-017` 题型生成器样例池审计：[Plan/v0.5/subplans/2026-05-01-v05-phase5-BL-017-题型生成器样例池审计.md](Plan/v0.5/subplans/2026-05-01-v05-phase5-BL-017-题型生成器样例池审计.md)
 
 ### 全局管理入口
 

@@ -748,10 +748,14 @@ function generateReverseRound(difficulty: number, id: string): Question {
       prompt,
       data: { kind: 'number-sense', subtype: 'round' },
       solution: {
-        answer: answerStr,
-        explanation: askMax
-          ? `最大的一位小数是 ${answerStr}（再大就会进位到 ${target + 1}）`
-          : `最小的一位小数是 ${answerStr}（再小就会舍去到 ${target - 1}）`,
+        answer: templateIdx === 4 ? (askMax ? '4' : '5') : answerStr,
+        explanation: templateIdx === 4
+          ? (askMax
+            ? `□ 最大填 4，所以这个数是 ${target}.4（再填 5 就会进位到 ${target + 1}）`
+            : `□ 最小填 5，所以这个数是 ${target - 1}.5（再小就会舍去到 ${target - 1}）`)
+          : (askMax
+            ? `最大的一位小数是 ${answerStr}（再大就会进位到 ${target + 1}）`
+            : `最小的一位小数是 ${answerStr}（再小就会舍去到 ${target - 1}）`),
       },
       hints: [askMax ? maxHint : minHint],
       xpBase: 10 + (difficulty - 1) * 5,
