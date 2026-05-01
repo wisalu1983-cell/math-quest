@@ -1,6 +1,6 @@
 # math-quest 项目概览
 
-> 最后更新：2026-04-30（Phase 4 `BL-010` 正式版原型还原修复与 parity 补测已完成；下一步进入 Phase 5 Release Gate）
+> 最后更新：2026-05-01（v0.5 / v0.6 / v0.7 待办分流已确认；下一步进入 Phase 5 Release Gate）
 > 角色：**活跃控制面 / 总管**。本文件只保留项目背景、版本轴、当前阶段目标、当前主线、当前状态、下一步和入口链接；细节下放到对应专人文档或版本归档。
 
 ---
@@ -28,7 +28,7 @@
 
 | 阶段 | 版本 | 状态 | 入口 |
 |---|---|---|---|
-| **当前版本** | **v0.5** | ✅ Phase 4 `BL-010` 已完成并补齐正式版原型还原修复与 parity 补测；下一步进入 Phase 5 Release Gate，处理 `ISSUE-069` 与版本级 L3 QA | [Plan/v0.5/](Plan/v0.5/) |
+| **当前版本** | **v0.5** | ✅ Phase 4 `BL-010` 已完成并补齐正式版原型还原修复与 parity 补测；下一步进入 Phase 5 Release Gate，处理 `ISSUE-069`、`BL-017` 审计判断与版本级 L3 QA | [Plan/v0.5/](Plan/v0.5/) |
 | 上一版本 | v0.4 | ✅ 已发布（题目体验系统性修复；release gate 补测通过） | [Plan/v0.4/](Plan/v0.4/) |
 | 更早版本 | v0.3 | ✅ 已上线（账号同步系统生效；管理配套文档已重建） | [Plan/v0.3/](Plan/v0.3/) |
 | 更早版本 | v0.2 | ✅ 已收工（2026-04-23；`qa-leader` 三层 QA 完成） | [Plan/v0.2/](Plan/v0.2/) |
@@ -50,15 +50,16 @@
 - ✅ v0.5 预研结论已汇总，入口见 [`Plan/v0.5/01-research-catalog.md`](Plan/v0.5/01-research-catalog.md)
 - ✅ `BL-009`、`BL-011`、`BL-010` 已纳入 v0.5
 - ✅ `ISSUE-067` 已随 v0.5 Phase 3 修复并关闭，归档见 [`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)
-- ✅ `BL-012` 已从 v0.5 拆出，改由 v0.6 承接；v0.6 版本包待启动
+- ✅ `BL-012` 已从 v0.5 / v0.6 当前候选范围拆出，改由 v0.7 承接；v0.7 版本包待启动
 - ✅ Phase 1 已完成：开工对齐、产品 / 体验决策 P1~P5、技术 ownership、类型/API、UI 容量与 QA 映射已确认，入口见 [`Plan/v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md`](Plan/v0.5/subplans/2026-04-28-v05-phase1-开工对齐与跨phase边界.md)
 - ✅ Phase 2 已完成：`BL-009` 竖式题样本质量诊断、过滤规则、生成器实现、实施后复测和 current spec 回写已完成。入口见 [`Plan/v0.5/phases/phase-2.md`](Plan/v0.5/phases/phase-2.md) · [`Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md`](Plan/v0.5/subplans/2026-04-28-v05-phase2-BL-009-竖式题样本质量诊断与过滤规则.md)
 - 🟡 Phase 3 有条件完成：`BL-011` 内置键盘、自动换格统一化与 `ISSUE-067` 结构化错因反馈已实现，QA 见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md) 与 [`../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md`](../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md)。入口见 [`Plan/v0.5/phases/phase-3.md`](Plan/v0.5/phases/phase-3.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-计算输入内置键盘.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-BL-011-自动换格统一化.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md`](Plan/v0.5/subplans/2026-04-29-v05-phase3-ISSUE-067-结构化错因反馈.md)
 - 🟡 Phase 3 剩余条件：真实 Android Chrome / iOS Safari 默认内置键盘证据发布后在线上环境验收，清单见 [`../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md`](../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/real-device-checklist.md)
 - ✅ v0.5 Phase 1~3 全量 QA 通过：L3 级 46 项用例，Vitest 59 files / 743 tests、Playwright 23 tests、build、npm audit 全部通过；Code Review PASS-WITH-NOTES；视觉 QA 12 截图 25 校验点 PASS。入口见 [`../QA/runs/2026-04-29-v05-full-regression/qa-summary.md`](../QA/runs/2026-04-29-v05-full-regression/qa-summary.md)
 - 🟡 `ISSUE-069` 已纳入 v0.5 Release Gate 前小修：A02 `reverse-round` 填空题答案口径冲突，作为 P1 correctness hotfix 处理，不并入 Phase 4 `BL-010` 竖式除法 UI 主线
+- 🟡 `BL-017` 已纳入 v0.5 Release Gate 审计判断：先做全题型硬编码样例池 / 重复风险审计，不承诺在 v0.5 内全量修复；若发现系统性问题，拆入 v0.6 生成器样本质量优化
 - ✅ Phase 4 `BL-010` 已完成：长除法 UI 化答题生产实现、正式版原型还原修复、parity 补测、A03 current spec 回写和专项 E2E / build 验证已完成。入口见 [`Plan/v0.5/phases/phase-4.md`](Plan/v0.5/phases/phase-4.md) · [`Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md`](Plan/v0.5/subplans/2026-04-29-v05-phase4-BL-010-竖式除法UI化答题.md) · [`Plan/v0.5/subplans/2026-04-30-v05-phase4-BL-010-竖式除法正式版原型还原修复.md`](Plan/v0.5/subplans/2026-04-30-v05-phase4-BL-010-竖式除法正式版原型还原修复.md) · [`../QA/runs/2026-04-30-v05-phase4-long-division-parity-qa/qa-summary.md`](../QA/runs/2026-04-30-v05-phase4-long-division-parity-qa/qa-summary.md)
-- ⏭️ 下一步：进入 v0.5 Phase 5 Release Gate；处理 `ISSUE-069`（A02 `reverse-round` 填空题答案口径冲突，P1 correctness hotfix），并执行版本级 L3 QA / 收口
+- ⏭️ 下一步：进入 v0.5 Phase 5 Release Gate；处理 `ISSUE-069`（A02 `reverse-round` 填空题答案口径冲突，P1 correctness hotfix），完成 `BL-017` 全题型样例池审计判断，并执行版本级 L3 QA / 收口
 
 **入口**：
 

@@ -18,6 +18,14 @@
 |---|---|---|---|---|---|
 | R1 | <风险描述> | 高 / 中 / 低 | 高 / 中 / 低 | P0 / P1 / P2 | <用例族> |
 
+## Prototype Parity Matrix（如适用）
+
+> 适用条件：功能存在已确认 UI / 交互预览原型，例如 `?preview=*` 页面、HTML 原型、截图、设计稿或预览分支。预览原型只能作为 oracle / 对照依据，最终证据必须来自开发落地版本或真实游戏流。
+
+| ID | Prototype Source / Approval | 原型期望 | 开发落地版本观察 | Evidence | Result | 备注 / 偏离裁决 |
+|---|---|---|---|---|---|---|
+| P-001 | <预览 URL / 设计稿 / 截图 / 批准记录> | <关键状态、布局、交互步骤、焦点、输入规则、显隐时机、反馈文案、视觉 token 或响应式边界> | <真实页面或游戏流观察> | <截图、Playwright 测试、人工记录或报告链接> | PASS / FAIL / RISK / BLOCKED | <若有意偏离，链接 Plan / Spec / 用户裁决> |
+
 ## <用例族>：<模块名称>
 
 设计意图：<从 Spec / Plan 提炼一句话，说明为什么要测这一组。>
@@ -54,6 +62,7 @@
 - FAIL 必须进入 `ProjectManager/ISSUE_LIST.md` 或经产品裁决接受。
 - 自动化失败不得写成 QA PASS。
 - `Execution Matrix` 必须覆盖测试用例表中所有 ID；缺少 P0 / P1 结果不得声明 QA PASS。
+- 若存在已确认预览原型，`Prototype Parity Matrix` 中 P0 / P1 原型项必须全部有开发落地版本证据；未说明依据的偏离不得声明 QA PASS。
 - 对随机生成器，必须记录 seed / 样本量 / 验收带。
 
 ## Execution Summary

@@ -25,8 +25,9 @@
 | QA canonical | 制度 / 混合 | `QA/qa-leader-canonical.md` | QA 任务范围、阶段情境 | 不直接产生产物 | 已可用 |
 | QA 方法论说明 | 制度 / 审计 | `QA/qa-system-methodology.md` | 审阅 QA 体系时读取 | 不直接产生产物 | 已可用 |
 | 专业测试用例模板 | L2 / L3 | `QA/templates/test-cases-professional-template.md` | Test basis、风险、用户画像 | `QA/runs/<date>-<scope>/test-cases-vN.md` | 已可用 |
+| 预览原型一致性门禁 | UI / 视觉 / 交互 / 制度 | `QA/qa-leader-canonical.md` §“预览原型一致性门禁” + `QA/templates/test-cases-professional-template.md` `Prototype Parity Matrix` | 已确认 UI / 交互原型、开发落地版本入口、用户裁决 | `QA/runs/<date>-<scope>/test-cases-vN.md` / `execution-matrix.md` / `qa-summary.md` | 已可用 |
 | QA Leader 适配件同步 | 制度 / 工具变更 | `QA/scripts/sync-qa-leader-adapters.ps1` | canonical 已更新 | `.agents` / `.claude` / `.cursor` 适配件 | 已可用 |
-| QA 自检用例 | 制度 / 工具变更 | `QA/qa-system-self-test.md` | 修改 skill / rule / registry 后 | 自检报告或命令输出 | 已存在，内容需随本轮制度升级后续补测 |
+| QA 自检用例 | 制度 / 工具变更 | `QA/qa-system-self-test.md` | 修改 skill / rule / registry 后 | 自检报告或命令输出 | 已存在；已补预览原型一致性结构自检项，历史执行结果需下次专项重跑 |
 
 ## 自动化能力
 

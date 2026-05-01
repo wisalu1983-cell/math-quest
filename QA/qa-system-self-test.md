@@ -5,6 +5,7 @@
 **执行时机**：QA 体系首次部署后，或执行 `sync-qa-skills.ps1` 后，或修改任何 skill 内容后。
 
 > 2026-04-26 更新：Codex 适配件 `.agents/skills/qa-leader/SKILL.md` 已纳入自检；正式 QA 产物入库规则也需要随 `.gitignore` 一起检查。下方 2026-04-16 执行结果为历史结果，制度升级后需按新增项重跑。
+> 2026-05-01 更新：预览原型一致性门禁已纳入 QA Leader、专业测试用例模板和 capability registry；本文件补入对应结构自检项，历史执行结果仍需下次 QA 体系自检时重跑。
 
 ---
 
@@ -25,6 +26,8 @@
 | S-09 | 同步脚本存在 | 检查 `math-quest/QA/sync-qa-skills.ps1` | 文件存在，可被 PowerShell 解析无语法错误 | — | P1 | 自动化 |
 | S-10 | Codex 适配件存在 | 检查 `math-quest/.agents/skills/qa-leader/SKILL.md` | 文件存在，含 YAML frontmatter（name: qa-leader） | — | P0 | 自动化 |
 | S-11 | 专业测试用例模板存在 | 检查 `math-quest/QA/templates/test-cases-professional-template.md` | 文件存在，含 Risk / Technique / Oracle / Coverage Matrix | — | P0 | 自动化 |
+| S-12 | 专业测试用例模板含原型一致性矩阵 | 检查 `math-quest/QA/templates/test-cases-professional-template.md` | 含 `Prototype Parity Matrix`，且要求记录“原型期望 → 开发落地版本观察 → Evidence → Result” | — | P0 | 自动化 |
+| S-13 | capability registry 登记原型一致性门禁 | 检查 `math-quest/QA/capability-registry.md` | 含“预览原型一致性门禁”能力，入口指向 QA canonical 和专业测试用例模板 | — | P1 | 自动化 |
 
 ---
 

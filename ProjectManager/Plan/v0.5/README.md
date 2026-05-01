@@ -2,7 +2,7 @@
 
 > 所属版本：v0.5
 > 创建：2026-04-28
-> 状态：✅ Phase 4 `BL-010` 正式版原型还原修复与 parity 补测已完成；下一步进入 Phase 5 Release Gate
+> 状态：✅ Phase 4 `BL-010` 正式版原型还原修复与 parity 补测已完成；下一步进入 Phase 5 Release Gate（待处理项见“当前状态”）
 > 设计规格：N/A（启动阶段由本版本预研结论和既有 current spec 约束驱动；具体子项开工前按需补设计 / 子计划）
 
 ---
@@ -47,7 +47,7 @@
 - 新设计规格：`BL-009` 已在 Phase 2 收口时回写 `ProjectManager/Specs/a03-vertical-calc/current.md`；Phase 3 已在收口时回写内置键盘与结构化错因长期行为；Phase 4 已回写长除法 UI 长期行为，并补充小数扩倍阶段替换、纸面长除法版式和逐步显现规则。
 - QA 产物：Phase 2 使用固定 seed 诊断脚本、generator 单测、全量 test/build 验收；Phase 3 QA run 见 [`../../../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`](../../../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md)，结论为有条件通过；Phase 4 QA run 见 [`../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md`](../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md)，结论为 PASS-WITH-NOTES。
 - **v0.5 Phase 1~3 全量 QA**：L3 全量测试已于 2026-04-29 执行，结论为有条件通过（44 PASS / 0 FAIL / 1 DEFERRED / 1 RISK），入口见 [`../../../QA/runs/2026-04-29-v05-full-regression/qa-summary.md`](../../../QA/runs/2026-04-29-v05-full-regression/qa-summary.md)。
-- Release Gate 前小修：`ISSUE-069` reverse-round 填空题答案口径冲突已纳入 v0.5，作为 P1 correctness hotfix 在 Phase 5 收口前处理；不塞入 Phase 4 `BL-010` 主线。
+- Release Gate 范围：`ISSUE-069` reverse-round 填空题答案口径冲突已纳入 v0.5，作为 P1 correctness hotfix 在 Phase 5 收口前处理；`BL-017` 题型生成器硬编码样例池审计纳入 Phase 5 审计判断，只承诺先判定是否影响 v0.5 验收；二者都不塞入 Phase 4 `BL-010` 主线。
 
 ## 当前状态
 
@@ -55,10 +55,11 @@
 - ✅ 2026-04-27 ~ 2026-04-28 对话预研结论已汇总到 [`01-research-catalog.md`](./01-research-catalog.md)。
 - ✅ `BL-009`（闯关竖式题目排除纯口算样例）、`BL-011`（计算输入内置键盘）、`BL-010`（竖式除法 UI 化答题）已纳入 v0.5。
 - ✅ `ISSUE-067`（多行乘法竖式判错面板缺少过程 / 训练格错因）已随 Phase 3 修复并关闭。
-- ✅ `BL-012`（特定账号数据查询后台页面）已从 v0.5 拆出，改由 v0.6 承接；v0.6 版本包待启动。
+- ✅ `BL-012`（特定账号数据查询后台页面）已从 v0.5 / v0.6 当前候选范围拆出，改由 v0.7 承接；v0.7 版本包待启动。
 - ✅ Phase 1 已完成：开工对齐、产品 / 体验决策确认、技术 ownership、类型/API、UI 容量与 QA 映射已形成后续 Phase 的共同边界。
 - ✅ Phase 2 已完成：`BL-009` 子计划、固定 seed 诊断、生成器过滤、自动化测试、实施后复测与 current spec 回写已完成。
 - 🟡 Phase 3 有条件完成：`BL-011` 内置键盘、自动换格统一化 + 结构化错因反馈基础设施已实现，本地 QA / 自动化 / build 通过；真实 Android Chrome 与 iOS Safari 设备证据改为发布后线上验收。
 - ✅ v0.5 Phase 1~3 全量 QA 通过：L3 级 46 项用例，44 PASS / 0 FAIL / 1 DEFERRED（真实设备）/ 1 RISK（lint 历史债）；Vitest 59 files / 743 tests、Playwright 23 tests、build、audit 全部通过。入口见 [`../../../QA/runs/2026-04-29-v05-full-regression/qa-summary.md`](../../../QA/runs/2026-04-29-v05-full-regression/qa-summary.md)。
 - 🟡 `ISSUE-069` 已纳入 v0.5 Release Gate 前小修：A02 `reverse-round` 模板 4 题干问“□ 里填几”但答案口径为完整小数，修复范围限定在模板 4 答案 / explanation 与 generator 回归测试。
+- 🟡 `BL-017` 已纳入 v0.5 Release Gate 审计判断：先做全题型硬编码样例池 / 重复风险审计，不承诺在 v0.5 内全量修复；若发现系统性问题，拆入 v0.6 生成器样本质量优化。
 - ✅ Phase 4 `BL-010` 已完成：长除法 UI 化答题生产实现、正式版原型还原修复、A03 current spec 回写、parity QA 和专项 E2E / build 验证已完成；保留全仓 lint 历史 RISK 与真实设备线上补验 DEFERRED。
