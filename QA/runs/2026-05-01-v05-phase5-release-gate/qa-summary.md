@@ -16,7 +16,7 @@
 | 证据 | 结果 |
 |---|---|
 | [`execution-matrix.md`](./execution-matrix.md) | Release Gate 命令全通过 |
-| [`automated-result.md`](./automated-result.md) | 首轮 Playwright 端口 / 并发稳定性问题及最终结果已记录 |
+| [`automated-result.md`](./automated-result.md) | Playwright 端口 / 并发稳定性、readOnly slot 激活与循环小数结果格自动换格补验已记录 |
 | `ProjectManager/Plan/v0.5/issues-closed.md` | `ISSUE-069` 已关闭归档 |
 | `ProjectManager/Backlog.md` | `BL-017` 已记录 v0.5 审计完成，系统性样例池治理回流 v0.6 |
 
@@ -25,7 +25,8 @@
 - Phase 3 真实 Android Chrome / iOS Safari 默认内置键盘证据仍按既有口径发布后线上补验。
 - `BL-017` 发现的旧题型系统性样例池重复风险不在 v0.5 Release Gate 全量修复，已回流 v0.6。
 - Playwright 默认 worker 固定为 1，以避免长除法 parity spec 在多浏览器并发下出现渐进输入 reveal 偶发超时。
+- 合并后复验补齐了 production 循环小数结果格 `0.1 -> 循环节` 的自动换格口径，与 formal prototype 保持一致。
 
 ## Decision
 
-v0.5 Phase 5 可进入版本收口 / 合并决策。当前没有阻塞发布的 open issue。
+v0.5 Phase 5 已合并 `master` 并完成版本收口。当前没有阻塞发布的 open issue。

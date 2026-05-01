@@ -1,7 +1,7 @@
 # ISSUE_LIST — 当前版本开放问题
 
 > 最后更新：2026-05-01（`ISSUE-069` 已随 v0.5 Phase 5 修复并归档）
-> 当前版本：**v0.5 Phase 5 Release Gate 进行中**（入口：[`Plan/v0.5/README.md`](Plan/v0.5/README.md)）
+> 当前版本：**v0.5 Phase 5 已收口**（入口：[`Plan/v0.5/README.md`](Plan/v0.5/README.md)）
 > 本文件角色：**只列当前版本开放的 issue**（待修 bug / 欠账 / 实现问题）。历史关闭项走版本归档，未激活需求走 Backlog。
 
 ---

@@ -3,7 +3,7 @@
 > 所属版本：v0.5
 > 创建：2026-05-01
 > 所属主线：[../README](../README.md)
-> 状态：🟡 QA PASS-WITH-NOTES（Phase 5 hotfix、审计 hardening、Release Gate QA 已完成；待版本收口 / 合并决策）
+> 状态：✅ 已完成（Phase 5 hotfix、审计 hardening、Release Gate QA 已完成；已合并 `master` 并完成版本收口）
 
 ---
 
@@ -54,7 +54,7 @@ Phase 5 是 v0.5 的 Release Gate。目标是在 Phase 2~4 已完成后，收口
 | `ISSUE-069` 是否扩大到 A02 系统重做 | 不扩大。只修模板 4 答案 / explanation 与回归测试。 |
 | `BL-017` 是否阻塞 v0.5 | 初判不阻塞。系统性样例池问题转 v0.6，v0.5 只修当前新增 `vertical-calc/cyclic-div` 的 3 样例池风险。 |
 | Living Spec 是否回写 | `ISSUE-069` 无独立 current spec；`BL-017` 的 broad generator-quality 规则转 v0.6，不在本阶段写成 current spec。A03 current spec 若需补充 `cyclic-div` 样本池口径，在 Release Gate 验收后再判断。 |
-| QA 层级 | 已完成 scoped generator tests、全量 Vitest、build、Playwright、audit、pm-sync-check 与版本级 Release Gate QA；结论为 PASS-WITH-NOTES。 |
+| QA 层级 | 已完成 scoped generator tests、全量 Vitest、build、Playwright、audit、pm-sync-check 与版本级 Release Gate QA；合并后复验补齐循环小数结果格自动换格口径；结论为 PASS-WITH-NOTES。 |
 
 ## 收尾条件
 
@@ -68,4 +68,4 @@ Phase 5 是 v0.5 的 Release Gate。目标是在 Phase 2~4 已完成后，收口
 
 ## 当前状态
 
-Phase 5 已启动于隔离分支 `codex/v05-phase5-release-gate`。当前已完成 `ISSUE-069` 与 `vertical-calc/cyclic-div` 的失败测试、最小修复、全量 Vitest、build、Playwright、audit、pm-sync-check 和 Release Gate QA；`ISSUE-069` 已关闭，`BL-017` 已回写 Backlog，QA 产物见 [`../../../QA/runs/2026-05-01-v05-phase5-release-gate/qa-summary.md`](../../../QA/runs/2026-05-01-v05-phase5-release-gate/qa-summary.md)。下一步是版本收口 / 合并决策。
+Phase 5 已在隔离分支 `codex/v05-phase5-release-gate` 完成实现与验证，并已合并至 `master`。当前已完成 `ISSUE-069` 与 `vertical-calc/cyclic-div` 的失败测试、最小修复、全量 Vitest、build、Playwright、audit、pm-sync-check 和 Release Gate QA；`ISSUE-069` 已关闭，`BL-017` 已回写 Backlog，QA 产物见 [`../../../QA/runs/2026-05-01-v05-phase5-release-gate/qa-summary.md`](../../../QA/runs/2026-05-01-v05-phase5-release-gate/qa-summary.md)。当前没有阻塞 v0.5 收口的 open issue。

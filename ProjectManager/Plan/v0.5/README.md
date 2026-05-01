@@ -2,7 +2,7 @@
 
 > 所属版本：v0.5
 > 创建：2026-04-28
-> 状态：🟡 Phase 5 Release Gate QA PASS-WITH-NOTES；`ISSUE-069` 已修复并关闭，`BL-017` 已完成 v0.5 范围，下一步版本收口 / 合并决策
+> 状态：✅ Phase 5 已合并 `master` 并完成收口；`ISSUE-069` 已修复并关闭，`BL-017` 已完成 v0.5 范围，Release Gate QA PASS-WITH-NOTES
 > 设计规格：N/A（启动阶段由本版本预研结论和既有 current spec 约束驱动；具体子项开工前按需补设计 / 子计划）
 
 ---
@@ -45,7 +45,7 @@
 
 ## N/A / 延迟创建说明
 
-- `subplans/`：Phase 1 开工对齐文档已完成；Phase 2 `BL-009` 子计划已完成；Phase 3 `BL-011`、`BL-011` 自动换格统一化、`ISSUE-067` 与 `ISSUE-068` 子计划已完成；Phase 4 `BL-010` 生产实现与正式版原型还原修复已完成；Phase 5 `ISSUE-069` 与 `BL-017` 子计划已创建并完成基础验证。
+- `subplans/`：Phase 1 开工对齐文档已完成；Phase 2 `BL-009` 子计划已完成；Phase 3 `BL-011`、`BL-011` 自动换格统一化、`ISSUE-067` 与 `ISSUE-068` 子计划已完成；Phase 4 `BL-010` 生产实现与正式版原型还原修复已完成；Phase 5 `ISSUE-069` 与 `BL-017` 子计划已完成并通过 Release Gate QA。
 - Phase 3 follow-up：`BL-011` 自动换格统一化已完成，用于收敛内置键盘自动换格逻辑并修正多行乘法输入顺序；QA run 见 [`../../../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md`](../../../QA/runs/2026-04-29-v05-phase3-keyboard-autofocus-qa/qa-summary.md)。
 - 新设计规格：`BL-009` 已在 Phase 2 收口时回写 `ProjectManager/Specs/a03-vertical-calc/current.md`；Phase 3 已在收口时回写内置键盘与结构化错因长期行为；Phase 4 已回写长除法 UI 长期行为，并补充小数扩倍阶段替换、纸面长除法版式和逐步显现规则。
 - QA 产物：Phase 2 使用固定 seed 诊断脚本、generator 单测、全量 test/build 验收；Phase 3 QA run 见 [`../../../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md`](../../../QA/runs/2026-04-29-v05-phase3-input-feedback-qa/qa-summary.md)，结论为有条件通过；Phase 4 QA run 见 [`../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md`](../../../QA/runs/2026-04-30-v05-phase4-long-division-qa/qa-summary.md)，结论为 PASS-WITH-NOTES；Phase 5 Release Gate 见 [`../../../QA/runs/2026-05-01-v05-phase5-release-gate/qa-summary.md`](../../../QA/runs/2026-05-01-v05-phase5-release-gate/qa-summary.md)，结论为 PASS-WITH-NOTES。
@@ -66,4 +66,4 @@
 - ✅ `ISSUE-069` 已随 Phase 5 修复并关闭：A02 `reverse-round` 模板 4 的 `solution.answer` 改为方框内单个数字，explanation 仍展示完整一位小数；新增 generator / 判题 helper 回归测试。
 - ✅ `BL-017` v0.5 审计判断与小范围 hardening 已完成：全题型样例池审计显示旧题型存在系统性重复风险，转 v0.6；当前版本新增 `vertical-calc/cyclic-div` 从 3 个固定样例改为受约束循环小数生成，原样例保留为兜底。
 - ✅ Phase 4 `BL-010` 已完成：长除法 UI 化答题生产实现、正式版原型还原修复、A03 current spec 回写、parity QA 和专项 E2E / build 验证已完成；保留全仓 lint 历史 RISK 与真实设备线上补验 DEFERRED。
-- 🟡 Phase 5 Release Gate QA PASS-WITH-NOTES：`npm test -- --run` 64 files / 773 tests、`npm run build`、`npx playwright test` 58 tests、`npm audit --audit-level=moderate`、`npx tsx scripts/pm-sync-check.ts` 均通过；下一步版本收口 / 合并决策。
+- ✅ Phase 5 已完成 Release Gate QA：`npm test -- --run` 64 files / 773 tests、`npm run build`、`npx playwright test` 58 tests、`npm audit --audit-level=moderate`、`npx tsx scripts/pm-sync-check.ts` 均通过；结论 PASS-WITH-NOTES，已合并 `master` 并完成版本收口。

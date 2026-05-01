@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -633,43 +633,60 @@ async function waitForActiveInput(page: Page, label: string) {
   }, label);
 }
 
+async function isReadonlyTextbox(textbox: Locator) {
+  await expect(textbox).toBeVisible();
+  return textbox.evaluate(element => (element as HTMLInputElement).readOnly);
+}
+
+async function activateReadonlyTextbox(page: Page, textbox: Locator, label: string) {
+  await textbox.scrollIntoViewIfNeeded();
+  await textbox.evaluate((element) => {
+    element.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true,
+      cancelable: true,
+      pointerType: 'mouse',
+    }));
+  });
+  await waitForActiveInput(page, label);
+}
+
 async function fillInputWithMathKeyboard(page: Page, input: BoardInput) {
   if (input.kind === 'field') {
     const textbox = page.getByRole('textbox', { name: input.label, exact: true });
-    await textbox.click({ force: true });
-    const isReadonly = await textbox.evaluate(element => (element as HTMLInputElement).readOnly);
+    const isReadonly = await isReadonlyTextbox(textbox);
     if (!isReadonly) {
+      await textbox.click({ force: true });
       await textbox.fill(input.value);
       await expect(textbox).toHaveValue(input.value);
       await textbox.press('Tab').catch(() => undefined);
       await page.waitForTimeout(0);
       return;
     }
-    await waitForActiveInput(page, input.label);
+    await activateReadonlyTextbox(page, textbox, input.label);
     for (const [index, key] of input.value.split('').entries()) {
       await pressMathKey(page, key);
       await expect(textbox).toHaveValue(input.value.slice(0, index + 1));
     }
-    await textbox.press('Tab').catch(() => undefined);
+    // Readonly virtual-keyboard inputs auto-advance through MathInputBar.
+    // A synthetic Tab can race with the previous DOM focus on mobile viewports.
     return;
   }
 
   for (const [index, key] of input.value.split('').entries()) {
     const label = `${input.label}第 ${index + 1} 位`;
     const textbox = page.getByRole('textbox', { name: label, exact: true });
-    await textbox.click({ force: true });
-    const isReadonly = await textbox.evaluate(element => (element as HTMLInputElement).readOnly);
+    const isReadonly = await isReadonlyTextbox(textbox);
     if (!isReadonly) {
+      await textbox.click({ force: true });
       await textbox.fill(key);
       await expect(textbox).toHaveValue(key);
       await textbox.press('Tab').catch(() => undefined);
       await page.waitForTimeout(0);
       continue;
     }
-    await waitForActiveInput(page, label);
+    await activateReadonlyTextbox(page, textbox, label);
     await pressMathKey(page, key);
     await expect(textbox).toHaveValue(key);
-    await textbox.press('Tab').catch(() => undefined);
   }
 }
 

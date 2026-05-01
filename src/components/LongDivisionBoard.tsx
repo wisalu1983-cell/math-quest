@@ -353,9 +353,19 @@ export default function LongDivisionBoard({ data, difficulty, onComplete }: Prop
     if (!nextValue) return false;
     const setupField = setupFieldById.get(key);
     if (setupField?.mustBeInteger && !isIntegerText(nextValue)) return false;
-    const expectedLength = data.expectedByKey[key]?.length ?? 1;
-    return normalizeLongDivisionNumberText(nextValue).replace(/\D/g, '').length >= expectedLength;
-  }, [data.expectedByKey, setupFieldById]);
+    const expected = data.expectedByKey[key] ?? '';
+    const comparableValue = fieldAllowsDecimal(key)
+      ? normalizeLongDivisionNumberText(nextValue)
+      : nextValue.trim();
+    const comparableExpected = fieldAllowsDecimal(key)
+      ? normalizeLongDivisionNumberText(expected)
+      : expected.trim();
+    const expectedDigitLength = comparableExpected.replace(/\D/g, '').length;
+    if (expectedDigitLength > 0) {
+      return comparableValue.replace(/\D/g, '').length >= expectedDigitLength;
+    }
+    return comparableValue.length >= Math.max(comparableExpected.length, 1);
+  }, [data.expectedByKey, fieldAllowsDecimal, setupFieldById]);
 
   const fieldHasFilledExpectedLength = useCallback((key: string): boolean => {
     const rawValue = values[key] ?? '';
