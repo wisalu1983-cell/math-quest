@@ -58,6 +58,10 @@ const mockClient = {
       };
     }),
     signOut: vi.fn(async () => ({ error: null })),
+    refreshSession: vi.fn(async () => ({
+      data: { session: null },
+      error: null,
+    })),
   },
 };
 
@@ -102,6 +106,7 @@ describe('AuthStore', () => {
     mockClient.auth.onAuthStateChange.mockClear();
     mockClient.auth.signInWithOtp.mockClear();
     mockClient.auth.signOut.mockClear();
+    mockClient.auth.refreshSession.mockClear();
     resetAuthStore();
   });
 
@@ -237,6 +242,40 @@ describe('AuthStore', () => {
       supabaseUser: null,
       isAuthenticated: false,
       magicLinkSent: false,
+    });
+  });
+
+  it('initialize 时 getSession 返回 null session 但 refreshSession 成功，应保持登录态', async () => {
+    mockState.session = null;
+    mockClient.auth.refreshSession.mockResolvedValueOnce({
+      data: { session: mockSession },
+      error: null,
+    });
+
+    await useAuthStore.getState().initialize();
+
+    expect(mockClient.auth.refreshSession).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({
+      supabaseUser: mockUser,
+      isAuthenticated: true,
+      isLoading: false,
+    });
+  });
+
+  it('initialize 时 getSession 返回 null session 且 refreshSession 也失败，应保持未登录', async () => {
+    mockState.session = null;
+    mockClient.auth.refreshSession.mockResolvedValueOnce({
+      data: { session: null },
+      error: null,
+    });
+
+    await useAuthStore.getState().initialize();
+
+    expect(mockClient.auth.refreshSession).toHaveBeenCalledTimes(1);
+    expect(useAuthStore.getState()).toMatchObject({
+      supabaseUser: null,
+      isAuthenticated: false,
+      isLoading: false,
     });
   });
 });

@@ -22,7 +22,13 @@ export function getSupabaseClient(): SupabaseClient | null {
   }
 
   if (!client) {
-    client = createClient(url, anonKey);
+    client = createClient(url, anonKey, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+      },
+    });
   }
 
   return client;

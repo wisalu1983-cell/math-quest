@@ -10,7 +10,7 @@
 
 | 当前开放数 | 是否阻塞当前主线 | 当前需关注项 |
 |---|---|---|
-| 0 | 否 | 无 |
+| 1 | 否 | ISSUE-070 登录状态持久化 |
 
 > v0.5 版本包已创建；v0.4 已发布版本入口见 [Plan/v0.4/README.md](Plan/v0.4/README.md)。
 
@@ -18,7 +18,15 @@
 
 ## 开放问题清单
 
-当前无开放 issue。
+### ISSUE-070 · 登录状态未持久化：重新上线后需重新登录（P1 · 体验 bug / Auth 实现欠账）
+
+- **状态**：🔧 待修复
+- **来源**：2026-05-03 用户反馈（登录后过段时间重新打开 app 需重新登录）
+- **类别**：体验 bug / Auth 持久化 / Session 续期
+- **问题摘要**：`src/lib/supabase.ts` 创建 client 时未显式配置持久化与自动刷新选项；`src/store/auth.ts` 的 `initialize()` 只调用 `getSession()` 读取现有 session，没有 refresh 兜底逻辑。token 在离线期间过期后重新上线会静默变为未登录状态，用户被动掉线。Supabase dashboard 无需改动（Free Plan refresh token 默认有效期已够用）。
+- **期望行为**：同一设备正常使用路径下，30 天内打开 app 始终处于登录状态；设备短暂离线期间不触发登出，恢复联网后自动完成 token 续期。
+- **改动范围**：`src/lib/supabase.ts`（createClient 显式配置）、`src/store/auth.ts`（initialize 加 refreshSession 兜底 + 离线守门）；新增 auth.ts 针对性单测；不涉及答题流程、同步逻辑、UI 渲染。
+- **验收**：auth 相关单测通过；`npm run build` 通过。不需要全量 Vitest 和 Playwright。
 
 ---
 

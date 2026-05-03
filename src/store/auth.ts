@@ -70,12 +70,31 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
 
-    set({
-      supabaseUser: data.session?.user ?? null,
-      isAuthenticated: Boolean(data.session?.user),
-      isLoading: false,
-      authError: null,
-    });
+    if (data.session) {
+      set({
+        supabaseUser: data.session.user,
+        isAuthenticated: true,
+        isLoading: false,
+        authError: null,
+      });
+    } else {
+      const { data: refreshData } = await client.auth.refreshSession();
+      if (refreshData.session) {
+        set({
+          supabaseUser: refreshData.session.user,
+          isAuthenticated: true,
+          isLoading: false,
+          authError: null,
+        });
+      } else {
+        set({
+          supabaseUser: null,
+          isAuthenticated: false,
+          isLoading: false,
+          authError: null,
+        });
+      }
+    }
 
     const { data: authListener } = client.auth.onAuthStateChange((_event, session) => {
       set({
