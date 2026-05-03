@@ -8,6 +8,18 @@
 
 ## 关闭问题
 
+### ISSUE-070 · 登录状态未持久化：重新上线后需重新登录（P1 · 体验 bug / Auth 实现欠账）
+
+- **状态**：✅ 已修复（2026-05-03，v0.5 post-release hotfix）
+- **来源**：2026-05-03 用户反馈（登录后过段时间重新打开 app 需重新登录）
+- **类别**：体验 bug / Auth 持久化 / Session 续期
+- **问题摘要**：`src/lib/supabase.ts` 创建 client 时未显式配置持久化与自动刷新选项；`src/store/auth.ts` 的 `initialize()` 只调用 `getSession()` 读取现有 session，没有 refresh 兜底逻辑。token 在离线期间过期后重新上线会静默变为未登录状态，用户被动掉线。
+- **修复摘要**：`src/lib/supabase.ts` createClient 添加显式 `auth` 配置（`autoRefreshToken`、`persistSession`、`detectSessionInUrl` 全部开启）；`src/store/auth.ts` `initialize()` 在 `getSession()` 返回 null session 时增加 `refreshSession()` 回退逗辑，刷新成功保持登录态，刷新失败才要求重新登录；离线状态不再误触登出。
+- **关闭证据**：
+  - `src/store/auth.test.ts`：新增 2 个测试用例覆盖 refreshSession 成功 / 失败两个分支，全部 11 个 auth 测试通过。
+  - `npm run build`：通过，仅 Vite chunk size warning（历史遗留）。
+  - 已合并 `master` 并推送，commit `cc22f32`。
+
 ### ISSUE-069 · reverse-round 填空题要求填 □ 数字但正确答案显示完整小数（P1 · bug / 题干答案一致性）
 
 - **状态**：✅ 已修复（2026-05-01，v0.5 Phase 5）
