@@ -8,6 +8,24 @@
 
 ## 关闭问题
 
+### ISSUE-071 · npm run lint 全量失败，恢复 lint 质量门（P1 · 工程质量 bugfix / QA gate）
+
+- **状态**：✅ 已修复（2026-05-07，v0.5 post-release engineering hotfix）
+- **来源**：由 `ProjectManager/Backlog.md` 的 `BL-016 · master lint 债清理` 转入；2026-05-07 用户确认不单开版本号，按 bugfix 执行。
+- **类别**：工程质量 bugfix / Lint hygiene / QA gate。
+- **问题摘要**：最新 `master` 上 `npm run lint` 全量失败，质量门长期红灯，导致后续功能只能依赖 scoped lint，新增问题容易被既有噪音掩盖。
+- **修复摘要**：
+  - 修复运行时代码中的 React Hooks / purity / refs / set-state-in-effect / 非 hook 函数调用 hook 风险，包括 `SyncStatusIndicator`、`CampaignMap`、`RankMatchHub`、`RankMatchGameResult`、`SessionSummary` 与 `merge-flow`。
+  - 移除 `TopicIcon` 中指向未安装 `react/no-danger` 规则的 eslint 注释，保留静态 SVG 输出方式。
+  - 类型化测试 helper 与测试数据访问，把生成器、段位赛、同步测试中的 `any` 收敛为 `Question`、`TopicId`、`HistoryRecord`、typed store API 或结构类型。
+  - 清理小型 lint 问题：未使用 import、无必要转义、未使用变量等。
+- **关闭证据**：
+  - `npm run lint`：通过。
+  - `npm test -- --run`：64 files / 775 tests passed。
+  - `npm run build`：通过，仅 Vite chunk size warning（历史遗留）。
+  - `npx tsx scripts/pm-sync-check.ts`：通过。
+- **非目标确认**：本次不启动新版本包，不混入 `BL-017` 生成器样本池治理、`BL-014` 乘法竖式 legacy 收敛或其他功能开发，不改变产品功能、学习规则、存档结构或 current spec 承诺。
+
 ### ISSUE-070 · 登录状态未持久化：重新上线后需重新登录（P1 · 体验 bug / Auth 实现欠账）
 
 - **状态**：✅ 已修复（2026-05-03，v0.5 post-release hotfix）

@@ -97,7 +97,7 @@ describe('SessionStore 段位赛中断/取消生命周期', () => {
     useSessionStore.getState().startRankMatchGame(rank.id, 1);
     const sessionId = useSessionStore.getState().session!.id;
 
-    (useSessionStore.getState() as any).suspendRankMatchSession();
+    useSessionStore.getState().suspendRankMatchSession();
 
     expect(useSessionStore.getState().session).toBeNull();
     expect(useSessionStore.getState().active).toBe(false);
@@ -109,7 +109,7 @@ describe('SessionStore 段位赛中断/取消生命周期', () => {
     const rank = useRankMatchStore.getState().startRankMatch('rookie');
     useSessionStore.getState().startRankMatchGame(rank.id, 1);
 
-    (useSessionStore.getState() as any).cancelRankMatchSession();
+    useSessionStore.getState().cancelRankMatchSession();
 
     expect(useSessionStore.getState().session).toBeNull();
     expect(useRankMatchStore.getState().activeRankSession).toBeNull();

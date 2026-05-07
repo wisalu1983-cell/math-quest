@@ -8,9 +8,10 @@ import { generateEquationTranspose } from './equation-transpose';
 import { generateNumberSense } from './number-sense';
 import { generateBracketOps } from './bracket-ops';
 import { generateOperationLaws } from './operation-laws';
+import type { Question } from '@/types';
 
 // Helper: generate N questions and return them
-function genN(fn: (p: { difficulty: number; id: string }) => any, difficulty: number, n = 50) {
+function genN(fn: (p: { difficulty: number; id: string }) => Question, difficulty: number, n = 50): Question[] {
   return Array.from({ length: n }, (_, i) => fn({ difficulty, id: `test-${i}` }));
 }
 
@@ -23,10 +24,10 @@ describe('Mental Arithmetic (口算速算)', () => {
   describe('低档 (difficulty=5)', () => {
     it('C1档1-高(d=4~5)乘法应为中档函数（含多位操作数）', () => {
       const qs = genN(generateMentalArithmetic, 5, 200);
-      const muls = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
+      const muls = qs.filter((q: Question) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
       expect(muls.length).toBeGreaterThan(0);
       // d=5 走 midMulMidZero，会有三位数操作数
-      const hasLargerOps = muls.some((q: any) => {
+      const hasLargerOps = muls.some((q: Question) => {
         const [a] = q.data.operands;
         return a >= 100;
       });
@@ -35,7 +36,7 @@ describe('Mental Arithmetic (口算速算)', () => {
 
     it('除法应为表内除法（整除，商为 2-9）', () => {
       const qs = genN(generateMentalArithmetic, 5, 200);
-      const divs = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
+      const divs = qs.filter((q: Question) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
       expect(divs.length).toBeGreaterThan(0);
       for (const q of divs) {
         const [a, b] = q.data.operands;
@@ -53,10 +54,10 @@ describe('Mental Arithmetic (口算速算)', () => {
   describe('中档 (difficulty=7)', () => {
     it('乘法包含"中间含0"陷阱（如 208×5）', () => {
       const qs = genN(generateMentalArithmetic, 7, 300);
-      const muls = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
+      const muls = qs.filter((q: Question) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
       expect(muls.length).toBeGreaterThan(0);
       // 至少存在一道：a 是三位数且十位为 0（即 X0Y 结构）
-      const midZero = muls.filter((q: any) => {
+      const midZero = muls.filter((q: Question) => {
         const a = q.data.operands[0];
         return a >= 100 && a <= 999 && Math.floor((a / 10) % 10) === 0;
       });
@@ -65,7 +66,7 @@ describe('Mental Arithmetic (口算速算)', () => {
 
     it('除法为整除（v2.1 规格：心算题不带余数）', () => {
       const qs = genN(generateMentalArithmetic, 7, 300);
-      const divs = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
+      const divs = qs.filter((q: Question) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
       expect(divs.length).toBeGreaterThan(0);
       for (const q of divs) {
         const [a, b] = q.data.operands;
@@ -78,9 +79,9 @@ describe('Mental Arithmetic (口算速算)', () => {
   describe('档 2 (difficulty=9，v2.2)', () => {
     it('乘法池包含"末尾0/拆分/基础"混合（档 2 = 原中档+原高档）', () => {
       const qs = genN(generateMentalArithmetic, 9, 300);
-      const muls = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
+      const muls = qs.filter((q: Question) => q.data.kind === 'mental-arithmetic' && q.data.operator === '×');
       expect(muls.length).toBeGreaterThan(0);
-      const qualifying = muls.filter((q: any) => {
+      const qualifying = muls.filter((q: Question) => {
         const [a, b] = q.data.operands;
         const trailingZero = (a % 10 === 0) || (b % 10 === 0);
         const factorSplit = [25, 125, 75, 50].includes(a) || [25, 125, 75, 50].includes(b);
@@ -92,14 +93,14 @@ describe('Mental Arithmetic (口算速算)', () => {
 
     it('除法必须整除；档 2 覆盖原高档"非表内"池', () => {
       const qs = genN(generateMentalArithmetic, 9, 300);
-      const divs = qs.filter((q: any) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
+      const divs = qs.filter((q: Question) => q.data.kind === 'mental-arithmetic' && q.data.operator === '÷');
       expect(divs.length).toBeGreaterThan(0);
       for (const q of divs) {
         const [a, b] = q.data.operands;
         expect(a % b).toBe(0);
       }
       // 档 2 约 50% 抽到原高档池（除数≥10 或 被除数≥1000）
-      const hard = divs.filter((q: any) => {
+      const hard = divs.filter((q: Question) => {
         const [a, b] = q.data.operands;
         return b >= 10 || a >= 1000;
       });
@@ -135,7 +136,7 @@ describe('Mental Arithmetic (口算速算)', () => {
       const qs = genN(generateMentalArithmetic, 5, 300);
       const mcQs = qs.filter(q => q.data.kind === 'multi-step' && q.type === 'multiple-choice');
       for (const q of mcQs) {
-        const opts = (q.data as any).options as string[];
+        const opts = (q.data as Record<string, unknown>).options as string[];
         expect(opts).toContain(String(q.solution.answer));
       }
     });
@@ -389,7 +390,7 @@ describe('Multi-Step (多步计算)', () => {
       const mbs = qs.filter(q => q.type === 'multi-blank');
       for (const q of mbs) {
         expect(Array.isArray(q.solution.blanks)).toBe(true);
-        expect((q.solution.blanks as any[]).length).toBeGreaterThanOrEqual(2);
+        expect((q.solution.blanks as unknown[]).length).toBeGreaterThanOrEqual(2);
       }
     });
   });
@@ -408,7 +409,7 @@ describe('Multi-Step (多步计算)', () => {
       const mcs = qs.filter(q => q.type === 'multiple-choice');
       expect(mcs.length).toBeGreaterThan(0);
       for (const q of mcs) {
-        const opts = (q.data as any).options as string[];
+        const opts = (q.data as Record<string, unknown>).options as string[];
         expect(opts).toContain(String(q.solution.answer));
       }
     });
@@ -417,7 +418,7 @@ describe('Multi-Step (多步计算)', () => {
       const qs = genN(generateMultiStep, 7, 100);
       const mcs = qs.filter(q => q.type === 'multiple-choice');
       for (const q of mcs) {
-        const opts = (q.data as any).options as string[];
+        const opts = (q.data as Record<string, unknown>).options as string[];
         expect(opts.length).toBe(4);
         expect(new Set(opts).size).toBe(4);
       }
@@ -433,7 +434,7 @@ describe('Multi-Step (多步计算)', () => {
 
     it('高档应含错误诊断 MC（"哪步错了"）', () => {
       const qs = genN(generateMultiStep, 10, 200);
-      const diagnose = qs.filter(q => (q.data as any).subtype === 'simplify-error-diagnose');
+      const diagnose = qs.filter(q => (q.data as Record<string, unknown>).subtype === 'simplify-error-diagnose');
       expect(diagnose.length).toBeGreaterThan(0);
     });
 
@@ -448,7 +449,7 @@ describe('Multi-Step (多步计算)', () => {
       const mcs = qs.filter(q => q.type === 'multiple-choice');
       expect(mcs.length).toBeGreaterThan(0);
       for (const q of mcs) {
-        const opts = (q.data as any).options as string[];
+        const opts = (q.data as Record<string, unknown>).options as string[];
         expect(opts).toContain(String(q.solution.answer));
       }
     });
@@ -467,13 +468,13 @@ describe('Multi-Step (多步计算)', () => {
 describe('Decimal Ops - Compare Size (大小比较)', () => {
   it('应在 difficulty≤5 时生成大小比较题', () => {
     const qs = genN(generateDecimalOps, 5, 300);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
     expect(compareQs.length).toBeGreaterThan(0);
   });
 
   it('大小比较题应为 multiple-choice 类型', () => {
     const qs = genN(generateDecimalOps, 5, 300);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
     for (const q of compareQs) {
       expect(q.type).toBe('multiple-choice');
     }
@@ -481,7 +482,7 @@ describe('Decimal Ops - Compare Size (大小比较)', () => {
 
   it('答案必须是 >、< 或 = 之一', () => {
     const qs = genN(generateDecimalOps, 5, 500);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
     for (const q of compareQs) {
       expect(['>', '<', '=']).toContain(String(q.solution.answer));
     }
@@ -489,7 +490,7 @@ describe('Decimal Ops - Compare Size (大小比较)', () => {
 
   it('选项必须包含 >、< 和 =', () => {
     const qs = genN(generateDecimalOps, 5, 300);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
     for (const q of compareQs) {
       const opts = q.data.options as string[];
       expect(opts).toContain('>');
@@ -501,8 +502,8 @@ describe('Decimal Ops - Compare Size (大小比较)', () => {
 
   it('三种答案应都能出现', () => {
     const qs = genN(generateDecimalOps, 5, 600);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
-    const answers = new Set(compareQs.map((q: any) => String(q.solution.answer)));
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
+    const answers = new Set(compareQs.map((q: Question) => String(q.solution.answer)));
     expect(answers.has('>')).toBe(true);
     expect(answers.has('<')).toBe(true);
     expect(answers.has('=')).toBe(true);
@@ -513,7 +514,7 @@ describe('Decimal Ops - Compare Size (大小比较)', () => {
 describe('Decimal Ops - Cyclic Division (循环小数除法)', () => {
   it('应在 difficulty≥6 时生成循环小数除法题', () => {
     const qs = genN(generateDecimalOps, 7, 400);
-    const cyclicQs = qs.filter((q: any) =>
+    const cyclicQs = qs.filter((q: Question) =>
       q.prompt.includes('保留') && q.data.subtype === 'div'
     );
     expect(cyclicQs.length).toBeGreaterThan(0);
@@ -521,7 +522,7 @@ describe('Decimal Ops - Cyclic Division (循环小数除法)', () => {
 
   it('循环小数除法题应为 numeric-input 类型', () => {
     const qs = genN(generateDecimalOps, 7, 400);
-    const cyclicQs = qs.filter((q: any) =>
+    const cyclicQs = qs.filter((q: Question) =>
       q.prompt.includes('保留') && q.data.subtype === 'div'
     );
     for (const q of cyclicQs) {
@@ -531,7 +532,7 @@ describe('Decimal Ops - Cyclic Division (循环小数除法)', () => {
 
   it('答案应为有效数字', () => {
     const qs = genN(generateDecimalOps, 7, 400);
-    const cyclicQs = qs.filter((q: any) =>
+    const cyclicQs = qs.filter((q: Question) =>
       q.prompt.includes('保留') && q.data.subtype === 'div'
     );
     for (const q of cyclicQs) {
@@ -545,13 +546,13 @@ describe('Equation Transpose (方程与等式)', () => {
   describe('Bracket Equations (含括号方程, v2.1)', () => {
     it('difficulty≥6 应能生成含括号方程（equation-input 或 numeric-input）', () => {
       const qs = genN(generateEquationTranspose, 7, 400);
-      const bracketQs = qs.filter((q: any) => q.data.equation?.includes('('));
+      const bracketQs = qs.filter((q: Question) => q.data.equation?.includes('('));
       expect(bracketQs.length).toBeGreaterThan(0);
     });
 
     it('含括号方程：numeric 答案为有效数字，expression 提供 standardExpression', () => {
       const qs = genN(generateEquationTranspose, 7, 400);
-      const bracketQs = qs.filter((q: any) => q.data.equation?.includes('('));
+      const bracketQs = qs.filter((q: Question) => q.data.equation?.includes('('));
       for (const q of bracketQs) {
         if (q.type === 'numeric-input') {
           expect(isNaN(Number(q.solution.answer))).toBe(false);
@@ -565,13 +566,13 @@ describe('Equation Transpose (方程与等式)', () => {
   describe('v2.1 低档主流为 equation-input 填写完整等式', () => {
     it('低档（d=3）equation-input 比例应显著', () => {
       const qs = genN(generateEquationTranspose, 3, 400);
-      const exprInput = qs.filter((q: any) => q.type === 'equation-input');
+      const exprInput = qs.filter((q: Question) => q.type === 'equation-input');
       expect(exprInput.length).toBeGreaterThan(qs.length * 0.3);
     });
 
     it('equation-input 必须提供 variable 与 standardExpression', () => {
       const qs = genN(generateEquationTranspose, 3, 200);
-      const exprInput = qs.filter((q: any) => q.type === 'equation-input');
+      const exprInput = qs.filter((q: Question) => q.type === 'equation-input');
       for (const q of exprInput) {
         expect(q.solution.variable).toBeTruthy();
         expect(q.solution.standardExpression).toBeTruthy();
@@ -582,7 +583,7 @@ describe('Equation Transpose (方程与等式)', () => {
   describe('v2.1 高档陷阱覆盖', () => {
     it('高档（d=9）应出现 T3 / T4 / T3+T4 陷阱标记', () => {
       const qs = genN(generateEquationTranspose, 9, 400);
-      const traps = qs.map((q: any) => q.data?.trap).filter(Boolean);
+      const traps = qs.map((q: Question) => q.data?.trap).filter(Boolean);
       const unique = new Set(traps);
       expect(unique.size).toBeGreaterThan(0);
     });
@@ -593,13 +594,13 @@ describe('Equation Transpose (方程与等式)', () => {
 describe('Number Sense - Compare (大小比较判断)', () => {
   it('应生成大小比较判断题', () => {
     const qs = genN(generateNumberSense, 5, 400);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
     expect(compareQs.length).toBeGreaterThan(0);
   });
 
   it('大小比较题应为 multiple-choice 类型', () => {
     const qs = genN(generateNumberSense, 5, 400);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
     for (const q of compareQs) {
       expect(q.type).toBe('multiple-choice');
     }
@@ -607,7 +608,7 @@ describe('Number Sense - Compare (大小比较判断)', () => {
 
   it('答案必须是 >、< 或 = 之一', () => {
     const qs = genN(generateNumberSense, 5, 600);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
     for (const q of compareQs) {
       expect(['>', '<', '=']).toContain(String(q.solution.answer));
     }
@@ -615,7 +616,7 @@ describe('Number Sense - Compare (大小比较判断)', () => {
 
   it('选项必须包含 >、< 和 =', () => {
     const qs = genN(generateNumberSense, 5, 400);
-    const compareQs = qs.filter((q: any) => q.data.subtype === 'compare');
+    const compareQs = qs.filter((q: Question) => q.data.subtype === 'compare');
     for (const q of compareQs) {
       const opts = q.data.options as string[];
       expect(opts).toEqual(['>', '<', '=']);
@@ -627,8 +628,8 @@ describe('Number Sense - Compare (大小比较判断)', () => {
 describe('Decimal Ops - Shift Extension (小数点左移)', () => {
   it('difficulty 6-7 应生成左移题（×0.1 或 ×0.01）', () => {
     const qs = genN(generateDecimalOps, 7, 500);
-    const shiftQs = qs.filter((q: any) => q.data.subtype === 'shift');
-    const leftShifts = shiftQs.filter((q: any) =>
+    const shiftQs = qs.filter((q: Question) => q.data.subtype === 'shift');
+    const leftShifts = shiftQs.filter((q: Question) =>
       q.data.expression.includes('× 0.1') || q.data.expression.includes('× 0.01') || q.data.expression.includes('× 0.001')
     );
     expect(leftShifts.length).toBeGreaterThan(0);
@@ -636,7 +637,7 @@ describe('Decimal Ops - Shift Extension (小数点左移)', () => {
 
   it('左移题答案应为有效数字', () => {
     const qs = genN(generateDecimalOps, 7, 500);
-    const leftShifts = qs.filter((q: any) =>
+    const leftShifts = qs.filter((q: Question) =>
       q.data.subtype === 'shift' && (q.data.expression.includes('× 0.1') || q.data.expression.includes('× 0.01'))
     );
     for (const q of leftShifts) {
@@ -649,7 +650,7 @@ describe('Decimal Ops - Special Values (特殊值)', () => {
   it('C1 档1-低(d=3)应偶尔生成特殊值乘法（如 0.125×8）', () => {
     // C1规范化后：特殊值只在 d=3 生成，d=4~5 改为方向辨析/连续移位
     const qs = genN(generateDecimalOps, 3, 600);
-    const specials = qs.filter((q: any) =>
+    const specials = qs.filter((q: Question) =>
       q.data.subtype === 'mul' && q.solution.explanation.includes('特殊值')
     );
     expect(specials.length).toBeGreaterThan(0);
@@ -657,10 +658,10 @@ describe('Decimal Ops - Special Values (特殊值)', () => {
 
   it('C1 档1-高(d=4~5)mul 应生成方向辨析或连续移位题', () => {
     const qs = genN(generateDecimalOps, 4, 400);
-    const mulQs = qs.filter((q: any) => q.data.subtype === 'mul');
+    const mulQs = qs.filter((q: Question) => q.data.subtype === 'mul');
     expect(mulQs.length).toBeGreaterThan(0);
     // d=4 的乘法题应包含 0.1 或 0.01 或 × m ÷ n 形式（方向辨析/连续移位）
-    const hasDirection = mulQs.some((q: any) =>
+    const hasDirection = mulQs.some((q: Question) =>
       q.data.expression.includes('0.1') || q.data.expression.includes('÷')
     );
     expect(hasDirection).toBe(true);
@@ -671,9 +672,9 @@ describe('Decimal Ops - Special Values (特殊值)', () => {
 describe('Bracket Ops - 4-item Extension (四项括号变换)', () => {
   it('difficulty≥6 应生成四项括号变换题', () => {
     const qs = genN(generateBracketOps, 7, 400);
-    const fourItems = qs.filter((q: any) => {
+    const fourItems = qs.filter((q: Question) => {
       const expr = q.data.originalExpression;
-      const ops = expr.match(/[+\-]/g) || [];
+      const ops = expr.match(/[+-]/g) || [];
       return ops.length >= 3;
     });
     expect(fourItems.length).toBeGreaterThan(0);
@@ -683,13 +684,13 @@ describe('Bracket Ops - 4-item Extension (四项括号变换)', () => {
 describe('Bracket Ops - Division Property (除法性质)', () => {
   it('difficulty≥6 应生成除法性质题', () => {
     const qs = genN(generateBracketOps, 7, 400);
-    const divProps = qs.filter((q: any) => q.data.subtype === 'division-property');
+    const divProps = qs.filter((q: Question) => q.data.subtype === 'division-property');
     expect(divProps.length).toBeGreaterThan(0);
   });
 
   it('除法性质题选项应包含正确答案', () => {
     const qs = genN(generateBracketOps, 7, 400);
-    const divProps = qs.filter((q: any) => q.data.subtype === 'division-property');
+    const divProps = qs.filter((q: Question) => q.data.subtype === 'division-property');
     for (const q of divProps) {
       const opts = q.data.options as string[];
       expect(opts).toContain(String(q.solution.answer));
@@ -718,13 +719,13 @@ describe('Bracket Ops v2.1 - 答题形式', () => {
 describe('Mental Arithmetic - Extended Ranges (整十整百运算)', () => {
   it('C1 档1-高(d=4~5)应稳定生成三位数运算（midAdd/midSub）', () => {
     const qs = genN(generateMentalArithmetic, 5, 200);
-    const singleStep = qs.filter((q: any) => q.data.kind !== 'multi-step');
-    const addSubQs = singleStep.filter((q: any) =>
+    const singleStep = qs.filter((q: Question) => q.data.kind !== 'multi-step');
+    const addSubQs = singleStep.filter((q: Question) =>
       q.data.operator === '+' || q.data.operator === '-'
     );
     expect(addSubQs.length).toBeGreaterThan(0);
     // d=5 全走 midAdd/midSub，100% 应有三位数操作数
-    const threeDigit = addSubQs.filter((q: any) => {
+    const threeDigit = addSubQs.filter((q: Question) => {
       const ops = q.data.operands as number[];
       return ops.some((n: number) => n >= 100);
     });
@@ -734,9 +735,9 @@ describe('Mental Arithmetic - Extended Ranges (整十整百运算)', () => {
   it('C1 档1-低(d=2~3)整十整百运算来自 lowAdd，不强制 d=5 为整十整百', () => {
     // d=3 时仍走 lowAdd（d≤3），包含 25% 整十整百
     const qs = genN(generateMentalArithmetic, 3, 300);
-    const singleStep = qs.filter((q: any) => q.data.kind !== 'multi-step');
-    const addQs = singleStep.filter((q: any) => q.data.operator === '+');
-    const roundNums = addQs.filter((q: any) => {
+    const singleStep = qs.filter((q: Question) => q.data.kind !== 'multi-step');
+    const addQs = singleStep.filter((q: Question) => q.data.operator === '+');
+    const roundNums = addQs.filter((q: Question) => {
       const ops = q.data.operands as number[];
       return ops.some((n: number) => n >= 10 && n % 10 === 0);
     });
@@ -748,13 +749,13 @@ describe('Mental Arithmetic - Extended Ranges (整十整百运算)', () => {
 describe('Multi-Step v2.1 - 识别力（Recognize）', () => {
   it('低档应能生成"哪道可以凑整简便"识别题', () => {
     const qs = genN(generateMultiStep, 5, 300);
-    const recognize = qs.filter((q: any) => q.data.subtype === 'recognize-simplifiable');
+    const recognize = qs.filter((q: Question) => q.data.subtype === 'recognize-simplifiable');
     expect(recognize.length).toBeGreaterThan(0);
   });
 
   it('中档应能生成"哪道不能简便"/"用什么律"识别题', () => {
     const qs = genN(generateMultiStep, 7, 400);
-    const recognize = qs.filter((q: any) =>
+    const recognize = qs.filter((q: Question) =>
       q.data.subtype === 'recognize-not-simplifiable' ||
       q.data.subtype === 'recognize-method'
     );
@@ -765,16 +766,16 @@ describe('Multi-Step v2.1 - 识别力（Recognize）', () => {
 describe('Multi-Step v2.1 - 执行力（Execute）填空模板', () => {
   it('低档应能生成凑整拆分 multi-blank 模板', () => {
     const qs = genN(generateMultiStep, 5, 300);
-    const mbs = qs.filter((q: any) => q.type === 'multi-blank' && q.data.subtype === 'fill-split-low');
+    const mbs = qs.filter((q: Question) => q.type === 'multi-blank' && q.data.subtype === 'fill-split-low');
     expect(mbs.length).toBeGreaterThan(0);
     for (const q of mbs) {
-      expect((q.solution.blanks as any[]).length).toBe(2);
+      expect((q.solution.blanks as unknown[]).length).toBe(2);
     }
   });
 
   it('中档应能生成发现拆分路径 multi-blank 题', () => {
     const qs = genN(generateMultiStep, 7, 400);
-    const mbs = qs.filter((q: any) => q.type === 'multi-blank' && q.data.subtype === 'fill-split-mid');
+    const mbs = qs.filter((q: Question) => q.type === 'multi-blank' && q.data.subtype === 'fill-split-mid');
     expect(mbs.length).toBeGreaterThan(0);
   });
 });
@@ -783,13 +784,13 @@ describe('Multi-Step v2.1 - 执行力（Execute）填空模板', () => {
 describe('Operation Laws - Identification (运算律类型识别)', () => {
   it('应生成运算律识别题', () => {
     const qs = genN(generateOperationLaws, 5, 400);
-    const idQs = qs.filter((q: any) => q.prompt.includes('运用了什么运算律'));
+    const idQs = qs.filter((q: Question) => q.prompt.includes('运用了什么运算律'));
     expect(idQs.length).toBeGreaterThan(0);
   });
 
   it('运算律识别题应为 multiple-choice 类型', () => {
     const qs = genN(generateOperationLaws, 5, 400);
-    const idQs = qs.filter((q: any) => q.prompt.includes('运用了什么运算律'));
+    const idQs = qs.filter((q: Question) => q.prompt.includes('运用了什么运算律'));
     for (const q of idQs) {
       expect(q.type).toBe('multiple-choice');
     }
@@ -797,7 +798,7 @@ describe('Operation Laws - Identification (运算律类型识别)', () => {
 
   it('答案必须是三种运算律之一', () => {
     const qs = genN(generateOperationLaws, 5, 400);
-    const idQs = qs.filter((q: any) => q.prompt.includes('运用了什么运算律'));
+    const idQs = qs.filter((q: Question) => q.prompt.includes('运用了什么运算律'));
     for (const q of idQs) {
       expect(['交换律', '结合律', '分配律']).toContain(String(q.solution.answer));
     }
@@ -805,8 +806,8 @@ describe('Operation Laws - Identification (运算律类型识别)', () => {
 
   it('三种运算律答案应都能出现', () => {
     const qs = genN(generateOperationLaws, 5, 600);
-    const idQs = qs.filter((q: any) => q.prompt.includes('运用了什么运算律'));
-    const answers = new Set(idQs.map((q: any) => String(q.solution.answer)));
+    const idQs = qs.filter((q: Question) => q.prompt.includes('运用了什么运算律'));
+    const answers = new Set(idQs.map((q: Question) => String(q.solution.answer)));
     expect(answers.size).toBe(3);
   });
 });
@@ -815,7 +816,7 @@ describe('Operation Laws - Identification (运算律类型识别)', () => {
 describe('Equation Transpose - Concept (方程概念判断)', () => {
   it('应生成方程概念判断题', () => {
     const qs = genN(generateEquationTranspose, 5, 400);
-    const conceptQs = qs.filter((q: any) =>
+    const conceptQs = qs.filter((q: Question) =>
       q.prompt.includes('方程') && q.type === 'multiple-choice' && !q.prompt.includes('解方程')
     );
     expect(conceptQs.length).toBeGreaterThan(0);
@@ -823,7 +824,7 @@ describe('Equation Transpose - Concept (方程概念判断)', () => {
 
   it('方程概念题应为 multiple-choice 类型', () => {
     const qs = genN(generateEquationTranspose, 5, 400);
-    const conceptQs = qs.filter((q: any) =>
+    const conceptQs = qs.filter((q: Question) =>
       q.prompt.includes('方程') && q.type === 'multiple-choice' && !q.prompt.includes('解方程')
     );
     for (const q of conceptQs) {
@@ -833,7 +834,7 @@ describe('Equation Transpose - Concept (方程概念判断)', () => {
 
   it('方程概念题选项应包含正确答案', () => {
     const qs = genN(generateEquationTranspose, 5, 400);
-    const conceptQs = qs.filter((q: any) =>
+    const conceptQs = qs.filter((q: Question) =>
       q.prompt.includes('方程') && q.type === 'multiple-choice' && !q.prompt.includes('解方程')
     );
     for (const q of conceptQs) {
@@ -847,7 +848,7 @@ describe('Equation Transpose - Concept (方程概念判断)', () => {
 describe('Number Sense - Floor/Ceil (去尾法/进一法)', () => {
   it('应生成去尾法或进一法情景题', () => {
     const qs = genN(generateNumberSense, 7, 500);
-    const fcQs = qs.filter((q: any) =>
+    const fcQs = qs.filter((q: Question) =>
       q.data.subtype === 'round' &&
       (q.prompt.includes('至少') || q.prompt.includes('最多')) &&
       !q.prompt.includes('四舍五入')
@@ -857,7 +858,7 @@ describe('Number Sense - Floor/Ceil (去尾法/进一法)', () => {
 
   it('去尾法/进一法答案应为有效数字', () => {
     const qs = genN(generateNumberSense, 7, 500);
-    const fcQs = qs.filter((q: any) =>
+    const fcQs = qs.filter((q: Question) =>
       q.data.subtype === 'round' &&
       (q.prompt.includes('至少') || q.prompt.includes('最多')) &&
       !q.prompt.includes('四舍五入')
@@ -879,7 +880,7 @@ describe('Number Sense - Floor/Ceil (去尾法/进一法)', () => {
 describe('Number Sense - Reverse Round (逆向推理)', () => {
   it('应生成逆向推理题', () => {
     const qs = genN(generateNumberSense, 7, 500);
-    const revQs = qs.filter((q: any) =>
+    const revQs = qs.filter((q: Question) =>
       q.prompt.includes('最大') || q.prompt.includes('最小')
     );
     expect(revQs.length).toBeGreaterThan(0);
@@ -887,7 +888,7 @@ describe('Number Sense - Reverse Round (逆向推理)', () => {
 
   it('逆向推理答案应为有效数字', () => {
     const qs = genN(generateNumberSense, 7, 500);
-    const revQs = qs.filter((q: any) =>
+    const revQs = qs.filter((q: Question) =>
       q.prompt.includes('最大') || q.prompt.includes('最小')
     );
     for (const q of revQs) {
@@ -900,7 +901,7 @@ describe('Number Sense - Reverse Round (逆向推理)', () => {
 describe('Vertical Calc - Decimal Add/Sub (小数加减法)', () => {
   it('中档应生成小数加减法题', () => {
     const qs = genN(generateVerticalCalc, 7, 400);
-    const decAddSub = qs.filter((q: any) =>
+    const decAddSub = qs.filter((q: Question) =>
       q.type === 'vertical-fill' && q.data.decimalPlaces != null &&
       (q.data.operation === '+' || q.data.operation === '-')
     );
@@ -909,7 +910,7 @@ describe('Vertical Calc - Decimal Add/Sub (小数加减法)', () => {
 
   it('小数加减法答案应为有效数字', () => {
     const qs = genN(generateVerticalCalc, 7, 400);
-    const decAddSub = qs.filter((q: any) =>
+    const decAddSub = qs.filter((q: Question) =>
       q.type === 'vertical-fill' && q.data.decimalPlaces != null &&
       (q.data.operation === '+' || q.data.operation === '-')
     );
@@ -922,7 +923,7 @@ describe('Vertical Calc - Decimal Add/Sub (小数加减法)', () => {
 describe('Vertical Calc - Decimal Mul (小数乘法)', () => {
   it('中档应生成小数×整数乘法竖式题', () => {
     const qs = genN(generateVerticalCalc, 7, 400);
-    const decMul = qs.filter((q: any) =>
+    const decMul = qs.filter((q: Question) =>
       q.type === 'vertical-fill' && q.prompt.includes('列竖式计算') &&
       q.data.operation === '×' &&
       (q.data.operands[0] % 1 !== 0 || q.data.operands[1] % 1 !== 0)
@@ -940,7 +941,7 @@ describe('Vertical Calc - Decimal Mul (小数乘法)', () => {
 
   it('高档应生成小数×小数乘法竖式题', () => {
     const qs = genN(generateVerticalCalc, 9, 400);
-    const decMul = qs.filter((q: any) =>
+    const decMul = qs.filter((q: Question) =>
       q.type === 'vertical-fill' &&
       q.data.operation === '×' &&
       q.data.multiplicationBoard?.mode === 'decimal' &&
@@ -958,7 +959,7 @@ describe('Vertical Calc - Decimal Mul (小数乘法)', () => {
 describe('Vertical Calc - Decimal Div (小数除法)', () => {
   it('中档应生成小数÷整数除法题', () => {
     const qs = genN(generateVerticalCalc, 7, 400);
-    const decDiv = qs.filter((q: any) =>
+    const decDiv = qs.filter((q: Question) =>
       q.type === 'vertical-fill' && q.prompt.includes('列竖式计算') &&
       q.data.operation === '÷' &&
       q.data.longDivisionBoard?.mode === 'decimal-dividend' &&
@@ -972,7 +973,7 @@ describe('Vertical Calc - Decimal Div (小数除法)', () => {
 
   it('高档应生成除数是小数的除法题', () => {
     const qs = genN(generateVerticalCalc, 9, 400);
-    const decDivDecDivisor = qs.filter((q: any) =>
+    const decDivDecDivisor = qs.filter((q: Question) =>
       q.type === 'vertical-fill' && q.data.operation === '÷' &&
       q.data.longDivisionBoard?.mode === 'decimal-divisor' &&
       q.data.operands[1] % 1 !== 0
@@ -985,7 +986,7 @@ describe('Vertical Calc - Decimal Div (小数除法)', () => {
 
   it('高档 dec-div 不应残留隐藏 trainingFields（ISSUE-059）', () => {
     const qs = genN(generateVerticalCalc, 9, 400);
-    const highDecDivs = qs.filter((q: any) =>
+    const highDecDivs = qs.filter((q: Question) =>
       q.type === 'vertical-fill' &&
       q.data.operation === '÷' &&
       q.data.longDivisionBoard?.mode === 'decimal-divisor' &&
@@ -1002,7 +1003,7 @@ describe('Vertical Calc - Decimal Div (小数除法)', () => {
 describe('Vertical Calc - Approximate (取近似值)', () => {
   it('困难/魔王应生成取近似值题', () => {
     const qs = genN(generateVerticalCalc, 7, 500);
-    const approxQs = qs.filter((q: any) =>
+    const approxQs = qs.filter((q: Question) =>
       q.prompt.includes('精确到') || q.prompt.includes('保留')
     );
     expect(approxQs.length).toBeGreaterThan(0);
@@ -1010,7 +1011,7 @@ describe('Vertical Calc - Approximate (取近似值)', () => {
 
   it('取近似值答案应为有效数字', () => {
     const qs = genN(generateVerticalCalc, 7, 500);
-    const approxQs = qs.filter((q: any) =>
+    const approxQs = qs.filter((q: Question) =>
       q.prompt.includes('精确到') || q.prompt.includes('保留')
     );
     for (const q of approxQs) {
@@ -1075,7 +1076,7 @@ describe('Number Sense - B1 退化题过滤', () => {
 describe('Vertical Calc - Dispatcher Distribution (调度器分布)', () => {
   it('低档 100% 整数（v2.1：低档禁止小数）', () => {
     const qs = genN(generateVerticalCalc, 5, 1000);
-    const intOnly = qs.filter((q: any) => {
+    const intOnly = qs.filter((q: Question) => {
       const ops = q.data.operands ?? [];
       return ops.every((n: number) => Number.isInteger(n));
     });
@@ -1084,7 +1085,7 @@ describe('Vertical Calc - Dispatcher Distribution (调度器分布)', () => {
 
   it('中档整数 vertical-fill 应明显下降（小数接管主流）', () => {
     const qs = genN(generateVerticalCalc, 7, 1000);
-      const intVf = qs.filter((q: any) => {
+      const intVf = qs.filter((q: Question) => {
         if (q.type !== 'vertical-fill') return false;
         if (q.data.multiplicationBoard?.mode === 'decimal') return false;
         if (q.data.longDivisionBoard) return false;

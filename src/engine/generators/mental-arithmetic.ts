@@ -655,7 +655,7 @@ function generateOperationOrder(difficulty: number, id: string): Question {
 // Export
 // ---------------------------------------------------------------------------
 
-export function getSubtypeEntries(_difficulty: number): SubtypeDef[] {
+export function getSubtypeEntries(): SubtypeDef[] {
   return [
     { tag: 'add',   weight: 20 },
     { tag: 'sub',   weight: 20 },

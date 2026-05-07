@@ -319,7 +319,13 @@ export const useRankMatchStore = create<RankMatchStore>((set, get) => {
   });
 });
 
+declare global {
+  interface Window {
+    __MQ_RANK_MATCH__?: typeof useRankMatchStore;
+  }
+}
+
 // E2E 测试钩子：仅在浏览器 DEV 环境暴露 store，供 Playwright / DevTools 读写活跃赛事
 if (import.meta.env.DEV && typeof window !== 'undefined') {
-  (window as any).__MQ_RANK_MATCH__ = useRankMatchStore;
+  window.__MQ_RANK_MATCH__ = useRankMatchStore;
 }

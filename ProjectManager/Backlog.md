@@ -1,6 +1,6 @@
 # Backlog（未激活需求 / 想法 / 延期候选）
 
-> 最后更新：2026-05-03（新增 `BL-024` 答错结算界面显示用户错误回答）
+> 最后更新：2026-05-07（`BL-016` 已转入 `ISSUE-071` 并随 v0.5 post-release engineering hotfix 修复）
 > 角色：**未激活的需求 / 想法 / 方向 / 延期候选**集中地。只有被正式纳入某个版本之后，条目才会展开为正式 Plan；已纳入当前版本但尚未收口的条目可暂存在本文件作为来源索引，版本收口时必须归档或回流。
 >
 > **与 `ISSUE_LIST.md` 的边界**：
@@ -116,22 +116,6 @@
 - **状态**：候选（暂不纳入版本；v0.6 预研时再决定是否作为治理试点）
 - **初步分流**：v0.6 启动时先做一次“开发模式判定”：用户可见功能优先 vertical slice；账号同步、存档迁移、共享输入协议等高风险基础设施采用 foundation slice + vertical slice；纯诊断走 diagnostic phase；release gate 走 stabilization / QA phase。若采用子 agent 拆分，先写一份 canonical 职责文档，再按 Claude Code / Codex / Cursor 分别做轻量适配。
 - **期望方向**：把开发实现与 QA 验证从主 agent 的常规职责中拆出，降低主 agent 上下文负担，同时保留用户作为制作人 / PO 的产品决策入口；不新增常驻学习设计、发布或 Spec 治理角色。
-
----
-
-### BL-016 · master lint 债清理
-
-- **来源**：2026-04-30 用户要求记录当前 `master` lint 债；证据来自独立 worktree `.worktrees/lint-master-20260430`，`master@5bfb1bf`，先执行 `npm ci`，再执行 `npm run lint`。
-- **背景**：`master@5bfb1bf` 当前 `npm run lint` 未通过，共 `145 errors / 1 warning`，涉及 17 个文件。主要集中在生成器测试中的 `@typescript-eslint/no-explicit-any`，以及 React Hooks 新规则、ESLint 规则配置和少量历史代码风格问题。该项记录为未激活工程债清理候选；若后续拆成具体缺陷或版本阻塞项，应迁入 `ISSUE_LIST.md` 或对应版本 Plan。
-- **类别**：工程债 / Lint hygiene / 测试类型收敛
-- **状态**：延期至 v0.6 hardening / 单独工程债切片（版本包待启动；不并入 v0.5 当前功能主线）
-- **已确认范围**：
-  - 总量：`145 errors / 1 warning`。
-  - 主要规则：`@typescript-eslint/no-explicit-any` 126 条；`react-hooks/refs` 5 条；`react-hooks/rules-of-hooks` 3 条；`react-hooks/set-state-in-effect` 2 条；`react-hooks/purity` 2 条；其余为未使用变量、`prefer-const`、`no-useless-escape`、`react-hooks/exhaustive-deps` warning，以及 `react/no-danger` 规则定义缺失。
-  - 高集中度文件：`src/engine/generators/generators.test.ts` 79 errors；`src/engine/generators/difficulty-tiers.test.ts` 22 errors；`src/engine/generators/qa-v3.test.ts` 18 errors。
-  - 关键非测试风险：`src/components/SyncStatusIndicator.tsx` ref render access；`src/pages/CampaignMap.tsx` 条件调用 hook；`src/pages/RankMatchHub.tsx` render 中调用 `Date.now()`；`src/sync/merge-flow.ts` 非 hook 函数调用 `useRemoteAccount()`。
-- **初步分流**：先把 lint 债拆成“规则配置 / 测试 helper 类型化 / React Hooks 结构性修复 / 小型风格修复”四组；优先处理可能影响运行语义的 React Hooks 类问题，再集中收敛测试 helper 的 `any`，避免在业务功能 PR 中混合大量低风险机械改动。
-- **期望方向**：恢复 `npm run lint` 作为可信质量门；后续新增功能不再继承 master 上的 lint 噪音。
 
 ---
 
@@ -251,6 +235,7 @@
 
 ## 已落地归档
 
+- **BL-016 · master lint 债清理**：已转入并修复 `ISSUE-071`（2026-05-07），按 v0.5 post-release engineering hotfix 恢复 `npm run lint` 全量质量门，未单开版本号。入口：[`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)
 - **BL-001 · 本地用户数据存档 / 账号系统前置数据模型**：已落地 v0.3（2026-04-24），扩大为 Supabase 在线账号与数据同步主线。入口：[`Plan/v0.3/README.md`](Plan/v0.3/README.md)
 - **BL-003 · compare 概念题方法提示补证**：已落地 v0.4（2026-04-26），Phase 4 用可控题对象与浏览器证据补齐 compare tip 可达性。入口：[`Plan/v0.4/phases/phase-4.md`](Plan/v0.4/phases/phase-4.md) · [`QA/runs/2026-04-26-v04-release-gate/qa-summary.md`](../QA/runs/2026-04-26-v04-release-gate/qa-summary.md)
 - **BL-004 · Practice 答题页状态重置实现清理**：已落地 v0.4（2026-04-26），统一为 `usePracticeInputState()`，换题 reset 与首输入聚焦通过回归。入口：[`Plan/v0.4/phases/phase-5.md`](Plan/v0.4/phases/phase-5.md) · [`QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md`](../QA/runs/2026-04-26-v04-phase5-practice-reset/qa-summary.md)

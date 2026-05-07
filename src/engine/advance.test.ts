@@ -3,7 +3,6 @@ import { describe, it, expect, vi } from 'vitest';
 import {
   getStars,
   getStarProgress,
-  getFractionalStars,
   getTierCounts,
   buildAdvanceSlots,
 } from './advance';

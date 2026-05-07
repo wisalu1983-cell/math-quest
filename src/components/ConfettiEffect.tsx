@@ -1,5 +1,5 @@
 // src/components/ConfettiEffect.tsx
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface Particle {
@@ -38,40 +38,36 @@ interface ConfettiEffectProps {
 }
 
 export default function ConfettiEffect({ active }: ConfettiEffectProps) {
-  const [particles, setParticles] = useState<Particle[]>([]);
-
-  useEffect(() => {
-    if (active) {
-      setParticles(makeParticles(22));
-    } else {
-      setParticles([]);
-    }
-  }, [active]);
-
   return (
     <AnimatePresence>
-      {active && particles.map(p => (
-        <motion.div
-          key={p.id}
-          aria-hidden="true"
-          className="fixed pointer-events-none z-40 rounded-full"
-          style={{
-            left: `${p.x}vw`,
-            top: 0,
-            width: p.size,
-            height: p.size,
-            background: p.color,
-          }}
-          initial={{ y: -20, x: 0, opacity: 1, rotate: 0 }}
-          animate={{ y: '105vh', x: p.drift, opacity: 0, rotate: 360 }}
-          transition={{
-            duration: p.duration / 1000,
-            delay: p.delay / 1000,
-            ease: 'easeIn',
-          }}
-          exit={{}}
-        />
-      ))}
+      {active && <ConfettiBurst key="confetti-burst" />}
     </AnimatePresence>
   );
+}
+
+function ConfettiBurst() {
+  const [particles] = useState<Particle[]>(() => makeParticles(22));
+
+  return particles.map(p => (
+    <motion.div
+      key={p.id}
+      aria-hidden="true"
+      className="fixed pointer-events-none z-40 rounded-full"
+      style={{
+        left: `${p.x}vw`,
+        top: 0,
+        width: p.size,
+        height: p.size,
+        background: p.color,
+      }}
+      initial={{ y: -20, x: 0, opacity: 1, rotate: 0 }}
+      animate={{ y: '105vh', x: p.drift, opacity: 0, rotate: 360 }}
+      transition={{
+        duration: p.duration / 1000,
+        delay: p.delay / 1000,
+        ease: 'easeIn',
+      }}
+      exit={{}}
+    />
+  ));
 }

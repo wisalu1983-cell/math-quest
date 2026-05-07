@@ -140,7 +140,7 @@ describe('useRankMatchStore · startRankMatch', () => {
     resetStores(makeGameProgress(rookieAdvance()));
     const session = useRankMatchStore.getState().startRankMatch('rookie');
 
-    const suspended = (useRankMatchStore.getState() as any).suspendActiveMatch();
+    const suspended = useRankMatchStore.getState().suspendActiveMatch();
 
     expect(suspended.status).toBe('suspended');
     expect(useRankMatchStore.getState().activeRankSession?.status).toBe('suspended');
@@ -150,9 +150,9 @@ describe('useRankMatchStore · startRankMatch', () => {
   it('suspended session 可被重新激活为 active', () => {
     resetStores(makeGameProgress(rookieAdvance()));
     useRankMatchStore.getState().startRankMatch('rookie');
-    (useRankMatchStore.getState() as any).suspendActiveMatch();
+    useRankMatchStore.getState().suspendActiveMatch();
 
-    const reactivated = (useRankMatchStore.getState() as any).reactivateSuspendedMatch();
+    const reactivated = useRankMatchStore.getState().reactivateSuspendedMatch();
 
     expect(reactivated.status).toBe('active');
     expect(useRankMatchStore.getState().activeRankSession?.status).toBe('active');
@@ -164,9 +164,9 @@ describe('useRankMatchStore · startRankMatch', () => {
 
     expect(useRankMatchStore.getState().startedInThisSession.has(session.id)).toBe(true);
 
-    (useRankMatchStore.getState() as any).suspendActiveMatch();
+    useRankMatchStore.getState().suspendActiveMatch();
     useRankMatchStore.setState({ startedInThisSession: new Set() });
-    const reactivated = (useRankMatchStore.getState() as any).reactivateSuspendedMatch();
+    const reactivated = useRankMatchStore.getState().reactivateSuspendedMatch();
 
     expect(useRankMatchStore.getState().startedInThisSession.has(reactivated.id)).toBe(true);
   });
@@ -175,7 +175,7 @@ describe('useRankMatchStore · startRankMatch', () => {
     resetStores(makeGameProgress(rookieAdvance()));
     const session = useRankMatchStore.getState().startRankMatch('rookie');
 
-    const cancelled = (useRankMatchStore.getState() as any).cancelActiveMatch();
+    const cancelled = useRankMatchStore.getState().cancelActiveMatch();
 
     expect(cancelled.status).toBe('cancelled');
     expect(repository.getRankMatchSession(session.id)?.status).toBe('cancelled');

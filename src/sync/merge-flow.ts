@@ -304,7 +304,7 @@ export async function runMergeFlow(
     return 'online';
   };
 
-  const useRemoteAccount = async (remote: RemoteBundle): Promise<void> => {
+  const applyRemoteAccount = async (remote: RemoteBundle): Promise<void> => {
     const nextProgress = remote.progress ?? remoteProgressToLocal(userId, null);
     saveLocalAccount(nextProgress, remote.profile, true);
     deps.repository.saveHistorySilent(remote.history);
@@ -369,7 +369,7 @@ export async function runMergeFlow(
         if (operation === 'merge') {
           await mergeLocalIntoCloud(localProgress, remote);
         } else {
-          await useRemoteAccount(remote);
+          await applyRemoteAccount(remote);
         }
         return startSync();
       } catch {

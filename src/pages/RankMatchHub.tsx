@@ -2,7 +2,7 @@
 // 段位赛大厅：展示五段位卡片、入场校验、活跃赛事恢复入口
 // 路由：useUIStore.currentPage === 'rank-match-hub'（禁用 react-router）
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useUIStore, useSessionStore, useGameProgressStore } from '@/store';
 import { useRankMatchStore, RankMatchRecoveryError } from '@/store/rank-match';
 import { isTierUnlocked, getTierGaps } from '@/engine/rank-match/entry-gate';
@@ -42,7 +42,14 @@ export default function RankMatchHub() {
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [showRestartConfirm, setShowRestartConfirm] = useState(false);
   const [showAbandonConfirm, setShowAbandonConfirm] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
   const online = useOnlineStatus();
+
+  useEffect(() => {
+    if (!activeRankSession || activeRankSession.outcome) return;
+    const timer = setInterval(() => setNow(Date.now()), 30_000);
+    return () => clearInterval(timer);
+  }, [activeRankSession]);
 
   const rankProgress = gameProgress?.rankProgress;
   const advanceProgress = gameProgress?.advanceProgress ?? {};
@@ -177,11 +184,11 @@ export default function RankMatchHub() {
     const takeoverState = getRankMatchTakeoverState({
       session: activeRankSession,
       startedInThisSession,
-      now: Date.now(),
+      now,
     });
     const isAnotherDeviceActive = takeoverState === 'another-device-active';
     const isStaleActiveTakeoverable = takeoverState === 'stale-active-takeoverable';
-    const minutesLeft = getTakeoverMinutesLeft(activeRankSession, Date.now());
+    const minutesLeft = getTakeoverMinutesLeft(activeRankSession, now);
     const statusLabel = activeRankSession.status === 'suspended'
       ? '中断中的挑战'
       : isAnotherDeviceActive

@@ -39,11 +39,13 @@ export default function RankMatchGameResult() {
   }, [didNavigate, lastAction, rankSession, setPage, startRankMatchGame]);
 
   useEffect(() => {
-    if (countdown <= 0) {
-      navigateNext();
-      return;
-    }
-    const id = setTimeout(() => setCountdown(c => c - 1), 1000);
+    const id = setTimeout(() => {
+      if (countdown <= 0) {
+        navigateNext();
+      } else {
+        setCountdown(c => c - 1);
+      }
+    }, countdown <= 0 ? 0 : 1000);
     return () => clearTimeout(id);
   }, [countdown, navigateNext]);
 

@@ -16,6 +16,33 @@ export default function CampaignMap() {
   const topicId = selectedTopicId as TopicId;
   const map = topicId ? CAMPAIGN_MAPS[topicId] : null;
   const topic = TOPICS.find(t => t.id === topicId);
+  const recommendedRef = useRef<HTMLDivElement>(null);
+
+  // 找推荐关卡（第一个 playable + not completed）
+  let recommendedLevelId: string | null = null;
+  if (map && topic) {
+    outer: for (let si = 0; si < map.stages.length; si++) {
+      for (let li = 0; li < map.stages[si].lanes.length; li++) {
+        for (let lvi = 0; lvi < map.stages[si].lanes[li].levels.length; lvi++) {
+          const lvl = map.stages[si].lanes[li].levels[lvi];
+          if (isLevelPlayable(si, li, lvi) && !isLevelCompleted(topicId, lvl.levelId)) {
+            recommendedLevelId = lvl.levelId;
+            break outer;
+          }
+        }
+      }
+    }
+  }
+
+  // 推荐关卡自动滚动
+  useEffect(() => {
+    if (recommendedRef.current) {
+      const timer = setTimeout(() => {
+        recommendedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [recommendedLevelId]);
 
   if (!map || !topic) {
     return (
@@ -51,20 +78,6 @@ export default function CampaignMap() {
     return prog.completedLevels.find(l => l.levelId === levelId)?.bestHearts ?? null;
   }
 
-  // 找推荐关卡（第一个 playable + not completed）
-  let recommendedLevelId: string | null = null;
-  outer: for (let si = 0; si < map.stages.length; si++) {
-    for (let li = 0; li < map.stages[si].lanes.length; li++) {
-      for (let lvi = 0; lvi < map.stages[si].lanes[li].levels.length; lvi++) {
-        const lvl = map.stages[si].lanes[li].levels[lvi];
-        if (isLevelPlayable(si, li, lvi) && !isLevelCompleted(topicId, lvl.levelId)) {
-          recommendedLevelId = lvl.levelId;
-          break outer;
-        }
-      }
-    }
-  }
-
   // 关卡全局序号（用于显示"第N关"）
   let globalLevelIdx = 0;
   const levelNums: Record<string, number> = {};
@@ -89,17 +102,6 @@ export default function CampaignMap() {
     startCampaignSession(topicId, levelId);
     setPage('practice');
   }
-
-  // 推荐关卡自动滚动
-  const recommendedRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (recommendedRef.current) {
-      const timer = setTimeout(() => {
-        recommendedRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }, 300);
-      return () => clearTimeout(timer);
-    }
-  }, [recommendedLevelId]);
 
   return (
     <div className="min-h-dvh bg-bg safe-top">
@@ -209,7 +211,7 @@ export default function CampaignMap() {
                       else if (playable) state = 'play';
 
                       let btnClass = 'w-full rounded-[18px] border-2 flex flex-col items-center justify-between transition-all active:scale-95';
-                      let btnStyle: React.CSSProperties = stage.isBoss
+                      const btnStyle: React.CSSProperties = stage.isBoss
                         ? { height: 120, padding: '12px 8px 12px' }
                         : { height: 96, padding: '10px 8px 10px' };
 

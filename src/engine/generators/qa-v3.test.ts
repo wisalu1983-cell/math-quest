@@ -1,12 +1,12 @@
 /// <reference types="vitest/globals" />
 import { describe, it, expect } from 'vitest';
 import { generateQuestion } from '../index';
-import { CAMPAIGN_MAPS, getSubtypeFilter } from '@/constants/campaign';
-import type { Question } from '@/types';
+import { CAMPAIGN_MAPS } from '@/constants/campaign';
+import type { Question, TopicId } from '@/types';
 
 function genBatch(topicId: string, difficulty: number, count: number, subtypeFilter?: string[]): Question[] {
   return Array.from({ length: count }, () =>
-    generateQuestion(topicId as any, difficulty, subtypeFilter)
+    generateQuestion(topicId as TopicId, difficulty, subtypeFilter)
   );
 }
 
@@ -59,7 +59,7 @@ describe('A. 版本迭代验证', () => {
     const FRIENDLY = new Set([25, 50, 75, 125]);
     let hi = 0;
     for (const q of qs) {
-      const d = q.data as any;
+      const d = q.data as Record<string, unknown>;
       if (d.kind !== 'mental-arithmetic' || !d.operands) continue;
       const [a, b] = d.operands as [number, number];
       const op = d.operator as string;
@@ -80,7 +80,7 @@ describe('A. 版本迭代验证', () => {
     const mcQs = qs.filter(q => q.type === 'multiple-choice');
     expect(mcQs.length).toBeGreaterThan(5);
     for (const q of mcQs) {
-      const data = q.data as any;
+      const data = q.data as Record<string, unknown>;
       if (!data.options) continue;
       const exprNums = data.expression.match(/\d+/g) || [];
       for (const opt of data.options) {
@@ -116,7 +116,7 @@ describe('A. 版本迭代验证', () => {
     const qs = genBatch('equation-transpose', difficulty, count);
     const byTrap: Record<string, Question[]> = {};
     for (const q of qs) {
-      const trap = (q.data as any).trap as string | undefined;
+      const trap = (q.data as Record<string, unknown>).trap as string | undefined;
       if (!trap) continue;
       (byTrap[trap] ??= []).push(q);
     }
@@ -187,7 +187,7 @@ describe('A. 版本迭代验证', () => {
         expect(q.solution.answers?.length, `${topic} multi-select answers 数组应 ≥ 1`).toBeGreaterThanOrEqual(1);
         const sorted = q.solution.answer.split(',').sort().join(',');
         expect(sorted, `${topic} multi-select answer 应已排序`).toBe(q.solution.answer);
-        expect(q.data && 'options' in q.data && (q.data as any).options?.length, `${topic} multi-select 应有 options`).toBeGreaterThanOrEqual(2);
+        expect(q.data && 'options' in q.data && (q.data as Record<string, unknown>).options?.length, `${topic} multi-select 应有 options`).toBeGreaterThanOrEqual(2);
       }
     }
   });
@@ -201,7 +201,7 @@ describe('F-I. 通用生成质量', () => {
   // F-01
   it('F-01: Question 结构完整', () => {
     for (const topicId of Object.keys(CAMPAIGN_MAPS)) {
-      const q = generateQuestion(topicId as any, 5);
+      const q = generateQuestion(topicId as TopicId, 5);
       expect(q).toHaveProperty('id');
       expect(q).toHaveProperty('topicId');
       expect(q).toHaveProperty('type');
@@ -242,7 +242,7 @@ describe('F-I. 通用生成质量', () => {
       const qs = genBatch(topicId, 5, 50);
       const mcQs = qs.filter(q => q.type === 'multiple-choice');
       for (const q of mcQs) {
-        const data = q.data as any;
+        const data = q.data as Record<string, unknown>;
         if (!data.options) continue;
         if (data.options.length === 2 && data.options.includes('是') && data.options.includes('不是')) {
           continue; // DEFECT-001: 已知2选项判断题
@@ -261,7 +261,7 @@ describe('F-I. 通用生成质量', () => {
     const mcQs = qs.filter(q => q.type === 'multiple-choice');
     expect(mcQs.length).toBeGreaterThan(0);
     for (const q of mcQs) {
-      const data = q.data as any;
+      const data = q.data as Record<string, unknown>;
       expect(data.options?.length).toBeGreaterThanOrEqual(3);
     }
   });
@@ -279,7 +279,7 @@ describe('F-II. subtypeFilter 逐题型验证', () => {
       const qs = genBatch(topicId, 5, 30, subtypeFilter);
       let matchCount = 0;
       for (const q of qs) {
-        const data = q.data as any;
+        const data = q.data as Record<string, unknown>;
         const subtype = data.subtype || data.kind || data.law;
         if (expectedSubtypes.includes(subtype)) {
           matchCount++;
@@ -298,14 +298,14 @@ describe('F-II. subtypeFilter 逐题型验证', () => {
   // F-08: A02 估算
   it('F-08: A02 估算路线 100% estimate', () => {
     const qs = genBatch('number-sense', 5, 30, ['estimate']);
-    const matchCount = qs.filter(q => (q.data as any).subtype === 'estimate').length;
+    const matchCount = qs.filter(q => (q.data as Record<string, unknown>).subtype === 'estimate').length;
     expect(matchCount / qs.length).toBe(1);
   });
 
   // F-09: A02 比较大小
   it('F-09: A02 比较大小路线 100% compare', () => {
     const qs = genBatch('number-sense', 5, 30, ['compare']);
-    const matchCount = qs.filter(q => (q.data as any).subtype === 'compare').length;
+    const matchCount = qs.filter(q => (q.data as Record<string, unknown>).subtype === 'compare').length;
     expect(matchCount / qs.length).toBe(1);
   });
 
@@ -351,14 +351,14 @@ describe('F-II. subtypeFilter 逐题型验证', () => {
   // F-13: A05 乘法路线
   it('F-13: A05 乘法路线 100% mul', () => {
     const qs = genBatch('decimal-ops', 5, 30, ['mul']);
-    const matchCount = qs.filter(q => (q.data as any).subtype === 'mul').length;
+    const matchCount = qs.filter(q => (q.data as Record<string, unknown>).subtype === 'mul').length;
     expect(matchCount / qs.length).toBe(1);
   });
 
   // F-14: A06 添括号路线（v2.1：添括号为中档题，改用 d=7）
   it('F-14: A06 添括号路线 100% add-bracket', () => {
     const qs = genBatch('bracket-ops', 7, 30, ['add-bracket']);
-    const matchCount = qs.filter(q => (q.data as any).subtype === 'add-bracket').length;
+    const matchCount = qs.filter(q => (q.data as Record<string, unknown>).subtype === 'add-bracket').length;
     expect(matchCount / qs.length).toBe(1);
   });
 
@@ -366,7 +366,7 @@ describe('F-II. subtypeFilter 逐题型验证', () => {
   it('F-15: A06 去括号路线 100% remove-bracket', () => {
     const qs = genBatch('bracket-ops', 5, 30, ['remove-bracket-plus', 'remove-bracket-minus']);
     const matchCount = qs.filter(q => {
-      const st = (q.data as any).subtype;
+      const st = (q.data as Record<string, unknown>).subtype;
       return st === 'remove-bracket-plus' || st === 'remove-bracket-minus' || st === 'remove-bracket';
     }).length;
     expect(matchCount / qs.length).toBe(1);
@@ -408,7 +408,7 @@ describe('A-07/A-08: 方程MC选项数', () => {
     const qs = genBatch('equation-transpose', 3, 50, ['move-constant']);
     const mcQs = qs.filter(q => q.type === 'multiple-choice');
     for (const q of mcQs) {
-      const data = q.data as any;
+      const data = q.data as Record<string, unknown>;
       if (data.options) {
         expect(data.options.length).toBe(4);
       }
@@ -419,7 +419,7 @@ describe('A-07/A-08: 方程MC选项数', () => {
     const qs = genBatch('equation-transpose', 3, 50, ['move-from-linear', 'solve-after-transpose']);
     const mcQs = qs.filter(q => q.type === 'multiple-choice');
     for (const q of mcQs) {
-      const data = q.data as any;
+      const data = q.data as Record<string, unknown>;
       if (data.options) {
         expect(data.options.length).toBe(4);
       }
@@ -458,7 +458,7 @@ describe('Campaign 结构验证', () => {
 
   it('A-24: 51条Lane难度单调不减 + S1首关≥2 + Boss=9', () => {
     let totalLanes = 0;
-    for (const [_, map] of Object.entries(CAMPAIGN_MAPS)) {
+    for (const [, map] of Object.entries(CAMPAIGN_MAPS)) {
       for (const stage of map.stages) {
         for (const lane of stage.lanes) {
           totalLanes++;

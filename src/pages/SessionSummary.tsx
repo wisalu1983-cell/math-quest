@@ -117,6 +117,8 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
   }
 
   useEffect(() => {
+    const activeTimers = timers.current;
+
     // Scene 1: hearts bounce in, 120 ms stagger
     for (let i = 0; i < heartsEarned; i++) {
       addTimer(() => {
@@ -172,7 +174,7 @@ function AdvanceSummary({ topicId, heartsEarned, correctCount, totalCount, accur
     addTimer(() => inject(0), allEnteredAt + 550);
 
     return () => {
-      timers.current.forEach(clearTimeout);
+      activeTimers.forEach(clearTimeout);
       document.querySelectorAll('[data-mq-flier]').forEach(el => el.remove());
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps

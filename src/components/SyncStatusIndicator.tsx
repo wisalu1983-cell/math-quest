@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Check, Clock3, RefreshCw, XCircle, Zap } from 'lucide-react';
 import { useUIStore } from '@/store';
 import { useAuthStore } from '@/store/auth';
@@ -11,16 +11,17 @@ export default function SyncStatusIndicator() {
   const retryCount = useSyncEngine(s => s.retryCount);
   const syncState = useSyncEngine(s => s.syncState);
   const setPage = useUIStore(s => s.setPage);
-  const hasPlayedOfflineHint = useRef(false);
+  const [hasPlayedOfflineHint, setHasPlayedOfflineHint] = useState(false);
 
   const ariaLabel = getHomeSyncAriaLabel(status, retryCount, syncState);
-  const shouldAnimateOffline = status === 'offline' && !hasPlayedOfflineHint.current;
+  const shouldAnimateOffline = status === 'offline' && !hasPlayedOfflineHint;
 
   useEffect(() => {
-    if (status === 'offline') {
-      hasPlayedOfflineHint.current = true;
+    if (status === 'offline' && !hasPlayedOfflineHint) {
+      const timer = setTimeout(() => setHasPlayedOfflineHint(true), 700);
+      return () => clearTimeout(timer);
     }
-  }, [status]);
+  }, [hasPlayedOfflineHint, status]);
 
   if (!supabaseUser || !ariaLabel) return null;
 

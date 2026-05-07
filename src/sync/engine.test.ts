@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { User } from '@/types';
+import type { HistoryRecord, User } from '@/types';
 import type { GameProgress, RankMatchSession } from '@/types/gamification';
 import type { RemoteGameProgress, RemoteProfile } from './types';
 
 const remoteState = {
   profile: null as RemoteProfile | null,
   gameProgress: null as RemoteGameProgress | null,
-  history: [] as any[],
+  history: [] as HistoryRecord[],
   rankMatchSessions: {} as Record<string, RankMatchSession>,
   fetchRemoteProfile: vi.fn(async () => remoteState.profile),
   upsertRemoteProfile: vi.fn(async () => true),

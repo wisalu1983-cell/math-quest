@@ -97,7 +97,6 @@ function SvgWrap({
       height={size}
       className={className}
       aria-hidden="true"
-      // eslint-disable-next-line react/no-danger
       dangerouslySetInnerHTML={{ __html: paths }}
     />
   );

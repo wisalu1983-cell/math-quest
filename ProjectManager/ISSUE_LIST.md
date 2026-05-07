@@ -1,6 +1,6 @@
 # ISSUE_LIST — 当前版本开放问题
 
-> 最后更新：2026-05-03（`ISSUE-070` 已随 v0.5 post-release hotfix 修复并归档）
+> 最后更新：2026-05-07（`ISSUE-071` 已随 v0.5 post-release engineering hotfix 修复并归档）
 > 当前版本：**v0.5 Phase 5 已收口**（入口：[`Plan/v0.5/README.md`](Plan/v0.5/README.md)）
 > 本文件角色：**只列当前版本开放的 issue**（待修 bug / 欠账 / 实现问题）。历史关闭项走版本归档，未激活需求走 Backlog。
 
@@ -24,6 +24,7 @@
 
 ## 本轮关闭问题
 
+- `ISSUE-071` npm run lint 全量失败，恢复 lint 质量门：已随 v0.5 post-release engineering hotfix 修复并归档到 [`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)。
 - `ISSUE-067` 多行乘法竖式判错面板缺少过程 / 训练格错因：已随 v0.5 Phase 3 修复并归档到 [`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)。
 - `ISSUE-068` 单行过程积乘法竖式要求重复填写答数：已随 v0.5 Phase 3 小修关闭，归档到 [`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)。
 - `ISSUE-070` 登录状态未持久化：已随 v0.5 post-release hotfix 修复并归档到 [`Plan/v0.5/issues-closed.md`](Plan/v0.5/issues-closed.md)。
@@ -46,7 +47,7 @@
 
 > 完整流转规则见 [`Plan/rules/pm-write-routing.md`](Plan/rules/pm-write-routing.md)；版本收口规则见 [`Plan/version-lifecycle.md`](Plan/version-lifecycle.md)。
 
-1. **新开 issue**：从当前最大 ID 续编（跨版本连续，目前下一个新 ID 从 `ISSUE-070` 起）。写明 P0/P1/P2、所属版本、类别（bug / 实现一致性 / a11y / UI / 等）
+1. **新开 issue**：从当前最大 ID 续编（跨版本连续，目前下一个新 ID 从 `ISSUE-072` 起）。写明 P0/P1/P2、所属版本、类别（bug / 实现一致性 / a11y / UI / 等）
 2. **关闭 issue**：在本文件内标注关闭并保留关闭证据链；版本收口时由本文件整体搬至 `Plan/vX.Y/issues-closed.md`
 3. **延期 issue**：迁入 `Backlog.md`，原 ID 保留；激活时搬回本文件，仍用原 ID
 4. **同一条目不同时在两边**：bug 进本文件；未激活需求 / 想法进 Backlog

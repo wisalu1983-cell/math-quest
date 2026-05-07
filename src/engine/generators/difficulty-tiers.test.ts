@@ -167,9 +167,9 @@ describe('A01 口算速算 2 档（v2.2）', () => {
       expect(singleStep.length).toBeGreaterThan(100);
     });
     it('乘法为表内乘法范围', () => {
-      const muls = qs.filter(q => (q.data as any).operator === '×');
+      const muls = qs.filter(q => (q.data as Record<string, unknown>).operator === '×');
       for (const q of muls) {
-        const [a, b] = (q.data as any).operands;
+        const [a, b] = (q.data as Record<string, unknown>).operands;
         const small = Math.min(a, b);
         expect(small).toBeLessThanOrEqual(9);
       }
@@ -202,13 +202,13 @@ describe('A01 口算速算 2 档（v2.2）', () => {
     it('除法题答案为有效整数（覆盖原中档和原高档两个池）', () => {
       const qs = genFiltered(generateMentalArithmetic, 9, ['div'], 100);
       for (const q of qs) {
-        const ops = (q.data as any).operands;
+        const ops = (q.data as Record<string, unknown>).operands;
         expect(ops).toBeDefined();
         expect(Number.isInteger(Number(q.solution.answer))).toBe(true);
       }
       // 档 2 除法池既有三位数÷一位数（原中档），也有大数/末尾0（原高档）
       const hasHardPool = qs.some(q => {
-        const [a, b] = (q.data as any).operands;
+        const [a, b] = (q.data as Record<string, unknown>).operands;
         return b >= 10 || a >= 1000;
       });
       expect(hasHardPool).toBe(true);
@@ -273,7 +273,7 @@ describe('A03 竖式笔算 三档（v2.1）', () => {
     it('禁止出现小数', () => {
       const qs = genN(generateVerticalCalc, 3, 300);
       for (const q of qs) {
-        const ops = (q.data as any).operands ?? [];
+        const ops = (q.data as Record<string, unknown>).operands ?? [];
         for (const n of ops) {
           expect(Number.isInteger(n)).toBe(true);
         }
@@ -286,7 +286,7 @@ describe('A03 竖式笔算 三档（v2.1）', () => {
     it('dec-mul 为小数×整数（非小数×小数）', () => {
       const qs = genFiltered(generateVerticalCalc, 7, ['dec-mul'], 30);
       for (const q of qs) {
-        const ops = (q.data as any).operands;
+        const ops = (q.data as Record<string, unknown>).operands;
         expect(ops).toBeDefined();
         const hasDecimal = ops.some((n: number) => !Number.isInteger(n));
         const hasInteger = ops.some((n: number) => Number.isInteger(n));
@@ -308,7 +308,7 @@ describe('A03 竖式笔算 三档（v2.1）', () => {
     it('dec-div 为小数÷小数（扩倍后长除法）', () => {
       const qs = genFiltered(generateVerticalCalc, 9, ['dec-div'], 30);
       for (const q of qs) {
-        const ops = (q.data as any).operands;
+        const ops = (q.data as Record<string, unknown>).operands;
         // 高档小数除法：除数为小数
         expect(Number.isInteger(ops[1])).toBe(false);
       }
@@ -361,7 +361,7 @@ describe('A04 运算律 2 档（v2.2）', () => {
     const qs = genFiltered(generateOperationLaws, 8, ['counter-example'], 40);
     for (const q of qs) {
       expect(['multiple-choice', 'multi-select']).toContain(q.type);
-      expect((q.data as any).options?.length).toBeGreaterThanOrEqual(2);
+      expect((q.data as Record<string, unknown>).options?.length).toBeGreaterThanOrEqual(2);
     }
   });
 
@@ -369,7 +369,7 @@ describe('A04 运算律 2 档（v2.2）', () => {
     const qs = genFiltered(generateOperationLaws, 8, ['easy-confuse'], 20);
     for (const q of qs) {
       expect(q.type).toBe('multiple-choice');
-      expect((q.data as any).options?.length).toBe(4);
+      expect((q.data as Record<string, unknown>).options?.length).toBe(4);
     }
   });
 
@@ -385,7 +385,7 @@ describe('A04 运算律 2 档（v2.2）', () => {
     const qs = genFiltered(generateOperationLaws, 8, ['distributive-trap'], 20);
     for (const q of qs) {
       expect(q.type).toBe('multiple-choice');
-      expect((q.data as any).options?.length).toBeGreaterThanOrEqual(3);
+      expect((q.data as Record<string, unknown>).options?.length).toBeGreaterThanOrEqual(3);
     }
   });
 
@@ -497,7 +497,7 @@ describe('A06 括号变换 三档（v2.1）', () => {
     });
     it('低档括号位置应多样化（3档位分布均有覆盖）', () => {
       const qs = genN(generateBracketOps, 3, 150);
-      const positions = new Set((qs.map(q => (q.data as any).position) as string[]).filter(Boolean));
+      const positions = new Set((qs.map(q => (q.data as Record<string, unknown>).position) as string[]).filter(Boolean));
       // 至少覆盖到 front/middle/tail 中的两种（运气因素下放松，但不能只有一种）
       expect(positions.size).toBeGreaterThanOrEqual(2);
     });
@@ -508,7 +508,7 @@ describe('A06 括号变换 三档（v2.1）', () => {
       const qs = genFiltered(generateBracketOps, 7, ['division-property'], 30);
       for (const q of qs) {
         expect(q.type).toBe('multiple-choice');
-        const opts = (q.data as any).options;
+        const opts = (q.data as Record<string, unknown>).options;
         expect(opts).toContain(q.solution.answer);
       }
     });
@@ -527,7 +527,7 @@ describe('A06 括号变换 三档（v2.1）', () => {
       const qs = genFiltered(generateBracketOps, 9, ['nested-bracket'], 30);
       for (const q of qs) {
         expect(q.type).toBe('expression-input');
-        const expr = (q.data as any).originalExpression || q.prompt;
+        const expr = (q.data as Record<string, unknown>).originalExpression || q.prompt;
         const openCount = (expr.match(/\(/g) || []).length;
         expect(openCount).toBeGreaterThanOrEqual(2);
       }
@@ -536,7 +536,7 @@ describe('A06 括号变换 三档（v2.1）', () => {
       const qs = genFiltered(generateBracketOps, 9, ['error-diagnose'], 30);
       for (const q of qs) {
         expect(q.type).toBe('multiple-choice');
-        const opts = (q.data as any).options;
+        const opts = (q.data as Record<string, unknown>).options;
         expect(opts).toContain(q.solution.answer);
       }
     });
@@ -576,7 +576,7 @@ describe('A07 简便计算 三档（v2.1：识别+执行双能力）', () => {
       const qs = genFiltered(generateMultiStep, 7, ['bracket-hard'], 50);
       const mcQs = qs.filter(q => q.type === 'multiple-choice');
       for (const q of mcQs) {
-        const opts = (q.data as any).options;
+        const opts = (q.data as Record<string, unknown>).options;
         expect(opts).toContain(String(q.solution.answer));
       }
     });
@@ -605,7 +605,7 @@ describe('A07 简便计算 三档（v2.1：识别+执行双能力）', () => {
       const qs = genFiltered(generateMultiStep, 9, ['bracket-demon'], 50);
       const mcQs = qs.filter(q => q.type === 'multiple-choice');
       for (const q of mcQs) {
-        const opts = (q.data as any).options;
+        const opts = (q.data as Record<string, unknown>).options;
         expect(opts).toContain(String(q.solution.answer));
       }
     });
@@ -627,7 +627,7 @@ describe('A08 方程移项 2 档（v2.2）', () => {
       const qs = genFiltered(generateEquationTranspose, 3, ['equation-concept'], 30);
       for (const q of qs) {
         expect(q.type).toBe('multiple-choice');
-        const opts = (q.data as any).options;
+        const opts = (q.data as Record<string, unknown>).options;
         expect(opts).toBeDefined();
         expect(opts).toContain(q.solution.answer);
       }
@@ -648,7 +648,7 @@ describe('A08 方程移项 2 档（v2.2）', () => {
         expect(q.type).toBe('equation-input');
         expect(q.solution.standardExpression).toBeTruthy();
         // 档 1 的 T1-lite 陷阱标记
-        const trap = (q.data as any).trap;
+        const trap = (q.data as Record<string, unknown>).trap;
         expect(trap).toBe('T1-lite');
       }
     });
@@ -660,13 +660,13 @@ describe('A08 方程移项 2 档（v2.2）', () => {
       for (const q of qs) {
         expect(q.type).toBe('equation-input');
         expect(q.solution.standardExpression).toBeTruthy();
-        expect((q.data as any).trap).toBe('T4');
+        expect((q.data as Record<string, unknown>).trap).toBe('T4');
       }
     });
     it('bracket-equation：档 2 含陷阱 T3 / T3+T4', () => {
       const qs = genFiltered(generateEquationTranspose, 9, ['bracket-equation'], 60);
       const withTrap = qs.filter(q => {
-        const t = (q.data as any).trap;
+        const t = (q.data as Record<string, unknown>).trap;
         return t === 'T3' || t === 'T3+T4';
       });
       expect(withTrap.length).toBeGreaterThan(0);
@@ -675,7 +675,7 @@ describe('A08 方程移项 2 档（v2.2）', () => {
       const qs = genFiltered(generateEquationTranspose, 7, ['move-from-linear'], 60);
       const exprs = qs.filter(q => q.type === 'equation-input');
       expect(exprs.length).toBeGreaterThan(0);
-      const traps = new Set(qs.map(q => (q.data as any).trap).filter(Boolean));
+      const traps = new Set(qs.map(q => (q.data as Record<string, unknown>).trap).filter(Boolean));
       // 至少应出现 T1 或 T2 中的一种（概率抽样）
       expect(traps.size).toBeGreaterThanOrEqual(0);
     });
@@ -684,7 +684,7 @@ describe('A08 方程移项 2 档（v2.2）', () => {
       expect(qs.length).toBeGreaterThan(0);
       for (const q of qs) {
         expect(q.type).toBe('multiple-choice');
-        const opts = (q.data as any).options;
+        const opts = (q.data as Record<string, unknown>).options;
         expect(opts).toBeDefined();
         expect(opts).toContain(q.solution.answer);
       }
